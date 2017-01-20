@@ -12,6 +12,9 @@ namespace cppast
     {
 
     };
+
+    /// \returns Whether or not a given entity type is one derived from [cppast::cpp_scope]().
+    bool is_scope(cpp_entity_type type) noexcept;
 } // namespace cppast
 
 #endif // CPPAST_CPP_ENTITY_TYPE_HPP_INCLUDED

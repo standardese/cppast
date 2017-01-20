@@ -49,6 +49,7 @@ namespace cppast
         }
 
     private:
+        /// \returns The type of the entity.
         virtual cpp_entity_type do_get_entity_type() const noexcept = 0;
 
         type_safe::optional_ref<cpp_entity> parent_;
