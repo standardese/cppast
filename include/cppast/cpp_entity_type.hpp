@@ -10,7 +10,7 @@ namespace cppast
     /// All possible types of C++ entities.
     enum class cpp_entity_type
     {
-
+        file_t,
     };
 
     /// \returns Whether or not a given entity type is one derived from [cppast::cpp_scope]().

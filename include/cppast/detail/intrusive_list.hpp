@@ -17,9 +17,6 @@ namespace cppast
     namespace detail
     {
         template <typename T>
-        class intrusive_list;
-
-        template <typename T>
         class intrusive_list_node
         {
             std::unique_ptr<T> next_;
@@ -103,7 +100,8 @@ namespace cppast
 
             T* cur_;
 
-            friend intrusive_list<T>;
+            template <typename U>
+            friend class intrusive_list;
         };
 
         template <typename T>
@@ -115,12 +113,12 @@ namespace cppast
             //=== modifiers ===//
             void push_back(std::unique_ptr<T> obj) noexcept
             {
-                DEBUG_ASSERT(obj, detail::assert_handler{});
+                DEBUG_ASSERT(obj != nullptr, detail::assert_handler{});
 
                 if (last_)
                 {
                     auto ptr = intrusive_list_access<T>::set_next(last_.value(), std::move(obj));
-                    last_    = type_safe::opt_cref(ptr);
+                    last_    = *ptr;
                 }
                 else
                 {

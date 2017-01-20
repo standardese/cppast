@@ -55,7 +55,7 @@ namespace cppast
         type_safe::optional_ref<cpp_entity> parent_;
         std::string                         name_;
 
-        friend detail::intrusive_list_access<cpp_entity>;
+        friend detail::intrusive_list<cpp_entity>;
     };
 } // namespace cppast
 
