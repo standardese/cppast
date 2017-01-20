@@ -11,6 +11,8 @@ namespace cppast
     enum class cpp_entity_type
     {
         file_t,
+
+        namespace_t,
     };
 
     /// \returns Whether or not a given entity type is one derived from [cppast::cpp_scope]().

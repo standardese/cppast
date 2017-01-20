@@ -36,15 +36,20 @@ namespace cppast
         }
 
         /// \returns A [ts::optional_ref]() to the parent entity in the AST.
-        type_safe::optional_ref<cpp_entity> parent() const noexcept
+        type_safe::optional_ref<const cpp_entity> parent() const noexcept
         {
             return parent_;
         }
 
     protected:
         /// \effects Creates it giving it the parent entity and the name.
-        cpp_entity(type_safe::optional_ref<cpp_entity> parent, std::string name)
-        : parent_(std::move(parent)), name_(std::move(name))
+        cpp_entity(const cpp_entity& parent, std::string name)
+        : parent_(parent), name_(std::move(name))
+        {
+        }
+
+        /// \effects Creates it giving it no parent and the name.
+        cpp_entity(std::nullptr_t, std::string name) : name_(std::move(name))
         {
         }
 
@@ -52,10 +57,11 @@ namespace cppast
         /// \returns The type of the entity.
         virtual cpp_entity_type do_get_entity_type() const noexcept = 0;
 
-        type_safe::optional_ref<cpp_entity> parent_;
-        std::string                         name_;
+        type_safe::optional_ref<const cpp_entity> parent_;
+        std::string                               name_;
 
-        friend detail::intrusive_list<cpp_entity>;
+        template <typename T>
+        friend struct detail::intrusive_list_access;
     };
 } // namespace cppast
 

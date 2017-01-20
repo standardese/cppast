@@ -29,14 +29,14 @@ namespace cppast
         struct intrusive_list_access
         {
             template <typename U>
-            static T* get_next(const intrusive_list_node<U>& obj)
+            static T* get_next(const U& obj)
             {
                 static_assert(std::is_base_of<U, T>::value, "must be a base");
                 return static_cast<T*>(obj.next_.get());
             }
 
             template <typename U>
-            static T* set_next(intrusive_list_node<U>& obj, std::unique_ptr<T> node)
+            static T* set_next(U& obj, std::unique_ptr<T> node)
             {
                 static_assert(std::is_base_of<U, T>::value, "must be a base");
                 obj.next_ = std::move(node);

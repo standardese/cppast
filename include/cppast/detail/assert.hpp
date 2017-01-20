@@ -14,6 +14,11 @@ namespace cppast
         struct assert_handler : debug_assert::set_level<1>, debug_assert::default_handler
         {
         };
+
+        struct precondition_error_handler : debug_assert::set_level<1>,
+                                            debug_assert::default_handler
+        {
+        };
     }
 } // namespace cppast::detail
 

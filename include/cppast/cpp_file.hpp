@@ -9,7 +9,7 @@
 
 namespace cppast
 {
-    /// A [cppast::cpp_entity]() referring to a file.
+    /// A [cppast::cpp_entity]() modelling a file.
     ///
     /// This is the top-level entity of the AST.
     class cpp_file final : public cpp_entity
@@ -34,6 +34,12 @@ namespace cppast
             std::unique_ptr<cpp_file> finish() noexcept
             {
                 return std::move(file_);
+            }
+
+            /// \returns A reference to (not yet finished) file.
+            const cpp_file& get() const noexcept
+            {
+                return *file_;
             }
 
         private:
