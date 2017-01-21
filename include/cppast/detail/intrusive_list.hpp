@@ -45,7 +45,7 @@ namespace cppast
             {
                 static_assert(std::is_base_of<U, T>::value, "must be a base");
                 obj.next_ = std::move(node);
-                return obj.next_.get();
+                return static_cast<T*>(obj.next_.get());
             }
 
             template <typename U, typename V>

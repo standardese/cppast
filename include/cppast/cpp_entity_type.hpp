@@ -19,6 +19,9 @@ namespace cppast
         using_directive_t,
         using_declaration_t,
 
+        enum_t,
+        enum_value_t,
+
         count,
     };
 

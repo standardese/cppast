@@ -33,7 +33,7 @@ namespace cppast
                 namespace_->add_child(std::move(child));
             }
 
-            /// \effects Registers the file in the [cppast::cpp_entity_index](),
+            /// \effects Registers the namespace in the [cppast::cpp_entity_index](),
             /// using the given [cppast::cpp_entity_id]().
             /// \returns The finished namespace.
             std::unique_ptr<cpp_namespace> finish(const cpp_entity_index& idx,

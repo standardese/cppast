@@ -10,11 +10,15 @@ bool cppast::is_type(cpp_entity_type type) noexcept
 {
     switch (type)
     {
+    case cpp_entity_type::enum_t:
+        return true;
+
     case cpp_entity_type::file_t:
     case cpp_entity_type::namespace_t:
     case cpp_entity_type::namespace_alias_t:
     case cpp_entity_type::using_directive_t:
     case cpp_entity_type::using_declaration_t:
+    case cpp_entity_type::enum_value_t:
     case cpp_entity_type::count:
         break;
     }
