@@ -5,6 +5,7 @@
 #ifndef CPPAST_CPP_NAMESPACE_HPP_INCLUDED
 #define CPPAST_CPP_NAMESPACE_HPP_INCLUDED
 
+#include <cppast/cpp_entity_index.hpp>
 #include <cppast/cpp_scope.hpp>
 
 namespace cppast
@@ -29,9 +30,13 @@ namespace cppast
                 namespace_->add_child(std::move(child));
             }
 
+            /// \effects Registers the file in the [cppast::cpp_entity_index](),
+            /// using the given [cppast::cpp_entity_id]().
             /// \returns The finished namespace.
-            std::unique_ptr<cpp_namespace> finish() noexcept
+            std::unique_ptr<cpp_namespace> finish(const cpp_entity_index& idx,
+                                                  cpp_entity_id           id) noexcept
             {
+                idx.register_entity(std::move(id), type_safe::ref(*namespace_));
                 return std::move(namespace_);
             }
 

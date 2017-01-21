@@ -5,7 +5,7 @@
 #ifndef CPPAST_CPP_FILE_HPP_INCLUDED
 #define CPPAST_CPP_FILE_HPP_INCLUDED
 
-#include <cppast/cpp_entity.hpp>
+#include <cppast/cpp_entity_index.hpp>
 #include <cppast/cpp_scope.hpp>
 
 namespace cppast
@@ -28,12 +28,15 @@ namespace cppast
             /// \effects Adds an entity.
             void add_child(std::unique_ptr<cpp_entity> child) noexcept
             {
-                file_->children_.push_back(*file_, std::move(child));
+                file_->add_child(std::move(child));
             }
 
+            /// \effects Registers the file in the [cppast::cpp_entity_index]().
+            /// It will use the file name as identifier.
             /// \returns The finished file.
-            std::unique_ptr<cpp_file> finish() noexcept
+            std::unique_ptr<cpp_file> finish(const cpp_entity_index& idx) noexcept
             {
+                idx.register_entity(cpp_entity_id(file_->name()), type_safe::ref(*file_));
                 return std::move(file_);
             }
 
@@ -48,8 +51,6 @@ namespace cppast
 
         /// \returns [cpp_entity_type::file_t]().
         cpp_entity_type do_get_entity_type() const noexcept override;
-
-        detail::intrusive_list<cpp_entity> children_;
     };
 } // namespace cppast
 
