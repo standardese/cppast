@@ -22,6 +22,8 @@ namespace cppast
         pointer,
         reference,
 
+        array,
+
         unexposed,
     };
 
