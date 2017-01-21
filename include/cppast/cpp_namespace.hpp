@@ -60,6 +60,62 @@ namespace cppast
 
         bool inline_;
     };
+
+    /// A reference to a [cppast::cpp_namespace]().
+    class cpp_namespace_ref
+    {
+    public:
+        /// \effects Creates it giving it the target id and name.
+        /// \requires A [cppast::cpp_namespace]() must register in the [cppast::cpp_entity_index]() with that id.
+        cpp_namespace_ref(cpp_entity_id target_id, std::string target_name)
+        : target_(std::move(target_id)), name_(std::move(target_name))
+        {
+        }
+
+        /// \returns The name of the reference, as spelled in the source code.
+        const std::string& name() const noexcept
+        {
+            return name_;
+        }
+
+        /// \returns The [cppast::cpp_namespace]() it refers to.
+        const cpp_namespace& get(const cpp_entity_index& idx) const noexcept;
+
+    private:
+        cpp_entity_id target_;
+        std::string   name_;
+    };
+
+    /// A [cppast::cpp_entity]() modelling a namespace alias.
+    class cpp_namespace_alias final : public cpp_entity
+    {
+    public:
+        static std::unique_ptr<cpp_namespace_alias> build(const cpp_entity_index& idx,
+                                                          cpp_entity_id id, std::string name,
+                                                          cpp_namespace_ref target)
+        {
+            auto ptr = std::unique_ptr<cpp_namespace_alias>(
+                new cpp_namespace_alias(std::move(name), std::move(target)));
+            idx.register_entity(std::move(id), type_safe::ref(*ptr));
+            return ptr;
+        }
+
+        /// \returns The [cppast::cpp_namespace_ref]() to the aliased namespace.
+        const cpp_namespace_ref& target() const noexcept
+        {
+            return target_;
+        }
+
+    private:
+        cpp_namespace_alias(std::string name, cpp_namespace_ref target)
+        : cpp_entity(std::move(name)), target_(std::move(target))
+        {
+        }
+
+        cpp_entity_type do_get_entity_type() const noexcept override;
+
+        cpp_namespace_ref target_;
+    };
 } // namespace cppast
 
 #endif // CPPAST_CPP_NAMESPACE_HPP_INCLUDED
