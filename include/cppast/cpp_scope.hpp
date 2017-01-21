@@ -9,22 +9,14 @@
 
 namespace cppast
 {
-    /// Base class for all entities that add a scope.
+    /// Helper class for entities that are containers.
     ///
-    /// Examples are namespaces and classes,
-    /// or anything else that can appear followed by `::`.
-    class cpp_scope : public cpp_entity
+    /// Inherit from it to generate container access.
+    template <class Derived, typename T>
+    class cpp_entity_container
     {
     public:
-        /// \returns The name of the scope.
-        /// By default, this is the same name as the entity,
-        /// but derived classes can override it.
-        std::string scope_name() const
-        {
-            return do_get_scope_name();
-        }
-
-        using iterator = detail::intrusive_list<cpp_entity>::const_iterator;
+        using iterator = typename detail::intrusive_list<T>::const_iterator;
 
         /// \returns A const iterator to the first child.
         iterator begin() const noexcept
@@ -39,25 +31,47 @@ namespace cppast
         }
 
     protected:
-        using cpp_entity::cpp_entity;
-
-        /// \effects Adds a new child to the scope.
-        void add_child(std::unique_ptr<cpp_entity> ptr) noexcept
+        /// \effects Adds a new child to the container.
+        void add_child(std::unique_ptr<T> ptr) noexcept
         {
-            children_.push_back(*this, std::move(ptr));
+            children_.push_back(static_cast<Derived&>(*this), std::move(ptr));
         }
 
         /// \returns A non-const iterator to the first child.
-        detail::intrusive_list<cpp_entity>::iterator mutable_begin() noexcept
+        typename detail::intrusive_list<T>::iterator mutable_begin() noexcept
         {
             return children_.begin();
         }
 
         /// \returns A non-const iterator one past the last child.
-        detail::intrusive_list<cpp_entity>::iterator mutable_end() noexcept
+        typename detail::intrusive_list<T>::iterator mutable_end() noexcept
         {
             return children_.begin();
         }
+
+        ~cpp_entity_container() noexcept = default;
+
+    private:
+        detail::intrusive_list<T> children_;
+    };
+
+    /// Base class for all entities that add a scope.
+    ///
+    /// Examples are namespaces and classes,
+    /// or anything else that can appear followed by `::`.
+    class cpp_scope : public cpp_entity, public cpp_entity_container<cpp_scope, cpp_entity>
+    {
+    public:
+        /// \returns The name of the scope.
+        /// By default, this is the same name as the entity,
+        /// but derived classes can override it.
+        std::string scope_name() const
+        {
+            return do_get_scope_name();
+        }
+
+    protected:
+        using cpp_entity::cpp_entity;
 
     private:
         /// \returns The name of the new scope,
@@ -66,8 +80,6 @@ namespace cppast
         {
             return name();
         }
-
-        detail::intrusive_list<cpp_entity> children_;
     };
 } // namespace cppast
 

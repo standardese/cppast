@@ -6,13 +6,14 @@
 #define CPPAST_CPP_FILE_HPP_INCLUDED
 
 #include <cppast/cpp_entity.hpp>
+#include <cppast/cpp_scope.hpp>
 
 namespace cppast
 {
     /// A [cppast::cpp_entity]() modelling a file.
     ///
     /// This is the top-level entity of the AST.
-    class cpp_file final : public cpp_entity
+    class cpp_file final : public cpp_entity, public cpp_entity_container<cpp_file, cpp_entity>
     {
     public:
         /// Builds a [cppast::cpp_file]().
@@ -39,20 +40,6 @@ namespace cppast
         private:
             std::unique_ptr<cpp_file> file_;
         };
-
-        using iterator = detail::intrusive_list<cpp_entity>::const_iterator;
-
-        /// \returns A const iterator to the first child.
-        iterator begin() const noexcept
-        {
-            return children_.begin();
-        }
-
-        /// \returns A const iterator to the last child.
-        iterator end() const noexcept
-        {
-            return children_.end();
-        }
 
     private:
         cpp_file(std::string name) : cpp_entity(std::move(name))

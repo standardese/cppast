@@ -10,7 +10,7 @@
 namespace cppast
 {
     /// A [cppast::cpp_entity]() modelling a namespace.
-    class cpp_namespace : public cpp_scope
+    class cpp_namespace final : public cpp_scope
     {
     public:
         /// Builds a [cppast::cpp_namespace]().
