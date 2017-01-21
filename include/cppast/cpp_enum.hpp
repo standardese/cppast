@@ -106,6 +106,10 @@ namespace cppast
 
         cpp_entity_type do_get_entity_type() const noexcept override;
 
+        /// \returns If the enum is scoped, the name of the enum,
+        /// otherwise [ts::nullopt]().
+        type_safe::optional<std::string> do_get_scope_name() const override;
+
         std::unique_ptr<cpp_type> type_;
         bool                      scoped_;
     };

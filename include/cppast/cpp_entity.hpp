@@ -35,6 +35,13 @@ namespace cppast
             return name_;
         }
 
+        /// \returns The name of the new scope created by the entity,
+        /// if there is any.
+        type_safe::optional<std::string> scope_name() const
+        {
+            return do_get_scope_name();
+        }
+
         /// \returns A [ts::optional_ref]() to the parent entity in the AST.
         type_safe::optional_ref<const cpp_entity> parent() const noexcept
         {
@@ -51,6 +58,13 @@ namespace cppast
         /// \returns The type of the entity.
         virtual cpp_entity_type do_get_entity_type() const noexcept = 0;
 
+        /// \returns The name of the new scope created by the entity, if any.
+        /// By default, there is no scope created.
+        virtual type_safe::optional<std::string> do_get_scope_name() const
+        {
+            return type_safe::nullopt;
+        }
+
         void on_insert(const cpp_entity& parent) noexcept
         {
             parent_ = parent;
@@ -63,6 +77,9 @@ namespace cppast
         friend struct detail::intrusive_list_access;
         friend detail::intrusive_list_node<cpp_entity>;
     };
+
+    /// \returns The full name of the [cppast::cpp_entity](), with all scopes.
+    std::string full_name(const cpp_entity& e);
 } // namespace cppast
 
 #endif // CPPAST_CPP_ENTITY_HPP_INCLUDED

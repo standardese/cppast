@@ -61,6 +61,12 @@ namespace cppast
 
         cpp_entity_type do_get_entity_type() const noexcept override;
 
+        /// \returns The name of the namespace.
+        type_safe::optional<std::string> do_get_scope_name() const override
+        {
+            return name();
+        }
+
         bool inline_;
     };
 

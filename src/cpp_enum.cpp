@@ -17,3 +17,8 @@ cpp_entity_type cpp_enum::do_get_entity_type() const noexcept
 {
     return cpp_entity_type::enum_t;
 }
+
+type_safe::optional<std::string> cpp_enum::do_get_scope_name() const
+{
+    return scoped_ ? type_safe::make_optional(name()) : type_safe::nullopt;
+}
