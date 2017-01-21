@@ -6,12 +6,11 @@
 #define CPPAST_CPP_ENTITY_REF_HPP_INCLUDED
 
 #include <cppast/cpp_entity_index.hpp>
-#include <cppast/cpp_entity_type.hpp>
 
 namespace cppast
 {
     /// A basic reference to some kind of [cppast::cpp_entity]().
-    template <typename T, cpp_entity_type Type>
+    template <typename T, typename Predicate>
     class basic_cpp_entity_ref
     {
     public:
@@ -37,7 +36,10 @@ namespace cppast
         /// \returns The [cppast::cpp_entity]() it refers to.
         const T& get(const cpp_entity_index& idx) const noexcept
         {
-            return detail::downcast_entity<const T&>(idx.lookup(target_).value(), Type);
+            auto entity = idx.lookup(target_);
+            DEBUG_ASSERT(Predicate{}(entity.value()), detail::precondition_error_handler{},
+                         "invalid entity");
+            return static_cast<const T&>(entity.value());
         }
 
     private:
@@ -45,8 +47,20 @@ namespace cppast
         std::string   name_;
     };
 
+    /// \exclude
+    namespace detail
+    {
+        struct cpp_entity_ref_predicate
+        {
+            bool operator()(const cpp_entity&)
+            {
+                return true;
+            }
+        };
+    }
+
     /// A [cppast::basic_cpp_entity_ref]() to any [cppast::cpp_entity]().
-    using cpp_entity_ref = basic_cpp_entity_ref<cpp_entity, cpp_entity_type::count>;
+    using cpp_entity_ref = basic_cpp_entity_ref<cpp_entity, detail::cpp_entity_ref_predicate>;
 } // namespace cppast
 
 #endif // CPPAST_CPP_ENTITY_REF_HPP_INCLUDED
