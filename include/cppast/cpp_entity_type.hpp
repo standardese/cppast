@@ -17,6 +17,7 @@ namespace cppast
         namespace_t,
         namespace_alias_t,
         using_directive_t,
+        using_declaration_t,
 
         count,
     };

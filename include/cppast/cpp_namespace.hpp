@@ -117,7 +117,7 @@ namespace cppast
             return std::unique_ptr<cpp_using_directive>(new cpp_using_directive(target));
         }
 
-        /// \returns The [cppast::cpp_namespace_ref]() that is exposed.
+        /// \returns The [cppast::cpp_namespace_ref]() that is being used.
         /// \notes The name of the reference is the same as the name of this entity.
         cpp_namespace_ref target() const
         {
@@ -133,6 +133,41 @@ namespace cppast
         cpp_entity_type do_get_entity_type() const noexcept override
         {
             return cpp_entity_type::using_directive_t;
+        }
+
+        cpp_entity_id target_;
+    };
+
+    /// A [cppast::cpp_entity]() modelling a using declaration.
+    ///
+    /// A using declaration is `using std::vector`, for example.
+    class cpp_using_declaration final : public cpp_entity
+    {
+    public:
+        /// \returns A newly created using declaration.
+        /// \notes It is not meant to be registered at the [cppast::cpp_entity_index](),
+        /// as nothing can refer to it.
+        static std::unique_ptr<cpp_using_declaration> build(const cpp_entity_ref& target)
+        {
+            return std::unique_ptr<cpp_using_declaration>(new cpp_using_declaration(target));
+        }
+
+        /// \returns The [cppast::cpp_entity_ref]() that is being used.
+        /// \notes The name of the reference is the same as the name of this entity.
+        cpp_entity_ref target() const
+        {
+            return {target_, name()};
+        }
+
+    private:
+        cpp_using_declaration(const cpp_entity_ref& target)
+        : cpp_entity(target.name()), target_(target.id())
+        {
+        }
+
+        cpp_entity_type do_get_entity_type() const noexcept override
+        {
+            return cpp_entity_type::using_declaration_t;
         }
 
         cpp_entity_id target_;
