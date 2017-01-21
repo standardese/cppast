@@ -78,6 +78,12 @@ namespace cppast
             return name_;
         }
 
+        /// \returns The [cppast::cpp_entity_id]() of the namespace it refers to.
+        const cpp_entity_id& id() const noexcept
+        {
+            return target_;
+        }
+
         /// \returns The [cppast::cpp_namespace]() it refers to.
         const cpp_namespace& get(const cpp_entity_index& idx) const noexcept;
 
@@ -90,6 +96,7 @@ namespace cppast
     class cpp_namespace_alias final : public cpp_entity
     {
     public:
+        /// \returns A newly created and registered namespace alias.
         static std::unique_ptr<cpp_namespace_alias> build(const cpp_entity_index& idx,
                                                           cpp_entity_id id, std::string name,
                                                           cpp_namespace_ref target)
@@ -115,6 +122,38 @@ namespace cppast
         cpp_entity_type do_get_entity_type() const noexcept override;
 
         cpp_namespace_ref target_;
+    };
+
+    /// A [cppast::cpp_entity]() modelling a using directive.
+    ///
+    /// A using directive is `using namespace std`, for example.
+    class cpp_using_directive final : public cpp_entity
+    {
+    public:
+        /// \returns A newly created using directive.
+        /// \notes It is not meant to be registered at the [cppast::cpp_entity_index](),
+        /// as nothing can refer to it.
+        static std::unique_ptr<cpp_using_directive> build(const cpp_namespace_ref& target)
+        {
+            return std::unique_ptr<cpp_using_directive>(new cpp_using_directive(target));
+        }
+
+        /// \returns The [cppast::cpp_namespace_ref]() that is exposed.
+        /// \notes The name of the reference is the same as the name of this entity.
+        cpp_namespace_ref target() const
+        {
+            return {target_, name()};
+        }
+
+    private:
+        cpp_using_directive(const cpp_namespace_ref& target)
+        : cpp_entity(target.name()), target_(target.id())
+        {
+        }
+
+        cpp_entity_type do_get_entity_type() const noexcept override;
+
+        cpp_entity_id target_;
     };
 } // namespace cppast
 

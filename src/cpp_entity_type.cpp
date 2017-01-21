@@ -15,6 +15,7 @@ bool cppast::is_scope(cpp_entity_type type) noexcept
 
     case cpp_entity_type::file_t:
     case cpp_entity_type::namespace_alias_t:
+    case cpp_entity_type::using_directive_t:
         break;
     }
 

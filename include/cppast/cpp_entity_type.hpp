@@ -16,6 +16,7 @@ namespace cppast
 
         namespace_t,
         namespace_alias_t,
+        using_directive_t,
     };
 
     /// \returns Whether or not a given entity type is one derived from [cppast::cpp_scope]().

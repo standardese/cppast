@@ -23,3 +23,8 @@ cpp_entity_type cpp_namespace_alias::do_get_entity_type() const noexcept
 {
     return cpp_entity_type::namespace_alias_t;
 }
+
+cpp_entity_type cpp_using_directive::do_get_entity_type() const noexcept
+{
+    return cpp_entity_type::using_directive_t;
+}
