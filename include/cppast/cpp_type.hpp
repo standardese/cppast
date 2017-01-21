@@ -61,6 +61,10 @@ namespace cppast
         friend detail::intrusive_list_node<cpp_type>;
     };
 
+    /// \returns `true` if the given [cppast::cpp_type]() is valid, `false` otherwise.
+    /// Invalid types are, for example, references to references.
+    bool is_valid(const cpp_type& type) noexcept;
+
     /// An unexposed [cppast::cpp_type]().
     ///
     /// This is one where no further information besides a name is available.
