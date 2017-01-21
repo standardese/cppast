@@ -6,7 +6,7 @@
 #define CPPAST_CPP_FILE_HPP_INCLUDED
 
 #include <cppast/cpp_entity_index.hpp>
-#include <cppast/cpp_scope.hpp>
+#include <cppast/cpp_entity_container.hpp>
 
 namespace cppast
 {

@@ -5,15 +5,16 @@
 #ifndef CPPAST_CPP_NAMESPACE_HPP_INCLUDED
 #define CPPAST_CPP_NAMESPACE_HPP_INCLUDED
 
+#include <cppast/cpp_entity_container.hpp>
 #include <cppast/cpp_entity_index.hpp>
 #include <cppast/cpp_entity_ref.hpp>
 #include <cppast/cpp_entity_type.hpp>
-#include <cppast/cpp_scope.hpp>
 
 namespace cppast
 {
     /// A [cppast::cpp_entity]() modelling a namespace.
-    class cpp_namespace final : public cpp_scope
+    class cpp_namespace final : public cpp_entity,
+                                public cpp_entity_container<cpp_namespace, cpp_entity>
     {
     public:
         /// Builds a [cppast::cpp_namespace]().
@@ -54,7 +55,7 @@ namespace cppast
 
     private:
         cpp_namespace(std::string name, bool is_inline)
-        : cpp_scope(std::move(name)), inline_(is_inline)
+        : cpp_entity(std::move(name)), inline_(is_inline)
         {
         }
 
