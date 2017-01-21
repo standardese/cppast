@@ -5,7 +5,7 @@
 #ifndef CPPAST_CPP_ENTITY_INDEX_HPP_INCLUDED
 #define CPPAST_CPP_ENTITY_INDEX_HPP_INCLUDED
 
-#include <map>
+#include <unordered_map>
 #include <mutex>
 #include <string>
 
@@ -19,22 +19,40 @@ namespace cppast
 {
     class cpp_entity;
 
+    /// \exclude
+    namespace detail
+    {
+        constexpr std::size_t fnv_basis = 14695981039346656037ull;
+        constexpr std::size_t fnv_prime = 1099511628211ull;
+
+        // FNV-1a 64 bit hash
+        constexpr std::size_t id_hash(const char* str, std::size_t hash = fnv_basis)
+        {
+            return *str ? id_hash(str + 1, (hash ^ *str) * fnv_prime) : hash;
+        }
+    } // namespace detail
+
     /// A [ts::strong_typedef]() representing the unique id of a [cppast::cpp_entity]().
     ///
-    /// It is fully comparable.
-    struct cpp_entity_id : type_safe::strong_typedef<cpp_entity_id, std::string>,
-                           type_safe::strong_typedef_op::equality_comparison<cpp_entity_id, bool>,
-                           type_safe::strong_typedef_op::relational_comparison<cpp_entity_id, bool>
+    /// It is comparable for equality.
+    struct cpp_entity_id : type_safe::strong_typedef<cpp_entity_id, std::size_t>,
+                           type_safe::strong_typedef_op::equality_comparison<cpp_entity_id, bool>
     {
-        using strong_typedef::strong_typedef;
+        explicit cpp_entity_id(const std::string& str) : cpp_entity_id(str.c_str())
+        {
+        }
+
+        explicit cpp_entity_id(const char* str) : strong_typedef(detail::id_hash(str))
+        {
+        }
     };
 
     inline namespace literals
     {
         /// \returns A new [cppast::cpp_entity_id]() created from the given string.
-        inline cpp_entity_id operator""_id(const char* str, std::size_t size)
+        inline cpp_entity_id operator""_id(const char* str, std::size_t)
         {
-            return cpp_entity_id(std::string(str, size));
+            return cpp_entity_id(str);
         }
     }
 
@@ -68,8 +86,17 @@ namespace cppast
         }
 
     private:
+        struct hash
+        {
+            std::size_t operator()(const cpp_entity_id& id) const noexcept
+            {
+                return static_cast<std::size_t>(id);
+            }
+        };
+
         mutable std::mutex mutex_;
-        mutable std::map<cpp_entity_id, type_safe::object_ref<const cpp_entity>> map_;
+        mutable std::unordered_map<cpp_entity_id, type_safe::object_ref<const cpp_entity>, hash>
+            map_;
     };
 } // namespace cppast
 
