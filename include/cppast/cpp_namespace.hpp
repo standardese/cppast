@@ -18,8 +18,8 @@ namespace cppast
         {
         public:
             /// \effects Sets the namespace name and whether it is inline.
-            explicit builder(const cpp_entity& parent, std::string name, bool is_inline)
-            : namespace_(new cpp_namespace(parent, std::move(name), is_inline))
+            explicit builder(std::string name, bool is_inline)
+            : namespace_(new cpp_namespace(std::move(name), is_inline))
             {
             }
 
@@ -35,12 +35,6 @@ namespace cppast
                 return std::move(namespace_);
             }
 
-            /// \returns A reference to (not yet finished) namespace.
-            const cpp_namespace& get() const noexcept
-            {
-                return *namespace_;
-            }
-
         private:
             std::unique_ptr<cpp_namespace> namespace_;
         };
@@ -52,8 +46,8 @@ namespace cppast
         }
 
     private:
-        cpp_namespace(const cpp_entity& parent, std::string name, bool is_inline)
-        : cpp_scope(parent, std::move(name)), inline_(is_inline)
+        cpp_namespace(std::string name, bool is_inline)
+        : cpp_scope(std::move(name)), inline_(is_inline)
         {
         }
 

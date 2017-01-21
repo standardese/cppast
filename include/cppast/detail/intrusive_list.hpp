@@ -21,6 +21,11 @@ namespace cppast
         {
             std::unique_ptr<T> next_;
 
+            void do_on_insert(const T& parent) noexcept
+            {
+                static_cast<T&>(*this).on_insert(parent);
+            }
+
             template <typename U>
             friend struct intrusive_list_access;
         };
@@ -41,6 +46,12 @@ namespace cppast
                 static_assert(std::is_base_of<U, T>::value, "must be a base");
                 obj.next_ = std::move(node);
                 return obj.next_.get();
+            }
+
+            template <typename U, typename V>
+            static void on_insert(U& obj, const V& parent)
+            {
+                obj.do_on_insert(parent);
             }
         };
 
@@ -111,7 +122,8 @@ namespace cppast
             intrusive_list() = default;
 
             //=== modifiers ===//
-            void push_back(std::unique_ptr<T> obj) noexcept
+            template <typename U>
+            void push_back(const U& parent, std::unique_ptr<T> obj) noexcept
             {
                 DEBUG_ASSERT(obj != nullptr, detail::assert_handler{});
 
@@ -125,6 +137,8 @@ namespace cppast
                     first_ = std::move(obj);
                     last_  = type_safe::opt_ref(first_.get());
                 }
+
+                intrusive_list_access<T>::on_insert(last_.value(), parent);
             }
 
             //=== accesors ===//

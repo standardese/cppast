@@ -44,9 +44,7 @@ namespace cppast
         /// \effects Adds a new child to the scope.
         void add_child(std::unique_ptr<cpp_entity> ptr) noexcept
         {
-            DEBUG_ASSERT(ptr->parent() == *this, detail::precondition_error_handler{},
-                         "parent not set properly");
-            children_.push_back(std::move(ptr));
+            children_.push_back(*this, std::move(ptr));
         }
 
         /// \returns A non-const iterator to the first child.

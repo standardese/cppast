@@ -27,19 +27,13 @@ namespace cppast
             /// \effects Adds an entity.
             void add_child(std::unique_ptr<cpp_entity> child) noexcept
             {
-                file_->children_.push_back(std::move(child));
+                file_->children_.push_back(*file_, std::move(child));
             }
 
             /// \returns The finished file.
             std::unique_ptr<cpp_file> finish() noexcept
             {
                 return std::move(file_);
-            }
-
-            /// \returns A reference to (not yet finished) file.
-            const cpp_file& get() const noexcept
-            {
-                return *file_;
             }
 
         private:
@@ -61,7 +55,7 @@ namespace cppast
         }
 
     private:
-        cpp_file(std::string name) : cpp_entity(nullptr, std::move(name))
+        cpp_file(std::string name) : cpp_entity(std::move(name))
         {
         }
 

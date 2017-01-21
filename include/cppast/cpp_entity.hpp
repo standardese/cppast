@@ -42,14 +42,8 @@ namespace cppast
         }
 
     protected:
-        /// \effects Creates it giving it the parent entity and the name.
-        cpp_entity(const cpp_entity& parent, std::string name)
-        : parent_(parent), name_(std::move(name))
-        {
-        }
-
-        /// \effects Creates it giving it no parent and the name.
-        cpp_entity(std::nullptr_t, std::string name) : name_(std::move(name))
+        /// \effects Creates it giving it the the name.
+        cpp_entity(std::string name) : name_(std::move(name))
         {
         }
 
@@ -57,11 +51,17 @@ namespace cppast
         /// \returns The type of the entity.
         virtual cpp_entity_type do_get_entity_type() const noexcept = 0;
 
+        void on_insert(const cpp_entity& parent) noexcept
+        {
+            parent_ = parent;
+        }
+
         type_safe::optional_ref<const cpp_entity> parent_;
         std::string                               name_;
 
         template <typename T>
         friend struct detail::intrusive_list_access;
+        friend detail::intrusive_list_node<cpp_entity>;
     };
 } // namespace cppast
 
