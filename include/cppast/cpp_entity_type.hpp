@@ -17,6 +17,8 @@ namespace cppast
         namespace_t,
         namespace_alias_t,
         using_directive_t,
+
+        count,
     };
 
     /// \returns Whether or not a given entity type is one derived from [cppast::cpp_scope]().
@@ -28,8 +30,8 @@ namespace cppast
         template <typename T, typename Org>
         T downcast_entity(Org& org, cpp_entity_type dest_type) noexcept
         {
-            DEBUG_ASSERT(org.type() == dest_type, detail::precondition_error_handler{},
-                         "invalid downcast");
+            DEBUG_ASSERT(dest_type == cpp_entity_type::count || org.type() == dest_type,
+                         detail::precondition_error_handler{}, "invalid downcast");
             return static_cast<T>(org);
         }
     } // namespace detail
