@@ -23,6 +23,9 @@ namespace cppast
         reference,
 
         array,
+        function,
+        member_function,
+        member_object,
 
         unexposed,
     };

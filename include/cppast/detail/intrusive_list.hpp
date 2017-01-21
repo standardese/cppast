@@ -195,6 +195,36 @@ namespace cppast
             std::unique_ptr<T>         first_;
             type_safe::optional_ref<T> last_;
         };
+
+        template <typename T>
+        class iteratable_intrusive_list
+        {
+        public:
+            iteratable_intrusive_list(type_safe::object_ref<const intrusive_list<T>> list)
+            : list_(list)
+            {
+            }
+
+            bool empty() const noexcept
+            {
+                return list_->empty();
+            }
+
+            using iterator = typename intrusive_list<T>::const_iterator;
+
+            iterator begin() const noexcept
+            {
+                return list_->begin();
+            }
+
+            iterator end() const noexcept
+            {
+                return list_->end();
+            }
+
+        private:
+            type_safe::object_ref<const intrusive_list<T>> list_;
+        };
     }
 } // namespace cppast::detail
 
