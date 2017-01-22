@@ -12,7 +12,7 @@ namespace cppast
     /// Information about the state of a visit operation.
     enum class visitor_info
     {
-        leave_entity, //< Callback called for a leave entity without children.
+        leaf_entity, //< Callback called for a leaf entity without children.
 
         container_entity_enter, //< Callback called for a container entity before the children.
         container_entity_exit,  //< Callback called for a container entity after the children.

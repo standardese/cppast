@@ -47,7 +47,7 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
     case cpp_entity_kind::using_declaration_t:
     case cpp_entity_kind::type_alias_t:
     case cpp_entity_kind::enum_value_t:
-        return cb(functor, e, visitor_info::leave_entity);
+        return cb(functor, e, visitor_info::leaf_entity);
 
     case cpp_entity_kind::count:
         break;
