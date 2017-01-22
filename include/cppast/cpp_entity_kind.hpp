@@ -25,8 +25,11 @@ namespace cppast
         count,
     };
 
+    /// \returns A human readable string describing the entity kind.
+    const char* to_string(cpp_entity_kind kind) noexcept;
+
     /// \returns Whether or not a given entity kind is a C++ type.
-    bool is_type(cpp_entity_kind type) noexcept;
+    bool is_type(cpp_entity_kind kind) noexcept;
 } // namespace cppast
 
 #endif // CPPAST_CPP_ENTITY_KIND_HPP_INCLUDED
