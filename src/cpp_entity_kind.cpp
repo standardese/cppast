@@ -13,6 +13,9 @@ const char* cppast::to_string(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::file_t:
         return "file";
 
+    case cpp_entity_kind::language_linkage_t:
+        return "language linkage";
+
     case cpp_entity_kind::namespace_t:
         return "namespace";
     case cpp_entity_kind::namespace_alias_t:
@@ -49,6 +52,7 @@ bool cppast::is_type(cpp_entity_kind kind) noexcept
         return true;
 
     case cpp_entity_kind::file_t:
+    case cpp_entity_kind::language_linkage_t:
     case cpp_entity_kind::namespace_t:
     case cpp_entity_kind::namespace_alias_t:
     case cpp_entity_kind::using_directive_t:

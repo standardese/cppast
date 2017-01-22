@@ -14,6 +14,8 @@ namespace cppast
     {
         file_t,
 
+        language_linkage_t,
+
         namespace_t,
         namespace_alias_t,
         using_directive_t,

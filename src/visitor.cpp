@@ -8,6 +8,7 @@
 #include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_enum.hpp>
 #include <cppast/cpp_file.hpp>
+#include <cppast/cpp_language_linkage.hpp>
 #include <cppast/cpp_namespace.hpp>
 
 using namespace cppast;
@@ -37,6 +38,8 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
     {
     case cpp_entity_kind::file_t:
         return handle_container<cpp_file>(e, cb, functor);
+    case cpp_entity_kind::language_linkage_t:
+        return handle_container<cpp_language_linkage>(e, cb, functor);
     case cpp_entity_kind::namespace_t:
         return handle_container<cpp_namespace>(e, cb, functor);
     case cpp_entity_kind::enum_t:

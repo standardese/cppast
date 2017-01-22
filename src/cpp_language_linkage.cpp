@@ -1,0 +1,20 @@
+// Copyright (C) 2017 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// This file is subject to the license terms in the LICENSE file
+// found in the top-level directory of this distribution.
+
+#include <cppast/cpp_language_linkage.hpp>
+
+#include <cppast/cpp_entity_kind.hpp>
+
+using namespace cppast;
+
+bool cpp_language_linkage::is_block() const noexcept
+{
+    DEBUG_ASSERT(begin() != end(), detail::assert_handler{}, "empty container");
+    return std::next(begin()) != end(); // more than one entity, so block
+}
+
+cpp_entity_kind cpp_language_linkage::do_get_entity_kind() const noexcept
+{
+    return cpp_entity_kind::language_linkage_t;
+}
