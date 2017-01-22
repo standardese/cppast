@@ -30,6 +30,9 @@ const char* cppast::to_string(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::enum_value_t:
         return "enum value";
 
+    case cpp_entity_kind::variable_t:
+        return "variable";
+
     case cpp_entity_kind::count:
         break;
     }
@@ -51,6 +54,7 @@ bool cppast::is_type(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::using_directive_t:
     case cpp_entity_kind::using_declaration_t:
     case cpp_entity_kind::enum_value_t:
+    case cpp_entity_kind::variable_t:
     case cpp_entity_kind::count:
         break;
     }

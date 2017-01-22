@@ -24,6 +24,8 @@ namespace cppast
         enum_t,
         enum_value_t,
 
+        variable_t,
+
         count,
     };
 
