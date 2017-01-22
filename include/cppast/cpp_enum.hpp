@@ -25,13 +25,7 @@ namespace cppast
         /// \notes `value` may be `nullptr`, in which case the enum has an implicit value.
         static std::unique_ptr<cpp_enum_value> build(
             const cpp_entity_index& idx, cpp_entity_id id, std::string name,
-            std::unique_ptr<cpp_expression> value = nullptr)
-        {
-            auto result = std::unique_ptr<cpp_enum_value>(
-                new cpp_enum_value(std::move(name), std::move(value)));
-            idx.register_entity(std::move(id), type_safe::ref(*result));
-            return result;
-        }
+            std::unique_ptr<cpp_expression> value = nullptr);
 
         /// \returns A [ts::optional_ref]() to the [cppast::cpp_expression]() that is the enum value.
         /// \notes It only has an associated expression if the value is explictly given.

@@ -90,13 +90,7 @@ namespace cppast
         /// \returns A newly created and registered namespace alias.
         static std::unique_ptr<cpp_namespace_alias> build(const cpp_entity_index& idx,
                                                           cpp_entity_id id, std::string name,
-                                                          cpp_namespace_ref target)
-        {
-            auto ptr = std::unique_ptr<cpp_namespace_alias>(
-                new cpp_namespace_alias(std::move(name), std::move(target)));
-            idx.register_entity(std::move(id), type_safe::ref(*ptr));
-            return ptr;
-        }
+                                                          cpp_namespace_ref target);
 
         /// \returns The [cppast::cpp_namespace_ref]() to the aliased namespace.
         const cpp_namespace_ref& target() const noexcept

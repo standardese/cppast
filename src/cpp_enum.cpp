@@ -8,6 +8,16 @@
 
 using namespace cppast;
 
+std::unique_ptr<cpp_enum_value> cpp_enum_value::build(const cpp_entity_index& idx, cpp_entity_id id,
+                                                      std::string                     name,
+                                                      std::unique_ptr<cpp_expression> value)
+{
+    auto result =
+        std::unique_ptr<cpp_enum_value>(new cpp_enum_value(std::move(name), std::move(value)));
+    idx.register_entity(std::move(id), type_safe::ref(*result));
+    return result;
+}
+
 cpp_entity_kind cpp_enum_value::do_get_entity_kind() const noexcept
 {
     return cpp_entity_kind::enum_value_t;

@@ -12,6 +12,8 @@
 namespace cppast
 {
     enum class cpp_entity_kind;
+    class cpp_entity_index;
+    struct cpp_entity_id;
 
     /// The base class for all entities in the C++ AST.
     class cpp_entity : detail::intrusive_list_node<cpp_entity>

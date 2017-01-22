@@ -22,6 +22,9 @@ const char* cppast::to_string(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::using_declaration_t:
         return "using declaration";
 
+    case cpp_entity_kind::type_alias_t:
+        return "type alias";
+
     case cpp_entity_kind::enum_t:
         return "enum";
     case cpp_entity_kind::enum_value_t:
@@ -39,6 +42,7 @@ bool cppast::is_type(cpp_entity_kind kind) noexcept
     switch (kind)
     {
     case cpp_entity_kind::enum_t:
+    case cpp_entity_kind::type_alias_t:
         return true;
 
     case cpp_entity_kind::file_t:
