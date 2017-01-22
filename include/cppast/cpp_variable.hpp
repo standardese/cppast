@@ -5,23 +5,11 @@
 #ifndef CPPAST_CPP_VARIABLE_HPP_INCLUDED
 #define CPPAST_CPP_VARIABLE_HPP_INCLUDED
 
+#include <cppast/cpp_storage_specifiers.hpp>
 #include <cppast/cpp_variable_base.hpp>
 
 namespace cppast
 {
-    /// Storage class and other specifiers for a [cppast::cpp_variable]().
-    enum cpp_variable_specifiers
-    {
-        cpp_var_none = 0,
-
-        cpp_var_static = 1,
-        cpp_var_extern = 2,
-
-        cpp_var_thread_local = 4,
-
-        cpp_var_constexpr = 8,
-    };
-
     /// A [cppast::cpp_entity]() modelling a C++ variable.
     /// \notes This is not a member variable,
     /// use [cppast::cpp_member_variable]() for that.
@@ -33,24 +21,34 @@ namespace cppast
         static std::unique_ptr<cpp_variable> build(const cpp_entity_index& idx, cpp_entity_id id,
                                                    std::string name, std::unique_ptr<cpp_type> type,
                                                    std::unique_ptr<cpp_expression> def,
-                                                   cpp_variable_specifiers         spec);
+                                                   cpp_storage_specifiers spec, bool is_constexpr);
 
-        /// \returns The [cppast::cpp_variable_specifiers]() on that variable.
-        cpp_variable_specifiers specifiers() const noexcept
+        /// \returns The [cppast::cpp_storage_specifiers]() on that variable.
+        cpp_storage_specifiers storage_class() const noexcept
         {
-            return specifiers_;
+            return storage_;
+        }
+
+        /// \returns Whether the variable is marked `constexpr`.
+        bool is_constexpr() const noexcept
+        {
+            return is_constexpr_;
         }
 
     private:
         cpp_variable(std::string name, std::unique_ptr<cpp_type> type,
-                     std::unique_ptr<cpp_expression> def, cpp_variable_specifiers spec)
-        : cpp_variable_base(std::move(name), std::move(type), std::move(def)), specifiers_(spec)
+                     std::unique_ptr<cpp_expression> def, cpp_storage_specifiers spec,
+                     bool is_constexpr)
+        : cpp_variable_base(std::move(name), std::move(type), std::move(def)),
+          storage_(spec),
+          is_constexpr_(is_constexpr)
         {
         }
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
-        cpp_variable_specifiers specifiers_;
+        cpp_storage_specifiers storage_;
+        bool                   is_constexpr_;
     };
 } // namespace cppast
 

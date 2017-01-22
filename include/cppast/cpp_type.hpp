@@ -103,7 +103,7 @@ namespace cppast
     {
     public:
         /// \returns A newly created builtin type.
-        std::unique_ptr<cpp_builtin_type> build(std::string name)
+        static std::unique_ptr<cpp_builtin_type> build(std::string name)
         {
             return std::unique_ptr<cpp_builtin_type>(new cpp_builtin_type(std::move(name)));
         }
@@ -146,7 +146,7 @@ namespace cppast
     {
     public:
         /// \returns A newly created user-defined type.
-        std::unique_ptr<cpp_user_defined_type> build(cpp_type_ref entity)
+        static std::unique_ptr<cpp_user_defined_type> build(cpp_type_ref entity)
         {
             return std::unique_ptr<cpp_user_defined_type>(
                 new cpp_user_defined_type(std::move(entity)));

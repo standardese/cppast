@@ -25,14 +25,14 @@ namespace cppast
             {
             }
 
-            /// \effects Adds an argument type.
-            void add_argument(std::unique_ptr<cpp_type> arg)
+            /// \effects Adds an parameter type.
+            void add_parameter(std::unique_ptr<cpp_type> arg)
             {
-                func_->arguments_.push_back(*func_, std::move(arg));
+                func_->parameters_.push_back(*func_, std::move(arg));
             }
 
             /// \effects Adds an ellipsis, marking it as variadic.
-            void variadic()
+            void is_variadic()
             {
                 func_->variadic_ = true;
             }
@@ -53,10 +53,10 @@ namespace cppast
             return *return_type_;
         }
 
-        /// \returns An iteratable object iterating over the argument types.
-        detail::iteratable_intrusive_list<cpp_type> argument_types() const noexcept
+        /// \returns An iteratable object iterating over the parameter types.
+        detail::iteratable_intrusive_list<cpp_type> parameter_types() const noexcept
         {
-            return type_safe::ref(arguments_);
+            return type_safe::ref(parameters_);
         }
 
         /// \returns Whether or not the function is variadic (C-style ellipsis).
@@ -77,7 +77,7 @@ namespace cppast
         }
 
         std::unique_ptr<cpp_type>        return_type_;
-        detail::intrusive_list<cpp_type> arguments_;
+        detail::intrusive_list<cpp_type> parameters_;
         bool                             variadic_;
     };
 
@@ -99,14 +99,14 @@ namespace cppast
             {
             }
 
-            /// \effects Adds an argument type.
-            void add_argument(std::unique_ptr<cpp_type> arg)
+            /// \effects Adds a parameter type.
+            void add_parameter(std::unique_ptr<cpp_type> arg)
             {
-                func_->arguments_.push_back(*func_, std::move(arg));
+                func_->parameters_.push_back(*func_, std::move(arg));
             }
 
             /// \effects Adds an ellipsis, marking it as variadic.
-            void variadic()
+            void is_variadic()
             {
                 func_->variadic_ = true;
             }
@@ -133,10 +133,10 @@ namespace cppast
             return *object_type_;
         }
 
-        /// \returns An iteratable object iterating over the argument types.
-        detail::iteratable_intrusive_list<cpp_type> argument_types() const noexcept
+        /// \returns An iteratable object iterating over the parameter types.
+        detail::iteratable_intrusive_list<cpp_type> parameter_types() const noexcept
         {
-            return type_safe::ref(arguments_);
+            return type_safe::ref(parameters_);
         }
 
         /// \returns Whether or not the function is variadic (C-style ellipsis).
@@ -158,7 +158,7 @@ namespace cppast
         }
 
         std::unique_ptr<cpp_type>        class_type_, object_type_;
-        detail::intrusive_list<cpp_type> arguments_;
+        detail::intrusive_list<cpp_type> parameters_;
         bool                             variadic_;
     };
 

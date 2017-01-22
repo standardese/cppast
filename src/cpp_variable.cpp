@@ -11,10 +11,10 @@ using namespace cppast;
 std::unique_ptr<cpp_variable> cpp_variable::build(const cpp_entity_index& idx, cpp_entity_id id,
                                                   std::string name, std::unique_ptr<cpp_type> type,
                                                   std::unique_ptr<cpp_expression> def,
-                                                  cpp_variable_specifiers         spec)
+                                                  cpp_storage_specifiers spec, bool is_constexpr)
 {
     auto result = std::unique_ptr<cpp_variable>(
-        new cpp_variable(std::move(name), std::move(type), std::move(def), spec));
+        new cpp_variable(std::move(name), std::move(type), std::move(def), spec, is_constexpr));
     idx.register_entity(std::move(id), type_safe::cref(*result));
     return result;
 }

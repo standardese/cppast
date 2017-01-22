@@ -28,6 +28,9 @@ namespace cppast
 
         variable_t,
 
+        function_parameter_t,
+        function_t,
+
         count,
     };
 

@@ -8,6 +8,7 @@
 #include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_enum.hpp>
 #include <cppast/cpp_file.hpp>
+#include <cppast/cpp_function.hpp>
 #include <cppast/cpp_language_linkage.hpp>
 #include <cppast/cpp_namespace.hpp>
 
@@ -44,6 +45,8 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
         return handle_container<cpp_namespace>(e, cb, functor);
     case cpp_entity_kind::enum_t:
         return handle_container<cpp_enum>(e, cb, functor);
+    case cpp_entity_kind::function_t:
+        return handle_container<cpp_function>(e, cb, functor);
 
     case cpp_entity_kind::namespace_alias_t:
     case cpp_entity_kind::using_directive_t:
@@ -51,6 +54,7 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
     case cpp_entity_kind::type_alias_t:
     case cpp_entity_kind::enum_value_t:
     case cpp_entity_kind::variable_t:
+    case cpp_entity_kind::function_parameter_t:
         return cb(functor, e, visitor_info::leaf_entity);
 
     case cpp_entity_kind::count:

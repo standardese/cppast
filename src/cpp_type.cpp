@@ -69,7 +69,7 @@ bool cppast::is_valid(const cpp_type& type) noexcept
         if (!can_compose(func.return_type()) || !is_valid(func.return_type()))
             return false;
 
-        for (auto& arg : func.argument_types())
+        for (auto& arg : func.parameter_types())
             if (!can_compose(arg) || !is_valid(arg))
                 return false;
 
@@ -84,7 +84,7 @@ bool cppast::is_valid(const cpp_type& type) noexcept
         else if (!can_compose(func.return_type()) || !is_valid(func.return_type()))
             return false;
 
-        for (auto& arg : func.argument_types())
+        for (auto& arg : func.parameter_types())
             if (!can_compose(arg) || !is_valid(arg))
                 return false;
 
