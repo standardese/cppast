@@ -4,31 +4,31 @@
 
 #include <cppast/cpp_namespace.hpp>
 
-#include <cppast/cpp_entity_type.hpp>
+#include <cppast/cpp_entity_kind.hpp>
 
 using namespace cppast;
 
-cpp_entity_type cpp_namespace::do_get_entity_type() const noexcept
+cpp_entity_kind cpp_namespace::do_get_entity_kind() const noexcept
 {
-    return cpp_entity_type::namespace_t;
+    return cpp_entity_kind::namespace_t;
 }
 
 bool detail::cpp_namespace_ref_predicate::operator()(const cpp_entity& e)
 {
-    return e.type() == cpp_entity_type::namespace_t;
+    return e.kind() == cpp_entity_kind::namespace_t;
 }
 
-cpp_entity_type cpp_namespace_alias::do_get_entity_type() const noexcept
+cpp_entity_kind cpp_namespace_alias::do_get_entity_kind() const noexcept
 {
-    return cpp_entity_type::namespace_alias_t;
+    return cpp_entity_kind::namespace_alias_t;
 }
 
-cpp_entity_type cpp_using_directive::do_get_entity_type() const noexcept
+cpp_entity_kind cpp_using_directive::do_get_entity_kind() const noexcept
 {
-    return cpp_entity_type::using_directive_t;
+    return cpp_entity_kind::using_directive_t;
 }
 
-cpp_entity_type cpp_using_declaration::do_get_entity_type() const noexcept
+cpp_entity_kind cpp_using_declaration::do_get_entity_kind() const noexcept
 {
-    return cpp_entity_type::using_declaration_t;
+    return cpp_entity_kind::using_declaration_t;
 }

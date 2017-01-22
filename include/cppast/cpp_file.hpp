@@ -50,7 +50,7 @@ namespace cppast
         }
 
         /// \returns [cpp_entity_type::file_t]().
-        cpp_entity_type do_get_entity_type() const noexcept override;
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
     };
 } // namespace cppast
 

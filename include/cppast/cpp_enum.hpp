@@ -46,7 +46,7 @@ namespace cppast
         {
         }
 
-        cpp_entity_type do_get_entity_type() const noexcept override;
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
 
         std::unique_ptr<cpp_expression> value_;
     };
@@ -104,7 +104,7 @@ namespace cppast
         {
         }
 
-        cpp_entity_type do_get_entity_type() const noexcept override;
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
 
         /// \returns If the enum is scoped, the name of the enum,
         /// otherwise [ts::nullopt]().

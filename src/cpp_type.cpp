@@ -6,14 +6,14 @@
 
 #include <cppast/cpp_array_type.hpp>
 #include <cppast/cpp_entity.hpp>
-#include <cppast/cpp_entity_type.hpp>
+#include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_function_types.hpp>
 
 using namespace cppast;
 
 bool detail::cpp_type_ref_predicate::operator()(const cpp_entity& e)
 {
-    return is_type(e.type());
+    return is_type(e.kind());
 }
 
 namespace

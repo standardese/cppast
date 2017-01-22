@@ -4,18 +4,18 @@
 
 #include <cppast/cpp_enum.hpp>
 
-#include <cppast/cpp_entity_type.hpp>
+#include <cppast/cpp_entity_kind.hpp>
 
 using namespace cppast;
 
-cpp_entity_type cpp_enum_value::do_get_entity_type() const noexcept
+cpp_entity_kind cpp_enum_value::do_get_entity_kind() const noexcept
 {
-    return cpp_entity_type::enum_value_t;
+    return cpp_entity_kind::enum_value_t;
 }
 
-cpp_entity_type cpp_enum::do_get_entity_type() const noexcept
+cpp_entity_kind cpp_enum::do_get_entity_kind() const noexcept
 {
-    return cpp_entity_type::enum_t;
+    return cpp_entity_kind::enum_t;
 }
 
 type_safe::optional<std::string> cpp_enum::do_get_scope_name() const

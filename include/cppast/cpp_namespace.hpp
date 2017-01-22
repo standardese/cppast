@@ -8,7 +8,7 @@
 #include <cppast/cpp_entity_container.hpp>
 #include <cppast/cpp_entity_index.hpp>
 #include <cppast/cpp_entity_ref.hpp>
-#include <cppast/cpp_entity_type.hpp>
+#include <cppast/cpp_entity_kind.hpp>
 
 namespace cppast
 {
@@ -59,7 +59,7 @@ namespace cppast
         {
         }
 
-        cpp_entity_type do_get_entity_type() const noexcept override;
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
 
         /// \returns The name of the namespace.
         type_safe::optional<std::string> do_get_scope_name() const override
@@ -110,7 +110,7 @@ namespace cppast
         {
         }
 
-        cpp_entity_type do_get_entity_type() const noexcept override;
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
 
         cpp_namespace_ref target_;
     };
@@ -142,7 +142,7 @@ namespace cppast
         {
         }
 
-        cpp_entity_type do_get_entity_type() const noexcept override;
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
 
         cpp_entity_id target_;
     };
@@ -174,7 +174,7 @@ namespace cppast
         {
         }
 
-        cpp_entity_type do_get_entity_type() const noexcept override;
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
 
         cpp_entity_id target_;
     };

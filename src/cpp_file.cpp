@@ -4,11 +4,11 @@
 
 #include <cppast/cpp_file.hpp>
 
-#include <cppast/cpp_entity_type.hpp>
+#include <cppast/cpp_entity_kind.hpp>
 
 using namespace cppast;
 
-cpp_entity_type cpp_file::do_get_entity_type() const noexcept
+cpp_entity_kind cpp_file::do_get_entity_kind() const noexcept
 {
-    return cpp_entity_type::file_t;
+    return cpp_entity_kind::file_t;
 }

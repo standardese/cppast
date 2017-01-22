@@ -2,15 +2,15 @@
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
-#ifndef CPPAST_CPP_ENTITY_TYPE_HPP_INCLUDED
-#define CPPAST_CPP_ENTITY_TYPE_HPP_INCLUDED
+#ifndef CPPAST_CPP_ENTITY_KIND_HPP_INCLUDED
+#define CPPAST_CPP_ENTITY_KIND_HPP_INCLUDED
 
 #include <cppast/detail/assert.hpp>
 
 namespace cppast
 {
-    /// All possible types of C++ entities.
-    enum class cpp_entity_type
+    /// All possible kinds of C++ entities.
+    enum class cpp_entity_kind
     {
         file_t,
 
@@ -25,8 +25,8 @@ namespace cppast
         count,
     };
 
-    /// \returns Whether or not a given entity type is a C++ type.
-    bool is_type(cpp_entity_type type) noexcept;
+    /// \returns Whether or not a given entity kind is a C++ type.
+    bool is_type(cpp_entity_kind type) noexcept;
 } // namespace cppast
 
-#endif // CPPAST_CPP_ENTITY_TYPE_HPP_INCLUDED
+#endif // CPPAST_CPP_ENTITY_KIND_HPP_INCLUDED

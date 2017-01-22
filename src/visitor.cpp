@@ -5,7 +5,7 @@
 #include <cppast/visitor.hpp>
 
 #include <cppast/cpp_entity.hpp>
-#include <cppast/cpp_entity_type.hpp>
+#include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_enum.hpp>
 #include <cppast/cpp_file.hpp>
 #include <cppast/cpp_namespace.hpp>
@@ -33,22 +33,22 @@ namespace
 
 bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* functor)
 {
-    switch (e.type())
+    switch (e.kind())
     {
-    case cpp_entity_type::file_t:
+    case cpp_entity_kind::file_t:
         return handle_container<cpp_file>(e, cb, functor);
-    case cpp_entity_type::namespace_t:
+    case cpp_entity_kind::namespace_t:
         return handle_container<cpp_namespace>(e, cb, functor);
-    case cpp_entity_type::enum_t:
+    case cpp_entity_kind::enum_t:
         return handle_container<cpp_enum>(e, cb, functor);
 
-    case cpp_entity_type::namespace_alias_t:
-    case cpp_entity_type::using_directive_t:
-    case cpp_entity_type::using_declaration_t:
-    case cpp_entity_type::enum_value_t:
+    case cpp_entity_kind::namespace_alias_t:
+    case cpp_entity_kind::using_directive_t:
+    case cpp_entity_kind::using_declaration_t:
+    case cpp_entity_kind::enum_value_t:
         return cb(functor, e, visitor_info::leave_entity);
 
-    case cpp_entity_type::count:
+    case cpp_entity_kind::count:
         break;
     }
 

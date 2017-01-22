@@ -11,7 +11,7 @@
 
 namespace cppast
 {
-    enum class cpp_entity_type;
+    enum class cpp_entity_kind;
 
     /// The base class for all entities in the C++ AST.
     class cpp_entity : detail::intrusive_list_node<cpp_entity>
@@ -22,10 +22,10 @@ namespace cppast
 
         virtual ~cpp_entity() noexcept = default;
 
-        /// \returns The type of the entity.
-        cpp_entity_type type() const noexcept
+        /// \returns The kind of the entity.
+        cpp_entity_kind kind() const noexcept
         {
-            return do_get_entity_type();
+            return do_get_entity_kind();
         }
 
         /// \returns The name of the entity.
@@ -55,8 +55,8 @@ namespace cppast
         }
 
     private:
-        /// \returns The type of the entity.
-        virtual cpp_entity_type do_get_entity_type() const noexcept = 0;
+        /// \returns The kind of the entity.
+        virtual cpp_entity_kind do_get_entity_kind() const noexcept = 0;
 
         /// \returns The name of the new scope created by the entity, if any.
         /// By default, there is no scope created.
