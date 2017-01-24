@@ -59,6 +59,8 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
     case cpp_entity_kind::access_specifier_t:
     case cpp_entity_kind::base_class_t:
     case cpp_entity_kind::variable_t:
+    case cpp_entity_kind::member_variable_t:
+    case cpp_entity_kind::bitfield_t:
     case cpp_entity_kind::function_parameter_t:
         return cb(functor, e, visitor_info::leaf_entity);
 

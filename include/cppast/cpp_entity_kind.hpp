@@ -31,6 +31,8 @@ namespace cppast
         base_class_t,
 
         variable_t,
+        member_variable_t,
+        bitfield_t,
 
         function_parameter_t,
         function_t,

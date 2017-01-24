@@ -42,6 +42,10 @@ const char* cppast::to_string(cpp_entity_kind kind) noexcept
 
     case cpp_entity_kind::variable_t:
         return "variable";
+    case cpp_entity_kind::member_variable_t:
+        return "member variable";
+    case cpp_entity_kind::bitfield_t:
+        return "bit field";
 
     case cpp_entity_kind::function_parameter_t:
         return "function parameter";
@@ -74,6 +78,8 @@ bool cppast::is_type(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::access_specifier_t:
     case cpp_entity_kind::base_class_t:
     case cpp_entity_kind::variable_t:
+    case cpp_entity_kind::member_variable_t:
+    case cpp_entity_kind::bitfield_t:
     case cpp_entity_kind::function_parameter_t:
     case cpp_entity_kind::function_t:
     case cpp_entity_kind::count:
