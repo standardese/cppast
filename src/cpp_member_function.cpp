@@ -17,3 +17,13 @@ cpp_entity_kind cpp_conversion_op::do_get_entity_kind() const noexcept
 {
     return cpp_entity_kind::conversion_op_t;
 }
+
+cpp_entity_kind cpp_constructor::do_get_entity_kind() const noexcept
+{
+    return cpp_entity_kind::constructor_t;
+}
+
+cpp_entity_kind cpp_destructor::do_get_entity_kind() const noexcept
+{
+    return cpp_entity_kind::destructor_t;
+}

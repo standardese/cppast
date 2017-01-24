@@ -55,6 +55,10 @@ const char* cppast::to_string(cpp_entity_kind kind) noexcept
         return "member function";
     case cpp_entity_kind::conversion_op_t:
         return "conversion operator";
+    case cpp_entity_kind::constructor_t:
+        return "constructor";
+    case cpp_entity_kind::destructor_t:
+        return "destructor";
 
     case cpp_entity_kind::count:
         break;
@@ -88,6 +92,8 @@ bool cppast::is_type(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::function_t:
     case cpp_entity_kind::member_function_t:
     case cpp_entity_kind::conversion_op_t:
+    case cpp_entity_kind::constructor_t:
+    case cpp_entity_kind::destructor_t:
     case cpp_entity_kind::count:
         break;
     }

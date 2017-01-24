@@ -55,6 +55,8 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
         return handle_container<cpp_member_function>(e, cb, functor);
     case cpp_entity_kind::conversion_op_t:
         return handle_container<cpp_conversion_op>(e, cb, functor);
+    case cpp_entity_kind::constructor_t:
+        return handle_container<cpp_constructor>(e, cb, functor);
 
     case cpp_entity_kind::namespace_alias_t:
     case cpp_entity_kind::using_directive_t:
@@ -67,6 +69,7 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
     case cpp_entity_kind::member_variable_t:
     case cpp_entity_kind::bitfield_t:
     case cpp_entity_kind::function_parameter_t:
+    case cpp_entity_kind::destructor_t:
         return cb(functor, e, visitor_info::leaf_entity);
 
     case cpp_entity_kind::count:

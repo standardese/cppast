@@ -169,6 +169,91 @@ namespace cppast
 
         bool explicit_;
     };
+
+    /// A [cppast::cpp_entity]() modelling a C++ constructor.
+    class cpp_constructor final : public cpp_function_base
+    {
+    public:
+        /// Builder for [cppast::cpp_constructor]().
+        class builder : public basic_builder<cpp_constructor>
+        {
+        public:
+            using basic_builder::basic_builder;
+
+            /// \effects Marks the constructor `explicit`.
+            void is_explicit() noexcept
+            {
+                function->explicit_ = true;
+            }
+
+            /// \effects Marks the constructor `constexpr`.
+            void is_constexpr() noexcept
+            {
+                function->constexpr_ = true;
+            }
+        };
+
+        /// \returns Whether or not the constructor is `explicit`.
+        bool is_explicit() const noexcept
+        {
+            return explicit_;
+        }
+
+        /// \returns Whether or not the constructor is `constexpr`.
+        bool is_constexpr() const noexcept
+        {
+            return constexpr_;
+        }
+
+    private:
+        cpp_constructor(std::string name)
+        : cpp_function_base(std::move(name)), explicit_(false), constexpr_(false)
+        {
+        }
+
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
+
+        bool explicit_;
+        bool constexpr_;
+    };
+
+    /// A [cppast::cpp_entity]() modelling a C++ destructor.
+    class cpp_destructor final : public cpp_function_base
+    {
+    public:
+        /// Builds a [cppast::cpp_destructor]().
+        class builder : public basic_builder<cpp_destructor>
+        {
+        public:
+            using basic_builder::basic_builder;
+
+            /// \effects Sets the `virtual`-ness of the destructor.
+            void virtual_info(cpp_virtual virt) noexcept
+            {
+                function->virtual_ = virt;
+            }
+
+        private:
+            using basic_builder::add_parameter;
+            using basic_builder::is_variadic;
+        };
+
+        /// \returns The `virtual`-ness of the constructor.
+        cpp_virtual virtual_info() const noexcept
+        {
+            return virtual_;
+        }
+
+    private:
+        cpp_destructor(std::string name)
+        : cpp_function_base(std::move(name)), virtual_(cpp_virtual_none)
+        {
+        }
+
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
+
+        cpp_virtual virtual_;
+    };
 } // namespace cppast
 
 #endif // CPPAST_CPP_MEMBER_FUNCTION_HPP_INCLUDED

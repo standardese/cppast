@@ -38,6 +38,8 @@ namespace cppast
         function_t,
         member_function_t,
         conversion_op_t,
+        constructor_t,
+        destructor_t,
 
         count,
     };
