@@ -51,6 +51,10 @@ const char* cppast::to_string(cpp_entity_kind kind) noexcept
         return "function parameter";
     case cpp_entity_kind::function_t:
         return "function";
+    case cpp_entity_kind::member_function_t:
+        return "member function";
+    case cpp_entity_kind::conversion_op_t:
+        return "conversion operator";
 
     case cpp_entity_kind::count:
         break;
@@ -82,6 +86,8 @@ bool cppast::is_type(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::bitfield_t:
     case cpp_entity_kind::function_parameter_t:
     case cpp_entity_kind::function_t:
+    case cpp_entity_kind::member_function_t:
+    case cpp_entity_kind::conversion_op_t:
     case cpp_entity_kind::count:
         break;
     }

@@ -36,6 +36,8 @@ namespace cppast
 
         function_parameter_t,
         function_t,
+        member_function_t,
+        conversion_op_t,
 
         count,
     };

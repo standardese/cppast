@@ -11,6 +11,7 @@
 #include <cppast/cpp_file.hpp>
 #include <cppast/cpp_function.hpp>
 #include <cppast/cpp_language_linkage.hpp>
+#include <cppast/cpp_member_function.hpp>
 #include <cppast/cpp_namespace.hpp>
 
 using namespace cppast;
@@ -50,6 +51,10 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
         return handle_container<cpp_class>(e, cb, functor);
     case cpp_entity_kind::function_t:
         return handle_container<cpp_function>(e, cb, functor);
+    case cpp_entity_kind::member_function_t:
+        return handle_container<cpp_member_function>(e, cb, functor);
+    case cpp_entity_kind::conversion_op_t:
+        return handle_container<cpp_conversion_op>(e, cb, functor);
 
     case cpp_entity_kind::namespace_alias_t:
     case cpp_entity_kind::using_directive_t:
