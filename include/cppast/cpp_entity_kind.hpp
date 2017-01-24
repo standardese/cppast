@@ -28,6 +28,7 @@ namespace cppast
 
         class_t,
         access_specifier_t,
+        base_class_t,
 
         variable_t,
 

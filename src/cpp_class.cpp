@@ -51,6 +51,11 @@ cpp_entity_kind cpp_access_specifier::do_get_entity_kind() const noexcept
     return cpp_entity_kind::access_specifier_t;
 }
 
+cpp_entity_kind cpp_base_class::do_get_entity_kind() const noexcept
+{
+    return cpp_entity_kind::base_class_t;
+}
+
 cpp_entity_kind cpp_class::do_get_entity_kind() const noexcept
 {
     return cpp_entity_kind::class_t;

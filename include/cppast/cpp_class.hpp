@@ -7,6 +7,7 @@
 
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_container.hpp>
+#include <cppast/cpp_type.hpp>
 
 namespace cppast
 {
@@ -61,6 +62,51 @@ namespace cppast
         cpp_access_specifier_kind access_;
     };
 
+    /// A [cppast::cpp_entity]() modelling a base class specifier.
+    class cpp_base_class final : public cpp_entity
+    {
+    public:
+        /// \returns A newly created base class specifier.
+        /// \notes It is not meant to be registered at the [cppast::cpp_entity_index](),
+        /// as nothing can refer to the specifier itself.
+        static std::unique_ptr<cpp_base_class> build(const cpp_type_ref&       base,
+                                                     cpp_access_specifier_kind access,
+                                                     bool                      is_virtual)
+        {
+            return std::unique_ptr<cpp_base_class>(new cpp_base_class(base, access, is_virtual));
+        }
+
+        /// \returns An entity reference to the base class.
+        cpp_type_ref entity() const
+        {
+            return cpp_type_ref(base_id_, name());
+        }
+
+        /// \returns The access specifier of the base class.
+        cpp_access_specifier_kind access_specifier() const noexcept
+        {
+            return access_;
+        }
+
+        /// \returns Whether or not it is a `virtual` base class.
+        bool is_virtual() const noexcept
+        {
+            return virtual_;
+        }
+
+    private:
+        cpp_base_class(const cpp_type_ref& base, cpp_access_specifier_kind access, bool is_virtual)
+        : cpp_entity(base.name()), base_id_(base.id()), access_(access), virtual_(is_virtual)
+        {
+        }
+
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
+
+        cpp_entity_id             base_id_;
+        cpp_access_specifier_kind access_;
+        bool                      virtual_;
+    };
+
     /// A [cppast::cpp_entity]() modelling a C++ class.
     class cpp_class final : public cpp_entity, public cpp_entity_container<cpp_class, cpp_entity>
     {
@@ -73,6 +119,19 @@ namespace cppast
             explicit builder(std::string name, cpp_class_kind kind, bool is_final)
             : class_(new cpp_class(std::move(name), kind, is_final))
             {
+            }
+
+            /// \effects Builds a [cppast::cpp_base_class]() and adds it.
+            void base_class(const cpp_type_ref& base, cpp_access_specifier_kind access,
+                            bool is_virtual)
+            {
+                add_base_class(cpp_base_class::build(base, access, is_virtual));
+            }
+
+            /// \effects Adds a new base class.
+            void add_base_class(std::unique_ptr<cpp_base_class> base) noexcept
+            {
+                class_->bases_.push_back(*class_, std::move(base));
             }
 
             /// \effects Builds a [cppast::cpp_access_specifier]() and adds it.
@@ -109,6 +168,12 @@ namespace cppast
             return final_;
         }
 
+        /// \returns An iteratable object iterating over the [cppast::cpp_base_class]() specifiers.
+        detail::iteratable_intrusive_list<cpp_base_class> bases() const noexcept
+        {
+            return type_safe::ref(bases_);
+        }
+
     private:
         cpp_class(std::string name, cpp_class_kind kind, bool final)
         : cpp_entity(std::move(name)), kind_(kind), final_(final)
@@ -123,8 +188,9 @@ namespace cppast
             return name();
         }
 
-        cpp_class_kind kind_;
-        bool           final_;
+        detail::intrusive_list<cpp_base_class> bases_;
+        cpp_class_kind                         kind_;
+        bool                                   final_;
     };
 } // namespace cppast
 
