@@ -26,6 +26,9 @@ namespace cppast
         enum_t,
         enum_value_t,
 
+        class_t,
+        access_specifier_t,
+
         variable_t,
 
         function_parameter_t,

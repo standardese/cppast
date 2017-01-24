@@ -6,6 +6,7 @@
 
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_kind.hpp>
+#include <cppast/cpp_class.hpp>
 #include <cppast/cpp_enum.hpp>
 #include <cppast/cpp_file.hpp>
 #include <cppast/cpp_function.hpp>
@@ -45,6 +46,8 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
         return handle_container<cpp_namespace>(e, cb, functor);
     case cpp_entity_kind::enum_t:
         return handle_container<cpp_enum>(e, cb, functor);
+    case cpp_entity_kind::class_t:
+        return handle_container<cpp_class>(e, cb, functor);
     case cpp_entity_kind::function_t:
         return handle_container<cpp_function>(e, cb, functor);
 
@@ -53,6 +56,7 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
     case cpp_entity_kind::using_declaration_t:
     case cpp_entity_kind::type_alias_t:
     case cpp_entity_kind::enum_value_t:
+    case cpp_entity_kind::access_specifier_t:
     case cpp_entity_kind::variable_t:
     case cpp_entity_kind::function_parameter_t:
         return cb(functor, e, visitor_info::leaf_entity);

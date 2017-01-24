@@ -33,6 +33,11 @@ const char* cppast::to_string(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::enum_value_t:
         return "enum value";
 
+    case cpp_entity_kind::class_t:
+        return "class";
+    case cpp_entity_kind::access_specifier_t:
+        return "access specifier";
+
     case cpp_entity_kind::variable_t:
         return "variable";
 
@@ -52,8 +57,9 @@ bool cppast::is_type(cpp_entity_kind kind) noexcept
 {
     switch (kind)
     {
-    case cpp_entity_kind::enum_t:
     case cpp_entity_kind::type_alias_t:
+    case cpp_entity_kind::enum_t:
+    case cpp_entity_kind::class_t:
         return true;
 
     case cpp_entity_kind::file_t:
@@ -63,6 +69,8 @@ bool cppast::is_type(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::using_directive_t:
     case cpp_entity_kind::using_declaration_t:
     case cpp_entity_kind::enum_value_t:
+    case cpp_entity_kind::access_specifier_t:
+        break;
     case cpp_entity_kind::variable_t:
     case cpp_entity_kind::function_parameter_t:
     case cpp_entity_kind::function_t:
