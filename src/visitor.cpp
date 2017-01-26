@@ -70,6 +70,8 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
     case cpp_entity_kind::bitfield_t:
     case cpp_entity_kind::function_parameter_t:
     case cpp_entity_kind::destructor_t:
+    case cpp_entity_kind::template_type_parameter_t:
+    case cpp_entity_kind::non_type_template_parameter_t:
         return cb(functor, e, visitor_info::leaf_entity);
 
     case cpp_entity_kind::count:

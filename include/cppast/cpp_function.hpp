@@ -5,6 +5,7 @@
 #ifndef CPPAST_CPP_FUNCTION_HPP_INCLUDED
 #define CPPAST_CPP_FUNCTION_HPP_INCLUDED
 
+#include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_container.hpp>
 #include <cppast/cpp_storage_specifiers.hpp>
 #include <cppast/cpp_variable_base.hpp>
@@ -12,7 +13,7 @@
 namespace cppast
 {
     /// A [cppast::cpp_entity]() modelling a function parameter.
-    class cpp_function_parameter final : public cpp_variable_base
+    class cpp_function_parameter final : public cpp_entity, public cpp_variable_base
     {
     public:
         /// \returns A newly created and registered function parameter.
@@ -23,7 +24,7 @@ namespace cppast
     private:
         cpp_function_parameter(std::string name, std::unique_ptr<cpp_type> type,
                                std::unique_ptr<cpp_expression> def)
-        : cpp_variable_base(std::move(name), std::move(type), std::move(def))
+        : cpp_entity(std::move(name)), cpp_variable_base(std::move(type), std::move(def))
         {
         }
 

@@ -5,17 +5,16 @@
 #ifndef CPPAST_CPP_VARIABLE_BASE_HPP_INCLUDED
 #define CPPAST_CPP_VARIABLE_BASE_HPP_INCLUDED
 
-#include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_expression.hpp>
 #include <cppast/cpp_type.hpp>
 
 namespace cppast
 {
-    /// Base class for all [cppast::cpp_entity]() modelling some kind of variable.
+    /// Additional base class for all [cppast::cpp_entity]() modelling some kind of variable.
     ///
     /// Examples are [cppast::cpp_variable]() or [cppast::cpp_function_parameter](),
     /// or anything that is name/type/default-value triple.
-    class cpp_variable_base : public cpp_entity
+    class cpp_variable_base
     {
     public:
         /// \returns A reference to the [cppast::cpp_type]() of the variable.
@@ -31,11 +30,12 @@ namespace cppast
         }
 
     protected:
-        cpp_variable_base(std::string name, std::unique_ptr<cpp_type> type,
-                          std::unique_ptr<cpp_expression> def)
-        : cpp_entity(std::move(name)), type_(std::move(type)), default_(std::move(def))
+        cpp_variable_base(std::unique_ptr<cpp_type> type, std::unique_ptr<cpp_expression> def)
+        : type_(std::move(type)), default_(std::move(def))
         {
         }
+
+        ~cpp_variable_base() noexcept = default;
 
     private:
         std::unique_ptr<cpp_type>       type_;

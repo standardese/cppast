@@ -5,6 +5,7 @@
 #ifndef CPPAST_CPP_VARIABLE_HPP_INCLUDED
 #define CPPAST_CPP_VARIABLE_HPP_INCLUDED
 
+#include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_storage_specifiers.hpp>
 #include <cppast/cpp_variable_base.hpp>
 
@@ -13,7 +14,7 @@ namespace cppast
     /// A [cppast::cpp_entity]() modelling a C++ variable.
     /// \notes This is not a member variable,
     /// use [cppast::cpp_member_variable]() for that.
-    class cpp_variable final : public cpp_variable_base
+    class cpp_variable final : public cpp_entity, public cpp_variable_base
     {
     public:
         /// \returns A newly created and registered variable.
@@ -39,7 +40,8 @@ namespace cppast
         cpp_variable(std::string name, std::unique_ptr<cpp_type> type,
                      std::unique_ptr<cpp_expression> def, cpp_storage_specifiers spec,
                      bool is_constexpr)
-        : cpp_variable_base(std::move(name), std::move(type), std::move(def)),
+        : cpp_entity(std::move(name)),
+          cpp_variable_base(std::move(type), std::move(def)),
           storage_(spec),
           is_constexpr_(is_constexpr)
         {

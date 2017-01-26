@@ -5,12 +5,13 @@
 #ifndef CPPAST_CPP_MEMBER_VARIABLE_HPP_INCLUDED
 #define CPPAST_CPP_MEMBER_VARIABLE_HPP_INCLUDED
 
+#include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_variable_base.hpp>
 
 namespace cppast
 {
     /// Base class for all kinds of member variables.
-    class cpp_member_variable_base : public cpp_variable_base
+    class cpp_member_variable_base : public cpp_entity, public cpp_variable_base
     {
     public:
         /// \returns Whether or not the member variable is declared `mutable`.
@@ -22,7 +23,9 @@ namespace cppast
     protected:
         cpp_member_variable_base(std::string name, std::unique_ptr<cpp_type> type,
                                  std::unique_ptr<cpp_expression> def, bool is_mutable)
-        : cpp_variable_base(std::move(name), std::move(type), std::move(def)), mutable_(is_mutable)
+        : cpp_entity(std::move(name)),
+          cpp_variable_base(std::move(type), std::move(def)),
+          mutable_(is_mutable)
         {
         }
 
