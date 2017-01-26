@@ -4,6 +4,7 @@
 
 #include <cppast/visitor.hpp>
 
+#include <cppast/cpp_alias_template.hpp>
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_class.hpp>
@@ -57,6 +58,8 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
         return handle_container<cpp_conversion_op>(e, cb, functor);
     case cpp_entity_kind::constructor_t:
         return handle_container<cpp_constructor>(e, cb, functor);
+    case cpp_entity_kind::alias_template_t:
+        return handle_container<cpp_alias_template>(e, cb, functor);
 
     case cpp_entity_kind::namespace_alias_t:
     case cpp_entity_kind::using_directive_t:

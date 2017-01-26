@@ -65,6 +65,9 @@ const char* cppast::to_string(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::non_type_template_parameter_t:
         return "non type template parameter";
 
+    case cpp_entity_kind::alias_template_t:
+        return "alias template";
+
     case cpp_entity_kind::count:
         break;
     }
@@ -101,6 +104,7 @@ bool cppast::is_type(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::destructor_t:
     case cpp_entity_kind::template_type_parameter_t:
     case cpp_entity_kind::non_type_template_parameter_t:
+    case cpp_entity_kind::alias_template_t:
     case cpp_entity_kind::count:
         break;
     }

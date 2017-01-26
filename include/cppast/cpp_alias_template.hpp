@@ -1,0 +1,40 @@
+// Copyright (C) 2017 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// This file is subject to the license terms in the LICENSE file
+// found in the top-level directory of this distribution.
+
+#ifndef CPPAST_CPP_ALIAS_TEMPLATE_HPP_INCLUDED
+#define CPPAST_CPP_ALIAS_TEMPLATE_HPP_INCLUDED
+
+#include <cppast/cpp_template.hpp>
+#include <cppast/cpp_type_alias.hpp>
+
+namespace cppast
+{
+    /// A [cppast::cpp_entity]() modelling a C++ alias template.
+    class cpp_alias_template final : public cpp_template
+    {
+    public:
+        /// Builder for [cppast::cpp_alias_template]().
+        class builder : public basic_builder<cpp_alias_template, cpp_type_alias>
+        {
+        public:
+            using basic_builder::basic_builder;
+        };
+
+        /// \returns A reference to the type alias that is being templated.
+        const cpp_type_alias& type_alias() const noexcept
+        {
+            return static_cast<const cpp_type_alias&>(*begin());
+        }
+
+    private:
+        cpp_alias_template(std::string name, std::unique_ptr<cpp_type_alias> alias)
+        : cpp_template(std::move(name), std::unique_ptr<cpp_entity>(alias.release()))
+        {
+        }
+
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
+    };
+} // namespace cppast
+
+#endif // CPPAST_CPP_ALIAS_TEMPLATE_HPP_INCLUDED
