@@ -35,6 +35,11 @@ cpp_entity_kind cpp_template_type_parameter::do_get_entity_kind() const noexcept
     return cpp_entity_kind::template_type_parameter_t;
 }
 
+bool detail::cpp_template_parameter_ref_predicate::operator()(const cpp_entity& e)
+{
+    return e.kind() == cpp_entity_kind::template_type_parameter_t;
+}
+
 std::unique_ptr<cpp_non_type_template_parameter> cpp_non_type_template_parameter::build(
     const cpp_entity_index& idx, cpp_entity_id id, std::string name, std::unique_ptr<cpp_type> type,
     bool is_variadic, std::unique_ptr<cpp_expression> default_value)

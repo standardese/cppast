@@ -78,6 +78,52 @@ namespace cppast
         cpp_template_keyword      keyword_;
     };
 
+    /// \exclude
+    namespace detail
+    {
+        struct cpp_template_parameter_ref_predicate
+        {
+            bool operator()(const cpp_entity& e);
+        };
+    } // namespace detail
+
+    /// Reference to a [cppast::cpp_template_type_parameter]().
+    using cpp_template_type_parameter_ref =
+        basic_cpp_entity_ref<cpp_template_type_parameter,
+                             detail::cpp_template_parameter_ref_predicate>;
+
+    /// A [cppast::cpp_type]() defined by a [cppast::cpp_template_type_parameter]().
+    class cpp_template_parameter_type final : public cpp_type
+    {
+    public:
+        /// \returns A newly created parameter type.
+        static std::unique_ptr<cpp_template_parameter_type> build(
+            cpp_template_type_parameter_ref parameter)
+        {
+            return std::unique_ptr<cpp_template_parameter_type>(
+                new cpp_template_parameter_type(std::move(parameter)));
+        }
+
+        /// \returns A reference to the [cppast::cpp_template_type_parameter]() this type refers to.
+        const cpp_template_type_parameter_ref& entity() const noexcept
+        {
+            return parameter_;
+        }
+
+    private:
+        cpp_template_parameter_type(cpp_template_type_parameter_ref parameter)
+        : parameter_(std::move(parameter))
+        {
+        }
+
+        cpp_type_kind do_get_kind() const noexcept override
+        {
+            return cpp_type_kind::template_parameter;
+        }
+
+        cpp_template_type_parameter_ref parameter_;
+    };
+
     /// A [cppast::cpp_entity]() modelling a non-type template parameter.
     class cpp_non_type_template_parameter final : public cpp_template_parameter,
                                                   public cpp_variable_base
