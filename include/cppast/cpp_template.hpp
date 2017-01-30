@@ -33,8 +33,7 @@ namespace cppast
         {
         public:
             /// \effects Sets the name and the entity that is begin templated.
-            basic_builder(std::string name, std::unique_ptr<EntityT> templ)
-            : template_entity(new T(name, std::move(templ)))
+            basic_builder(std::unique_ptr<EntityT> templ) : template_entity(new T(std::move(templ)))
             {
             }
 
@@ -62,8 +61,7 @@ namespace cppast
 
         /// \effects Sets the name of the template and the entity to be templated.
         /// \notes It does not include the parameters.
-        cpp_template(std::string name, std::unique_ptr<cpp_entity> entity)
-        : cpp_entity(std::move(name))
+        cpp_template(std::unique_ptr<cpp_entity> entity) : cpp_entity(entity->name())
         {
             add_child(std::move(entity));
         }

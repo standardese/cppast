@@ -28,12 +28,14 @@ namespace cppast
         }
 
     private:
-        cpp_alias_template(std::string name, std::unique_ptr<cpp_type_alias> alias)
-        : cpp_template(std::move(name), std::unique_ptr<cpp_entity>(alias.release()))
+        cpp_alias_template(std::unique_ptr<cpp_type_alias> alias)
+        : cpp_template(std::unique_ptr<cpp_entity>(alias.release()))
         {
         }
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;
+
+        friend basic_builder<cpp_alias_template, cpp_type_alias>;
     };
 } // namespace cppast
 

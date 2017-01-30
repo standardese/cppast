@@ -20,6 +20,11 @@ namespace cppast
                                                      std::string               name,
                                                      std::unique_ptr<cpp_type> type);
 
+        /// \returns A newly created type alias that isn't registered.
+        /// \notes This function is intendend for templated type aliases.
+        static std::unique_ptr<cpp_type_alias> build(std::string               name,
+                                                     std::unique_ptr<cpp_type> type);
+
         /// \returns A reference to the aliased [cppast::cpp_type]().
         const cpp_type& underlying_type() const noexcept
         {

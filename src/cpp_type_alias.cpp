@@ -12,10 +12,15 @@ std::unique_ptr<cpp_type_alias> cpp_type_alias::build(const cpp_entity_index& id
                                                       std::string               name,
                                                       std::unique_ptr<cpp_type> type)
 {
-    auto result =
-        std::unique_ptr<cpp_type_alias>(new cpp_type_alias(std::move(name), std::move(type)));
+    auto result = build(std::move(name), std::move(type));
     idx.register_entity(std::move(id), type_safe::cref(*result));
     return result;
+}
+
+std::unique_ptr<cpp_type_alias> cpp_type_alias::build(std::string               name,
+                                                      std::unique_ptr<cpp_type> type)
+{
+    return std::unique_ptr<cpp_type_alias>(new cpp_type_alias(std::move(name), std::move(type)));
 }
 
 cpp_entity_kind cpp_type_alias::do_get_entity_kind() const noexcept
