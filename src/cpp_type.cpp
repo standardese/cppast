@@ -101,6 +101,7 @@ bool cppast::is_valid(const cpp_type& type) noexcept
 
     case cpp_type_kind::builtin:
     case cpp_type_kind::user_defined:
+    case cpp_type_kind::template_parameter:
     case cpp_type_kind::unexposed:
         // no further check required/possible
         break;

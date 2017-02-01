@@ -64,6 +64,8 @@ const char* cppast::to_string(cpp_entity_kind kind) noexcept
         return "template type parameter";
     case cpp_entity_kind::non_type_template_parameter_t:
         return "non type template parameter";
+    case cpp_entity_kind::template_template_parameter_t:
+        return "template template parameter";
 
     case cpp_entity_kind::alias_template_t:
         return "alias template";
@@ -104,7 +106,46 @@ bool cppast::is_type(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::destructor_t:
     case cpp_entity_kind::template_type_parameter_t:
     case cpp_entity_kind::non_type_template_parameter_t:
+    case cpp_entity_kind::template_template_parameter_t:
     case cpp_entity_kind::alias_template_t:
+    case cpp_entity_kind::count:
+        break;
+    }
+
+    return false;
+}
+
+bool cppast::is_template(cpp_entity_kind kind) noexcept
+{
+    switch (kind)
+    {
+    case cpp_entity_kind::alias_template_t:
+        return true;
+
+    case cpp_entity_kind::file_t:
+    case cpp_entity_kind::language_linkage_t:
+    case cpp_entity_kind::namespace_t:
+    case cpp_entity_kind::namespace_alias_t:
+    case cpp_entity_kind::using_directive_t:
+    case cpp_entity_kind::using_declaration_t:
+    case cpp_entity_kind::type_alias_t:
+    case cpp_entity_kind::enum_t:
+    case cpp_entity_kind::enum_value_t:
+    case cpp_entity_kind::class_t:
+    case cpp_entity_kind::access_specifier_t:
+    case cpp_entity_kind::base_class_t:
+    case cpp_entity_kind::variable_t:
+    case cpp_entity_kind::member_variable_t:
+    case cpp_entity_kind::bitfield_t:
+    case cpp_entity_kind::function_parameter_t:
+    case cpp_entity_kind::function_t:
+    case cpp_entity_kind::member_function_t:
+    case cpp_entity_kind::conversion_op_t:
+    case cpp_entity_kind::constructor_t:
+    case cpp_entity_kind::destructor_t:
+    case cpp_entity_kind::template_type_parameter_t:
+    case cpp_entity_kind::non_type_template_parameter_t:
+    case cpp_entity_kind::template_template_parameter_t:
     case cpp_entity_kind::count:
         break;
     }

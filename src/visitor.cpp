@@ -14,6 +14,7 @@
 #include <cppast/cpp_language_linkage.hpp>
 #include <cppast/cpp_member_function.hpp>
 #include <cppast/cpp_namespace.hpp>
+#include <cppast/cpp_template_parameter.hpp>
 
 using namespace cppast;
 
@@ -58,6 +59,8 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
         return handle_container<cpp_conversion_op>(e, cb, functor);
     case cpp_entity_kind::constructor_t:
         return handle_container<cpp_constructor>(e, cb, functor);
+    case cpp_entity_kind::template_template_parameter_t:
+        return handle_container<cpp_template_template_parameter>(e, cb, functor);
     case cpp_entity_kind::alias_template_t:
         return handle_container<cpp_alias_template>(e, cb, functor);
 

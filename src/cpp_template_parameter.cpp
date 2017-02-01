@@ -3,6 +3,7 @@
 // found in the top-level directory of this distribution.
 
 #include <cppast/cpp_template_parameter.hpp>
+
 #include <cppast/cpp_entity_kind.hpp>
 
 using namespace cppast;
@@ -54,4 +55,14 @@ std::unique_ptr<cpp_non_type_template_parameter> cpp_non_type_template_parameter
 cpp_entity_kind cpp_non_type_template_parameter::do_get_entity_kind() const noexcept
 {
     return cpp_entity_kind::non_type_template_parameter_t;
+}
+
+bool detail::cpp_template_ref_predicate::operator()(const cpp_entity& e)
+{
+    return is_template(e.kind());
+}
+
+cpp_entity_kind cpp_template_template_parameter::do_get_entity_kind() const noexcept
+{
+    return cpp_entity_kind::template_template_parameter_t;
 }

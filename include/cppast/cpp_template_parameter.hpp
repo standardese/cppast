@@ -5,7 +5,10 @@
 #ifndef CPPAST_CPP_TEMPLATE_PARAMETER_HPP_INCLUDED
 #define CPPAST_CPP_TEMPLATE_PARAMETER_HPP_INCLUDED
 
+#include <type_safe/optional.hpp>
+
 #include <cppast/cpp_entity.hpp>
+#include <cppast/cpp_entity_container.hpp>
 #include <cppast/cpp_variable_base.hpp>
 
 namespace cppast
@@ -124,7 +127,7 @@ namespace cppast
         cpp_template_type_parameter_ref parameter_;
     };
 
-    /// A [cppast::cpp_entity]() modelling a non-type template parameter.
+    /// A [cppast::cpp_entity]() modelling a C++ non-type template parameter.
     class cpp_non_type_template_parameter final : public cpp_template_parameter,
                                                   public cpp_variable_base
     {
@@ -145,6 +148,94 @@ namespace cppast
         }
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;
+    };
+
+    /// \exclude
+    namespace detail
+    {
+        struct cpp_template_ref_predicate
+        {
+            bool operator()(const cpp_entity& e);
+        };
+    } // namespace detail
+
+    class cpp_template;
+
+    /// A reference to a [cppast::cpp_template]().
+    using cpp_template_ref = basic_cpp_entity_ref<cpp_template, detail::cpp_template_ref_predicate>;
+
+    /// A [cppast::cpp_entity]() modelling a C++ template template parameter.
+    class cpp_template_template_parameter final
+        : public cpp_template_parameter,
+          public cpp_entity_container<cpp_template_template_parameter, cpp_template_parameter>
+    {
+    public:
+        /// Builds a [cppast::cpp_template_template_parameter]().
+        class builder
+        {
+        public:
+            /// \effects Sets the name and whether it is variadic.
+            builder(std::string name, bool variadic)
+            : parameter_(new cpp_template_template_parameter(std::move(name), variadic))
+            {
+            }
+
+            /// \effects Sets the keyword,
+            /// default is [cpp_template_keyword::keyword_class]().
+            void keyword(cpp_template_keyword kw)
+            {
+                parameter_->keyword_ = kw;
+            }
+
+            /// \effects Adds a parameter to the template.
+            void add_parameter(std::unique_ptr<cpp_template_parameter> param)
+            {
+                parameter_->add_child(std::move(param));
+            }
+
+            /// \effects Sets the default template.
+            void default_template(cpp_template_ref templ)
+            {
+                parameter_->default_ = std::move(templ);
+            }
+
+            /// \effects Registers the parameter in the [cppast::cpp_entity_index](),
+            /// using the given [cppast::cpp_entity_id]().
+            /// \returns The finished parameter.
+            std::unique_ptr<cpp_template_template_parameter> finish(const cpp_entity_index& idx,
+                                                                    cpp_entity_id           id)
+            {
+                idx.register_entity(std::move(id), type_safe::ref(*parameter_));
+                return std::move(parameter_);
+            }
+
+        private:
+            std::unique_ptr<cpp_template_template_parameter> parameter_;
+        };
+
+        /// \returns The keyword used in the template parameter.
+        cpp_template_keyword keyword() const noexcept
+        {
+            return keyword_;
+        }
+
+        /// \returns A [ts::optional]() that is the default template.
+        type_safe::optional<cpp_template_ref> default_template() const noexcept
+        {
+            return default_;
+        }
+
+    private:
+        cpp_template_template_parameter(std::string name, bool variadic)
+        : cpp_template_parameter(std::move(name), variadic),
+          keyword_(cpp_template_keyword::keyword_class)
+        {
+        }
+
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
+
+        type_safe::optional<cpp_template_ref> default_;
+        cpp_template_keyword                  keyword_;
     };
 } // namespace cppast
 

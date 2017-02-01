@@ -36,8 +36,7 @@ namespace cppast
             /// \effects Registers the namespace in the [cppast::cpp_entity_index](),
             /// using the given [cppast::cpp_entity_id]().
             /// \returns The finished namespace.
-            std::unique_ptr<cpp_namespace> finish(const cpp_entity_index& idx,
-                                                  cpp_entity_id           id) noexcept
+            std::unique_ptr<cpp_namespace> finish(const cpp_entity_index& idx, cpp_entity_id id)
             {
                 idx.register_entity(std::move(id), type_safe::ref(*namespace_));
                 return std::move(namespace_);
