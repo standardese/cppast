@@ -112,6 +112,13 @@ namespace cppast
                 return std::move(function);
             }
 
+            /// \returns The finished function without registering it.
+            /// \notes This is intended for templated functions only.
+            std::unique_ptr<T> finish()
+            {
+                return std::move(function);
+            }
+
         protected:
             basic_builder()           = default;
             ~basic_builder() noexcept = default;

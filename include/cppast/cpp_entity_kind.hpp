@@ -46,6 +46,7 @@ namespace cppast
         template_template_parameter_t,
 
         alias_template_t,
+        function_template_t,
 
         count,
     };
