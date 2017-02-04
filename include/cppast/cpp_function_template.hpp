@@ -37,6 +37,41 @@ namespace cppast
 
         friend basic_builder<cpp_function_template, cpp_function_base>;
     };
+
+    /// A [cppast::cpp_entity]() modelling a function template specialization.
+    class cpp_function_template_specialization final : public cpp_template_specialization
+    {
+    public:
+        /// Builder for [cppast::cpp_function_template_specialization]().
+        class builder : public specialization_builder<cpp_function_template_specialization,
+                                                      cpp_function_base, cpp_function_template>
+        {
+        public:
+            using specialization_builder::specialization_builder;
+
+        private:
+            using specialization_builder::add_parameter;
+        };
+
+        /// A reference to the function that is being specialized.
+        const cpp_function_base& function() const noexcept
+        {
+            return static_cast<const cpp_function_base&>(*begin());
+        }
+
+    private:
+        cpp_function_template_specialization(
+            std::unique_ptr<cpp_function_base>                 func,
+            type_safe::object_ref<const cpp_function_template> primary)
+        : cpp_template_specialization(std::unique_ptr<cpp_entity>(func.release()), primary)
+        {
+        }
+
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
+
+        friend specialization_builder<cpp_function_template_specialization, cpp_function_base,
+                                      cpp_function_template>;
+    };
 } // namespace cppast
 
 #endif // CPPAST_CPP_FUNCTION_TEMPLATE_HPP_INCLUDED

@@ -12,3 +12,8 @@ cpp_entity_kind cpp_function_template::do_get_entity_kind() const noexcept
 {
     return cpp_entity_kind::function_template_t;
 }
+
+cpp_entity_kind cpp_function_template_specialization::do_get_entity_kind() const noexcept
+{
+    return cpp_entity_kind::function_template_specialization_t;
+}

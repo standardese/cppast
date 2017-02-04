@@ -66,6 +66,8 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
         return handle_container<cpp_alias_template>(e, cb, functor);
     case cpp_entity_kind::function_template_t:
         return handle_container<cpp_function_template>(e, cb, functor);
+    case cpp_entity_kind::function_template_specialization_t:
+        return handle_container<cpp_function_template_specialization>(e, cb, functor);
 
     case cpp_entity_kind::namespace_alias_t:
     case cpp_entity_kind::using_directive_t:

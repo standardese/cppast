@@ -6,6 +6,7 @@
 #define CPPAST_CPP_TEMPLATE_PARAMETER_HPP_INCLUDED
 
 #include <type_safe/optional.hpp>
+#include <type_safe/variant.hpp>
 
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_container.hpp>
@@ -237,6 +238,15 @@ namespace cppast
         type_safe::optional<cpp_template_ref> default_;
         cpp_template_keyword                  keyword_;
     };
+
+    /// An argument for a [cppast::cpp_template_parameter]().
+    ///
+    /// It is a [ts::variant]() of [cppast::cpp_type]() (for [cppast::cpp_template_type_parameter]()),
+    /// [cppast::cpp_expression]() (for [cppast::cpp_non_type_template_parameter]()) and [cppast::cpp_template_ref]()
+    /// (for [cppast::cpp_template_template_parameter]().
+    using cpp_template_argument =
+        type_safe::variant<std::unique_ptr<cpp_type>, std::unique_ptr<cpp_expression>,
+                           cpp_template_ref>;
 } // namespace cppast
 
 #endif // CPPAST_CPP_TEMPLATE_PARAMETER_HPP_INCLUDED
