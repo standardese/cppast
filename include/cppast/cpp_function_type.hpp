@@ -2,8 +2,8 @@
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
-#ifndef CPPAST_CPP_FUNCTION_TYPES_HPP_INCLUDED
-#define CPPAST_CPP_FUNCTION_TYPES_HPP_INCLUDED
+#ifndef CPPAST_CPP_FUNCTION_TYPE_HPP_INCLUDED
+#define CPPAST_CPP_FUNCTION_TYPE_HPP_INCLUDED
 
 #include <cppast/cpp_type.hpp>
 
@@ -204,4 +204,4 @@ namespace cppast
     };
 } // namespace cppast
 
-#endif // CPPAST_CPP_FUNCTION_TYPES_HPP_INCLUDED
+#endif // CPPAST_CPP_FUNCTION_TYPE_HPP_INCLUDED

@@ -7,7 +7,7 @@
 #include <cppast/cpp_array_type.hpp>
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_kind.hpp>
-#include <cppast/cpp_function_types.hpp>
+#include <cppast/cpp_function_type.hpp>
 
 using namespace cppast;
 
