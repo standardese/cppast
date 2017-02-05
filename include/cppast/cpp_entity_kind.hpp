@@ -48,6 +48,8 @@ namespace cppast
         alias_template_t,
         function_template_t,
         function_template_specialization_t,
+        class_template_t,
+        class_template_specialization_t,
 
         count,
     };

@@ -8,6 +8,7 @@
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_class.hpp>
+#include <cppast/cpp_class_template.hpp>
 #include <cppast/cpp_enum.hpp>
 #include <cppast/cpp_file.hpp>
 #include <cppast/cpp_function.hpp>
@@ -68,6 +69,10 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
         return handle_container<cpp_function_template>(e, cb, functor);
     case cpp_entity_kind::function_template_specialization_t:
         return handle_container<cpp_function_template_specialization>(e, cb, functor);
+    case cpp_entity_kind::class_template_t:
+        return handle_container<cpp_class_template>(e, cb, functor);
+    case cpp_entity_kind::class_template_specialization_t:
+        return handle_container<cpp_class_template_specialization>(e, cb, functor);
 
     case cpp_entity_kind::namespace_alias_t:
     case cpp_entity_kind::using_directive_t:

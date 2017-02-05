@@ -73,6 +73,10 @@ const char* cppast::to_string(cpp_entity_kind kind) noexcept
         return "function template";
     case cpp_entity_kind::function_template_specialization_t:
         return "function template specialization";
+    case cpp_entity_kind::class_template_t:
+        return "class template";
+    case cpp_entity_kind::class_template_specialization_t:
+        return "class tempalte specialization";
 
     case cpp_entity_kind::count:
         break;
@@ -114,6 +118,8 @@ bool cppast::is_type(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::alias_template_t:
     case cpp_entity_kind::function_template_t:
     case cpp_entity_kind::function_template_specialization_t:
+    case cpp_entity_kind::class_template_t:
+    case cpp_entity_kind::class_template_specialization_t:
     case cpp_entity_kind::count:
         break;
     }
@@ -128,6 +134,8 @@ bool cppast::is_template(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::alias_template_t:
     case cpp_entity_kind::function_template_t:
     case cpp_entity_kind::function_template_specialization_t:
+    case cpp_entity_kind::class_template_t:
+    case cpp_entity_kind::class_template_specialization_t:
         return true;
 
     case cpp_entity_kind::file_t:
