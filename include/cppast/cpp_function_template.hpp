@@ -43,8 +43,8 @@ namespace cppast
     {
     public:
         /// Builder for [cppast::cpp_function_template_specialization]().
-        class builder : public specialization_builder<cpp_function_template_specialization,
-                                                      cpp_function_base, cpp_function_template>
+        class builder
+            : public specialization_builder<cpp_function_template_specialization, cpp_function_base>
         {
         public:
             using specialization_builder::specialization_builder;
@@ -60,17 +60,15 @@ namespace cppast
         }
 
     private:
-        cpp_function_template_specialization(
-            std::unique_ptr<cpp_function_base>                 func,
-            type_safe::object_ref<const cpp_function_template> primary)
+        cpp_function_template_specialization(std::unique_ptr<cpp_function_base> func,
+                                             cpp_template_ref                   primary)
         : cpp_template_specialization(std::unique_ptr<cpp_entity>(func.release()), primary)
         {
         }
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
-        friend specialization_builder<cpp_function_template_specialization, cpp_function_base,
-                                      cpp_function_template>;
+        friend specialization_builder<cpp_function_template_specialization, cpp_function_base>;
     };
 } // namespace cppast
 

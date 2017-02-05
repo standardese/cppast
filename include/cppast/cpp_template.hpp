@@ -71,14 +71,73 @@ namespace cppast
         detail::intrusive_list<cpp_template_parameter> parameters_;
     };
 
+    /// A [cppast::cpp_type]() representing an instantiation of a [cppast::cpp_template]().
+    class cpp_template_instantiation_type final : public cpp_type
+    {
+    public:
+        /// Builds a [cppast::cpp_template_instantiation]().
+        class builder
+        {
+        public:
+            /// \effects Sets the primary template being instantiated.
+            builder(cpp_template_ref templ)
+            : result_(new cpp_template_instantiation_type(std::move(templ)))
+            {
+            }
+
+            /// \effects Adds the next argument.
+            void add_argument(cpp_template_argument arg)
+            {
+                result_->arguments_.push_back(std::move(arg));
+            }
+
+            /// \returns The finished instantiation.
+            std::unique_ptr<cpp_template_instantiation_type> finish()
+            {
+                return std::move(result_);
+            }
+
+        private:
+            std::unique_ptr<cpp_template_instantiation_type> result_;
+        };
+
+        /// \returns A reference to the template that is being instantiated.
+        /// \notes It could also point to a specialization,
+        /// this is just the *primary* template.
+        const cpp_template_ref& primary_template() const noexcept
+        {
+            return templ_;
+        }
+
+        /// \returns An iteratable object iterating over the [cppast::cpp_template_argument]()s.
+        /// \exclude return
+        const std::vector<cpp_template_argument>& arguments() const noexcept
+        {
+            return arguments_;
+        }
+
+    private:
+        cpp_template_instantiation_type(cpp_template_ref ref) : templ_(std::move(ref))
+        {
+        }
+
+        cpp_type_kind do_get_kind() const noexcept override
+        {
+            return cpp_type_kind::template_instantiation;
+        }
+
+        std::vector<cpp_template_argument> arguments_;
+        cpp_template_ref                   templ_;
+    };
+
     /// Base class for all entities modelling a C++ template specialization.
     class cpp_template_specialization : public cpp_template
     {
     public:
         /// \returns A reference to the template that is being specialized.
-        const cpp_template& primary_template() const noexcept
+        cpp_template_ref primary_template() const noexcept
         {
-            return *templ_;
+            return cpp_template_ref(templ_, name());
         }
 
         /// \returns An iteratable object iterating over the [cppast::cpp_template_argument]()s.
@@ -99,13 +158,12 @@ namespace cppast
         /// Builder class for specializations.
         ///
         /// Inherit from it to provide additional setter.
-        template <class T, class EntityT, class TemplateT>
+        template <class T, class EntityT>
         class specialization_builder : public basic_builder<T, EntityT>
         {
         public:
             /// \effects Sets the entity that is being templated and the primary template.
-            specialization_builder(std::unique_ptr<EntityT>               entity,
-                                   type_safe::object_ref<const TemplateT> templ)
+            specialization_builder(std::unique_ptr<EntityT> entity, const cpp_template_ref& templ)
             {
                 this->template_entity = std::unique_ptr<T>(new T(std::move(entity), templ));
             }
@@ -123,15 +181,17 @@ namespace cppast
         };
 
         /// \effects Sets the entity that is being templated and the primary template.
-        cpp_template_specialization(std::unique_ptr<cpp_entity>               entity,
-                                    type_safe::object_ref<const cpp_template> templ)
-        : cpp_template(std::move(entity)), templ_(templ)
+        cpp_template_specialization(std::unique_ptr<cpp_entity> entity,
+                                    const cpp_template_ref&     templ)
+        : cpp_template(std::move(entity)), templ_(templ.id())
         {
+            DEBUG_ASSERT(templ.name() == entity->name(), detail::precondition_error_handler{},
+                         "invalid name of template ref");
         }
 
     private:
-        std::vector<cpp_template_argument>        arguments_;
-        type_safe::object_ref<const cpp_template> templ_;
+        std::vector<cpp_template_argument> arguments_;
+        cpp_entity_id                      templ_;
     };
 } // namespace cppast
 

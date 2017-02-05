@@ -28,6 +28,7 @@ namespace cppast
         member_object,
 
         template_parameter,
+        template_instantiation,
 
         unexposed,
     };
