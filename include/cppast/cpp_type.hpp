@@ -30,6 +30,8 @@ namespace cppast
         template_parameter,
         template_instantiation,
 
+        dependent,
+
         unexposed,
     };
 
@@ -172,6 +174,50 @@ namespace cppast
         }
 
         cpp_type_ref entity_;
+    };
+
+    class cpp_template_parameter_type;
+    class cpp_template_instantiation_type;
+
+    /// A [cppast::cpp_type]() that depends on another type.
+    class cpp_dependent_type final : public cpp_type
+    {
+    public:
+        /// \returns A newly created type dependent on a [cppast::cpp_template_parameter_type]().
+        static std::unique_ptr<cpp_dependent_type> build(
+            std::string name, std::unique_ptr<cpp_template_parameter_type> dependee);
+
+        /// \returns A newly created type dependent on a [cppast::cpp_template_instantiation_type]().
+        static std::unique_ptr<cpp_dependent_type> build(
+            std::string name, std::unique_ptr<cpp_template_instantiation_type> dependee);
+
+        /// \returns The name of the dependent type.
+        /// \notes It does not include a scope.
+        const std::string& name() const noexcept
+        {
+            return name_;
+        }
+
+        /// \returns A reference to the [cppast::cpp_type]() it depends one.
+        /// \notes This is either [cppast::cpp_template_parameter_type]() or [cppast:cpp_template_instantiation_type]().
+        const cpp_type& dependee() const noexcept
+        {
+            return *dependee_;
+        }
+
+    private:
+        cpp_dependent_type(std::string name, std::unique_ptr<cpp_type> dependee)
+        : name_(std::move(name)), dependee_(std::move(dependee))
+        {
+        }
+
+        cpp_type_kind do_get_kind() const noexcept override
+        {
+            return cpp_type_kind::dependent;
+        }
+
+        std::string               name_;
+        std::unique_ptr<cpp_type> dependee_;
     };
 
     /// The kinds of C++ cv qualifiers.

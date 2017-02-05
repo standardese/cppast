@@ -8,12 +8,27 @@
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_function_type.hpp>
+#include <cppast/cpp_template.hpp>
 
 using namespace cppast;
 
 bool detail::cpp_type_ref_predicate::operator()(const cpp_entity& e)
 {
     return is_type(e.kind());
+}
+
+std::unique_ptr<cpp_dependent_type> cpp_dependent_type::build(
+    std::string name, std::unique_ptr<cpp_template_parameter_type> dependee)
+{
+    return std::unique_ptr<cpp_dependent_type>(
+        new cpp_dependent_type(std::move(name), std::move(dependee)));
+}
+
+std::unique_ptr<cpp_dependent_type> cpp_dependent_type::build(
+    std::string name, std::unique_ptr<cpp_template_instantiation_type> dependee)
+{
+    return std::unique_ptr<cpp_dependent_type>(
+        new cpp_dependent_type(std::move(name), std::move(dependee)));
 }
 
 namespace
@@ -97,6 +112,12 @@ bool cppast::is_valid(const cpp_type& type) noexcept
         if (obj.class_type().kind() != cpp_type_kind::user_defined)
             return false;
         return is_valid(obj.object_type());
+    }
+
+    case cpp_type_kind::dependent:
+    {
+        auto& dep = static_cast<const cpp_dependent_type&>(type);
+        return is_valid(dep.dependee());
     }
 
     case cpp_type_kind::builtin:
