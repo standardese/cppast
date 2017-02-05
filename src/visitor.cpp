@@ -17,6 +17,7 @@
 #include <cppast/cpp_member_function.hpp>
 #include <cppast/cpp_namespace.hpp>
 #include <cppast/cpp_template_parameter.hpp>
+#include <cppast/cpp_variable_template.hpp>
 
 using namespace cppast;
 
@@ -65,6 +66,8 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
         return handle_container<cpp_template_template_parameter>(e, cb, functor);
     case cpp_entity_kind::alias_template_t:
         return handle_container<cpp_alias_template>(e, cb, functor);
+    case cpp_entity_kind::variable_template_t:
+        return handle_container<cpp_variable_template>(e, cb, functor);
     case cpp_entity_kind::function_template_t:
         return handle_container<cpp_function_template>(e, cb, functor);
     case cpp_entity_kind::function_template_specialization_t:
