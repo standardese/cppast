@@ -14,6 +14,8 @@ namespace cppast
     {
         file_t,
 
+        macro_definition_t,
+
         language_linkage_t,
 
         namespace_t,

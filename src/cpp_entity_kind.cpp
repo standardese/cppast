@@ -13,6 +13,9 @@ const char* cppast::to_string(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::file_t:
         return "file";
 
+    case cpp_entity_kind::macro_definition_t:
+        return "macro definition";
+
     case cpp_entity_kind::language_linkage_t:
         return "language linkage";
 
@@ -97,6 +100,7 @@ bool cppast::is_type(cpp_entity_kind kind) noexcept
         return true;
 
     case cpp_entity_kind::file_t:
+    case cpp_entity_kind::macro_definition_t:
     case cpp_entity_kind::language_linkage_t:
     case cpp_entity_kind::namespace_t:
     case cpp_entity_kind::namespace_alias_t:
@@ -143,6 +147,7 @@ bool cppast::is_template(cpp_entity_kind kind) noexcept
         return true;
 
     case cpp_entity_kind::file_t:
+    case cpp_entity_kind::macro_definition_t:
     case cpp_entity_kind::language_linkage_t:
     case cpp_entity_kind::namespace_t:
     case cpp_entity_kind::namespace_alias_t:
