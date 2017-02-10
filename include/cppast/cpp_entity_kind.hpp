@@ -15,6 +15,7 @@ namespace cppast
         file_t,
 
         macro_definition_t,
+        include_directive_t,
 
         language_linkage_t,
 

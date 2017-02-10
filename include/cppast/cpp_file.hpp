@@ -7,6 +7,7 @@
 
 #include <cppast/cpp_entity_index.hpp>
 #include <cppast/cpp_entity_container.hpp>
+#include <cppast/cpp_entity_ref.hpp>
 
 namespace cppast
 {
@@ -52,6 +53,18 @@ namespace cppast
         /// \returns [cpp_entity_type::file_t]().
         cpp_entity_kind do_get_entity_kind() const noexcept override;
     };
+
+    /// \exclude
+    namespace detail
+    {
+        struct cpp_file_ref_predicate
+        {
+            bool operator()(const cpp_entity& e);
+        };
+    } // namespace detail
+
+    /// A reference to a [cppast::cpp_file]().
+    using cpp_file_ref = basic_cpp_entity_ref<cpp_file, detail::cpp_file_ref_predicate>;
 } // namespace cppast
 
 #endif // CPPAST_CPP_FILE_HPP_INCLUDED

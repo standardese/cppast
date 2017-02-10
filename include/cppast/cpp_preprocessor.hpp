@@ -8,6 +8,7 @@
 #include <type_safe/optional.hpp>
 
 #include <cppast/cpp_entity.hpp>
+#include <cppast/cpp_file.hpp>
 
 namespace cppast
 {
@@ -58,6 +59,50 @@ namespace cppast
 
         type_safe::optional<std::string> parameters_;
         std::string                      replacement_;
+    };
+
+    /// The kind of [cppast::cpp_include_directive]().
+    enum class cpp_include_kind
+    {
+        system, //< An `#include <...>`.
+        local,  //< An `#include "..."`.
+    };
+
+    /// A [cppast::cpp_entity]() modelling an `#include`.
+    class cpp_include_directive final : public cpp_entity
+    {
+    public:
+        /// \returns A newly built include directive.
+        /// \notes It is not meant to be registered in the [cppast::cpp_entity_index](),
+        /// as no other [cppast::cpp_entity]() can refer to it.
+        static std::unique_ptr<cpp_include_directive> build(const cpp_file_ref& target,
+                                                            cpp_include_kind    kind)
+        {
+            return std::unique_ptr<cpp_include_directive>(new cpp_include_directive(target, kind));
+        }
+
+        /// \returns A reference to the [cppast::cpp_file]() it includes.
+        cpp_file_ref target() const noexcept
+        {
+            return cpp_file_ref(target_, name());
+        }
+
+        /// \returns The kind of include it is.
+        cpp_include_kind include_kind() const noexcept
+        {
+            return kind_;
+        }
+
+    private:
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
+
+        cpp_include_directive(const cpp_file_ref& target, cpp_include_kind kind)
+        : cpp_entity(target.name()), target_(target.id()), kind_(kind)
+        {
+        }
+
+        cpp_entity_id    target_;
+        cpp_include_kind kind_;
     };
 } // namespace cppast
 

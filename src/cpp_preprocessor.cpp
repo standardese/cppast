@@ -12,3 +12,8 @@ cpp_entity_kind cpp_macro_definition::do_get_entity_kind() const noexcept
 {
     return cpp_entity_kind::macro_definition_t;
 }
+
+cpp_entity_kind cpp_include_directive::do_get_entity_kind() const noexcept
+{
+    return cpp_entity_kind::include_directive_t;
+}

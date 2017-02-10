@@ -12,3 +12,8 @@ cpp_entity_kind cpp_file::do_get_entity_kind() const noexcept
 {
     return cpp_entity_kind::file_t;
 }
+
+bool detail::cpp_file_ref_predicate::operator()(const cpp_entity& e)
+{
+    return e.kind() == cpp_entity_kind::file_t;
+}

@@ -15,7 +15,6 @@ namespace cppast
     {
     public:
         /// \effects Creates it giving it the target id and name.
-        /// \requires An entity of matching kind must eventually register in the [cppast::cpp_entity_index]() using that id.
         basic_cpp_entity_ref(cpp_entity_id target_id, std::string target_name)
         : target_(std::move(target_id)), name_(std::move(target_name))
         {
@@ -34,6 +33,7 @@ namespace cppast
         }
 
         /// \returns The [cppast::cpp_entity]() it refers to.
+        /// \requires An entity of matching kind must be registered in the [cppast::cpp_entity_index]() using the given id.
         const T& get(const cpp_entity_index& idx) const noexcept
         {
             auto entity = idx.lookup(target_);
