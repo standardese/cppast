@@ -56,7 +56,7 @@ namespace cppast
     {
     public:
         /// \effects Sets the given C++ standard and compilation flags.
-        void set_standard(cpp_standard standard, type_safe::flag_set<compile_flag> flags)
+        void set_flags(cpp_standard standard, type_safe::flag_set<compile_flag> flags = {})
         {
             do_set_flags(standard, flags);
         }
@@ -77,6 +77,13 @@ namespace cppast
         void undefine_macro(std::string name)
         {
             do_remove_macro_definition(std::move(name));
+        }
+
+        /// \returns A unique name of the configuration.
+        /// \notes This allows detecting mismatches of configurations and parsers.
+        const char* name() const noexcept
+        {
+            return do_get_name();
         }
 
     protected:
@@ -109,6 +116,10 @@ namespace cppast
 
         /// \effects Undefines the given macro.
         virtual void do_remove_macro_definition(std::string name) = 0;
+
+        /// \returns A unique name of the configuration.
+        /// \notes This allows detecting mismatches of configurations and parsers.
+        virtual const char* do_get_name() const noexcept = 0;
 
         std::vector<std::string> flags_;
     };

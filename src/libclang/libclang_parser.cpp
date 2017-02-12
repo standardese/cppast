@@ -4,12 +4,28 @@
 
 #include <cppast/libclang_parser.hpp>
 
+#include <cstring>
+
 #include "raii_wrapper.hpp"
+#include "preprocessor.hpp"
 
 using namespace cppast;
 
+const std::string& detail::libclang_compile_config_access::clang_binary(
+    const libclang_compile_config& config)
+{
+    return config.clang_binary_;
+}
+
+const std::vector<std::string>& detail::libclang_compile_config_access::flags(
+    const libclang_compile_config& config)
+{
+    return config.get_flags();
+}
+
 libclang_compile_config::libclang_compile_config() : compile_config({})
 {
+    set_clang_binary("clang++");
 }
 
 void libclang_compile_config::do_set_flags(cpp_standard                      standard,
@@ -84,9 +100,18 @@ libclang_parser::~libclang_parser() noexcept
 {
 }
 
-std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
-                                                    const std::string&      path,
-                                                    const compile_config&   config) const
+std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx, std::string path,
+                                                    const compile_config& c) const
 {
-    return nullptr;
+    DEBUG_ASSERT(std::strcmp(c.name(), "libclang") == 0, detail::precondition_error_handler{},
+                 "config has mismatched type");
+    auto& config       = static_cast<const libclang_compile_config&>(c);
+    auto  preprocessed = detail::preprocess(config, path.c_str());
+
+    cpp_file::builder builder(std::move(path));
+
+    for (auto& e : preprocessed.entities)
+        builder.add_child(std::move(e.entity));
+
+    return builder.finish(idx);
 }

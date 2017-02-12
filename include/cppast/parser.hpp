@@ -25,10 +25,11 @@ namespace cppast
 
         /// \effects Parses the given file.
         /// \returns The [cppast::cpp_file]() object describing it.
-        std::unique_ptr<cpp_file> parse(const cpp_entity_index& idx, const std::string& path,
+        /// \requires The dynamic type of `config` must match the required config type.
+        std::unique_ptr<cpp_file> parse(const cpp_entity_index& idx, std::string path,
                                         const compile_config& config) const
         {
-            return do_parse(idx, path, config);
+            return do_parse(idx, std::move(path), config);
         }
 
     protected:
@@ -37,9 +38,8 @@ namespace cppast
     private:
         /// \effects Parses the given file.
         /// \returns The [cppast::cpp_file]() object describing it.
-        virtual std::unique_ptr<cpp_file> do_parse(const cpp_entity_index& idx,
-                                                   const std::string&      path,
-                                                   const compile_config&   config) const = 0;
+        virtual std::unique_ptr<cpp_file> do_parse(const cpp_entity_index& idx, std::string path,
+                                                   const compile_config& config) const = 0;
     };
 } // namespace cppast
 
