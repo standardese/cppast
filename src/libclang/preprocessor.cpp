@@ -73,7 +73,9 @@ namespace
 
         auto exit_code = process.get_exit_status();
         if (exit_code != 0)
-            DEBUG_UNREACHABLE(detail::assert_handler{}); // TODO: improve error handling
+            throw libclang_error("preprocessor: command '" + cmd
+                                 + "' exited with non-zero exit code (" + std::to_string(exit_code)
+                                 + ")");
 
         return preprocessed;
     }

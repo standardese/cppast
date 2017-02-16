@@ -134,7 +134,23 @@ namespace
                                             | CXTranslationUnit_KeepGoing, // flags
                                         &tu);
         if (error != CXError_Success)
-            DEBUG_UNREACHABLE(detail::assert_handler{}, "libclang error"); // TODO
+        {
+            switch (error)
+            {
+            case CXError_Success:
+                DEBUG_UNREACHABLE(detail::assert_handler{});
+                break;
+
+            case CXError_Failure:
+                throw libclang_error("clang_parseTranslationUnit: generic error");
+            case CXError_Crashed:
+                throw libclang_error("clang_parseTranslationUnit: libclang crashed :(");
+            case CXError_InvalidArguments:
+                throw libclang_error("clang_parseTranslationUnit: you shouldn't see this message");
+            case CXError_ASTReadError:
+                throw libclang_error("clang_parseTranslationUnit: AST deserialization error");
+            }
+        }
 
         return tu;
     }

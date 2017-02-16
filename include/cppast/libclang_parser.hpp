@@ -5,6 +5,8 @@
 #ifndef CPPAST_LIBCLANG_PARSER_HPP_INCLUDED
 #define CPPAST_LIBCLANG_PARSER_HPP_INCLUDED
 
+#include <stdexcept>
+
 #include <cppast/parser.hpp>
 
 namespace cppast
@@ -51,6 +53,16 @@ namespace cppast
         std::string clang_binary_;
 
         friend detail::libclang_compile_config_access;
+    };
+
+    /// The exception thrown when a fatal parse error occurs.
+    class libclang_error final : public std::runtime_error
+    {
+    public:
+        /// \effects Creates it with a message.
+        libclang_error(std::string msg) : std::runtime_error(std::move(msg))
+        {
+        }
     };
 
     /// A parser that uses libclang.
