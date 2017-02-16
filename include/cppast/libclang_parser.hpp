@@ -69,7 +69,7 @@ namespace cppast
     class libclang_parser final : public parser
     {
     public:
-        libclang_parser();
+        explicit libclang_parser(type_safe::object_ref<const diagnostic_logger> logger);
         ~libclang_parser() noexcept override;
 
     private:

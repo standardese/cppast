@@ -95,7 +95,8 @@ struct libclang_parser::impl
     }
 };
 
-libclang_parser::libclang_parser() : pimpl_(new impl)
+libclang_parser::libclang_parser(type_safe::object_ref<const diagnostic_logger> logger)
+: parser(logger), pimpl_(new impl)
 {
 }
 
@@ -164,7 +165,7 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
     auto& config = static_cast<const libclang_compile_config&>(c);
 
     // preprocess + parse
-    auto preprocessed = detail::preprocess(config, path.c_str());
+    auto preprocessed = detail::preprocess(config, path.c_str(), logger());
     auto tu           = get_cxunit(pimpl_->index, config, path.c_str(), preprocessed.source);
 
     // convert entity hierachies

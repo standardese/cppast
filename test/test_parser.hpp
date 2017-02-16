@@ -29,7 +29,8 @@ std::unique_ptr<cppast::cpp_file> parse(const cppast::cpp_entity_index& idx, con
     libclang_compile_config config;
     config.set_flags(cpp_standard::cpp_latest);
 
-    libclang_parser p;
+    static stderr_diagnostic_logger logger;
+    libclang_parser                 p(type_safe::ref(logger));
     return p.parse(idx, name, config);
 }
 

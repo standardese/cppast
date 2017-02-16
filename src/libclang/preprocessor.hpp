@@ -24,7 +24,8 @@ namespace cppast
             std::vector<pp_entity> entities;
         };
 
-        preprocessor_output preprocess(const libclang_compile_config& config, const char* path);
+        preprocessor_output preprocess(const libclang_compile_config& config, const char* path,
+                                       const diagnostic_logger& logger);
     }
 } // namespace cppast::detail
 

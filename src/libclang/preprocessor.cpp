@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
-#include <cstdio>
 
 // treat the tiny-process-library as header only
 #include <process.hpp>
@@ -23,6 +22,7 @@
 #include <type_safe/reference.hpp>
 
 #include <cppast/cpp_entity_kind.hpp>
+#include <cppast/diagnostic.hpp>
 
 using namespace cppast;
 namespace ts = type_safe;
@@ -54,9 +54,10 @@ namespace
     }
 
     // gets the full preprocessor output
-    std::string get_full_preprocess_output(const libclang_compile_config& c, const char* full_path)
+    std::string get_full_preprocess_output(const libclang_compile_config& c, const char* full_path,
+                                           const diagnostic_logger& logger)
     {
-        std::string preprocessed;
+        std::string preprocessed, diagnostics;
 
         auto    cmd = get_command(c, full_path);
         Process process(cmd, "",
@@ -66,16 +67,20 @@ namespace
                                 if (*str != '\r')
                                     preprocessed.push_back(*str);
                         },
-                        [&](const char* str, std::size_t n) {
-                            std::fprintf(stderr, "%.*s\n", static_cast<int>(n),
-                                         str); // TODO: log error properly
-                        });
+                        [&](const char* str, std::size_t n) { diagnostics.append(str, n); });
 
         auto exit_code = process.get_exit_status();
         if (exit_code != 0)
+        {
+            if (!diagnostics.empty())
+                logger.log("preprocessor",
+                           diagnostic{std::move(diagnostics), {}, severity::critical});
             throw libclang_error("preprocessor: command '" + cmd
                                  + "' exited with non-zero exit code (" + std::to_string(exit_code)
                                  + ")");
+        }
+        else if (!diagnostics.empty())
+            logger.log("preprocessor", diagnostic{std::move(diagnostics), {}, severity::error});
 
         return preprocessed;
     }
@@ -369,11 +374,11 @@ namespace
 }
 
 detail::preprocessor_output detail::preprocess(const libclang_compile_config& config,
-                                               const char*                    path)
+                                               const char* path, const diagnostic_logger& logger)
 {
     detail::preprocessor_output result;
 
-    auto output = get_full_preprocess_output(config, path);
+    auto output = get_full_preprocess_output(config, path, logger);
 
     position    p(ts::ref(result.source), output.c_str());
     std::size_t file_depth = 0u;
