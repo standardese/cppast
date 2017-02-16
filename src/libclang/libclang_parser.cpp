@@ -5,7 +5,9 @@
 #include <cppast/libclang_parser.hpp>
 
 #include <cstring>
+#include <vector>
 
+#include "libclang_visitor.hpp"
 #include "raii_wrapper.hpp"
 #include "preprocessor.hpp"
 
@@ -26,6 +28,7 @@ const std::vector<std::string>& detail::libclang_compile_config_access::flags(
 libclang_compile_config::libclang_compile_config() : compile_config({})
 {
     set_clang_binary("clang++");
+    add_include_dir(LIBCLANG_SYSTEM_INCLUDE_DIR);
 }
 
 void libclang_compile_config::do_set_flags(cpp_standard                      standard,
@@ -92,7 +95,7 @@ struct libclang_parser::impl
     }
 };
 
-libclang_parser::libclang_parser()
+libclang_parser::libclang_parser() : pimpl_(new impl)
 {
 }
 
@@ -100,18 +103,65 @@ libclang_parser::~libclang_parser() noexcept
 {
 }
 
+namespace
+{
+    std::vector<const char*> get_arguments(const libclang_compile_config& config)
+    {
+        std::vector<const char*> args = {"-x", "c++"}; // force C++
+        for (auto& flag : detail::libclang_compile_config_access::flags(config))
+            args.push_back(flag.c_str());
+        return args;
+    }
+
+    detail::cxtranslation_unit get_cxunit(const detail::cxindex&         idx,
+                                          const libclang_compile_config& config, const char* path,
+                                          const std::string& source)
+    {
+        CXUnsavedFile file;
+        file.Filename = path;
+        file.Contents = source.c_str();
+        file.Length   = source.length();
+
+        auto args = get_arguments(config);
+
+        CXTranslationUnit tu;
+        auto              error =
+            clang_parseTranslationUnit2(idx.get(), path, // index and path
+                                        args.data(),
+                                        static_cast<int>(args.size()), // arguments (ptr + size)
+                                        &file, 1,                      // unsaved files (ptr + size)
+                                        CXTranslationUnit_Incomplete
+                                            | CXTranslationUnit_KeepGoing, // flags
+                                        &tu);
+        if (error != CXError_Success)
+            DEBUG_UNREACHABLE(detail::assert_handler{}, "libclang error"); // TODO
+
+        return tu;
+    }
+}
+
 std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx, std::string path,
                                                     const compile_config& c) const
 {
     DEBUG_ASSERT(std::strcmp(c.name(), "libclang") == 0, detail::precondition_error_handler{},
                  "config has mismatched type");
-    auto& config       = static_cast<const libclang_compile_config&>(c);
-    auto  preprocessed = detail::preprocess(config, path.c_str());
+    auto& config = static_cast<const libclang_compile_config&>(c);
 
-    cpp_file::builder builder(std::move(path));
+    // preprocess + parse
+    auto preprocessed = detail::preprocess(config, path.c_str());
+    auto tu           = get_cxunit(pimpl_->index, config, path.c_str(), preprocessed.source);
 
+    // convert entity hierachies
+    cpp_file::builder builder(path);
+
+    // add all preprocessor entities up-front
+    // TODO: add them in the correct place
     for (auto& e : preprocessed.entities)
         builder.add_child(std::move(e.entity));
+
+    detail::visit_tu(tu, path.c_str(), [&](const CXCursor&) {
+
+    });
 
     return builder.finish(idx);
 }

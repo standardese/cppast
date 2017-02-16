@@ -83,6 +83,73 @@ namespace cppast
         };
 
         using cxtranslation_unit = raii_wrapper<CXTranslationUnit, cxtranslation_unit_deleter>;
+
+        class cxstring
+        {
+        public:
+            cxstring(CXString str) noexcept
+            : str_(str), c_str_(clang_getCString(str)), length_(std::strlen(c_str_))
+            {
+            }
+
+            cxstring(const cxstring&) = delete;
+            cxstring& operator=(const cxstring&) = delete;
+
+            ~cxstring() noexcept
+            {
+                clang_disposeString(str_);
+            }
+
+            const char* c_str() const noexcept
+            {
+                return c_str_;
+            }
+
+            char operator[](std::size_t i) const noexcept
+            {
+                return c_str()[i];
+            }
+
+            std::size_t length() const noexcept
+            {
+                return length_;
+            }
+
+        private:
+            CXString    str_;
+            const char* c_str_;
+            std::size_t length_;
+        };
+
+        inline bool operator==(const cxstring& a, const cxstring& b) noexcept
+        {
+            return std::strcmp(a.c_str(), b.c_str()) == 0;
+        }
+
+        inline bool operator==(const cxstring& a, const char* str) noexcept
+        {
+            return std::strcmp(a.c_str(), str) == 0;
+        }
+
+        inline bool operator==(const char* str, const cxstring& b) noexcept
+        {
+            return std::strcmp(str, b.c_str()) == 0;
+        }
+
+        inline bool operator!=(const cxstring& a, const cxstring& b) noexcept
+        {
+            return !(a == b);
+        }
+
+        inline bool operator!=(const cxstring& a, const char* str) noexcept
+        {
+            return !(a == str);
+        }
+
+        inline bool operator!=(const char* str, const cxstring& b) noexcept
+        {
+            return !(str == b);
+        }
     }
 } // namespace cppast::detail
 
