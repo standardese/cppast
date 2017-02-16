@@ -32,13 +32,10 @@ namespace cppast
             return target_;
         }
 
-        /// \returns The [cppast::cpp_entity]() it refers to.
-        /// \requires An entity of matching kind must be registered in the [cppast::cpp_entity_index]() using the given id.
-        const T& get(const cpp_entity_index& idx) const noexcept
+        /// \returns An optional reference to the [cppast::cpp_entity]() it refers to.
+        type_safe::optional_ref<const T> get(const cpp_entity_index& idx) const noexcept
         {
             auto entity = idx.lookup(target_);
-            DEBUG_ASSERT(Predicate{}(entity.value()), detail::precondition_error_handler{},
-                         "invalid entity");
             return static_cast<const T&>(entity.value());
         }
 

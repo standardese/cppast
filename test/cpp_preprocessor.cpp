@@ -57,3 +57,45 @@ baz
     });
     REQUIRE(count == 6u);
 }
+
+// requires clang 4.0, currently not available for testing
+#if 0
+TEST_CASE("cpp_include_directive")
+{
+    write_file("cpp_include_directive-header.hpp", R"(
+#define FOO
+)");
+
+    auto header_a = R"(
+#include <iostream>
+#include "cpp_include_directive-header.hpp"
+)";
+
+    auto header_b = R"(
+#include "header_a.hpp"
+)";
+
+    cpp_entity_index idx;
+    auto             file_a = parse(idx, "header_a.hpp", header_a);
+    auto             file_b = parse(idx, "header_b.hpp", header_b);
+
+    auto count =
+        test_visit<cpp_include_directive>(*file_a, [&](const cpp_include_directive& include) {
+            if (include.name() == "iostream")
+            {
+                REQUIRE(include.target().name() == include.name());
+                REQUIRE(include.include_kind() == cppast::cpp_include_kind::system);
+                REQUIRE(!include.target().get(idx));
+            }
+            else if (include.name() == "cpp_include_directive-header.hpp")
+            {
+                REQUIRE(include.target().name() == include.name());
+                REQUIRE(include.include_kind() == cppast::cpp_include_kind::local);
+                REQUIRE(!include.target().get(idx));
+            }
+            else
+                REQUIRE(false);
+        });
+    REQUIRE(count == 2u);
+}
+#endif

@@ -35,9 +35,10 @@ namespace
         // -E: print preprocessor output
         // -CC: keep comments, even in macro
         // -dD: print macro definitions as well
+        // -dI: print include directives as well
         // -Wno-pragma-once-outside-header: hide wrong warning
         std::string cmd(detail::libclang_compile_config_access::clang_binary(c)
-                        + " -E -CC -dD -Wno-pragma-once-outside-header ");
+                        + " -E -CC -dD -dI -Wno-pragma-once-outside-header ");
 
         // add other flags
         for (auto& flag : detail::libclang_compile_config_access::flags(c))
@@ -240,6 +241,43 @@ namespace
         return result;
     }
 
+    std::unique_ptr<cpp_include_directive> parse_include(position& p)
+    {
+        // format (at new line, literal <>): #include <filename>
+        // or: #include "filename"
+        if (!p.was_newl() || !starts_with(p, "#include"))
+            return nullptr;
+        p.skip(std::strlen("#include"));
+        skip_spaces(p);
+
+        auto include_kind = cpp_include_kind::system;
+        auto end_str      = "";
+        if (starts_with(p, "\""))
+        {
+            include_kind = cpp_include_kind::local;
+            end_str      = "\"";
+        }
+        else if (starts_with(p, "<"))
+        {
+            include_kind = cpp_include_kind::system;
+            end_str      = ">";
+        }
+        else
+            DEBUG_UNREACHABLE(detail::assert_handler{});
+        p.skip();
+
+        std::string filename;
+        for (; !starts_with(p, "\"") && !starts_with(p, ">"); p.skip())
+            filename += *p.ptr();
+        DEBUG_ASSERT(starts_with(p, end_str), detail::assert_handler{}, "bad termination");
+        p.skip();
+        DEBUG_ASSERT(starts_with(p, "\n"), detail::assert_handler{});
+        // don't skip newline
+
+        return cpp_include_directive::build(cpp_file_ref(cpp_entity_id(filename), filename),
+                                            include_kind);
+    }
+
     bool skip_pragma(position& p)
     {
         // format (at new line): #pragma <stuff..>\n
@@ -356,6 +394,11 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                                           }),
                            result.entities.end());
         }
+        else if (auto include = parse_include(p))
+        {
+            if (file_depth == 0u)
+                result.entities.push_back({std::move(include), p.cur_line()});
+        }
         else if (skip_pragma(p))
             continue;
         else if (auto lm = parse_linemarker(p))
@@ -370,16 +413,8 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                 if (file_depth == 0u && lm.value().file.front() != '<')
                 {
                     // this file is directly included by the given file
-                    // so build entity (first, the write updates the line count)
-                    result.entities.push_back(
-                        {cpp_include_directive::build(cpp_file_ref(cpp_entity_id(lm.value().file),
-                                                                   lm.value().file),
-                                                      // not really correct, but nice approximation
-                                                      lm.value().is_system ?
-                                                          cpp_include_kind::system :
-                                                          cpp_include_kind::local),
-                         p.cur_line()});
-                    // but also write the include directive again
+                    // write include with full path
+                    // note: don't build include here, do it when an #include is encountered
                     p.write_str("#include \"" + lm.value().file + "\"\n");
                 }
 

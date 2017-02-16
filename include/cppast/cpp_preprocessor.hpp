@@ -74,6 +74,8 @@ namespace cppast
     class cpp_include_directive final : public cpp_entity
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// \returns A newly built include directive.
         /// \notes It is not meant to be registered in the [cppast::cpp_entity_index](),
         /// as no other [cppast::cpp_entity]() can refer to it.
