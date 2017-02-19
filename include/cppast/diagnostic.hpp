@@ -46,7 +46,7 @@ namespace cppast
             {
                 result += file.value() + ":";
                 if (line)
-                    result += line.value() + ":";
+                    result += std::to_string(line.value()) + ":";
                 if (entity)
                     result += " (" + entity.value() + "):";
             }
@@ -65,6 +65,22 @@ namespace cppast
         critical, //< A critical error where AST generation isn't possible.
         /// \notes This will usually result in an exception being thrown after the diagnostic has been displayed.
     };
+
+    /// \returns A human-readable string describing the severity.
+    inline const char* to_string(severity s) noexcept
+    {
+        switch (s)
+        {
+        case severity::warning:
+            return "warning";
+        case severity::error:
+            return "error";
+        case severity::critical:
+            return "critical";
+        }
+
+        return "programmer error";
+    }
 
     /// A diagnostic.
     ///

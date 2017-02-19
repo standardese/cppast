@@ -36,9 +36,13 @@ namespace
         // -CC: keep comments, even in macro
         // -dD: print macro definitions as well
         // -dI: print include directives as well
+        // -fno-caret-diagnostics: don't show the source extract in diagnostics
+        // -fno-show-column: don't show the column number
+        // -fdiagnostics-format=msvc: use easier to parse MSVC format
         // -Wno-pragma-once-outside-header: hide wrong warning
         std::string cmd(detail::libclang_compile_config_access::clang_binary(c)
-                        + " -E -CC -dD -dI -Wno-pragma-once-outside-header ");
+                        + " -E -CC -dD -dI -fno-caret-diagnostics -fno-show-column "
+                          "-fdiagnostics-format=msvc -Wno-pragma-once-outside-header ");
 
         // add other flags
         for (auto& flag : detail::libclang_compile_config_access::flags(c))
@@ -53,11 +57,77 @@ namespace
         return cmd;
     }
 
+    source_location parse_source_location(const char*& ptr)
+    {
+        // format: <filename>(<line>):
+        // or: <filename>:
+        std::string filename;
+        while (*ptr && *ptr != ':' && *ptr != '(')
+            filename.push_back(*ptr++);
+
+        type_safe::optional<unsigned> line;
+        if (*ptr == '(')
+        {
+            ++ptr;
+
+            std::string str;
+            while (*ptr != ')')
+                str.push_back(*ptr++);
+            ++ptr;
+
+            line = std::stoi(str);
+        }
+
+        DEBUG_ASSERT(*ptr == ':', detail::assert_handler{});
+        ++ptr;
+
+        return {type_safe::nullopt, std::move(filename), std::move(line)};
+    }
+
+    severity parse_severity(const char*& ptr)
+    {
+        // format: <severity>:
+        std::string sev;
+        while (*ptr && *ptr != ':')
+            sev.push_back(*ptr++);
+        ++ptr;
+
+        if (sev == "warning")
+            return severity::warning;
+        else if (sev == "error")
+            return severity::error;
+        else if (sev == "fatal error")
+            return severity::critical;
+        else
+            DEBUG_UNREACHABLE(detail::assert_handler{});
+        return severity::error;
+    }
+
+    // parse and log diagnostic
+    void log_diagnostic(const diagnostic_logger& logger, const std::string& msg)
+    {
+        auto ptr = msg.c_str();
+
+        auto loc = parse_source_location(ptr);
+        while (*ptr == ' ')
+            ++ptr;
+
+        auto sev = parse_severity(ptr);
+        while (*ptr == ' ')
+            ++ptr;
+
+        std::string message;
+        while (*ptr && *ptr != '\n')
+            message.push_back(*ptr++);
+
+        logger.log("preprocessor", diagnostic{std::move(message), std::move(loc), sev});
+    }
+
     // gets the full preprocessor output
     std::string get_full_preprocess_output(const libclang_compile_config& c, const char* full_path,
                                            const diagnostic_logger& logger)
     {
-        std::string preprocessed, diagnostics;
+        std::string preprocessed, diagnostic;
 
         auto    cmd = get_command(c, full_path);
         Process process(cmd, "",
@@ -67,20 +137,27 @@ namespace
                                 if (*str != '\r')
                                     preprocessed.push_back(*str);
                         },
-                        [&](const char* str, std::size_t n) { diagnostics.append(str, n); });
+                        [&](const char* str, std::size_t n) {
+                            diagnostic.reserve(diagnostic.size() + n);
+                            for (auto end = str + n; str != end; ++str)
+                                if (*str == '\r')
+                                    continue;
+                                else if (*str == '\n')
+                                {
+                                    // consume current diagnostic
+                                    log_diagnostic(logger, diagnostic);
+                                    diagnostic.clear();
+                                }
+                                else
+                                    diagnostic.push_back(*str);
+                        });
 
         auto exit_code = process.get_exit_status();
+        DEBUG_ASSERT(diagnostic.empty(), detail::assert_handler{});
         if (exit_code != 0)
-        {
-            if (!diagnostics.empty())
-                logger.log("preprocessor",
-                           diagnostic{std::move(diagnostics), {}, severity::critical});
             throw libclang_error("preprocessor: command '" + cmd
                                  + "' exited with non-zero exit code (" + std::to_string(exit_code)
                                  + ")");
-        }
-        else if (!diagnostics.empty())
-            logger.log("preprocessor", diagnostic{std::move(diagnostics), {}, severity::error});
 
         return preprocessed;
     }
