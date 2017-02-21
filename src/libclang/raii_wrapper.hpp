@@ -5,7 +5,9 @@
 #ifndef CPPAST_RAII_WRAPPER_HPP_INCLUDED
 #define CPPAST_RAII_WRAPPER_HPP_INCLUDED
 
+#include <cstring>
 #include <type_traits>
+#include <utility>
 
 #include <clang-c/Index.h>
 
@@ -87,7 +89,7 @@ namespace cppast
         class cxstring
         {
         public:
-            cxstring(CXString str) noexcept
+            explicit cxstring(CXString str) noexcept
             : str_(str), c_str_(clang_getCString(str)), length_(std::strlen(c_str_))
             {
             }
