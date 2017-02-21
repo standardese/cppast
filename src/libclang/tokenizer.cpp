@@ -5,6 +5,7 @@
 #include "tokenizer.hpp"
 
 #include "libclang_visitor.hpp"
+#include "parse_error.hpp"
 
 using namespace cppast;
 
@@ -33,10 +34,12 @@ namespace
     class simple_tokenizer
     {
     public:
-        explicit simple_tokenizer(const CXTranslationUnit& tu, const CXSourceRange& range) : tu_(tu)
+        explicit simple_tokenizer(const CXTranslationUnit& tu, const CXSourceRange& range,
+                                  const CXCursor& cur)
+        : tu_(tu)
         {
             clang_tokenize(tu, range, &tokens_, &no_);
-            DEBUG_ASSERT(no_ >= 1u, detail::assert_handler{});
+            DEBUG_ASSERT(no_ >= 1u, detail::parse_error_handler{}, cur, "no tokens available");
         }
 
         ~simple_tokenizer()
@@ -63,12 +66,12 @@ namespace
         unsigned          no_;
     };
 
-    bool token_after_is(const CXTranslationUnit& tu, const CXFile& file,
+    bool token_after_is(const CXTranslationUnit& tu, const CXFile& file, const CXCursor& cur,
                         const CXSourceLocation& loc, const char* token_str)
     {
         auto loc_after = get_next_location(tu, file, loc);
 
-        simple_tokenizer tokenizer(tu, clang_getRange(loc, loc_after));
+        simple_tokenizer tokenizer(tu, clang_getRange(loc, loc_after), cur);
         detail::cxstring spelling(clang_getTokenSpelling(tu, tokenizer[0u]));
         return spelling == token_str;
     }
@@ -103,13 +106,13 @@ namespace
                 return CXChildVisit_Continue;
             });
 
-            if (!range_shrunk && !token_after_is(tu, file, end, ";"))
+            if (!range_shrunk && !token_after_is(tu, file, cur, end, ";"))
             {
                 // we do not have a body, but it is not a declaration either
                 do
                 {
                     end = get_next_location(tu, file, end);
-                } while (!token_after_is(tu, file, end, ";"));
+                } while (!token_after_is(tu, file, cur, end, ";"));
             }
             else if (clang_getCursorKind(cur) == CXCursor_CXXMethod)
                 // necessary for some reason
@@ -121,7 +124,7 @@ namespace
                  || clang_getCursorKind(cur) == CXCursor_ParmDecl)
         {
             if (clang_getCursorKind(cur) == CXCursor_TemplateTypeParameter
-                && token_after_is(tu, file, end, "("))
+                && token_after_is(tu, file, cur, end, "("))
             {
                 // if you have decltype as default argument for a type template parameter
                 // libclang doesn't include the parameters
@@ -130,9 +133,9 @@ namespace
                 for (auto paren_count = 1; paren_count != 0;
                      next             = get_next_location(tu, file, next))
                 {
-                    if (token_after_is(tu, file, next, "("))
+                    if (token_after_is(tu, file, cur, next, "("))
                         ++paren_count;
-                    else if (token_after_is(tu, file, next, ")"))
+                    else if (token_after_is(tu, file, cur, next, ")"))
                         --paren_count;
                     prev = next;
                 }
@@ -140,13 +143,13 @@ namespace
             }
         }
         else if (clang_getCursorKind(cur) == CXCursor_TypeAliasDecl
-                 && !token_after_is(tu, file, end, ";"))
+                 && !token_after_is(tu, file, cur, end, ";"))
         {
             // type alias tokens don't include everything
             do
             {
                 end = get_next_location(tu, file, end);
-            } while (!token_after_is(tu, file, end, ";"));
+            } while (!token_after_is(tu, file, cur, end, ";"));
             end = get_next_location(tu, file, end);
         }
 
@@ -159,7 +162,7 @@ detail::tokenizer::tokenizer(const detail::cxtranslation_unit& tu, const CXFile&
 {
     auto extent = get_extent(tu.get(), file, cur);
 
-    simple_tokenizer tokenizer(tu.get(), extent);
+    simple_tokenizer tokenizer(tu.get(), extent, cur);
     tokens_.reserve(tokenizer.size());
     for (auto i = 0u; i != tokenizer.size(); ++i)
         tokens_.emplace_back(tu, tokenizer[i]);

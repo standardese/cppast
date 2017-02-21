@@ -9,7 +9,9 @@
 
 #include "libclang_visitor.hpp"
 #include "raii_wrapper.hpp"
+#include "parse_error.hpp"
 #include "preprocessor.hpp"
+#include "tokenizer.hpp"
 
 using namespace cppast;
 
@@ -158,7 +160,7 @@ namespace
 }
 
 std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx, std::string path,
-                                                    const compile_config& c) const
+                                                    const compile_config& c) const try
 {
     DEBUG_ASSERT(std::strcmp(c.name(), "libclang") == 0, detail::precondition_error_handler{},
                  "config has mismatched type");
@@ -167,6 +169,7 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
     // preprocess + parse
     auto preprocessed = detail::preprocess(config, path.c_str(), logger());
     auto tu           = get_cxunit(pimpl_->index, config, path.c_str(), preprocessed.source);
+    auto file         = clang_getFile(tu.get(), path.c_str());
 
     // convert entity hierachies
     cpp_file::builder builder(path);
@@ -176,9 +179,12 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
     for (auto& e : preprocessed.entities)
         builder.add_child(std::move(e.entity));
 
-    detail::visit_tu(tu, path.c_str(), [&](const CXCursor&) {
-
-    });
+    detail::visit_tu(tu, path.c_str(), [&](const CXCursor&) {});
 
     return builder.finish(idx);
+}
+catch (detail::parse_error& ex)
+{
+    logger().log("libclang parser", ex.get_diagnostic());
+    return cpp_file::builder(path).finish(idx);
 }

@@ -11,6 +11,11 @@
 
 using namespace cppast;
 
+detail::cxstring detail::get_display_name(const CXCursor& cur) noexcept
+{
+    return cxstring(clang_getCursorDisplayName(cur));
+}
+
 namespace
 {
     std::mutex mtx;
@@ -19,7 +24,7 @@ namespace
 void detail::print_cursor_info(const CXCursor& cur) noexcept
 {
     std::lock_guard<std::mutex> lock(mtx);
-    std::printf("[debug] cursor '%s' (%s)\n", cxstring(clang_getCursorDisplayName(cur)).c_str(),
+    std::printf("[debug] cursor '%s' (%s)\n", get_display_name(cur).c_str(),
                 cxstring(clang_getCursorKindSpelling(cur.kind)).c_str());
 }
 
