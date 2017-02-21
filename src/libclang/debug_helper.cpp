@@ -5,12 +5,30 @@
 #include "debug_helper.hpp"
 
 #include <cstdio>
-#include <clang-c/Index.h>
+#include <mutex>
+
+#include "tokenizer.hpp"
 
 using namespace cppast;
 
+namespace
+{
+    std::mutex mtx;
+}
+
 void detail::print_cursor_info(const CXCursor& cur) noexcept
 {
+    std::lock_guard<std::mutex> lock(mtx);
     std::printf("[debug] cursor '%s' (%s)\n", cxstring(clang_getCursorDisplayName(cur)).c_str(),
                 cxstring(clang_getCursorKindSpelling(cur.kind)).c_str());
+}
+
+void detail::print_tokens(const detail::cxtranslation_unit& tu, const CXFile& file,
+                          const CXCursor& cur) noexcept
+{
+    std::lock_guard<std::mutex> lock(mtx);
+    detail::tokenizer           tokenizer(tu, file, cur);
+    for (auto& token : tokenizer)
+        std::printf("%s ", token.c_str());
+    std::puts("\n");
 }

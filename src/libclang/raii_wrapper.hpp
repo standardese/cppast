@@ -10,6 +10,7 @@
 #include <utility>
 
 #include <clang-c/Index.h>
+#include <type_safe/optional.hpp>
 
 #include <cppast/detail/assert.hpp>
 
@@ -89,22 +90,33 @@ namespace cppast
         class cxstring
         {
         public:
-            explicit cxstring(CXString str) noexcept
-            : str_(str), c_str_(clang_getCString(str)), length_(std::strlen(c_str_))
+            explicit cxstring(CXString str) noexcept : str_(string(str))
             {
             }
 
-            cxstring(const cxstring&) = delete;
-            cxstring& operator=(const cxstring&) = delete;
+            cxstring(cxstring&& other) noexcept : str_(other.str_)
+            {
+                other.str_.reset();
+            }
+
+            cxstring& operator=(cxstring&& other) noexcept
+            {
+                if (str_)
+                    clang_disposeString(str_.value().str);
+                str_ = other.str_;
+                other.str_.reset();
+                return *this;
+            }
 
             ~cxstring() noexcept
             {
-                clang_disposeString(str_);
+                if (str_)
+                    clang_disposeString(str_.value().str);
             }
 
             const char* c_str() const noexcept
             {
-                return c_str_;
+                return str_ ? str_.value().c_str : "";
             }
 
             char operator[](std::size_t i) const noexcept
@@ -114,13 +126,22 @@ namespace cppast
 
             std::size_t length() const noexcept
             {
-                return length_;
+                return str_ ? str_.value().length : 0u;
             }
 
         private:
-            CXString    str_;
-            const char* c_str_;
-            std::size_t length_;
+            struct string
+            {
+                CXString    str;
+                const char* c_str;
+                std::size_t length;
+
+                explicit string(CXString str)
+                : str(std::move(str)), c_str(clang_getCString(str)), length(std::strlen(c_str))
+                {
+                }
+            };
+            type_safe::optional<string> str_;
         };
 
         inline bool operator==(const cxstring& a, const cxstring& b) noexcept
