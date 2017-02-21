@@ -10,6 +10,7 @@
 #include "libclang_visitor.hpp"
 #include "raii_wrapper.hpp"
 #include "parse_error.hpp"
+#include "parse_functions.hpp"
 #include "preprocessor.hpp"
 #include "tokenizer.hpp"
 
@@ -179,7 +180,12 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
     for (auto& e : preprocessed.entities)
         builder.add_child(std::move(e.entity));
 
-    detail::visit_tu(tu, path.c_str(), [&](const CXCursor&) {});
+    detail::parse_context context{tu.get(), file, type_safe::ref(logger()), type_safe::ref(idx)};
+    detail::visit_tu(tu, path.c_str(), [&](const CXCursor& cur) {
+        auto entity = detail::parse_entity(context, cur);
+        if (entity)
+            builder.add_child(std::move(entity));
+    });
 
     return builder.finish(idx);
 }
