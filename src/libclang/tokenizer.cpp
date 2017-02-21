@@ -9,8 +9,8 @@
 
 using namespace cppast;
 
-detail::token::token(const detail::cxtranslation_unit& tu_unit, const CXToken& token)
-: value_(clang_getTokenSpelling(tu_unit.get(), token)), kind_(clang_getTokenKind(token))
+detail::token::token(const CXTranslationUnit& tu_unit, const CXToken& token)
+: value_(clang_getTokenSpelling(tu_unit, token)), kind_(clang_getTokenKind(token))
 {
 }
 
@@ -157,12 +157,11 @@ namespace
     }
 }
 
-detail::tokenizer::tokenizer(const detail::cxtranslation_unit& tu, const CXFile& file,
-                             const CXCursor& cur)
+detail::tokenizer::tokenizer(const CXTranslationUnit& tu, const CXFile& file, const CXCursor& cur)
 {
-    auto extent = get_extent(tu.get(), file, cur);
+    auto extent = get_extent(tu, file, cur);
 
-    simple_tokenizer tokenizer(tu.get(), extent, cur);
+    simple_tokenizer tokenizer(tu, extent, cur);
     tokens_.reserve(tokenizer.size());
     for (auto i = 0u; i != tokenizer.size(); ++i)
         tokens_.emplace_back(tu, tokenizer[i]);

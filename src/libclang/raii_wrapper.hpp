@@ -129,6 +129,11 @@ namespace cppast
                 return str_ ? str_.value().length : 0u;
             }
 
+            bool empty() const noexcept
+            {
+                return length() == 0u;
+            }
+
         private:
             struct string
             {

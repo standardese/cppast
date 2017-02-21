@@ -8,9 +8,14 @@
 
 using namespace cppast;
 
-cpp_entity_kind cpp_namespace::do_get_entity_kind() const noexcept
+cpp_entity_kind cpp_namespace::kind() noexcept
 {
     return cpp_entity_kind::namespace_t;
+}
+
+cpp_entity_kind cpp_namespace::do_get_entity_kind() const noexcept
+{
+    return kind();
 }
 
 bool detail::cpp_namespace_ref_predicate::operator()(const cpp_entity& e)

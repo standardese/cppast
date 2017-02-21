@@ -16,7 +16,7 @@ namespace cppast
         class token
         {
         public:
-            explicit token(const cxtranslation_unit& tu_unit, const CXToken& token);
+            explicit token(const CXTranslationUnit& tu_unit, const CXToken& token);
 
             const cxstring& value() const noexcept
             {
@@ -63,7 +63,7 @@ namespace cppast
         class tokenizer
         {
         public:
-            explicit tokenizer(const cxtranslation_unit& tu, const CXFile& file,
+            explicit tokenizer(const CXTranslationUnit& tu, const CXFile& file,
                                const CXCursor& cur);
 
             token_iterator begin() const noexcept

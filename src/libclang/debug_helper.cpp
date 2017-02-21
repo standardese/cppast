@@ -32,7 +32,7 @@ void detail::print_tokens(const detail::cxtranslation_unit& tu, const CXFile& fi
                           const CXCursor& cur) noexcept
 {
     std::lock_guard<std::mutex> lock(mtx);
-    detail::tokenizer           tokenizer(tu, file, cur);
+    detail::tokenizer           tokenizer(tu.get(), file, cur);
     for (auto& token : tokenizer)
         std::printf("%s ", token.c_str());
     std::puts("\n");

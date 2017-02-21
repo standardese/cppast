@@ -17,6 +17,8 @@ namespace cppast
                                 public cpp_entity_container<cpp_namespace, cpp_entity>
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// Builds a [cppast::cpp_namespace]().
         class builder
         {

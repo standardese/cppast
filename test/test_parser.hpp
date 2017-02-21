@@ -13,14 +13,14 @@
 #include <cppast/libclang_parser.hpp>
 #include <cppast/visitor.hpp>
 
-void write_file(const char* name, const char* code)
+inline void write_file(const char* name, const char* code)
 {
     std::ofstream file(name);
     file << code;
 }
 
-std::unique_ptr<cppast::cpp_file> parse(const cppast::cpp_entity_index& idx, const char* name,
-                                        const char* code)
+inline std::unique_ptr<cppast::cpp_file> parse(const cppast::cpp_entity_index& idx,
+                                               const char* name, const char* code)
 {
     using namespace cppast;
 
@@ -38,7 +38,10 @@ template <typename T, typename Func>
 unsigned test_visit(const cppast::cpp_file& file, Func f)
 {
     auto count = 0u;
-    cppast::visit(file, [&](const cppast::cpp_entity& e, cppast::visitor_info) {
+    cppast::visit(file, [&](const cppast::cpp_entity& e, cppast::visitor_info info) {
+        if (info == cppast::visitor_info::container_entity_exit)
+            return true; // already handled
+
         if (e.kind() == T::kind())
         {
             auto& obj = static_cast<const T&>(e);
@@ -50,6 +53,13 @@ unsigned test_visit(const cppast::cpp_file& file, Func f)
     });
 
     return count;
+}
+
+// number of direct children
+template <class Entity>
+unsigned count_children(const Entity& cont)
+{
+    return std::distance(cont.begin(), cont.end());
 }
 
 #endif // CPPAST_TEST_PARSER_HPP_INCLUDED
