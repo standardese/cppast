@@ -167,3 +167,102 @@ detail::tokenizer::tokenizer(const detail::cxtranslation_unit& tu, const CXFile&
     for (auto i = 0u; i != tokenizer.size(); ++i)
         tokens_.emplace_back(tu, tokenizer[i]);
 }
+
+void detail::skip(detail::token_stream& stream, const char* str)
+{
+    auto& token = stream.peek();
+    DEBUG_ASSERT(token == str, parse_error_handler{}, stream.cursor(),
+                 format("expected '", str, "', got '", token.c_str(), "'"));
+    stream.bump();
+}
+
+bool detail::skip_if(detail::token_stream& stream, const char* str)
+{
+    auto& token = stream.peek();
+    if (token != str)
+        return false;
+    stream.bump();
+    return true;
+}
+
+detail::token_iterator detail::find_closing_bracket(detail::token_stream stream)
+{
+    auto        template_bracket = false;
+    auto        open_bracket     = stream.peek().c_str();
+    const char* close_bracket    = nullptr;
+    if (skip_if(stream, "("))
+        close_bracket = ")";
+    else if (skip_if(stream, "{"))
+        close_bracket = "}";
+    else if (skip_if(stream, "["))
+        close_bracket = "]";
+    else if (skip_if(stream, "<"))
+    {
+        close_bracket    = "<";
+        template_bracket = true;
+    }
+    else
+        DEBUG_UNREACHABLE(parse_error_handler{}, stream.cursor(),
+                          format("expected a bracket, got '", stream.peek().c_str(), "'"));
+
+    auto bracket_count = 1;
+    auto paren_count   = 0; // internal nested parenthesis
+    while (bracket_count != 0)
+    {
+        auto& cur = stream.get().value();
+        if (paren_count == 0 && cur == open_bracket)
+            ++bracket_count;
+        else if (paren_count == 0 && cur == close_bracket)
+            --bracket_count;
+        else if (paren_count == 0 && template_bracket && cur == ">>")
+            // maximal munch
+            bracket_count -= 2u;
+        else if (cur == "(")
+            ++paren_count;
+        else if (cur == ")")
+            --paren_count;
+    }
+    stream.bump_back();
+    DEBUG_ASSERT(paren_count == 0 && stream.peek().value() == close_bracket, parse_error_handler{},
+                 stream.cursor(), "find_closing_bracket() internal parse error");
+    return stream.cur();
+}
+
+void detail::skip_brackets(detail::token_stream& stream)
+{
+    auto closing = find_closing_bracket(stream);
+    stream.set_cur(std::next(closing));
+}
+
+bool detail::skip_attribute(detail::token_stream& stream)
+{
+    if (skip_if(stream, "[") && stream.peek() == "[")
+    {
+        // C++11 attribute
+        // [[<attribute>]]
+        //  ^
+        skip_brackets(stream);
+        // [[<attribute>]]
+        //               ^
+        skip(stream, "]");
+        return true;
+    }
+    else if (skip_if(stream, "__attribute__"))
+    {
+        // GCC/clang attributes
+        // __attribute__(<attribute>)
+        //              ^
+        skip_brackets(stream);
+        return true;
+    }
+    else if (skip_if(stream, "__declspec"))
+    {
+        // MSVC declspec
+        // __declspec(<attribute>)
+        //           ^
+        skip_brackets(stream);
+        return true;
+    }
+
+    return false;
+}

@@ -6,6 +6,7 @@
 #define CPPAST_PARSE_ERROR_HPP_INCLUDED
 
 #include <stdexcept>
+#include <sstream>
 
 #include <debug_assert.hpp>
 #include <cppast/diagnostic.hpp>
@@ -45,11 +46,20 @@ namespace cppast
         struct parse_error_handler : debug_assert::set_level<1>, debug_assert::allow_exception
         {
             static void handle(const debug_assert::source_location&, const char*,
-                               const CXCursor& cur, const char* message)
+                               const CXCursor& cur, std::string message)
             {
-                throw parse_error(cur, message);
+                throw parse_error(cur, std::move(message));
             }
         };
+
+        template <typename... Args>
+        std::string format(Args&&... args)
+        {
+            std::ostringstream stream;
+            int                dummy[] = {(stream << std::forward<Args>(args), 0)...};
+            (void)dummy;
+            return stream.str();
+        }
     }
 } // namespace cppast::detail
 
