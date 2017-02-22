@@ -9,6 +9,14 @@
 
 namespace cppast
 {
+    enum class cpp_entity_kind;
+
+    /// \exclude
+    namespace detail
+    {
+        void check_entity_cast(const cpp_entity& e, cpp_entity_kind expected_kind);
+    } // namespace detail
+
     /// A basic reference to some kind of [cppast::cpp_entity]().
     template <typename T, typename Predicate>
     class basic_cpp_entity_ref
@@ -36,6 +44,9 @@ namespace cppast
         type_safe::optional_ref<const T> get(const cpp_entity_index& idx) const noexcept
         {
             auto entity = idx.lookup(target_);
+            if (!entity)
+                return type_safe::nullopt;
+            detail::check_entity_cast(entity.value(), T::kind());
             return static_cast<const T&>(entity.value());
         }
 

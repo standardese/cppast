@@ -50,3 +50,61 @@ namespace c
     });
     REQUIRE(count == 4u);
 }
+
+TEST_CASE("cpp_namespace_alias")
+{
+    auto code = R"(
+namespace ns1 {}
+namespace ns2 {}
+
+namespace a = ns1;
+namespace b = ns2;
+
+namespace outer
+{
+    namespace ns {}
+
+    namespace c = ns;
+    namespace d = ns1;
+}
+
+namespace e = outer::ns;
+namespace f = outer::c;
+)";
+
+    cpp_entity_index idx;
+    auto check_alias = [&](const cpp_namespace_alias& alias, const char* target_name,
+                           const char* target_full_name) {
+        auto& target = alias.target();
+        REQUIRE(target.name() == target_name);
+
+        auto entity = target.get(idx);
+        REQUIRE(entity);
+        REQUIRE(full_name(entity.value()) == target_full_name);
+    };
+
+    auto file  = parse(idx, "cpp_namespace_alias.cpp", code);
+    auto count = test_visit<cpp_namespace_alias>(*file, [&](const cpp_namespace_alias& alias) {
+        if (alias.name() == "a")
+            check_alias(alias, "ns1", "ns1");
+        else if (alias.name() == "b")
+            check_alias(alias, "ns2", "ns2");
+        else if (alias.name() == "c")
+        {
+            check_parent(alias, "outer", "outer::c");
+            check_alias(alias, "ns", "outer::ns");
+        }
+        else if (alias.name() == "d")
+        {
+            check_parent(alias, "outer", "outer::d");
+            check_alias(alias, "ns1", "ns1");
+        }
+        else if (alias.name() == "e")
+            check_alias(alias, "outer::ns", "outer::ns");
+        else if (alias.name() == "f")
+            check_alias(alias, "outer::c", "outer::ns");
+        else
+            REQUIRE(false);
+    });
+    REQUIRE(count == 6u);
+}

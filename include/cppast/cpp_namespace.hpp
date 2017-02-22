@@ -88,12 +88,16 @@ namespace cppast
     class cpp_namespace_alias final : public cpp_entity
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// \returns A newly created and registered namespace alias.
         static std::unique_ptr<cpp_namespace_alias> build(const cpp_entity_index& idx,
                                                           cpp_entity_id id, std::string name,
                                                           cpp_namespace_ref target);
 
         /// \returns The [cppast::cpp_namespace_ref]() to the aliased namespace.
+        /// \notes If the namespace aliases aliases another namespace alias,
+        /// the target entity will still be the namespace, not the alias.
         const cpp_namespace_ref& target() const noexcept
         {
             return target_;

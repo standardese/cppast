@@ -33,9 +33,14 @@ std::unique_ptr<cpp_namespace_alias> cpp_namespace_alias::build(const cpp_entity
     return ptr;
 }
 
-cpp_entity_kind cpp_namespace_alias::do_get_entity_kind() const noexcept
+cpp_entity_kind cpp_namespace_alias::kind() noexcept
 {
     return cpp_entity_kind::namespace_alias_t;
+}
+
+cpp_entity_kind cpp_namespace_alias::do_get_entity_kind() const noexcept
+{
+    return kind();
 }
 
 cpp_entity_kind cpp_using_directive::do_get_entity_kind() const noexcept

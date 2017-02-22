@@ -29,6 +29,9 @@ namespace cppast
         std::unique_ptr<cpp_entity> parse_cpp_namespace(const parse_context& context,
                                                         const CXCursor&      cur);
 
+        std::unique_ptr<cpp_entity> parse_cpp_namespace_alias(const parse_context& context,
+                                                              const CXCursor&      cur);
+
         std::unique_ptr<cpp_entity> parse_entity(const parse_context& context, const CXCursor& cur);
     }
 } // namespace cppast::detail

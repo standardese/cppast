@@ -15,15 +15,20 @@ namespace cppast
     {
         // visits direct children of an entity
         template <typename Func>
-        void visit_children(CXCursor parent, Func f)
+        void visit_children(CXCursor parent, Func f, bool recurse = false)
         {
-            clang_visitChildren(parent,
-                                [](CXCursor cur, CXCursor, CXClientData data) {
-                                    auto& actual_cb = *static_cast<Func*>(data);
-                                    actual_cb(cur);
-                                    return CXChildVisit_Continue;
-                                },
-                                &f);
+            auto continue_lambda = [](CXCursor cur, CXCursor, CXClientData data) {
+                auto& actual_cb = *static_cast<Func*>(data);
+                actual_cb(cur);
+                return CXChildVisit_Continue;
+            };
+            auto recurse_lambda = [](CXCursor cur, CXCursor, CXClientData data) {
+                auto& actual_cb = *static_cast<Func*>(data);
+                actual_cb(cur);
+                return CXChildVisit_Recurse;
+            };
+
+            clang_visitChildren(parent, recurse ? recurse_lambda : continue_lambda, &f);
         }
 
         // visits a translation unit
