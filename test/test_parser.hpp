@@ -62,4 +62,13 @@ unsigned count_children(const Entity& cont)
     return std::distance(cont.begin(), cont.end());
 }
 
+// checks the full name/parent
+inline void check_parent(const cppast::cpp_entity& e, const char* parent_name,
+                         const char* full_name)
+{
+    REQUIRE(e.parent());
+    REQUIRE(e.parent().value().name() == parent_name);
+    REQUIRE(cppast::full_name(e) == full_name);
+}
+
 #endif // CPPAST_TEST_PARSER_HPP_INCLUDED

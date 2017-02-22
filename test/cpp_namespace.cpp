@@ -41,8 +41,7 @@ namespace c
         }
         else if (ns.name() == "d")
         {
-            REQUIRE(ns.parent());
-            REQUIRE(ns.parent().value().name() == "c");
+            check_parent(ns, "c", "c::d");
             REQUIRE(!ns.is_inline());
             REQUIRE(no_children == 0u);
         }
