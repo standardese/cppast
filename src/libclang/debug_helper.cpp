@@ -16,6 +16,11 @@ detail::cxstring detail::get_display_name(const CXCursor& cur) noexcept
     return cxstring(clang_getCursorDisplayName(cur));
 }
 
+detail::cxstring detail::get_cursor_kind_spelling(const CXCursor& cur) noexcept
+{
+    return cxstring(clang_getCursorKindSpelling(clang_getCursorKind(cur)));
+}
+
 namespace
 {
     std::mutex mtx;

@@ -13,6 +13,8 @@ namespace cppast
     {
         cxstring get_display_name(const CXCursor& cur) noexcept;
 
+        cxstring get_cursor_kind_spelling(const CXCursor& cur) noexcept;
+
         void print_cursor_info(const CXCursor& cur) noexcept;
 
         void print_tokens(const cxtranslation_unit& tu, const CXFile& file,

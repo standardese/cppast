@@ -38,6 +38,10 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         break;
     }
 
+    auto msg = format("unhandled cursor of kind '", get_cursor_kind_spelling(cur).c_str(), "'");
+    context.logger->log("libclang parser",
+                        diagnostic{std::move(msg), make_location(cur), severity::warning});
+
     return nullptr;
 }
 catch (parse_error& ex)

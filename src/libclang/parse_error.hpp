@@ -17,6 +17,11 @@ namespace cppast
 {
     namespace detail
     {
+        inline source_location make_location(const CXCursor& cur)
+        {
+            return source_location::make(get_display_name(cur).c_str());
+        }
+
         // thrown on a parsing error
         // not meant to escape to the user
         class parse_error : public std::logic_error
@@ -28,7 +33,7 @@ namespace cppast
             }
 
             parse_error(const CXCursor& cur, std::string message)
-            : parse_error(source_location::make(get_display_name(cur).c_str()), std::move(message))
+            : parse_error(make_location(cur), std::move(message))
             {
             }
 
