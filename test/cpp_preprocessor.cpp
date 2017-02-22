@@ -10,18 +10,23 @@ using namespace cppast;
 
 TEST_CASE("cpp_macro_definition")
 {
-    auto code = R"(
+    auto        code    = R"(
 #include <iostream>
 #define G
 #define A
 #define B hello
+namespace ns {}
 #define C(x, y) x##_name
 #define D(...) __VA_ARGS__
 #define E() bar\
 baz
+namespace ns2
+{
 #define F () bar
 #undef G
+}
 )";
+    const char* order[] = {"A", "B", "ns", "C", "D", "E", "ns2", "F"};
 
     auto check_macro = [](const cpp_macro_definition& macro, const char* replacement,
                           const char* args) {
@@ -56,9 +61,18 @@ baz
             REQUIRE(false);
     });
     REQUIRE(count == 6u);
+
+    auto index = 0u;
+    for (auto& child : *file)
+    {
+        if (child.kind() == cpp_entity_kind::include_directive_t)
+            continue;
+        REQUIRE(child.name() == order[index++]);
+    }
 }
 
 // requires clang 4.0, currently not available for testing
+// TODO:
 #if 0
 TEST_CASE("cpp_include_directive")
 {

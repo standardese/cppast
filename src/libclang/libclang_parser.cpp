@@ -158,6 +158,15 @@ namespace
 
         return tu;
     }
+
+    unsigned get_line_no(const CXCursor& cursor)
+    {
+        auto loc = clang_getCursorLocation(cursor);
+
+        unsigned line;
+        clang_getPresumedLocation(loc, nullptr, &line, nullptr);
+        return line;
+    }
 }
 
 std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx, std::string path,
@@ -172,20 +181,25 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
     auto tu           = get_cxunit(pimpl_->index, config, path.c_str(), preprocessed.source);
     auto file         = clang_getFile(tu.get(), path.c_str());
 
-    // convert entity hierachies
     cpp_file::builder builder(path);
+    auto              preprocessed_iter = preprocessed.entities.begin();
 
-    // add all preprocessor entities up-front
-    // TODO: add them in the correct place
-    for (auto& e : preprocessed.entities)
-        builder.add_child(std::move(e.entity));
-
+    // convert entity hierachies
     detail::parse_context context{tu.get(), file, type_safe::ref(logger()), type_safe::ref(idx)};
     detail::visit_tu(tu, path.c_str(), [&](const CXCursor& cur) {
+        // add macro if needed
+        for (auto line = get_line_no(cur);
+             preprocessed_iter != preprocessed.entities.end() && preprocessed_iter->line <= line;
+             ++preprocessed_iter)
+            builder.add_child(std::move(preprocessed_iter->entity));
+
         auto entity = detail::parse_entity(context, cur);
         if (entity)
             builder.add_child(std::move(entity));
     });
+
+    for (; preprocessed_iter != preprocessed.entities.end(); ++preprocessed_iter)
+        builder.add_child(std::move(preprocessed_iter->entity));
 
     return builder.finish(idx);
 }
