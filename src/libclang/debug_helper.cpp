@@ -21,6 +21,11 @@ detail::cxstring detail::get_cursor_kind_spelling(const CXCursor& cur) noexcept
     return cxstring(clang_getCursorKindSpelling(clang_getCursorKind(cur)));
 }
 
+detail::cxstring detail::get_type_kind_spelling(const CXType& type) noexcept
+{
+    return cxstring(clang_getTypeKindSpelling(type.kind));
+}
+
 namespace
 {
     std::mutex mtx;

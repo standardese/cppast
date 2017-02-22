@@ -22,6 +22,11 @@ namespace cppast
             return source_location::make(get_display_name(cur).c_str());
         }
 
+        inline source_location make_location(const CXType& type)
+        {
+            return source_location::make(cxstring(clang_getTypeSpelling(type)).c_str());
+        }
+
         // thrown on a parsing error
         // not meant to escape to the user
         class parse_error : public std::logic_error
@@ -34,6 +39,11 @@ namespace cppast
 
             parse_error(const CXCursor& cur, std::string message)
             : parse_error(make_location(cur), std::move(message))
+            {
+            }
+
+            parse_error(const CXType& type, std::string message)
+            : parse_error(make_location(type), std::move(message))
             {
             }
 
@@ -54,6 +64,12 @@ namespace cppast
                                const CXCursor& cur, std::string message)
             {
                 throw parse_error(cur, std::move(message));
+            }
+
+            static void handle(const debug_assert::source_location&, const char*,
+                               const CXType& type, std::string message)
+            {
+                throw parse_error(type, std::move(message));
             }
         };
 

@@ -8,6 +8,11 @@
 
 using namespace cppast;
 
+cpp_entity_kind cpp_type_alias::kind() noexcept
+{
+    return cpp_entity_kind::type_alias_t;
+}
+
 std::unique_ptr<cpp_type_alias> cpp_type_alias::build(const cpp_entity_index& idx, cpp_entity_id id,
                                                       std::string               name,
                                                       std::unique_ptr<cpp_type> type)
@@ -25,5 +30,5 @@ std::unique_ptr<cpp_type_alias> cpp_type_alias::build(std::string               
 
 cpp_entity_kind cpp_type_alias::do_get_entity_kind() const noexcept
 {
-    return cpp_entity_kind::type_alias_t;
+    return kind();
 }

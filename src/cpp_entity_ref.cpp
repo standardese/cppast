@@ -8,7 +8,7 @@
 
 using namespace cppast;
 
-void detail::check_entity_cast(const cpp_entity& e, cpp_entity_kind expected_kind)
+void detail::check_entity_cast_impl(const cpp_entity& e, cpp_entity_kind expected_kind)
 {
     DEBUG_ASSERT(e.kind() == expected_kind, detail::precondition_error_handler{},
                  "mismatched entity kind");

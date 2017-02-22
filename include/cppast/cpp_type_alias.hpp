@@ -15,6 +15,8 @@ namespace cppast
     class cpp_type_alias final : public cpp_entity
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// \returns A newly created and registered type alias.
         static std::unique_ptr<cpp_type_alias> build(const cpp_entity_index& idx, cpp_entity_id id,
                                                      std::string               name,

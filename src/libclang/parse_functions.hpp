@@ -14,6 +14,8 @@
 
 namespace cppast
 {
+    class cpp_type;
+
     namespace detail
     {
         cpp_entity_id get_entity_id(const CXCursor& cur);
@@ -25,6 +27,8 @@ namespace cppast
             type_safe::object_ref<const diagnostic_logger> logger;
             type_safe::object_ref<const cpp_entity_index>  idx;
         };
+
+        std::unique_ptr<cpp_type> parse_type(const parse_context& context, const CXType& type);
 
         // parse_entity() dispatches on the cursor type
         // it calls one of the other parse functions defined elsewhere
@@ -42,6 +46,9 @@ namespace cppast
                                                               const CXCursor&      cur);
         std::unique_ptr<cpp_entity> parse_cpp_using_declaration(const parse_context& context,
                                                                 const CXCursor&      cur);
+
+        std::unique_ptr<cpp_entity> parse_cpp_type_alias(const parse_context& context,
+                                                         const CXCursor&      cur);
 
         std::unique_ptr<cpp_entity> parse_entity(const parse_context& context, const CXCursor& cur);
     }

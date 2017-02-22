@@ -14,7 +14,18 @@ namespace cppast
     /// \exclude
     namespace detail
     {
-        void check_entity_cast(const cpp_entity& e, cpp_entity_kind expected_kind);
+        void check_entity_cast_impl(const cpp_entity& e, cpp_entity_kind expected_kind);
+
+        template <typename T>
+        void check_entity_cast(const cpp_entity& e)
+        {
+            check_entity_cast_impl(e, T::kind());
+        }
+
+        template <>
+        inline void check_entity_cast<cpp_entity>(const cpp_entity&)
+        {
+        }
     } // namespace detail
 
     /// A basic reference to some kind of [cppast::cpp_entity]().
@@ -46,7 +57,7 @@ namespace cppast
             auto entity = idx.lookup(target_);
             if (!entity)
                 return type_safe::nullopt;
-            detail::check_entity_cast(entity.value(), T::kind());
+            detail::check_entity_cast<T>(entity.value());
             return static_cast<const T&>(entity.value());
         }
 

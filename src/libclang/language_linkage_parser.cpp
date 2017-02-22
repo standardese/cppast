@@ -11,14 +11,6 @@
 
 using namespace cppast;
 
-namespace
-{
-    cpp_language_linkage::builder make_ll_builder(const detail::parse_context& context,
-                                                  const CXCursor&              cur)
-    {
-    }
-}
-
 std::unique_ptr<cpp_entity> detail::try_parse_cpp_language_linkage(const parse_context& context,
                                                                    const CXCursor&      cur)
 {

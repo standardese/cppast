@@ -77,7 +77,7 @@ namespace cppast
     {
     public:
         /// \returns A newly created unexposed type.
-        std::unique_ptr<cpp_unexposed_type> build(std::string name)
+        static std::unique_ptr<cpp_unexposed_type> build(std::string name)
         {
             return std::unique_ptr<cpp_unexposed_type>(new cpp_unexposed_type(std::move(name)));
         }
