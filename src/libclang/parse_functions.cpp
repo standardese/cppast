@@ -19,6 +19,12 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
     auto kind = clang_getCursorKind(cur);
     switch (kind)
     {
+    case CXCursor_UnexposedDecl:
+        // go through all the try_parse_XXX functions
+        if (auto entity = try_parse_cpp_language_linkage(context, cur))
+            return std::move(entity);
+        break;
+
     case CXCursor_Namespace:
         return parse_cpp_namespace(context, cur);
     case CXCursor_NamespaceAlias:

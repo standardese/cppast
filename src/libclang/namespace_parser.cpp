@@ -5,7 +5,6 @@
 #include "parse_functions.hpp"
 
 #include <cppast/cpp_namespace.hpp>
-#include <clang-c/Index.h>
 
 #include "libclang_visitor.hpp"
 

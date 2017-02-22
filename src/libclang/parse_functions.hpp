@@ -26,6 +26,14 @@ namespace cppast
             type_safe::object_ref<const cpp_entity_index>  idx;
         };
 
+        // parse_entity() dispatches on the cursor type
+        // it calls one of the other parse functions defined elsewhere
+        // try_parse_XXX are not exposed entities
+        // they are called on an unexposed cursor and see whether they match
+
+        std::unique_ptr<cpp_entity> try_parse_cpp_language_linkage(const parse_context& context,
+                                                                   const CXCursor&      cur);
+
         std::unique_ptr<cpp_entity> parse_cpp_namespace(const parse_context& context,
                                                         const CXCursor&      cur);
         std::unique_ptr<cpp_entity> parse_cpp_namespace_alias(const parse_context& context,

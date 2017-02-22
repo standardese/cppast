@@ -15,6 +15,8 @@ namespace cppast
                                        public cpp_entity_container<cpp_language_linkage, cpp_entity>
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// Builds a [cppast::cpp_language_linkage]().
         class builder
         {

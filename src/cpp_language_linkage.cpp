@@ -8,6 +8,11 @@
 
 using namespace cppast;
 
+cpp_entity_kind cpp_language_linkage::kind() noexcept
+{
+    return cpp_entity_kind::language_linkage_t;
+}
+
 bool cpp_language_linkage::is_block() const noexcept
 {
     DEBUG_ASSERT(begin() != end(), detail::assert_handler{}, "empty container");
@@ -16,5 +21,5 @@ bool cpp_language_linkage::is_block() const noexcept
 
 cpp_entity_kind cpp_language_linkage::do_get_entity_kind() const noexcept
 {
-    return cpp_entity_kind::language_linkage_t;
+    return kind();
 }
