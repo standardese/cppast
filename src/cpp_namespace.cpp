@@ -43,12 +43,22 @@ cpp_entity_kind cpp_namespace_alias::do_get_entity_kind() const noexcept
     return kind();
 }
 
-cpp_entity_kind cpp_using_directive::do_get_entity_kind() const noexcept
+cpp_entity_kind cpp_using_directive::kind() noexcept
 {
     return cpp_entity_kind::using_directive_t;
 }
 
-cpp_entity_kind cpp_using_declaration::do_get_entity_kind() const noexcept
+cpp_entity_kind cpp_using_directive::do_get_entity_kind() const noexcept
+{
+    return kind();
+}
+
+cpp_entity_kind cpp_using_declaration::kind() noexcept
 {
     return cpp_entity_kind::using_declaration_t;
+}
+
+cpp_entity_kind cpp_using_declaration::do_get_entity_kind() const noexcept
+{
+    return kind();
 }

@@ -23,6 +23,10 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         return parse_cpp_namespace(context, cur);
     case CXCursor_NamespaceAlias:
         return parse_cpp_namespace_alias(context, cur);
+    case CXCursor_UsingDirective:
+        return parse_cpp_using_directive(context, cur);
+    case CXCursor_UsingDeclaration:
+        return parse_cpp_using_declaration(context, cur);
 
     default:
         break;

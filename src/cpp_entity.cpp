@@ -8,6 +8,9 @@ using namespace cppast;
 
 std::string cppast::full_name(const cpp_entity& e)
 {
+    if (e.name().empty())
+        return "";
+
     std::string scopes;
 
     for (auto cur = e.parent(); cur; cur = cur.value().parent())

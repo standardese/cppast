@@ -108,3 +108,61 @@ namespace f = outer::c;
     });
     REQUIRE(count == 6u);
 }
+
+TEST_CASE("cpp_using_directive")
+{
+    auto code = R"(
+namespace ns1 {}
+namespace ns2 {}
+
+using namespace ns1;
+using namespace ns2;
+
+namespace outer
+{
+    namespace ns {}
+
+    using namespace ns;
+    using namespace ::ns1;
+}
+
+using namespace outer::ns;
+)";
+
+    cpp_entity_index idx;
+    auto check_directive = [&](const cpp_using_directive& directive, const char* target_full_name) {
+        auto target = directive.target();
+
+        auto entity = target.get(idx);
+        REQUIRE(entity);
+        REQUIRE(full_name(entity.value()) == target_full_name);
+    };
+
+    auto file  = parse(idx, "cpp_using_directive.cpp", code);
+    auto count = test_visit<cpp_using_directive>(*file, [&](const cpp_using_directive& directive) {
+        if (directive.target().name() == "ns1")
+            check_directive(directive, "ns1");
+        else if (directive.target().name() == "ns2")
+            check_directive(directive, "ns2");
+        else if (directive.target().name() == "ns")
+        {
+            check_parent(directive, "outer", "");
+            check_directive(directive, "outer::ns");
+        }
+        else if (directive.target().name() == "::ns1")
+        {
+            check_parent(directive, "outer", "");
+            check_directive(directive, "ns1");
+        }
+        else if (directive.target().name() == "outer::ns")
+            check_directive(directive, "outer::ns");
+        else
+            REQUIRE(false);
+    });
+    REQUIRE(count == 5u);
+}
+
+TEST_CASE("cpp_using_declaration")
+{
+    // TODO: write test when actual entities can be parsed
+}

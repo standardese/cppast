@@ -117,65 +117,69 @@ namespace cppast
     /// A [cppast::cpp_entity]() modelling a using directive.
     ///
     /// A using directive is `using namespace std`, for example.
+    /// \notes It does not have a name.
     class cpp_using_directive final : public cpp_entity
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// \returns A newly created using directive.
         /// \notes It is not meant to be registered at the [cppast::cpp_entity_index](),
         /// as nothing can refer to it.
-        static std::unique_ptr<cpp_using_directive> build(const cpp_namespace_ref& target)
+        static std::unique_ptr<cpp_using_directive> build(cpp_namespace_ref target)
         {
-            return std::unique_ptr<cpp_using_directive>(new cpp_using_directive(target));
+            return std::unique_ptr<cpp_using_directive>(new cpp_using_directive(std::move(target)));
         }
 
         /// \returns The [cppast::cpp_namespace_ref]() that is being used.
-        /// \notes The name of the reference is the same as the name of this entity.
-        cpp_namespace_ref target() const
+        const cpp_namespace_ref& target() const
         {
-            return {target_, name()};
+            return target_;
         }
 
     private:
-        cpp_using_directive(const cpp_namespace_ref& target)
-        : cpp_entity(target.name()), target_(target.id())
+        cpp_using_directive(cpp_namespace_ref target) : cpp_entity(""), target_(std::move(target))
         {
         }
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
-        cpp_entity_id target_;
+        cpp_namespace_ref target_;
     };
 
     /// A [cppast::cpp_entity]() modelling a using declaration.
     ///
     /// A using declaration is `using std::vector`, for example.
+    /// \notes It does not have a name.
     class cpp_using_declaration final : public cpp_entity
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// \returns A newly created using declaration.
         /// \notes It is not meant to be registered at the [cppast::cpp_entity_index](),
         /// as nothing can refer to it.
-        static std::unique_ptr<cpp_using_declaration> build(const cpp_entity_ref& target)
+        static std::unique_ptr<cpp_using_declaration> build(cpp_entity_ref target)
         {
-            return std::unique_ptr<cpp_using_declaration>(new cpp_using_declaration(target));
+            return std::unique_ptr<cpp_using_declaration>(
+                new cpp_using_declaration(std::move(target)));
         }
 
         /// \returns The [cppast::cpp_entity_ref]() that is being used.
         /// \notes The name of the reference is the same as the name of this entity.
-        cpp_entity_ref target() const
+        const cpp_entity_ref& target() const noexcept
         {
-            return {target_, name()};
+            return target_;
         }
 
     private:
-        cpp_using_declaration(const cpp_entity_ref& target)
-        : cpp_entity(target.name()), target_(target.id())
+        cpp_using_declaration(cpp_entity_ref target) : cpp_entity(""), target_(std::move(target))
         {
         }
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
-        cpp_entity_id target_;
+        cpp_entity_ref target_;
     };
 } // namespace cppast
 
