@@ -20,9 +20,10 @@ namespace
         detail::tokenizer    tokenizer(context.tu, context.file, cur);
         detail::token_stream stream(tokenizer, cur);
 
-        // <identifier>,
-        // or: <identifier> = <expression>,
+        // <identifier> [<attribute>],
+        // or: <identifier> [<attribute>] = <expression>,
         auto& name = stream.get().value();
+        detail::skip_attribute(stream);
 
         std::unique_ptr<cpp_expression> value;
         if (detail::skip_if(stream, "="))
@@ -45,10 +46,12 @@ namespace
         detail::tokenizer    tokenizer(context.tu, context.file, cur);
         detail::token_stream stream(tokenizer, cur);
 
-        // enum [class] name [: type] {
+        // [<attribute>] enum [class] [<attribute>] name [: type] {
+        detail::skip_attribute(stream);
         detail::skip(stream, "enum");
-        auto  scoped = detail::skip_if(stream, "class");
-        auto& name   = stream.get().value();
+        auto scoped = detail::skip_if(stream, "class");
+        detail::skip_attribute(stream);
+        auto& name = stream.get().value();
 
         std::unique_ptr<cpp_type> type;
         if (detail::skip_if(stream, ":"))
