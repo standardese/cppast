@@ -35,6 +35,7 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         return parse_cpp_using_declaration(context, cur);
 
     case CXCursor_TypeAliasDecl:
+    case CXCursor_TypedefDecl:
         return parse_cpp_type_alias(context, cur);
 
     default:

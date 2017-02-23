@@ -414,16 +414,10 @@ catch (parse_error& ex)
 std::unique_ptr<cpp_entity> detail::parse_cpp_type_alias(const detail::parse_context& context,
                                                          const CXCursor&              cur)
 {
-    DEBUG_ASSERT(cur.kind == CXCursor_TypeAliasDecl, detail::assert_handler{});
+    DEBUG_ASSERT(cur.kind == CXCursor_TypeAliasDecl || cur.kind == CXCursor_TypedefDecl,
+                 detail::assert_handler{});
 
-    detail::tokenizer    tokenizer(context.tu, context.file, cur);
-    detail::token_stream stream(tokenizer, cur);
-
-    // using <identifier> = ...
-    detail::skip(stream, "using");
-    auto& name = stream.get().value();
-    detail::skip(stream, "=");
-
+    auto name = cxstring(clang_getCursorSpelling(cur));
     auto type = parse_type(context, clang_getTypedefDeclUnderlyingType(cur));
     if (!type)
         return nullptr;

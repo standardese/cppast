@@ -154,7 +154,10 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
 // other test cases don't need that anymore
 TEST_CASE("cpp_type_alias")
 {
-    auto code = R"(
+    const char* code = nullptr;
+    SECTION("using")
+    {
+        code = R"(
 // basic
 using a = int;
 using b = const long double volatile;
@@ -192,6 +195,48 @@ using r = void(foo::*)(int,...) const &;
 // member data pointers
 using s = int(foo::*);
 )";
+    }
+    SECTION("typedef")
+    {
+        code = R"(
+// basic
+typedef int a;
+typedef const long double volatile b;
+
+// pointers
+typedef int* c;
+typedef const unsigned int* d;
+typedef unsigned const * volatile e;
+
+// references
+typedef int& f;
+typedef const int&& g;
+
+// user-defined types
+typedef c h;
+typedef const d i;
+typedef e* j;
+
+// arrays
+typedef int k[42];
+typedef float* l[];
+typedef char m[3 * 2 + 4 ? 42 : 43];
+
+// function pointers
+typedef void(*n)(int);
+typedef char*(&o)(const int&,...);
+typedef n(*p)(int, o);
+
+struct foo {};
+
+// member function pointers
+typedef void(foo::*q)(int);
+typedef void(foo::*r)(int,...) const &;
+
+// member data pointers
+typedef int(foo::*s);
+)";
+    }
 
     auto add_cv = [](std::unique_ptr<cpp_type> type, cpp_cv cv) {
         return cpp_cv_qualified_type::build(std::move(type), cv);
