@@ -38,6 +38,9 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
     case CXCursor_TypedefDecl:
         return parse_cpp_type_alias(context, cur);
 
+    case CXCursor_EnumDecl:
+        return parse_cpp_enum(context, cur);
+
     default:
         break;
     }

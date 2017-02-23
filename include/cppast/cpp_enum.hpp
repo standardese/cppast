@@ -21,6 +21,8 @@ namespace cppast
     class cpp_enum_value final : public cpp_entity
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// \returns A newly created and registered enum value.
         /// \notes `value` may be `nullptr`, in which case the enum has an implicit value.
         static std::unique_ptr<cpp_enum_value> build(
@@ -49,6 +51,8 @@ namespace cppast
     class cpp_enum final : public cpp_entity, public cpp_entity_container<cpp_enum, cpp_enum_value>
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// Builds a [cppast::cpp_enum]().
         class builder
         {

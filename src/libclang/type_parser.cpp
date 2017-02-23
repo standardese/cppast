@@ -399,16 +399,11 @@ namespace
 }
 
 std::unique_ptr<cpp_type> detail::parse_type(const detail::parse_context& context,
-                                             const CXType&                type) try
+                                             const CXType&                type)
 {
     auto result = parse_type_impl(context, type);
     DEBUG_ASSERT(result && is_valid(*result), detail::parse_error_handler{}, type, "invalid type");
     return std::move(result);
-}
-catch (parse_error& ex)
-{
-    context.logger->log("libclang parser", ex.get_diagnostic());
-    return nullptr;
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_type_alias(const detail::parse_context& context,
@@ -419,7 +414,5 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_type_alias(const detail::parse_con
 
     auto name = cxstring(clang_getCursorSpelling(cur));
     auto type = parse_type(context, clang_getTypedefDeclUnderlyingType(cur));
-    if (!type)
-        return nullptr;
     return cpp_type_alias::build(*context.idx, get_entity_id(cur), name.c_str(), std::move(type));
 }

@@ -14,6 +14,7 @@
 
 namespace cppast
 {
+    class cpp_expression;
     class cpp_type;
 
     namespace detail
@@ -29,6 +30,9 @@ namespace cppast
         };
 
         std::unique_ptr<cpp_type> parse_type(const parse_context& context, const CXType& type);
+
+        std::unique_ptr<cpp_expression> parse_expression(const parse_context& context,
+                                                         const CXCursor&      cur);
 
         // parse_entity() dispatches on the cursor type
         // it calls one of the other parse functions defined elsewhere
@@ -49,6 +53,9 @@ namespace cppast
 
         std::unique_ptr<cpp_entity> parse_cpp_type_alias(const parse_context& context,
                                                          const CXCursor&      cur);
+
+        std::unique_ptr<cpp_entity> parse_cpp_enum(const parse_context& context,
+                                                   const CXCursor&      cur);
 
         std::unique_ptr<cpp_entity> parse_entity(const parse_context& context, const CXCursor& cur);
     }

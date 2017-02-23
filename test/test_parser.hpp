@@ -10,6 +10,7 @@
 #include <catch.hpp>
 
 #include <cppast/cpp_entity_kind.hpp>
+#include <cppast/cpp_type.hpp>
 #include <cppast/libclang_parser.hpp>
 #include <cppast/visitor.hpp>
 
@@ -70,5 +71,8 @@ inline void check_parent(const cppast::cpp_entity& e, const char* parent_name,
     REQUIRE(e.parent().value().name() == parent_name);
     REQUIRE(cppast::full_name(e) == full_name);
 }
+
+bool equal_types(const cppast::cpp_entity_index& idx, const cppast::cpp_type& parsed,
+                 const cppast::cpp_type& synthesized);
 
 #endif // CPPAST_TEST_PARSER_HPP_INCLUDED

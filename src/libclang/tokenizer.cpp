@@ -152,6 +152,9 @@ namespace
             } while (!token_after_is(tu, file, cur, end, ";"));
             end = get_next_location(tu, file, end);
         }
+        else if (clang_isExpression(clang_getCursorKind(cur)))
+            // need to shrink range by one
+            end = get_next_location(tu, file, end, -1);
 
         return clang_getRange(begin, end);
     }

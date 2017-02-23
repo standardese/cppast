@@ -8,6 +8,11 @@
 
 using namespace cppast;
 
+cpp_entity_kind cpp_enum_value::kind() noexcept
+{
+    return cpp_entity_kind::enum_value_t;
+}
+
 std::unique_ptr<cpp_enum_value> cpp_enum_value::build(const cpp_entity_index& idx, cpp_entity_id id,
                                                       std::string                     name,
                                                       std::unique_ptr<cpp_expression> value)
@@ -20,12 +25,17 @@ std::unique_ptr<cpp_enum_value> cpp_enum_value::build(const cpp_entity_index& id
 
 cpp_entity_kind cpp_enum_value::do_get_entity_kind() const noexcept
 {
-    return cpp_entity_kind::enum_value_t;
+    return kind();
+}
+
+cpp_entity_kind cpp_enum::kind() noexcept
+{
+    return cpp_entity_kind::enum_t;
 }
 
 cpp_entity_kind cpp_enum::do_get_entity_kind() const noexcept
 {
-    return cpp_entity_kind::enum_t;
+    return kind();
 }
 
 type_safe::optional<std::string> cpp_enum::do_get_scope_name() const
