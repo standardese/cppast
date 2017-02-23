@@ -5,6 +5,7 @@
 #include <cppast/cpp_type_alias.hpp>
 
 #include <cppast/cpp_array_type.hpp>
+#include <cppast/cpp_function_type.hpp>
 
 #include "test_parser.hpp"
 
@@ -78,9 +79,29 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
             break;
     }
 
-    // TODO
     case cpp_type_kind::function:
-        break;
+    {
+        auto& func_a = static_cast<const cpp_function_type&>(parsed);
+        auto& func_b = static_cast<const cpp_function_type&>(synthesized);
+
+        if (!equal_types(idx, func_a.return_type(), func_b.return_type()))
+            return false;
+        else if (func_a.is_variadic() != func_b.is_variadic())
+            return false;
+
+        auto iter_a = func_a.parameter_types().begin();
+        auto iter_b = func_a.parameter_types().begin();
+        while (iter_a != func_a.parameter_types().end() && iter_b != func_b.parameter_types().end())
+        {
+            if (!equal_types(idx, *iter_a, *iter_b))
+                return false;
+            ++iter_a;
+            ++iter_b;
+        }
+        return iter_a == func_a.parameter_types().end() && iter_b == func_b.parameter_types().end();
+    }
+
+    // TODO
     case cpp_type_kind::member_function:
         break;
     case cpp_type_kind::member_object:
@@ -127,6 +148,11 @@ using j = e*;
 using k = int[42];
 using l = float*[];
 using m = char[3 * 2 + 4 ? 42 : 43];
+
+// function pointers
+using n = void(*)(int);
+using o = char*(&)(int&,...);
+using p = n(*)(int, o);
 )";
 
     auto add_cv = [](std::unique_ptr<cpp_type> type, cpp_cv cv) {
@@ -220,8 +246,38 @@ using m = char[3 * 2 + 4 ? 42 : 43];
                 cpp_array_type::build(cpp_builtin_type::build("char"), make_size("42", true));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
+        else if (alias.name() == "n")
+        {
+            cpp_function_type::builder builder(cpp_builtin_type::build("void"));
+            builder.add_parameter(cpp_builtin_type::build("int"));
+            auto type = cpp_pointer_type::build(builder.finish());
+
+            REQUIRE(equal_types(idx, alias.underlying_type(), *type));
+        }
+        else if (alias.name() == "o")
+        {
+            cpp_function_type::builder builder(
+                cpp_pointer_type::build(cpp_builtin_type::build("char")));
+            builder.add_parameter(
+                cpp_reference_type::build(cpp_builtin_type::build("int"), cpp_ref_lvalue));
+            builder.is_variadic();
+            auto type = cpp_reference_type::build(builder.finish(), cpp_ref_lvalue);
+
+            REQUIRE(equal_types(idx, alias.underlying_type(), *type));
+        }
+        else if (alias.name() == "p")
+        {
+            cpp_function_type::builder builder(
+                cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "n")));
+            builder.add_parameter(cpp_builtin_type::build("int"));
+            builder.add_parameter(
+                cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "o")));
+            auto type = cpp_pointer_type::build(builder.finish());
+
+            REQUIRE(equal_types(idx, alias.underlying_type(), *type));
+        }
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 13u);
+    REQUIRE(count == 16u);
 }

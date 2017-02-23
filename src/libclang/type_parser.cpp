@@ -9,6 +9,7 @@
 #include <cppast/cpp_function_type.hpp>
 #include <cppast/cpp_type.hpp>
 #include <cppast/cpp_type_alias.hpp>
+#include <clang-c/Index.h>
 
 using namespace cppast;
 
@@ -206,6 +207,28 @@ namespace
                                                                size_expr.rend()));
     }
 
+    std::unique_ptr<cpp_type> try_parse_function_type(const detail::parse_context& context,
+                                                      const CXType&                type)
+    {
+        auto result = clang_getResultType(type);
+        if (result.kind == CXType_Invalid)
+            // not a function type
+            return nullptr;
+
+        cpp_function_type::builder builder(parse_type(context, result));
+
+        auto no_args = clang_getNumArgTypes(type);
+        DEBUG_ASSERT(no_args >= 0, detail::parse_error_handler{}, type,
+                     "invalid number of arguments");
+        for (auto i = 0u; i != unsigned(no_args); ++i)
+            builder.add_parameter(detail::parse_type(context, clang_getArgType(type, i)));
+
+        if (clang_isFunctionTypeVariadic(type))
+            builder.is_variadic();
+
+        return builder.finish();
+    }
+
     std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context,
                                               const CXType&                type)
     {
@@ -231,6 +254,10 @@ namespace
         }
         // fallthrough
         case CXType_Unexposed:
+            if (auto ftype = try_parse_function_type(context, type))
+                // guess what: after you've called clang_getPointeeType() on a function pointer
+                // you'll get an unexposed type
+                return ftype;
             return cpp_unexposed_type::build(get_type_spelling(type).c_str());
 
         case CXType_Void:
@@ -273,7 +300,7 @@ namespace
 
         case CXType_Pointer:
         {
-            auto pointee = parse_type_impl(context, clang_getPointeeType(type));
+            auto pointee = parse_type(context, clang_getPointeeType(type));
             auto pointer = cpp_pointer_type::build(std::move(pointee));
 
             auto spelling = get_type_spelling(type);
@@ -283,7 +310,7 @@ namespace
         case CXType_LValueReference:
         case CXType_RValueReference:
         {
-            auto referee = parse_type_impl(context, clang_getPointeeType(type));
+            auto referee = parse_type(context, clang_getPointeeType(type));
             return cpp_reference_type::build(std::move(referee), get_reference_kind(type));
         }
 
@@ -293,17 +320,16 @@ namespace
         case CXType_ConstantArray:
         {
             auto size       = parse_array_size(type);
-            auto value_type = parse_type_impl(context, clang_getArrayElementType(type));
+            auto value_type = parse_type(context, clang_getArrayElementType(type));
             return cpp_array_type::build(std::move(value_type), std::move(size));
         }
 
+        case CXType_FunctionNoProto:
+        case CXType_FunctionProto:
+            return try_parse_function_type(context, type);
+
         // TODO
         case CXType_Dependent:
-            break;
-
-        case CXType_FunctionNoProto:
-            break;
-        case CXType_FunctionProto:
             break;
         case CXType_MemberPointer:
             break;
