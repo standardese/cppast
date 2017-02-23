@@ -164,5 +164,63 @@ using namespace outer::ns;
 
 TEST_CASE("cpp_using_declaration")
 {
-    // TODO: write test when actual entities can be parsed
+    // TODO: test overloaded functions
+    auto code = R"(
+namespace ns1
+{
+    enum a {};
+    enum b {};
+}
+
+namespace ns2
+{
+    enum a {};
+    enum b {};
+}
+
+using ns1::a;
+using ns2::b;
+
+namespace outer
+{
+    namespace ns
+    {
+        enum c {};
+    }
+
+    using ns::c;
+}
+
+using outer::ns::c;
+using outer::c;
+)";
+
+    cpp_entity_index idx;
+    auto check_declaration = [&](const cpp_using_declaration& decl, const char* target_full_name) {
+        auto target = decl.target();
+
+        auto entity = target.get(idx);
+        REQUIRE(entity);
+        REQUIRE(full_name(entity.value()) == target_full_name);
+    };
+
+    auto file  = parse(idx, "cpp_using_declaration.cpp", code);
+    auto count = test_visit<cpp_using_declaration>(*file, [&](const cpp_using_declaration& decl) {
+        if (decl.target().name() == "ns1::a")
+            check_declaration(decl, "ns1::a");
+        else if (decl.target().name() == "ns2::b")
+            check_declaration(decl, "ns2::b");
+        else if (decl.target().name() == "ns::c")
+        {
+            check_parent(decl, "outer", "");
+            check_declaration(decl, "outer::ns::c");
+        }
+        else if (decl.target().name() == "outer::ns::c")
+            check_declaration(decl, "outer::ns::c");
+        else if (decl.target().name() == "outer::c")
+            check_declaration(decl, "outer::ns::c");
+        else
+            REQUIRE(false);
+    });
+    REQUIRE(count == 5u);
 }

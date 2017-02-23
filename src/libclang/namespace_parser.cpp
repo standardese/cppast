@@ -128,17 +128,34 @@ namespace
                                    case CXCursor_TypeRef:
                                    case CXCursor_TemplateRef:
                                    case CXCursor_MemberRef:
-                                   case CXCursor_OverloadedDeclRef:
                                    case CXCursor_VariableRef:
+                                   {
+                                       auto referenced = clang_getCursorReferenced(child);
+                                       result          = detail::get_entity_id(referenced);
                                        break;
+                                   }
+
+                                   case CXCursor_OverloadedDeclRef:
+                                   {
+                                       auto size = clang_getNumOverloadedDecls(child);
+                                       DEBUG_ASSERT(size >= 1u, detail::assert_handler{});
+                                       if (size == 1u)
+                                           result = detail::get_entity_id(
+                                               clang_getOverloadedDecl(child, 0u));
+                                       else
+                                           result = detail::get_entity_id(
+                                               clang_getCursorReferenced(child));
+                                       break;
+                                   }
+
+                                   case CXCursor_NamespaceRef:
+                                       break; // wait for children
 
                                    default:
                                        DEBUG_UNREACHABLE(detail::parse_error_handler{}, cur,
                                                          "unexpected target for using declaration");
                                    }
 
-                                   auto referenced = clang_getCursorReferenced(child);
-                                   result          = detail::get_entity_id(referenced);
                                },
                                true);
         return result;
