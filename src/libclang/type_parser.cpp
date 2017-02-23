@@ -5,6 +5,7 @@
 #include "parse_functions.hpp"
 
 #include <cppast/cpp_array_type.hpp>
+#include <cppast/cpp_expression.hpp>
 #include <cppast/cpp_function_type.hpp>
 #include <cppast/cpp_type.hpp>
 #include <cppast/cpp_type_alias.hpp>
@@ -174,6 +175,37 @@ namespace
         return cpp_ref_none;
     }
 
+    std::unique_ptr<cpp_expression> parse_array_size(const CXType& type)
+    {
+        auto size = clang_getArraySize(type);
+        if (size != -1)
+            return cpp_literal_expression::build(cpp_builtin_type::build("unsigned long long"),
+                                                 std::to_string(size));
+
+        auto spelling = get_type_spelling(type);
+        DEBUG_ASSERT(spelling.size() > 2u && spelling.back() == ']', detail::parse_error_handler{},
+                     type, "unexpected token");
+
+        std::string size_expr;
+        auto        bracket_count = 1;
+        for (auto ptr = spelling.c_str() + spelling.size() - 2u; bracket_count != 0; --ptr)
+        {
+            if (*ptr == ']')
+                ++bracket_count;
+            else if (*ptr == '[')
+                --bracket_count;
+
+            if (bracket_count != 0)
+                size_expr += *ptr;
+        }
+
+        return size_expr.empty() ?
+                   nullptr :
+                   cpp_unexposed_expression::build(cpp_builtin_type::build("unsigned long long"),
+                                                   std::string(size_expr.rbegin(),
+                                                               size_expr.rend()));
+    }
+
     std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context,
                                               const CXType&                type)
     {
@@ -255,15 +287,17 @@ namespace
             return cpp_reference_type::build(std::move(referee), get_reference_kind(type));
         }
 
-        // TODO
         case CXType_IncompleteArray:
         case CXType_VariableArray:
         case CXType_DependentSizedArray:
         case CXType_ConstantArray:
         {
-            break;
+            auto size       = parse_array_size(type);
+            auto value_type = parse_type_impl(context, clang_getArrayElementType(type));
+            return cpp_array_type::build(std::move(value_type), std::move(size));
         }
 
+        // TODO
         case CXType_Dependent:
             break;
 
@@ -283,12 +317,17 @@ namespace
 }
 
 std::unique_ptr<cpp_type> detail::parse_type(const detail::parse_context& context,
-                                             const CXType&                type)
+                                             const CXType&                type) try
 {
     auto result = parse_type_impl(context, type);
     DEBUG_ASSERT(result && is_valid(*result), detail::parse_error_handler{}, type,
                  "invalid type parsed");
     return std::move(result);
+}
+catch (parse_error& ex)
+{
+    context.logger->log("libclang parser", ex.get_diagnostic());
+    return nullptr;
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_type_alias(const detail::parse_context& context,

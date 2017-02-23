@@ -4,6 +4,8 @@
 
 #include <cppast/cpp_type_alias.hpp>
 
+#include <cppast/cpp_array_type.hpp>
+
 #include "test_parser.hpp"
 
 using namespace cppast;
@@ -49,9 +51,34 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
                && equal_types(idx, ref_a.referee(), ref_b.referee());
     }
 
-    // TODO
     case cpp_type_kind::array:
-        break;
+    {
+        auto& array_a = static_cast<const cpp_array_type&>(parsed);
+        auto& array_b = static_cast<const cpp_array_type&>(synthesized);
+
+        // check value type
+        if (!equal_types(idx, array_a.value_type(), array_b.value_type()))
+            return false;
+
+        // check size
+        if (!array_a.size().has_value() && !array_b.size().has_value())
+            return true;
+
+        auto& size_a = array_a.size().value();
+        auto& size_b = array_b.size().value();
+        if (size_a.kind() != size_b.kind())
+            return false;
+        else if (size_a.kind() == cpp_expression_kind::literal)
+            return static_cast<const cpp_literal_expression&>(size_a).value()
+                   == static_cast<const cpp_literal_expression&>(size_b).value();
+        else if (size_a.kind() == cpp_expression_kind::unexposed)
+            return static_cast<const cpp_unexposed_expression&>(size_a).expression()
+                   == static_cast<const cpp_unexposed_expression&>(size_b).expression();
+        else
+            break;
+    }
+
+    // TODO
     case cpp_type_kind::function:
         break;
     case cpp_type_kind::member_function:
@@ -95,10 +122,23 @@ using g = const int&&;
 using h = c;
 using i = const d;
 using j = e*;
+
+// arrays
+using k = int[42];
+using l = float*[];
+using m = char[3 * 2 + 4 ? 42 : 43];
 )";
 
     auto add_cv = [](std::unique_ptr<cpp_type> type, cpp_cv cv) {
         return cpp_cv_qualified_type::build(std::move(type), cv);
+    };
+
+    auto make_size = [](std::string size, bool literal) -> std::unique_ptr<cpp_expression> {
+        auto type = cpp_builtin_type::build("unsigned long long");
+        if (literal)
+            return cpp_literal_expression::build(std::move(type), std::move(size));
+        else
+            return cpp_unexposed_expression::build(std::move(type), std::move(size));
     };
 
     cpp_entity_index idx;
@@ -161,8 +201,27 @@ using j = e*;
                 cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "e")));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
+        else if (alias.name() == "k")
+        {
+            auto type =
+                cpp_array_type::build(cpp_builtin_type::build("int"), make_size("42", true));
+            REQUIRE(equal_types(idx, alias.underlying_type(), *type));
+        }
+        else if (alias.name() == "l")
+        {
+            auto type =
+                cpp_array_type::build(cpp_pointer_type::build(cpp_builtin_type::build("float")),
+                                      nullptr);
+            REQUIRE(equal_types(idx, alias.underlying_type(), *type));
+        }
+        else if (alias.name() == "m")
+        {
+            auto type =
+                cpp_array_type::build(cpp_builtin_type::build("char"), make_size("42", true));
+            REQUIRE(equal_types(idx, alias.underlying_type(), *type));
+        }
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 10u);
+    REQUIRE(count == 13u);
 }

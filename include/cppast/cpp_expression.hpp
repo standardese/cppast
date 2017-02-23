@@ -58,7 +58,7 @@ namespace cppast
     /// An unexposed [cppast::cpp_expression]().
     ///
     /// There is no further information than a string available.
-    class cpp_unexposed_expression final : cpp_expression
+    class cpp_unexposed_expression final : public cpp_expression
     {
     public:
         /// \returns A newly created unexposed expression.
@@ -90,7 +90,7 @@ namespace cppast
     };
 
     /// A [cppast::cpp_expression]() that is a literal.
-    class cpp_literal_expression final : cpp_expression
+    class cpp_literal_expression final : public cpp_expression
     {
     public:
         /// \returns A newly created literal expression.

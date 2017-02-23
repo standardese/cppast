@@ -15,6 +15,7 @@ namespace cppast
     {
     public:
         /// \returns A newly created array.
+        /// \notes `size` may be `nullptr`.
         static std::unique_ptr<cpp_array_type> build(std::unique_ptr<cpp_type>       type,
                                                      std::unique_ptr<cpp_expression> size)
         {
@@ -28,10 +29,11 @@ namespace cppast
             return *type_;
         }
 
-        /// \returns A [cppast::cpp_expression]() that is the size of the array.
-        const cpp_expression& size() const noexcept
+        /// \returns An optional reference to the [cppast::cpp_expression]() that is the size of the array.
+        /// \notes An unsized array - `T[]` - does not have a size.
+        type_safe::optional_ref<const cpp_expression> size() const noexcept
         {
-            return *size_;
+            return type_safe::opt_cref(size_.get());
         }
 
     private:
