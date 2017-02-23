@@ -53,9 +53,10 @@ namespace cppast
 
         std::unique_ptr<cpp_entity> parse_cpp_type_alias(const parse_context& context,
                                                          const CXCursor&      cur);
-
         std::unique_ptr<cpp_entity> parse_cpp_enum(const parse_context& context,
                                                    const CXCursor&      cur);
+        std::unique_ptr<cpp_entity> parse_cpp_class(const parse_context& context,
+                                                    const CXCursor&      cur);
 
         std::unique_ptr<cpp_entity> parse_entity(const parse_context& context, const CXCursor& cur);
     }

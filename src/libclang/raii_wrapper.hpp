@@ -119,6 +119,11 @@ namespace cppast
                 return str_ ? str_.value().c_str : "";
             }
 
+            std::string std_str() const noexcept
+            {
+                return c_str();
+            }
+
             char operator[](std::size_t i) const noexcept
             {
                 return c_str()[i];

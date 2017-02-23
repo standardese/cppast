@@ -46,17 +46,32 @@ const char* cppast::to_string(cpp_access_specifier_kind access) noexcept
     return "should not get here either";
 }
 
-cpp_entity_kind cpp_access_specifier::do_get_entity_kind() const noexcept
+cpp_entity_kind cpp_access_specifier::kind() noexcept
 {
     return cpp_entity_kind::access_specifier_t;
 }
 
-cpp_entity_kind cpp_base_class::do_get_entity_kind() const noexcept
+cpp_entity_kind cpp_access_specifier::do_get_entity_kind() const noexcept
+{
+    return kind();
+}
+
+cpp_entity_kind cpp_base_class::kind() noexcept
 {
     return cpp_entity_kind::base_class_t;
 }
 
-cpp_entity_kind cpp_class::do_get_entity_kind() const noexcept
+cpp_entity_kind cpp_base_class::do_get_entity_kind() const noexcept
+{
+    return kind();
+}
+
+cpp_entity_kind cpp_class::kind() noexcept
 {
     return cpp_entity_kind::class_t;
+}
+
+cpp_entity_kind cpp_class::do_get_entity_kind() const noexcept
+{
+    return kind();
 }

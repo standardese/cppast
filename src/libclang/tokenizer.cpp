@@ -142,17 +142,8 @@ namespace
                 end = prev;
             }
         }
-        else if (clang_getCursorKind(cur) == CXCursor_TypeAliasDecl
-                 && !token_after_is(tu, file, cur, end, ";"))
-        {
-            // type alias tokens don't include everything
-            do
-            {
-                end = get_next_location(tu, file, end);
-            } while (!token_after_is(tu, file, cur, end, ";"));
-            end = get_next_location(tu, file, end);
-        }
-        else if (clang_isExpression(clang_getCursorKind(cur)))
+        else if (clang_isExpression(clang_getCursorKind(cur))
+                 || clang_getCursorKind(cur) == CXCursor_CXXBaseSpecifier)
             // need to shrink range by one
             end = get_next_location(tu, file, end, -1);
 
@@ -236,35 +227,46 @@ void detail::skip_brackets(detail::token_stream& stream)
     stream.set_cur(std::next(closing));
 }
 
+namespace
+{
+    bool skip_attribute_impl(detail::token_stream& stream)
+    {
+        if (skip_if(stream, "[") && stream.peek() == "[")
+        {
+            // C++11 attribute
+            // [[<attribute>]]
+            //  ^
+            skip_brackets(stream);
+            // [[<attribute>]]
+            //               ^
+            skip(stream, "]");
+            return true;
+        }
+        else if (skip_if(stream, "__attribute__"))
+        {
+            // GCC/clang attributes
+            // __attribute__(<attribute>)
+            //              ^
+            skip_brackets(stream);
+            return true;
+        }
+        else if (skip_if(stream, "__declspec"))
+        {
+            // MSVC declspec
+            // __declspec(<attribute>)
+            //           ^
+            skip_brackets(stream);
+            return true;
+        }
+
+        return false;
+    }
+}
+
 bool detail::skip_attribute(detail::token_stream& stream)
 {
-    if (skip_if(stream, "[") && stream.peek() == "[")
-    {
-        // C++11 attribute
-        // [[<attribute>]]
-        //  ^
-        skip_brackets(stream);
-        // [[<attribute>]]
-        //               ^
-        skip(stream, "]");
-        return true;
-    }
-    else if (skip_if(stream, "__attribute__"))
-    {
-        // GCC/clang attributes
-        // __attribute__(<attribute>)
-        //              ^
-        skip_brackets(stream);
-        return true;
-    }
-    else if (skip_if(stream, "__declspec"))
-    {
-        // MSVC declspec
-        // __declspec(<attribute>)
-        //           ^
-        skip_brackets(stream);
-        return true;
-    }
-
-    return false;
+    auto any = false;
+    while (skip_attribute_impl(stream))
+        any = true;
+    return any;
 }

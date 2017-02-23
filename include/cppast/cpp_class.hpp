@@ -37,6 +37,8 @@ namespace cppast
     class cpp_access_specifier final : public cpp_entity
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// \returns A newly created access specifier.
         /// \notes It is not meant to be registered at the [cppast::cpp_entity_index](),
         /// as nothing can refer to it.
@@ -66,6 +68,8 @@ namespace cppast
     class cpp_base_class final : public cpp_entity
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// \returns A newly created base class specifier.
         /// \notes It is not meant to be registered at the [cppast::cpp_entity_index](),
         /// as nothing can refer to the specifier itself.
@@ -111,14 +115,22 @@ namespace cppast
     class cpp_class final : public cpp_entity, public cpp_entity_container<cpp_class, cpp_entity>
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// Builds a [cppast::cpp_class]().
         class builder
         {
         public:
             /// \effects Sets the name and kind and whether it is `final`.
-            explicit builder(std::string name, cpp_class_kind kind, bool is_final)
+            explicit builder(std::string name, cpp_class_kind kind, bool is_final = false)
             : class_(new cpp_class(std::move(name), kind, is_final))
             {
+            }
+
+            /// \effects Marks the class as final.
+            void is_final() noexcept
+            {
+                class_->final_ = true;
             }
 
             /// \effects Builds a [cppast::cpp_base_class]() and adds it.

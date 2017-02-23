@@ -28,10 +28,8 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         auto user_synthesized = static_cast<const cpp_user_defined_type&>(synthesized).entity();
         if (user_parsed.name() != user_synthesized.name())
             return false;
-        return true;
-        // TODO: check that the referring also works (need parsing of structs)
-        // auto entity = user_parsed.get(idx);
-        // return entity.has_value() && entity.value().name() == user_parsed.name();
+        auto entity = user_parsed.get(idx);
+        return entity.has_value() && entity.value().name() == user_parsed.name();
     }
 
     case cpp_type_kind::cv_qualified:
