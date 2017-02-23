@@ -134,7 +134,7 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         return equal_types(idx, obj_a.object_type(), obj_b.object_type());
     }
 
-    // TODO
+    // TODO: implement equality when those can be parsed
     case cpp_type_kind::template_parameter:
         break;
     case cpp_type_kind::template_instantiation:

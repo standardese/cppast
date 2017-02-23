@@ -384,10 +384,11 @@ namespace
         case CXType_MemberPointer:
             return cpp_pointer_type::build(parse_member_pointee_type(context, type));
 
-        // TODO
+        // TODO: everything template related
         case CXType_Dependent:
             break;
 
+        // TODO: auto/decltype
         case CXType_Auto:
             break;
         }
