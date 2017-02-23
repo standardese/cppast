@@ -59,6 +59,7 @@ namespace
     }
 
     // const/volatile at the end (because people do that apparently!)
+    // also used on member function pointers
     cpp_cv suffix_cv(std::string& spelling)
     {
         auto cv = cpp_cv_none;
@@ -207,6 +208,25 @@ namespace
                                                                size_expr.rend()));
     }
 
+    std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context,
+                                              const CXType&                type);
+
+    template <class Builder>
+    std::unique_ptr<cpp_type> add_parameters(Builder& builder, const detail::parse_context& context,
+                                             const CXType& type)
+    {
+        auto no_args = clang_getNumArgTypes(type);
+        DEBUG_ASSERT(no_args >= 0, detail::parse_error_handler{}, type,
+                     "invalid number of arguments");
+        for (auto i = 0u; i != unsigned(no_args); ++i)
+            builder.add_parameter(parse_type_impl(context, clang_getArgType(type, i)));
+
+        if (clang_isFunctionTypeVariadic(type))
+            builder.is_variadic();
+
+        return builder.finish();
+    }
+
     std::unique_ptr<cpp_type> try_parse_function_type(const detail::parse_context& context,
                                                       const CXType&                type)
     {
@@ -215,18 +235,51 @@ namespace
             // not a function type
             return nullptr;
 
-        cpp_function_type::builder builder(parse_type(context, result));
+        cpp_function_type::builder builder(parse_type_impl(context, result));
+        return add_parameters(builder, context, type);
+    }
 
-        auto no_args = clang_getNumArgTypes(type);
-        DEBUG_ASSERT(no_args >= 0, detail::parse_error_handler{}, type,
-                     "invalid number of arguments");
-        for (auto i = 0u; i != unsigned(no_args); ++i)
-            builder.add_parameter(detail::parse_type(context, clang_getArgType(type, i)));
+    cpp_reference member_function_ref_qualifier(std::string& spelling)
+    {
+        if (remove_suffix(spelling, "&&"))
+            return cpp_ref_rvalue;
+        else if (remove_suffix(spelling, "&"))
+            return cpp_ref_lvalue;
+        return cpp_ref_none;
+    }
 
-        if (clang_isFunctionTypeVariadic(type))
-            builder.is_variadic();
+    std::unique_ptr<cpp_type> make_ref_qualified(std::unique_ptr<cpp_type> type, cpp_reference ref)
+    {
+        if (ref == cpp_ref_none)
+            return std::move(type);
+        return cpp_reference_type::build(std::move(type), ref);
+    }
 
-        return builder.finish();
+    std::unique_ptr<cpp_type> parse_member_pointee_type(const detail::parse_context& context,
+                                                        const CXType&                type)
+    {
+        auto spelling = get_type_spelling(type);
+        auto ref      = member_function_ref_qualifier(spelling);
+        auto cv       = suffix_cv(spelling);
+
+        auto class_t = clang_Type_getClassType(type);
+        auto class_entity =
+            make_ref_qualified(make_cv_qualified(parse_type_impl(context, class_t), cv), ref);
+
+        auto pointee = clang_getPointeeType(type); // for everything except the class type
+        auto result  = clang_getResultType(pointee);
+        if (result.kind == CXType_Invalid)
+        {
+            // member data pointer
+            return cpp_member_object_type::build(std::move(class_entity),
+                                                 parse_type_impl(context, pointee));
+        }
+        else
+        {
+            cpp_member_function_type::builder builder(std::move(class_entity),
+                                                      parse_type_impl(context, result));
+            return add_parameters(builder, context, pointee);
+        }
     }
 
     std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context,
@@ -300,7 +353,7 @@ namespace
 
         case CXType_Pointer:
         {
-            auto pointee = parse_type(context, clang_getPointeeType(type));
+            auto pointee = parse_type_impl(context, clang_getPointeeType(type));
             auto pointer = cpp_pointer_type::build(std::move(pointee));
 
             auto spelling = get_type_spelling(type);
@@ -310,7 +363,7 @@ namespace
         case CXType_LValueReference:
         case CXType_RValueReference:
         {
-            auto referee = parse_type(context, clang_getPointeeType(type));
+            auto referee = parse_type_impl(context, clang_getPointeeType(type));
             return cpp_reference_type::build(std::move(referee), get_reference_kind(type));
         }
 
@@ -320,7 +373,7 @@ namespace
         case CXType_ConstantArray:
         {
             auto size       = parse_array_size(type);
-            auto value_type = parse_type(context, clang_getArrayElementType(type));
+            auto value_type = parse_type_impl(context, clang_getArrayElementType(type));
             return cpp_array_type::build(std::move(value_type), std::move(size));
         }
 
@@ -328,16 +381,18 @@ namespace
         case CXType_FunctionProto:
             return try_parse_function_type(context, type);
 
+        case CXType_MemberPointer:
+            return cpp_pointer_type::build(parse_member_pointee_type(context, type));
+
         // TODO
         case CXType_Dependent:
-            break;
-        case CXType_MemberPointer:
             break;
 
         case CXType_Auto:
             break;
         }
 
+        DEBUG_UNREACHABLE(detail::assert_handler{});
         return nullptr;
     }
 }
@@ -346,8 +401,7 @@ std::unique_ptr<cpp_type> detail::parse_type(const detail::parse_context& contex
                                              const CXType&                type) try
 {
     auto result = parse_type_impl(context, type);
-    DEBUG_ASSERT(result && is_valid(*result), detail::parse_error_handler{}, type,
-                 "invalid type parsed");
+    DEBUG_ASSERT(result && is_valid(*result), detail::parse_error_handler{}, type, "invalid type");
     return std::move(result);
 }
 catch (parse_error& ex)
@@ -370,5 +424,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_type_alias(const detail::parse_con
     detail::skip(stream, "=");
 
     auto type = parse_type(context, clang_getTypedefDeclUnderlyingType(cur));
+    if (!type)
+        return nullptr;
     return cpp_type_alias::build(*context.idx, get_entity_id(cur), name.c_str(), std::move(type));
 }

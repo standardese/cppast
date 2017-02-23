@@ -130,7 +130,7 @@ namespace cppast
         /// \returns A reference to the return [cppast::cpp_type]().
         const cpp_type& return_type() const noexcept
         {
-            return *object_type_;
+            return *return_type_;
         }
 
         /// \returns An iteratable object iterating over the parameter types.
@@ -148,7 +148,7 @@ namespace cppast
     private:
         cpp_member_function_type(std::unique_ptr<cpp_type> class_type,
                                  std::unique_ptr<cpp_type> return_type)
-        : class_type_(std::move(class_type)), object_type_(std::move(return_type)), variadic_(false)
+        : class_type_(std::move(class_type)), return_type_(std::move(return_type)), variadic_(false)
         {
         }
 
@@ -157,7 +157,7 @@ namespace cppast
             return cpp_type_kind::member_function;
         }
 
-        std::unique_ptr<cpp_type>        class_type_, object_type_;
+        std::unique_ptr<cpp_type>        class_type_, return_type_;
         detail::intrusive_list<cpp_type> parameters_;
         bool                             variadic_;
     };

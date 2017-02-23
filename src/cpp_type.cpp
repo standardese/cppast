@@ -94,7 +94,7 @@ bool cppast::is_valid(const cpp_type& type) noexcept
     {
         auto& func = static_cast<const cpp_member_function_type&>(type);
 
-        if (func.class_type().kind() != cpp_type_kind::user_defined)
+        if (!can_compose(func.class_type()) || !is_valid(func.class_type()))
             return false;
         else if (!can_compose(func.return_type()) || !is_valid(func.return_type()))
             return false;
