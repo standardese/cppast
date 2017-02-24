@@ -7,7 +7,7 @@
 
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_container.hpp>
-#include <cppast/cpp_storage_specifiers.hpp>
+#include <cppast/cpp_storage_class_specifiers.hpp>
 #include <cppast/cpp_variable_base.hpp>
 
 namespace cppast
@@ -157,7 +157,7 @@ namespace cppast
             }
 
             /// \effects Sets the storage class.
-            void storage_class(cpp_storage_specifiers storage)
+            void storage_class(cpp_storage_class_specifiers storage)
             {
                 function->storage_ = storage;
             }
@@ -184,7 +184,7 @@ namespace cppast
         /// \returns The [cppast::cpp_storage_specifiers]() of the function.
         /// \notes If it is `cpp_storage_class_static` and inside a [cppast::cpp_class](),
         /// it is a `static` class function.
-        cpp_storage_specifiers storage_class() const noexcept
+        cpp_storage_class_specifiers storage_class() const noexcept
         {
             return storage_;
         }
@@ -207,16 +207,16 @@ namespace cppast
         cpp_function(std::string name, std::unique_ptr<cpp_type> ret)
         : cpp_function_base(std::move(name)),
           return_type_(std::move(ret)),
-          storage_(cpp_storage_class_none),
+          storage_(cpp_storage_class_auto),
           friend_(false),
           constexpr_(false)
         {
         }
 
-        std::unique_ptr<cpp_type> return_type_;
-        cpp_storage_specifiers    storage_;
-        bool                      friend_;
-        bool                      constexpr_;
+        std::unique_ptr<cpp_type>    return_type_;
+        cpp_storage_class_specifiers storage_;
+        bool                         friend_;
+        bool                         constexpr_;
     };
 } // namespace cppast
 

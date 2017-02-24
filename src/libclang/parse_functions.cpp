@@ -13,6 +13,11 @@ cpp_entity_id detail::get_entity_id(const CXCursor& cur)
     return cpp_entity_id(usr.c_str());
 }
 
+detail::cxstring detail::get_cursor_name(const CXCursor& cur)
+{
+    return cxstring(clang_getCursorSpelling(cur));
+}
+
 std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& context,
                                                  const CXCursor&              cur) try
 {
@@ -43,6 +48,9 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
     case CXCursor_StructDecl:
     case CXCursor_UnionDecl:
         return parse_cpp_class(context, cur);
+
+    case CXCursor_VarDecl:
+        return parse_cpp_variable(context, cur);
 
     default:
         break;

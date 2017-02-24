@@ -6,7 +6,7 @@
 #define CPPAST_CPP_VARIABLE_HPP_INCLUDED
 
 #include <cppast/cpp_entity.hpp>
-#include <cppast/cpp_storage_specifiers.hpp>
+#include <cppast/cpp_storage_class_specifiers.hpp>
 #include <cppast/cpp_variable_base.hpp>
 
 namespace cppast
@@ -17,15 +17,18 @@ namespace cppast
     class cpp_variable final : public cpp_entity, public cpp_variable_base
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// \returns A newly created and registered variable.
         /// \notes The default value may be `nullptr` indicating no default value.
         static std::unique_ptr<cpp_variable> build(const cpp_entity_index& idx, cpp_entity_id id,
                                                    std::string name, std::unique_ptr<cpp_type> type,
                                                    std::unique_ptr<cpp_expression> def,
-                                                   cpp_storage_specifiers spec, bool is_constexpr);
+                                                   cpp_storage_class_specifiers    spec,
+                                                   bool                            is_constexpr);
 
         /// \returns The [cppast::cpp_storage_specifiers]() on that variable.
-        cpp_storage_specifiers storage_class() const noexcept
+        cpp_storage_class_specifiers storage_class() const noexcept
         {
             return storage_;
         }
@@ -38,7 +41,7 @@ namespace cppast
 
     private:
         cpp_variable(std::string name, std::unique_ptr<cpp_type> type,
-                     std::unique_ptr<cpp_expression> def, cpp_storage_specifiers spec,
+                     std::unique_ptr<cpp_expression> def, cpp_storage_class_specifiers spec,
                      bool is_constexpr)
         : cpp_entity(std::move(name)),
           cpp_variable_base(std::move(type), std::move(def)),
@@ -49,8 +52,8 @@ namespace cppast
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
-        cpp_storage_specifiers storage_;
-        bool                   is_constexpr_;
+        cpp_storage_class_specifiers storage_;
+        bool                         is_constexpr_;
     };
 } // namespace cppast
 

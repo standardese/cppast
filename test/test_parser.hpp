@@ -10,6 +10,7 @@
 #include <catch.hpp>
 
 #include <cppast/cpp_entity_kind.hpp>
+#include <cppast/cpp_expression.hpp>
 #include <cppast/cpp_type.hpp>
 #include <cppast/libclang_parser.hpp>
 #include <cppast/visitor.hpp>
@@ -74,5 +75,26 @@ inline void check_parent(const cppast::cpp_entity& e, const char* parent_name,
 
 bool equal_types(const cppast::cpp_entity_index& idx, const cppast::cpp_type& parsed,
                  const cppast::cpp_type& synthesized);
+
+inline bool equal_expressions(const cppast::cpp_expression& parsed,
+                              const cppast::cpp_expression& synthesized)
+{
+    using namespace cppast;
+
+    if (parsed.kind() != synthesized.kind())
+        return false;
+    switch (parsed.kind())
+    {
+    case cpp_expression_kind::unexposed:
+        return static_cast<const cpp_unexposed_expression&>(parsed).expression()
+               == static_cast<const cpp_unexposed_expression&>(synthesized).expression();
+
+    case cpp_expression_kind::literal:
+        return static_cast<const cpp_literal_expression&>(parsed).value()
+               == static_cast<const cpp_literal_expression&>(synthesized).value();
+    }
+
+    return false;
+}
 
 #endif // CPPAST_TEST_PARSER_HPP_INCLUDED

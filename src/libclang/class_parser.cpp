@@ -32,7 +32,7 @@ namespace
     cpp_class::builder make_class_builder(const CXCursor& cur)
     {
         auto kind = parse_class_kind(cur);
-        auto name = detail::cxstring(clang_getCursorSpelling(cur));
+        auto name = detail::get_cursor_name(cur);
         return cpp_class::builder(name.c_str(), kind);
     }
 

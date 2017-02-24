@@ -412,7 +412,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_type_alias(const detail::parse_con
     DEBUG_ASSERT(cur.kind == CXCursor_TypeAliasDecl || cur.kind == CXCursor_TypedefDecl,
                  detail::assert_handler{});
 
-    auto name = cxstring(clang_getCursorSpelling(cur));
+    auto name = detail::get_cursor_name(cur);
     auto type = parse_type(context, clang_getTypedefDeclUnderlyingType(cur));
     return cpp_type_alias::build(*context.idx, get_entity_id(cur), name.c_str(), std::move(type));
 }

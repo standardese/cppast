@@ -21,6 +21,11 @@ namespace cppast
     {
         cpp_entity_id get_entity_id(const CXCursor& cur);
 
+        // only use this if the name is just a single token
+        // never where it is a reference to something (like base class name)
+        // as then you won't get it "as-is"
+        cxstring get_cursor_name(const CXCursor& cur);
+
         struct parse_context
         {
             CXTranslationUnit                              tu;
@@ -57,6 +62,9 @@ namespace cppast
                                                    const CXCursor&      cur);
         std::unique_ptr<cpp_entity> parse_cpp_class(const parse_context& context,
                                                     const CXCursor&      cur);
+
+        std::unique_ptr<cpp_entity> parse_cpp_variable(const parse_context& context,
+                                                       const CXCursor&      cur);
 
         std::unique_ptr<cpp_entity> parse_entity(const parse_context& context, const CXCursor& cur);
     }
