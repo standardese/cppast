@@ -37,17 +37,15 @@ namespace cppast
     class cpp_member_variable final : public cpp_member_variable_base
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// \returns A newly created and registered member variable.
         /// \notes `def` may be `nullptr` in which case there is no member initializer provided.
-        static std::unique_ptr<cpp_member_variable> build(std::string                     name,
+        static std::unique_ptr<cpp_member_variable> build(const cpp_entity_index& idx,
+                                                          cpp_entity_id id, std::string name,
                                                           std::unique_ptr<cpp_type>       type,
                                                           std::unique_ptr<cpp_expression> def,
-                                                          bool is_mutable)
-        {
-            return std::unique_ptr<cpp_member_variable>(
-                new cpp_member_variable(std::move(name), std::move(type), std::move(def),
-                                        is_mutable));
-        }
+                                                          bool is_mutable);
 
     private:
         using cpp_member_variable_base::cpp_member_variable_base;
@@ -59,6 +57,19 @@ namespace cppast
     class cpp_bitfield final : public cpp_member_variable_base
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
+        /// \returns A newly created and registered bitfield.
+        /// \notes It cannot have a member initializer, i.e. default value.
+        static std::unique_ptr<cpp_bitfield> build(const cpp_entity_index& idx, cpp_entity_id id,
+                                                   std::string name, std::unique_ptr<cpp_type> type,
+                                                   unsigned no_bits, bool is_mutable);
+
+        /// \returns A newly created unnamed bitfield.
+        /// \notes It will not be registered, as it is unnamed.
+        static std::unique_ptr<cpp_bitfield> build(std::unique_ptr<cpp_type> type, unsigned no_bits,
+                                                   bool is_mutable);
+
         /// \returns The number of bits of the bitfield.
         unsigned no_bits() const noexcept
         {
@@ -66,9 +77,9 @@ namespace cppast
         }
 
     private:
-        cpp_bitfield(std::string name, std::unique_ptr<cpp_type> type,
-                     std::unique_ptr<cpp_expression> def, unsigned no_bits, bool is_mutable)
-        : cpp_member_variable_base(std::move(name), std::move(type), std::move(def), is_mutable),
+        cpp_bitfield(std::string name, std::unique_ptr<cpp_type> type, unsigned no_bits,
+                     bool is_mutable)
+        : cpp_member_variable_base(std::move(name), std::move(type), nullptr, is_mutable),
           bits_(no_bits)
         {
         }

@@ -143,7 +143,8 @@ namespace
             }
         }
         else if (clang_isExpression(clang_getCursorKind(cur))
-                 || clang_getCursorKind(cur) == CXCursor_CXXBaseSpecifier)
+                 || clang_getCursorKind(cur) == CXCursor_CXXBaseSpecifier
+                 || clang_getCursorKind(cur) == CXCursor_FieldDecl)
             // need to shrink range by one
             end = get_next_location(tu, file, end, -1);
 

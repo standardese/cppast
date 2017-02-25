@@ -38,6 +38,13 @@ namespace cppast
 
         std::unique_ptr<cpp_expression> parse_expression(const parse_context& context,
                                                          const CXCursor&      cur);
+        // parse the expression starting at the current token in the stream
+        // and ends at the end of the stream
+        // this is required for situations where there is no expression cursor exposed,
+        // like member initializers
+        std::unique_ptr<cpp_expression> parse_raw_expression(const parse_context& context,
+                                                             token_stream&        stream,
+                                                             const CXType&        type);
 
         // parse_entity() dispatches on the cursor type
         // it calls one of the other parse functions defined elsewhere
@@ -65,6 +72,9 @@ namespace cppast
 
         std::unique_ptr<cpp_entity> parse_cpp_variable(const parse_context& context,
                                                        const CXCursor&      cur);
+        // also parses bitfields
+        std::unique_ptr<cpp_entity> parse_cpp_member_variable(const parse_context& context,
+                                                              const CXCursor&      cur);
 
         std::unique_ptr<cpp_entity> parse_entity(const parse_context& context, const CXCursor& cur);
     }

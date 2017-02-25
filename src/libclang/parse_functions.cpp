@@ -51,6 +51,8 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
 
     case CXCursor_VarDecl:
         return parse_cpp_variable(context, cur);
+    case CXCursor_FieldDecl:
+        return parse_cpp_member_variable(context, cur);
 
     default:
         break;
