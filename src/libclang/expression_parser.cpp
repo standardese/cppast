@@ -31,11 +31,17 @@ std::unique_ptr<cpp_expression> detail::parse_expression(const detail::parse_con
 
     auto type = parse_type(context, clang_getCursorType(cur));
     auto expr = get_expression_str(stream);
-
-    if (kind == CXCursor_CharacterLiteral || kind == CXCursor_CompoundLiteralExpr
-        || kind == CXCursor_FloatingLiteral || kind == CXCursor_ImaginaryLiteral
-        || kind == CXCursor_IntegerLiteral || kind == CXCursor_StringLiteral
-        || kind == CXCursor_CXXBoolLiteralExpr || kind == CXCursor_CXXNullPtrLiteralExpr)
+    if (kind == CXCursor_CallExpr && (expr.empty() || expr.back() != ')'))
+    {
+        // we have a call expression that doesn't end in a closing parentheses
+        // this means default constructor, don't parse it at all
+        // so, for example a variable doesn't have a default value
+        return nullptr;
+    }
+    else if (kind == CXCursor_CharacterLiteral || kind == CXCursor_CompoundLiteralExpr
+             || kind == CXCursor_FloatingLiteral || kind == CXCursor_ImaginaryLiteral
+             || kind == CXCursor_IntegerLiteral || kind == CXCursor_StringLiteral
+             || kind == CXCursor_CXXBoolLiteralExpr || kind == CXCursor_CXXNullPtrLiteralExpr)
         return cpp_literal_expression::build(std::move(type), std::move(expr));
     else
         return cpp_unexposed_expression::build(std::move(type), std::move(expr));

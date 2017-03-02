@@ -29,7 +29,8 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         if (user_parsed.name() != user_synthesized.name())
             return false;
         auto entity = user_parsed.get(idx);
-        return entity.has_value() && entity.value().name() == user_parsed.name();
+        return entity.has_value() && entity.value().name().empty()
+               || entity.value().name() == user_parsed.name();
     }
 
     case cpp_type_kind::cv_qualified:
@@ -192,6 +193,11 @@ using r = void(foo::*)(int,...) const &;
 
 // member data pointers
 using s = int(foo::*);
+
+// user-defined types inline definition
+using t = struct t_ {};
+using u = const struct u_ {}*;
+using v = struct {};
 )";
     }
     SECTION("typedef")
@@ -233,6 +239,11 @@ typedef void(foo::*r)(int,...) const &;
 
 // member data pointers
 typedef int(foo::*s);
+
+// user-defined types inline definition
+typedef struct t_ {} t;
+typedef const struct u_ {}* u;
+typedef struct {} v;
 )";
     }
 
@@ -393,8 +404,25 @@ typedef int(foo::*s);
 
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
+        else if (alias.name() == "t")
+        {
+            auto type = cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "t_"));
+            REQUIRE(equal_types(idx, alias.underlying_type(), *type));
+        }
+        else if (alias.name() == "u")
+        {
+            auto type = cpp_pointer_type::build(
+                add_cv(cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "u_")),
+                       cpp_cv_const));
+            REQUIRE(equal_types(idx, alias.underlying_type(), *type));
+        }
+        else if (alias.name() == "v")
+        {
+            auto type = cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "v"));
+            REQUIRE(equal_types(idx, alias.underlying_type(), *type));
+        }
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 19u);
+    REQUIRE(count == 22u);
 }

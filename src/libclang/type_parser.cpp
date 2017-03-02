@@ -164,6 +164,12 @@ namespace
         auto suffix = suffix_cv(spelling);
         auto cv     = merge_cv(prefix, suffix);
 
+        // remove struct/class/union prefix on inline type definition
+        // i.e. C's typedef struct idiom
+        remove_prefix(spelling, "struct");
+        remove_prefix(spelling, "class");
+        remove_prefix(spelling, "union");
+
         auto entity = b(std::move(spelling));
         return make_cv_qualified(std::move(entity), cv);
     }
@@ -347,6 +353,8 @@ namespace
         case CXType_Elaborated:
             return make_leave_type(type, [&](std::string&& spelling) {
                 auto decl = clang_getTypeDeclaration(type);
+                if (remove_prefix(spelling, "(anonymous"))
+                    spelling = ""; // anonymous type
                 return cpp_user_defined_type::build(
                     cpp_type_ref(detail::get_entity_id(decl), std::move(spelling)));
             });

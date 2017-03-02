@@ -11,7 +11,7 @@ using namespace cppast;
 TEST_CASE("cpp_variable")
 {
     auto code = R"(
-// basic - global scope, so external storage
+// basic
 int a;
 unsigned long long b = 42;
 float c = 3.f + 0.14f;
@@ -24,6 +24,12 @@ thread_local static int g;
 
 // constexpr
 constexpr int h = 12;
+
+// inline definition
+struct foo {} i;
+const struct bar {} j = bar();
+struct baz {} k{};
+static struct {} l;
 )";
 
     cpp_entity_index idx;
@@ -43,11 +49,10 @@ constexpr int h = 12;
         REQUIRE(var.is_constexpr() == is_constexpr);
     };
 
-    auto file = parse({}, "cpp_variable.cpp", code);
+    auto file = parse(idx, "cpp_variable.cpp", code);
 
     auto int_type = cpp_builtin_type::build("int");
     auto count    = test_visit<cpp_variable>(*file, [&](const cpp_variable& var) {
-        INFO(var.name());
         if (var.name() == "a")
             check_variable(var, *int_type, nullptr, cpp_storage_class_none, false);
         else if (var.name() == "b")
@@ -74,8 +79,33 @@ constexpr int h = 12;
                                                               cpp_cv_const),
                            *cpp_literal_expression::build(cpp_builtin_type::build("int"), "12"),
                            cpp_storage_class_none, true);
+        else if (var.name() == "i")
+            check_variable(var,
+                           *cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "foo")),
+                           nullptr, cpp_storage_class_none, false);
+        else if (var.name() == "j")
+            check_variable(var, *cpp_cv_qualified_type::build(cpp_user_defined_type::build(
+                                                                  cpp_type_ref(cpp_entity_id(""),
+                                                                               "bar")),
+                                                              cpp_cv_const),
+                           *cpp_unexposed_expression::build(cpp_user_defined_type::build(
+                                                                cpp_type_ref(cpp_entity_id(""),
+                                                                             "bar")),
+                                                            "bar()"),
+                           cpp_storage_class_none, false);
+        else if (var.name() == "k")
+            check_variable(var,
+                           *cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "baz")),
+                           *cpp_unexposed_expression::build(cpp_user_defined_type::build(
+                                                                cpp_type_ref(cpp_entity_id(""),
+                                                                             "baz")),
+                                                            "{}"),
+                           cpp_storage_class_none, false);
+        else if (var.name() == "l")
+            check_variable(var, *cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "")),
+                           nullptr, cpp_storage_class_static, false);
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 8u);
+    REQUIRE(count == 12u);
 }

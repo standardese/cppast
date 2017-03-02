@@ -19,6 +19,8 @@ namespace
     {
         std::unique_ptr<cpp_expression> expression;
         detail::visit_children(cur, [&](const CXCursor& child) {
+            if (clang_isDeclaration(clang_getCursorKind(child)))
+                return;
             DEBUG_ASSERT(clang_isExpression(child.kind) && !expression,
                          detail::parse_error_handler{}, cur, "unexpected child cursor of variable");
 
