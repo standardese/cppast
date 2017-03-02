@@ -10,6 +10,8 @@ namespace cppast
     /// C++ storage class specifiers.
     ///
     /// See http://en.cppreference.com/w/cpp/language/storage_duration, for example.
+    /// \notes These are just all the possible *keywords* used in a variable declaration,
+    /// not necessarily their *semantic* meaning.
     enum cpp_storage_class_specifiers
     {
         cpp_storage_class_none = 0, //< no storage class specifier given.
