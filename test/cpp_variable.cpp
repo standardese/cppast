@@ -109,3 +109,37 @@ static struct {} l;
     });
     REQUIRE(count == 12u);
 }
+
+TEST_CASE("static cpp_variable")
+{
+    auto code = R"(
+struct test
+{
+    static int a;
+    static const int b;
+    static thread_local int c;
+};
+)";
+
+    auto file  = parse({}, "static_cpp_variable.cpp", code);
+    auto count = test_visit<cpp_variable>(*file, [&](const cpp_variable& var) {
+        REQUIRE(!var.default_value());
+        REQUIRE(!var.is_constexpr());
+        REQUIRE(is_static(var.storage_class()));
+
+        if (var.name() == "a")
+            REQUIRE(equal_types({}, var.type(), *cpp_builtin_type::build("int")));
+        else if (var.name() == "b")
+            REQUIRE(equal_types({}, var.type(),
+                                *cpp_cv_qualified_type::build(cpp_builtin_type::build("int"),
+                                                              cpp_cv_const)));
+        else if (var.name() == "c")
+        {
+            REQUIRE(equal_types({}, var.type(), *cpp_builtin_type::build("int")));
+            REQUIRE(is_thread_local(var.storage_class()));
+        }
+        else
+            REQUIRE(false);
+    });
+    REQUIRE(count == 3u);
+}

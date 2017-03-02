@@ -14,6 +14,7 @@ namespace cppast
     /// A [cppast::cpp_entity]() modelling a C++ variable.
     /// \notes This is not a member variable,
     /// use [cppast::cpp_member_variable]() for that.
+    /// But it can be `static` member variable.
     class cpp_variable final : public cpp_entity, public cpp_variable_base
     {
     public:
