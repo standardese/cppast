@@ -7,6 +7,7 @@
 
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_container.hpp>
+#include <cppast/cpp_forward_declarable.hpp>
 #include <cppast/cpp_storage_class_specifiers.hpp>
 #include <cppast/cpp_variable_base.hpp>
 
@@ -40,14 +41,30 @@ namespace cppast
         cpp_function_deleted,     //< Deleted definition.
     };
 
+    /// \returns Whether or not the function body is a declaration,
+    /// without a definition.
+    inline bool is_declaration(cpp_function_body_kind body) noexcept
+    {
+        return body == cpp_function_declaration;
+    }
+
+    /// \returns Whether or not the function body is a definition.
+    inline bool is_definition(cpp_function_body_kind body) noexcept
+    {
+        return !is_declaration(body);
+    }
+
     /// Base class for all entities that are functions.
     ///
     /// It contains arguments and common flags.
-    class cpp_function_base : public cpp_entity,
-                              public cpp_entity_container<cpp_function_base, cpp_function_parameter>
+    class cpp_function_base
+        : public cpp_entity,
+          public cpp_entity_container<cpp_function_base, cpp_function_parameter>,
+          public cpp_forward_declarable
     {
     public:
         /// \returns The [cppast::cpp_function_body_kind]().
+        /// \notes This matches the [cppast::cpp_forward_declarable]() queries.
         cpp_function_body_kind body_kind() const noexcept
         {
             return body_;
@@ -98,17 +115,16 @@ namespace cppast
                 static_cast<cpp_function_base&>(*function).noexcept_expr_ = std::move(cond);
             }
 
-            /// \effects Sets the [cppast::cpp_function_body_kind]().
-            void body_kind(cpp_function_body_kind kind)
-            {
-                static_cast<cpp_function_base&>(*function).body_ = kind;
-            }
-
-            /// \effects Registers the function.
+            /// \effects If the body is a definition, registers it.
+            /// Else marks it as a declaration.
             /// \returns The finished function.
-            std::unique_ptr<T> finish(const cpp_entity_index& idx, cpp_entity_id id)
+            std::unique_ptr<T> finish(const cpp_entity_index& idx, cpp_entity_id id,
+                                      cpp_function_body_kind body_kind)
             {
-                idx.register_entity(std::move(id), type_safe::cref(*function));
+                if (cppast::is_definition(body_kind))
+                    idx.register_entity(std::move(id), type_safe::cref(*function));
+                else
+                    function->set_definition(id);
                 return std::move(function);
             }
 

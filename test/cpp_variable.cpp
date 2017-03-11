@@ -35,7 +35,18 @@ static struct {} l;
     cpp_entity_index idx;
     auto check_variable = [&](const cpp_variable& var, const cpp_type& type,
                               type_safe::optional_ref<const cpp_expression> default_value,
-                              int storage_class, bool is_constexpr) {
+                              int storage_class, bool is_constexpr, bool is_declaration) {
+        if (is_declaration)
+        {
+            REQUIRE(var.is_declaration());
+            REQUIRE(!var.is_definition());
+        }
+        else
+        {
+            REQUIRE(var.is_definition());
+            REQUIRE(!var.is_declaration());
+        }
+
         REQUIRE(equal_types(idx, var.type(), type));
         if (var.default_value())
         {
@@ -54,35 +65,35 @@ static struct {} l;
     auto int_type = cpp_builtin_type::build("int");
     auto count    = test_visit<cpp_variable>(*file, [&](const cpp_variable& var) {
         if (var.name() == "a")
-            check_variable(var, *int_type, nullptr, cpp_storage_class_none, false);
+            check_variable(var, *int_type, nullptr, cpp_storage_class_none, false, false);
         else if (var.name() == "b")
             check_variable(var, *cpp_builtin_type::build("unsigned long long"),
                            // unexposed due to implicit cast, I think
                            *cpp_unexposed_expression::build(cpp_builtin_type::build("int"), "42"),
-                           cpp_storage_class_none, false);
+                           cpp_storage_class_none, false, false);
         else if (var.name() == "c")
             check_variable(var, *cpp_builtin_type::build("float"),
                            *cpp_unexposed_expression::build(cpp_builtin_type::build("float"),
                                                             "3.f+0.14f"),
-                           cpp_storage_class_none, false);
+                           cpp_storage_class_none, false, false);
         else if (var.name() == "d")
-            check_variable(var, *int_type, nullptr, cpp_storage_class_extern, false);
+            check_variable(var, *int_type, nullptr, cpp_storage_class_extern, false, true);
         else if (var.name() == "e")
-            check_variable(var, *int_type, nullptr, cpp_storage_class_static, false);
+            check_variable(var, *int_type, nullptr, cpp_storage_class_static, false, false);
         else if (var.name() == "f")
-            check_variable(var, *int_type, nullptr, cpp_storage_class_thread_local, false);
+            check_variable(var, *int_type, nullptr, cpp_storage_class_thread_local, false, false);
         else if (var.name() == "g")
             check_variable(var, *int_type, nullptr,
-                           cpp_storage_class_static | cpp_storage_class_thread_local, false);
+                           cpp_storage_class_static | cpp_storage_class_thread_local, false, false);
         else if (var.name() == "h")
             check_variable(var, *cpp_cv_qualified_type::build(cpp_builtin_type::build("int"),
                                                               cpp_cv_const),
                            *cpp_literal_expression::build(cpp_builtin_type::build("int"), "12"),
-                           cpp_storage_class_none, true);
+                           cpp_storage_class_none, true, false);
         else if (var.name() == "i")
             check_variable(var,
                            *cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "foo")),
-                           nullptr, cpp_storage_class_none, false);
+                           nullptr, cpp_storage_class_none, false, false);
         else if (var.name() == "j")
             check_variable(var, *cpp_cv_qualified_type::build(cpp_user_defined_type::build(
                                                                   cpp_type_ref(cpp_entity_id(""),
@@ -92,7 +103,7 @@ static struct {} l;
                                                                 cpp_type_ref(cpp_entity_id(""),
                                                                              "bar")),
                                                             "bar()"),
-                           cpp_storage_class_none, false);
+                           cpp_storage_class_none, false, false);
         else if (var.name() == "k")
             check_variable(var,
                            *cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "baz")),
@@ -100,10 +111,10 @@ static struct {} l;
                                                                 cpp_type_ref(cpp_entity_id(""),
                                                                              "baz")),
                                                             "{}"),
-                           cpp_storage_class_none, false);
+                           cpp_storage_class_none, false, false);
         else if (var.name() == "l")
             check_variable(var, *cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "")),
-                           nullptr, cpp_storage_class_static, false);
+                           nullptr, cpp_storage_class_static, false, false);
         else
             REQUIRE(false);
     });
@@ -123,6 +134,8 @@ struct test
 
     auto file  = parse({}, "static_cpp_variable.cpp", code);
     auto count = test_visit<cpp_variable>(*file, [&](const cpp_variable& var) {
+        REQUIRE(var.is_declaration());
+        REQUIRE(!var.is_definition());
         REQUIRE(!var.default_value());
         REQUIRE(!var.is_constexpr());
         REQUIRE(is_static(var.storage_class()));

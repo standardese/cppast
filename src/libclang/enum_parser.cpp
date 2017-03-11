@@ -66,8 +66,6 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_enum(const detail::parse_context& 
                                                    const CXCursor&              cur)
 {
     DEBUG_ASSERT(cur.kind == CXCursor_EnumDecl, detail::assert_handler{});
-    if (!clang_isCursorDefinition(cur))
-        return nullptr;
 
     auto builder = make_enum_builder(context, cur);
     detail::visit_children(cur, [&](const CXCursor& child) {
@@ -81,5 +79,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_enum(const detail::parse_context& 
             context.logger->log("libclang parser", ex.get_diagnostic());
         }
     });
-    return builder.finish(*context.idx, get_entity_id(cur));
+    if (clang_isCursorDefinition(cur))
+        return builder.finish(*context.idx, get_entity_id(cur));
+    else
+        return builder.finish_declaration(get_entity_id(cur));
 }

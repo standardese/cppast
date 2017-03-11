@@ -7,6 +7,7 @@
 
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_container.hpp>
+#include <cppast/cpp_forward_declarable.hpp>
 #include <cppast/cpp_type.hpp>
 
 namespace cppast
@@ -112,7 +113,13 @@ namespace cppast
     };
 
     /// A [cppast::cpp_entity]() modelling a C++ class.
-    class cpp_class final : public cpp_entity, public cpp_entity_container<cpp_class, cpp_entity>
+    ///
+    /// This can either be a definition or just a forward declaration.
+    /// If it is just a forward declaration,
+    /// everything except the class type will not be available.
+    class cpp_class final : public cpp_entity,
+                            public cpp_entity_container<cpp_class, cpp_entity>,
+                            public cpp_forward_declarable
     {
     public:
         static cpp_entity_kind kind() noexcept;
@@ -163,6 +170,15 @@ namespace cppast
             /// \returns The finished class.
             std::unique_ptr<cpp_class> finish(const cpp_entity_index& idx,
                                               cpp_entity_id           id) noexcept;
+
+            /// \effects Marks the class as forward declaration.
+            /// \returns The finished class.
+            /// \notes It will not be registered, as it is not the main definition.
+            std::unique_ptr<cpp_class> finish_declaration(cpp_entity_id definition_id) noexcept
+            {
+                class_->set_definition(definition_id);
+                return std::move(class_);
+            }
 
         private:
             std::unique_ptr<cpp_class> class_;

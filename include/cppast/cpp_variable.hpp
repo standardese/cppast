@@ -6,6 +6,7 @@
 #define CPPAST_CPP_VARIABLE_HPP_INCLUDED
 
 #include <cppast/cpp_entity.hpp>
+#include <cppast/cpp_forward_declarable.hpp>
 #include <cppast/cpp_storage_class_specifiers.hpp>
 #include <cppast/cpp_variable_base.hpp>
 
@@ -15,7 +16,9 @@ namespace cppast
     /// \notes This is not a member variable,
     /// use [cppast::cpp_member_variable]() for that.
     /// But it can be `static` member variable.
-    class cpp_variable final : public cpp_entity, public cpp_variable_base
+    class cpp_variable final : public cpp_entity,
+                               public cpp_variable_base,
+                               public cpp_forward_declarable
     {
     public:
         static cpp_entity_kind kind() noexcept;
@@ -27,6 +30,14 @@ namespace cppast
                                                    std::unique_ptr<cpp_expression> def,
                                                    cpp_storage_class_specifiers    spec,
                                                    bool                            is_constexpr);
+
+        /// \returns A newly created variable that is a declaration.
+        /// A declaration will not be registered and it does not have the default value.
+        static std::unique_ptr<cpp_variable> build_declaration(cpp_entity_id definition_id,
+                                                               std::string   name,
+                                                               std::unique_ptr<cpp_type>    type,
+                                                               cpp_storage_class_specifiers spec,
+                                                               bool is_constexpr);
 
         /// \returns The [cppast::cpp_storage_specifiers]() on that variable.
         cpp_storage_class_specifiers storage_class() const noexcept

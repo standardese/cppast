@@ -66,7 +66,6 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_variable(const detail::parse_conte
 
     auto name          = get_cursor_name(cur);
     auto type          = parse_type(context, clang_getCursorType(cur));
-    auto default_value = parse_default_value(context, cur);
     auto storage_class = parse_storage_class(cur);
     auto is_constexpr  = false;
 
@@ -80,8 +79,15 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_variable(const detail::parse_conte
         else if (token.value() == "constexpr")
             is_constexpr = true;
 
-    return cpp_variable::build(*context.idx, get_entity_id(cur), name.c_str(), std::move(type),
-                               std::move(default_value), storage_class, is_constexpr);
+    if (clang_isCursorDefinition(cur))
+    {
+        auto default_value = parse_default_value(context, cur);
+        return cpp_variable::build(*context.idx, get_entity_id(cur), name.c_str(), std::move(type),
+                                   std::move(default_value), storage_class, is_constexpr);
+    }
+    else
+        return cpp_variable::build_declaration(get_entity_id(cur), name.c_str(), std::move(type),
+                                               storage_class, is_constexpr);
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_member_variable(const detail::parse_context& context,

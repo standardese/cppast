@@ -88,11 +88,12 @@ namespace
     }
 }
 
+#include <iostream>
+#include "debug_helper.hpp"
+
 std::unique_ptr<cpp_entity> detail::parse_cpp_class(const detail::parse_context& context,
                                                     const CXCursor&              cur)
 {
-    if (!clang_isCursorDefinition(cur))
-        return nullptr;
     auto builder = make_class_builder(cur);
     detail::visit_children(cur, [&](const CXCursor& child) {
         auto kind = clang_getCursorKind(child);
@@ -105,5 +106,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class(const detail::parse_context&
         else if (auto entity = parse_entity(context, child))
             builder.add_child(std::move(entity));
     });
-    return builder.finish(*context.idx, get_entity_id(cur));
+    if (clang_isCursorDefinition(cur))
+        return builder.finish(*context.idx, get_entity_id(cur));
+    else
+        return builder.finish_declaration(get_entity_id(cur));
 }

@@ -11,8 +11,6 @@ using namespace cppast;
 TEST_CASE("cpp_enum")
 {
     auto code = R"(
-enum ignore_me : int;
-
 enum a
 {
     a_a,
@@ -21,7 +19,7 @@ enum a
     a_d = a_a + 2,
 };
 
-enum class ignore_me2;
+enum class b; // forward declaration
 
 enum class b : int
 {
@@ -30,6 +28,7 @@ enum class b : int
     b_c
 };
 
+enum c : int;
 )";
 
     cpp_entity_index idx;
@@ -37,6 +36,8 @@ enum class b : int
     auto count            = test_visit<cpp_enum>(*file, [&](const cpp_enum& e) {
         if (e.name() == "a")
         {
+            REQUIRE(e.is_definition());
+            REQUIRE(!e.is_declaration());
             REQUIRE(!e.is_scoped());
             REQUIRE(!e.underlying_type());
 
@@ -79,34 +80,62 @@ enum class b : int
         else if (e.name() == "b")
         {
             REQUIRE(e.is_scoped());
-            REQUIRE(e.underlying_type());
-            REQUIRE(equal_types(idx, e.underlying_type().value(), *cpp_builtin_type::build("int")));
 
-            auto no_vals = 0u;
-            for (auto& val : e)
+            if (e.is_definition())
             {
-                REQUIRE(full_name(val) == "b::" + val.name());
-                if (val.name() == "b_a" || val.name() == "b_c")
+                REQUIRE(e.underlying_type());
+                REQUIRE(
+                    equal_types(idx, e.underlying_type().value(), *cpp_builtin_type::build("int")));
+
+                auto no_vals = 0u;
+                for (auto& val : e)
                 {
-                    ++no_vals;
-                    REQUIRE(!val.value());
+                    REQUIRE(full_name(val) == "b::" + val.name());
+                    if (val.name() == "b_a" || val.name() == "b_c")
+                    {
+                        ++no_vals;
+                        REQUIRE(!val.value());
+                    }
+                    else if (val.name() == "b_b")
+                    {
+                        ++no_vals;
+                        REQUIRE(val.value());
+                        auto& expr = val.value().value();
+                        REQUIRE(expr.kind() == cpp_expression_kind::literal);
+                        REQUIRE(static_cast<const cpp_literal_expression&>(expr).value() == "42");
+                        REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build("int")));
+                    }
+                    else
+                        REQUIRE(false);
                 }
-                else if (val.name() == "b_b")
-                {
-                    ++no_vals;
-                    REQUIRE(val.value());
-                    auto& expr = val.value().value();
-                    REQUIRE(expr.kind() == cpp_expression_kind::literal);
-                    REQUIRE(static_cast<const cpp_literal_expression&>(expr).value() == "42");
-                    REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build("int")));
-                }
-                else
-                    REQUIRE(false);
+                REQUIRE(no_vals == 3u);
             }
-            REQUIRE(no_vals == 3u);
+            else if (e.is_declaration())
+            {
+                REQUIRE(!e.underlying_type()); // no underlying type, implicit int
+                REQUIRE(count_children(e) == 0u);
+
+                auto definition = get_definition(idx, e);
+                REQUIRE(definition);
+                REQUIRE(definition.value().name() == "b");
+                REQUIRE(count_children(definition.value()) == 3u);
+            }
+            else
+                REQUIRE(false);
+        }
+        else if (e.name() == "c")
+        {
+            REQUIRE(e.is_declaration());
+            REQUIRE(!e.is_definition());
+            REQUIRE(!e.is_scoped());
+            REQUIRE(equal_types(idx, e.underlying_type().value(), *cpp_builtin_type::build("int")));
+            REQUIRE(count_children(e) == 0u);
+
+            auto definition = get_definition(idx, e);
+            REQUIRE(!definition);
         }
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 2u);
+    REQUIRE(count == 4u);
 }

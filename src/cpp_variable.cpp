@@ -25,6 +25,18 @@ std::unique_ptr<cpp_variable> cpp_variable::build(const cpp_entity_index& idx, c
     return result;
 }
 
+std::unique_ptr<cpp_variable> cpp_variable::build_declaration(cpp_entity_id definition_id,
+                                                              std::string   name,
+                                                              std::unique_ptr<cpp_type>    type,
+                                                              cpp_storage_class_specifiers spec,
+                                                              bool is_constexpr)
+{
+    auto result = std::unique_ptr<cpp_variable>(
+        new cpp_variable(std::move(name), std::move(type), nullptr, spec, is_constexpr));
+    result->set_definition(definition_id);
+    return result;
+}
+
 cpp_entity_kind cpp_variable::do_get_entity_kind() const noexcept
 {
     return kind();

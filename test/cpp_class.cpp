@@ -11,12 +11,15 @@ using namespace cppast;
 TEST_CASE("cpp_class")
 {
     auto code = R"(
+// forward declarations
+struct a;
+class b;
+struct unresolved;
+
 // basic
 struct a {};
 class b final {};
 union c {};
-
-struct ignore_me;
 
 // members
 struct d
@@ -62,16 +65,42 @@ struct g
             REQUIRE(!c.is_final());
             REQUIRE(c.bases().begin() == c.bases().end());
             REQUIRE(c.begin() == c.end());
+
+            auto definition = get_definition(idx, c);
+            REQUIRE(definition);
+            REQUIRE(definition.value().name() == c.name());
         }
         else if (c.name() == "b")
         {
             REQUIRE(c.class_kind() == cpp_class_kind::class_t);
-            REQUIRE(c.is_final());
             REQUIRE(c.bases().begin() == c.bases().end());
             REQUIRE(c.begin() == c.end());
+
+            if (c.is_definition())
+                REQUIRE(c.is_final());
+            else
+                REQUIRE(c.is_declaration());
+
+            auto definition = get_definition(idx, c);
+            REQUIRE(definition);
+            REQUIRE(definition.value().name() == "b");
+        }
+        else if (c.name() == "unresolved")
+        {
+            REQUIRE(c.is_declaration());
+            REQUIRE(!c.is_definition());
+            REQUIRE(c.class_kind() == cpp_class_kind::struct_t);
+            REQUIRE(!c.is_final());
+            REQUIRE(c.bases().begin() == c.bases().end());
+            REQUIRE(c.begin() == c.end());
+
+            auto definition = get_definition(idx, c);
+            REQUIRE(!definition);
         }
         else if (c.name() == "c")
         {
+            REQUIRE(c.is_definition());
+            REQUIRE(!c.is_declaration());
             REQUIRE(c.class_kind() == cpp_class_kind::union_t);
             REQUIRE(!c.is_final());
             REQUIRE(c.bases().begin() == c.bases().end());
@@ -79,6 +108,8 @@ struct g
         }
         else if (c.name() == "d")
         {
+            REQUIRE(c.is_definition());
+            REQUIRE(!c.is_declaration());
             REQUIRE(c.class_kind() == cpp_class_kind::struct_t);
             REQUIRE(!c.is_final());
             REQUIRE(c.bases().begin() == c.bases().end());
@@ -133,6 +164,8 @@ struct g
         }
         else if (c.name() == "e")
         {
+            REQUIRE(c.is_definition());
+            REQUIRE(!c.is_declaration());
             REQUIRE(c.class_kind() == cpp_class_kind::class_t);
             REQUIRE(!c.is_final());
             REQUIRE(c.begin() == c.end());
@@ -166,6 +199,8 @@ struct g
         }
         else if (c.name() == "f")
         {
+            REQUIRE(c.is_definition());
+            REQUIRE(!c.is_declaration());
             REQUIRE(c.class_kind() == cpp_class_kind::struct_t);
             REQUIRE(!c.is_final());
             REQUIRE(c.begin() == c.end());
@@ -200,6 +235,8 @@ struct g
         }
         else if (c.name() == "g")
         {
+            REQUIRE(c.is_definition());
+            REQUIRE(!c.is_declaration());
             REQUIRE(c.class_kind() == cpp_class_kind::struct_t);
             REQUIRE(!c.is_final());
             REQUIRE(c.begin() == c.end());
@@ -226,5 +263,5 @@ struct g
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 8u);
+    REQUIRE(count == 11u);
 }

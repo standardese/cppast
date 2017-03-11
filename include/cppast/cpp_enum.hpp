@@ -13,6 +13,7 @@
 #include <cppast/cpp_entity_index.hpp>
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_expression.hpp>
+#include <cppast/cpp_forward_declarable.hpp>
 #include <cppast/cpp_type.hpp>
 
 namespace cppast
@@ -48,7 +49,12 @@ namespace cppast
     };
 
     /// A [cppast::cpp_entity]() modelling a C++ enumeration.
-    class cpp_enum final : public cpp_entity, public cpp_entity_container<cpp_enum, cpp_enum_value>
+    ///
+    /// This can either be a definition or just a forward declaration.
+    /// If it is just forward declared, it will not have any children.
+    class cpp_enum final : public cpp_entity,
+                           public cpp_entity_container<cpp_enum, cpp_enum_value>,
+                           public cpp_forward_declarable
     {
     public:
         static cpp_entity_kind kind() noexcept;
@@ -76,6 +82,15 @@ namespace cppast
             std::unique_ptr<cpp_enum> finish(const cpp_entity_index& idx, cpp_entity_id id) noexcept
             {
                 idx.register_entity(std::move(id), type_safe::ref(*enum_));
+                return std::move(enum_);
+            }
+
+            /// \effects Marks the enum as forward declaration.
+            /// \returns The finished enum.
+            /// \notes It will not be registered, as it is not the main definition.
+            std::unique_ptr<cpp_enum> finish_declaration(cpp_entity_id definition_id) noexcept
+            {
+                enum_->set_definition(definition_id);
                 return std::move(enum_);
             }
 
