@@ -124,9 +124,19 @@ namespace cppast
                 return cursor_;
             }
 
+            token_iterator begin() const noexcept
+            {
+                return begin_;
+            }
+
             token_iterator cur() const noexcept
             {
                 return cur_;
+            }
+
+            token_iterator end() const noexcept
+            {
+                return end_;
             }
 
             void set_cur(token_iterator iter) noexcept

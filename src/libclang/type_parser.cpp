@@ -183,6 +183,9 @@ namespace
         return cpp_ref_none;
     }
 
+    std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context,
+                                              const CXType&                type);
+
     std::unique_ptr<cpp_expression> parse_array_size(const CXType& type)
     {
         auto size = clang_getArraySize(type);
@@ -214,8 +217,27 @@ namespace
                                                                size_expr.rend()));
     }
 
-    std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context,
-                                              const CXType&                type);
+    std::unique_ptr<cpp_type> try_parse_array_type(const detail::parse_context& context,
+                                                   const CXType&                type)
+    {
+        auto canonical  = clang_getCanonicalType(type);
+        auto value_type = clang_getArrayElementType(type);
+        if (value_type.kind == CXType_Invalid)
+        {
+            // value_type is invalid, however type can still be an array
+            // as there seems to be a libclang bug
+            // only if the canonical type is not an array,
+            // is it truly not an array
+            value_type = clang_getArrayElementType(canonical);
+            if (value_type.kind == CXType_Invalid)
+                return nullptr;
+            // we have an array, even though type isn't one directly
+            // only downside of this workaround: we've stripped away typedefs
+        }
+
+        auto size = parse_array_size(canonical); // type may not work, see above
+        return cpp_array_type::build(parse_type_impl(context, value_type), std::move(size));
+    }
 
     template <class Builder>
     std::unique_ptr<cpp_type> add_parameters(Builder& builder, const detail::parse_context& context,
@@ -317,6 +339,9 @@ namespace
                 // guess what: after you've called clang_getPointeeType() on a function pointer
                 // you'll get an unexposed type
                 return ftype;
+            else if (auto atype = try_parse_array_type(context, type))
+                // same deal here
+                return atype;
             return cpp_unexposed_type::build(get_type_spelling(type).c_str());
 
         case CXType_Void:
@@ -379,11 +404,7 @@ namespace
         case CXType_VariableArray:
         case CXType_DependentSizedArray:
         case CXType_ConstantArray:
-        {
-            auto size       = parse_array_size(type);
-            auto value_type = parse_type_impl(context, clang_getArrayElementType(type));
-            return cpp_array_type::build(std::move(value_type), std::move(size));
-        }
+            return try_parse_array_type(context, type);
 
         case CXType_FunctionNoProto:
         case CXType_FunctionProto:

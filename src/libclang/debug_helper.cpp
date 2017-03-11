@@ -38,11 +38,11 @@ void detail::print_cursor_info(const CXCursor& cur) noexcept
                 cxstring(clang_getCursorKindSpelling(cur.kind)).c_str());
 }
 
-void detail::print_tokens(const detail::cxtranslation_unit& tu, const CXFile& file,
+void detail::print_tokens(const CXTranslationUnit& tu, const CXFile& file,
                           const CXCursor& cur) noexcept
 {
     std::lock_guard<std::mutex> lock(mtx);
-    detail::tokenizer           tokenizer(tu.get(), file, cur);
+    detail::tokenizer           tokenizer(tu, file, cur);
     for (auto& token : tokenizer)
         std::printf("%s ", token.c_str());
     std::puts("\n");

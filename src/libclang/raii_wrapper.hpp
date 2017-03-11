@@ -28,7 +28,7 @@ namespace cppast
             {
             }
 
-            raii_wrapper(T obj) noexcept : obj_(obj)
+            explicit raii_wrapper(T obj) noexcept : obj_(obj)
             {
                 DEBUG_ASSERT(obj_, detail::assert_handler{});
             }

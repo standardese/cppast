@@ -19,7 +19,7 @@ namespace cppast
 
         void print_cursor_info(const CXCursor& cur) noexcept;
 
-        void print_tokens(const cxtranslation_unit& tu, const CXFile& file,
+        void print_tokens(const CXTranslationUnit& tu, const CXFile& file,
                           const CXCursor& cur) noexcept;
     }
 } // namespace cppast::detail

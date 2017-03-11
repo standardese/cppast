@@ -17,6 +17,8 @@ namespace cppast
     class cpp_function_parameter final : public cpp_entity, public cpp_variable_base
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// \returns A newly created and registered function parameter.
         static std::unique_ptr<cpp_function_parameter> build(
             const cpp_entity_index& idx, cpp_entity_id id, std::string name,
@@ -121,6 +123,7 @@ namespace cppast
             std::unique_ptr<T> finish(const cpp_entity_index& idx, cpp_entity_id id,
                                       cpp_function_body_kind body_kind)
             {
+                function->body_ = body_kind;
                 if (cppast::is_definition(body_kind))
                     idx.register_entity(std::move(id), type_safe::cref(*function));
                 else
@@ -161,6 +164,8 @@ namespace cppast
     class cpp_function final : public cpp_function_base
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// Builds a [cppast::cpp_function]().
         class builder : public cpp_function_base::basic_builder<cpp_function>
         {

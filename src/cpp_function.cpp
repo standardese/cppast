@@ -8,6 +8,11 @@
 
 using namespace cppast;
 
+cpp_entity_kind cpp_function_parameter::kind() noexcept
+{
+    return cpp_entity_kind::function_parameter_t;
+}
+
 std::unique_ptr<cpp_function_parameter> cpp_function_parameter::build(
     const cpp_entity_index& idx, cpp_entity_id id, std::string name, std::unique_ptr<cpp_type> type,
     std::unique_ptr<cpp_expression> def)
@@ -20,10 +25,15 @@ std::unique_ptr<cpp_function_parameter> cpp_function_parameter::build(
 
 cpp_entity_kind cpp_function_parameter::do_get_entity_kind() const noexcept
 {
-    return cpp_entity_kind::function_parameter_t;
+    return kind();
+}
+
+cpp_entity_kind cpp_function::kind() noexcept
+{
+    return cpp_entity_kind::function_t;
 }
 
 cpp_entity_kind cpp_function::do_get_entity_kind() const noexcept
 {
-    return cpp_entity_kind::function_t;
+    return kind();
 }

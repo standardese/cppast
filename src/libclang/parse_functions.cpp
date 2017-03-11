@@ -4,6 +4,8 @@
 
 #include "parse_functions.hpp"
 
+#include <cppast/cpp_storage_class_specifiers.hpp>
+
 using namespace cppast;
 
 cpp_entity_id detail::get_entity_id(const CXCursor& cur)
@@ -16,6 +18,35 @@ cpp_entity_id detail::get_entity_id(const CXCursor& cur)
 detail::cxstring detail::get_cursor_name(const CXCursor& cur)
 {
     return cxstring(clang_getCursorSpelling(cur));
+}
+
+cpp_storage_class_specifiers detail::get_storage_class(const CXCursor& cur)
+{
+    switch (clang_Cursor_getStorageClass(cur))
+    {
+    case CX_SC_Invalid:
+        break;
+
+    case CX_SC_None:
+        return cpp_storage_class_none;
+
+    case CX_SC_Auto:
+    case CX_SC_Register:
+        return cpp_storage_class_auto;
+
+    case CX_SC_Extern:
+        return cpp_storage_class_extern;
+    case CX_SC_Static:
+        return cpp_storage_class_static;
+
+    case CX_SC_PrivateExtern:
+    case CX_SC_OpenCLWorkGroupLocal:
+        // non-exposed storage classes
+        return cpp_storage_class_auto;
+    }
+
+    DEBUG_UNREACHABLE(detail::parse_error_handler{}, cur, "unexpected storage class");
+    return cpp_storage_class_auto;
 }
 
 std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& context,
@@ -53,6 +84,9 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         return parse_cpp_variable(context, cur);
     case CXCursor_FieldDecl:
         return parse_cpp_member_variable(context, cur);
+
+    case CXCursor_FunctionDecl:
+        return parse_cpp_function(context, cur);
 
     default:
         break;

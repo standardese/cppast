@@ -156,7 +156,7 @@ namespace
             }
         }
 
-        return tu;
+        return detail::cxtranslation_unit(tu);
     }
 
     unsigned get_line_no(const CXCursor& cursor)

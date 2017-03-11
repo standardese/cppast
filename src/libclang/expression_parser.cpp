@@ -10,11 +10,11 @@ using namespace cppast;
 
 namespace
 {
-    std::string get_expression_str(detail::token_stream& stream)
+    std::string get_expression_str(detail::token_stream& stream, detail::token_iterator end)
     {
         // just concat everything
         std::string expr;
-        while (!stream.done())
+        while (stream.cur() != end)
             expr += stream.get().c_str();
         return expr;
     }
@@ -30,7 +30,7 @@ std::unique_ptr<cpp_expression> detail::parse_expression(const detail::parse_con
     detail::token_stream stream(tokenizer, cur);
 
     auto type = parse_type(context, clang_getCursorType(cur));
-    auto expr = get_expression_str(stream);
+    auto expr = get_expression_str(stream, stream.end());
     if (kind == CXCursor_CallExpr && (expr.empty() || expr.back() != ')'))
     {
         // we have a call expression that doesn't end in a closing parentheses
@@ -47,12 +47,13 @@ std::unique_ptr<cpp_expression> detail::parse_expression(const detail::parse_con
         return cpp_unexposed_expression::build(std::move(type), std::move(expr));
 }
 
-std::unique_ptr<cpp_expression> detail::parse_raw_expression(const parse_context& context,
-                                                             token_stream&        stream,
-                                                             const CXType&        type)
+std::unique_ptr<cpp_expression> detail::parse_raw_expression(const parse_context&,
+                                                             token_stream&             stream,
+                                                             token_iterator            end,
+                                                             std::unique_ptr<cpp_type> type)
 {
     if (stream.done())
         return nullptr;
-    auto expr = get_expression_str(stream);
-    return cpp_unexposed_expression::build(parse_type(context, type), std::move(expr));
+    auto expr = get_expression_str(stream, end);
+    return cpp_unexposed_expression::build(std::move(type), std::move(expr));
 }
