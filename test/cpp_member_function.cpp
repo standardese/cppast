@@ -130,3 +130,58 @@ struct bar : foo
     });
     REQUIRE(count == 12u);
 }
+
+TEST_CASE("cpp_conversion_op")
+{
+    auto code = R"(
+namespace ns
+{
+    using type = char;
+}
+
+// most of it only need to be check in member function
+struct foo
+{
+    operator int&();
+    explicit operator bool() const;
+    constexpr operator ns::type();
+};
+)";
+
+    cpp_entity_index idx;
+    auto             file = parse(idx, "cpp_conversion_op.cpp", code);
+    auto count            = test_visit<cpp_conversion_op>(*file, [&](const cpp_conversion_op& op) {
+        REQUIRE(op.name().empty());
+        REQUIRE(count_children(op) == 0u);
+        REQUIRE(!op.is_variadic());
+        REQUIRE(op.body_kind() == cpp_function_declaration);
+        REQUIRE(op.ref_qualifier() == cpp_ref_none);
+        REQUIRE(!op.virtual_info());
+        REQUIRE(!op.noexcept_condition());
+
+        if (!op.is_explicit() && !op.is_constexpr())
+        {
+            REQUIRE(equal_types(idx, op.return_type(),
+                                *cpp_reference_type::build(cpp_builtin_type::build("int"),
+                                                           cpp_ref_lvalue)));
+            REQUIRE(op.cv_qualifier() == cpp_cv_none);
+            REQUIRE(!op.is_explicit());
+            REQUIRE(!op.is_constexpr());
+        }
+        else if (op.is_explicit() && !op.is_constexpr())
+        {
+            REQUIRE(equal_types(idx, op.return_type(), *cpp_builtin_type::build("bool")));
+            REQUIRE(op.cv_qualifier() == cpp_cv_const);
+        }
+        else if (!op.is_explicit() && op.is_constexpr())
+        {
+            REQUIRE(equal_types(idx, op.return_type(),
+                                *cpp_user_defined_type::build(
+                                    cpp_type_ref(cpp_entity_id(""), "ns::type"))));
+            REQUIRE(op.cv_qualifier() == cpp_cv_none);
+        }
+        else
+            REQUIRE(false);
+    });
+    REQUIRE(count == 3u);
+}

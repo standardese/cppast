@@ -170,12 +170,32 @@ void detail::skip(detail::token_stream& stream, const char* str)
     stream.bump();
 }
 
-bool detail::skip_if(detail::token_stream& stream, const char* str)
+namespace
 {
-    auto& token = stream.peek();
-    if (token != str)
-        return false;
-    stream.bump();
+    bool starts_with(const char*& str, const detail::token& t)
+    {
+        if (std::strncmp(str, t.c_str(), t.value().length()) != 0)
+            return false;
+        str += t.value().length();
+        while (*str == ' ' || *str == '\t')
+            ++str;
+        return true;
+    }
+}
+
+bool detail::skip_if(detail::token_stream& stream, const char* str, bool multi_token)
+{
+    auto save = stream.cur();
+    do
+    {
+        auto& token = stream.peek();
+        if (!starts_with(str, token) || (!multi_token && *str != '\0'))
+        {
+            stream.set_cur(save);
+            return false;
+        }
+        stream.bump();
+    } while (multi_token && *str);
     return true;
 }
 

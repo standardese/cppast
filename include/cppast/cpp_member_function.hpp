@@ -146,6 +146,9 @@ namespace cppast
             {
                 static_cast<cpp_member_function_base&>(*this->function).constexpr_ = true;
             }
+
+        protected:
+            basic_member_builder() noexcept = default;
         };
 
         /// \effects Sets name and return type, as well as the rest to defaults.
@@ -173,10 +176,11 @@ namespace cppast
         static cpp_entity_kind kind() noexcept;
 
         /// Builder for [cppast::cpp_member_function]().
-        class builder : public basic_member_builder<cpp_member_function>
+        class builder : public cpp_member_function_base::basic_member_builder<cpp_member_function>
         {
         public:
-            using basic_member_builder::basic_member_builder;
+            using cpp_member_function_base::basic_member_builder<cpp_member_function>::
+                basic_member_builder;
         };
 
     private:
@@ -191,17 +195,29 @@ namespace cppast
     class cpp_conversion_op final : public cpp_member_function_base
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// Builder for [cppast::cpp_conversion_op]().
         class builder : public basic_member_builder<cpp_conversion_op>
         {
         public:
-            using basic_member_builder::basic_member_builder;
+            /// \effects Creates it giving it the return type.
+            /// \notes It does not have a name as it is given by the return type.
+            builder(std::unique_ptr<cpp_type> type)
+            {
+                function =
+                    std::unique_ptr<cpp_conversion_op>(new cpp_conversion_op(std::move(type)));
+            }
 
             /// \effects Marks the conversion operator `explicit`.
             void is_explicit() noexcept
             {
                 function->explicit_ = true;
             }
+
+        private:
+            using basic_member_builder::is_variadic;
+            using basic_member_builder::add_parameter;
         };
 
         /// \returns Whether or not the conversion is `explicit`.
@@ -211,14 +227,16 @@ namespace cppast
         }
 
     private:
-        cpp_conversion_op(std::string name, std::unique_ptr<cpp_type> return_t)
-        : cpp_member_function_base(std::move(name), std::move(return_t)), explicit_(false)
+        cpp_conversion_op(std::unique_ptr<cpp_type> return_t)
+        : cpp_member_function_base("", std::move(return_t)), explicit_(false)
         {
         }
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
         bool explicit_;
+
+        friend basic_member_builder<cpp_conversion_op>;
     };
 
     /// A [cppast::cpp_entity]() modelling a C++ constructor.

@@ -29,8 +29,8 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         if (user_parsed.name() != user_synthesized.name())
             return false;
         auto entity = user_parsed.get(idx);
-        return entity.has_value() && entity.value().name().empty()
-               || entity.value().name() == user_parsed.name();
+        return entity.has_value() && (entity.value().name().empty()
+                                      || full_name(entity.value()) == user_parsed.name());
     }
 
     case cpp_type_kind::cv_qualified:

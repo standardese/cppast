@@ -154,7 +154,8 @@ namespace cppast
         void skip(token_stream& stream, const char* str);
 
         // skips the next token if it has the given string
-        bool skip_if(token_stream& stream, const char* str);
+        // if multi_token == true, str can consist of multiple tokens optionally separated by whitespace
+        bool skip_if(token_stream& stream, const char* str, bool multi_token = false);
 
         // returns the location of the closing bracket
         // the current token must be (,[,{ or <

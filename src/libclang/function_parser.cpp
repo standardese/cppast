@@ -66,7 +66,8 @@ namespace
         prefix_info result;
 
         // just check for keywords until we've reached the function name
-        while (!detail::skip_if(stream, name.c_str()))
+        // notes: name can have multiple tokens if it is an operator
+        while (!detail::skip_if(stream, name.c_str(), true))
         {
             if (detail::skip_if(stream, "constexpr"))
                 result.is_constexpr = true;
@@ -270,7 +271,7 @@ namespace
 
         auto prefix = parse_prefix_info(stream, name);
         DEBUG_ASSERT(!prefix.is_virtual, detail::parse_error_handler{}, cur,
-                     "unexpected tokens in function prefix");
+                     "free function cannot be virtual");
         if (prefix.is_constexpr)
             builder.is_constexpr();
 
@@ -356,6 +357,21 @@ namespace
             return result;
         }
     }
+
+    template <class Builder>
+    std::unique_ptr<cpp_entity> handle_suffix(const detail::parse_context& context,
+                                              const CXCursor& cur, Builder& builder,
+                                              detail::token_stream& stream, bool is_virtual)
+    {
+        auto suffix = parse_suffix_info(stream, context);
+        builder.cv_ref_qualifier(suffix.cv_qualifier, suffix.ref_qualifier);
+        if (suffix.noexcept_condition)
+            builder.noexcept_condition(move(suffix.noexcept_condition));
+        if (auto virt = calculate_virtual(cur, is_virtual, suffix.virtual_keywords))
+            builder.virtual_info(virt.value());
+
+        return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
+    }
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::parse_context& context,
@@ -379,13 +395,53 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
         builder.is_constexpr();
 
     skip_parameters(stream);
+    return handle_suffix(context, cur, builder, stream, prefix.is_virtual);
+}
 
-    auto suffix = parse_suffix_info(stream, context);
-    builder.cv_ref_qualifier(suffix.cv_qualifier, suffix.ref_qualifier);
-    if (suffix.noexcept_condition)
-        builder.noexcept_condition(std::move(suffix.noexcept_condition));
-    if (auto virt = calculate_virtual(cur, prefix.is_virtual, suffix.virtual_keywords))
-        builder.virtual_info(virt.value());
+std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_context& context,
+                                                            const CXCursor&              cur)
+{
+    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_ConversionFunction, detail::assert_handler{});
+    cpp_conversion_op::builder builder(detail::parse_type(context, clang_getCursorResultType(cur)));
 
-    return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
+    detail::tokenizer    tokenizer(context.tu, context.file, cur);
+    detail::token_stream stream(tokenizer, cur);
+
+    // look for constexpr, explicit, virtual
+    // must come before the operator token
+    auto is_virtual = false;
+    while (!detail::skip_if(stream, "operator"))
+    {
+        if (detail::skip_if(stream, "virtual"))
+            is_virtual = true;
+        else if (detail::skip_if(stream, "constexpr"))
+            builder.is_constexpr();
+        else if (detail::skip_if(stream, "explicit"))
+            builder.is_explicit();
+        else
+            stream.bump();
+    }
+
+    // heuristic to find arguments tokens
+    // skip forward, skipping inside brackets
+    while (true)
+    {
+        if (detail::skip_if(stream, "("))
+        {
+            if (detail::skip_if(stream, ")"))
+                break;
+            else
+                detail::skip_brackets(stream);
+        }
+        else if (detail::skip_if(stream, "["))
+            detail::skip_brackets(stream);
+        else if (detail::skip_if(stream, "{"))
+            detail::skip_brackets(stream);
+        else if (detail::skip_if(stream, "<"))
+            detail::skip_brackets(stream);
+        else
+            stream.bump();
+    }
+
+    return handle_suffix(context, cur, builder, stream, is_virtual);
 }
