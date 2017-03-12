@@ -8,9 +8,14 @@
 
 using namespace cppast;
 
-cpp_entity_kind cpp_member_function::do_get_entity_kind() const noexcept
+cpp_entity_kind cpp_member_function::kind() noexcept
 {
     return cpp_entity_kind::member_function_t;
+}
+
+cpp_entity_kind cpp_member_function::do_get_entity_kind() const noexcept
+{
+    return kind();
 }
 
 cpp_entity_kind cpp_conversion_op::do_get_entity_kind() const noexcept

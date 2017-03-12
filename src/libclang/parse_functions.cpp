@@ -91,7 +91,7 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         // check for static function
         if (auto func = try_parse_static_cpp_function(context, cur))
             return func;
-        break;
+        return parse_cpp_member_function(context, cur);
 
     default:
         break;

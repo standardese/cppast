@@ -5,30 +5,72 @@
 #ifndef CPPAST_CPP_MEMBER_FUNCTION_HPP_INCLUDED
 #define CPPAST_CPP_MEMBER_FUNCTION_HPP_INCLUDED
 
+#include <type_safe/flag_set.hpp>
+
 #include <cppast/cpp_function.hpp>
 
 namespace cppast
 {
     /// The `virtual`-ness of a member function.
-    enum cpp_virtual
+    ///
+    /// This is a [ts::flag_set]() `enum`.
+    /// \notes It does not specify whether a member function is `virtual` or not,
+    /// only the kind of `virtual`.
+    /// \notes As surprising as it may be, any of these can be used in combination,
+    /// i.e. you can have a `final` non-overriding function or an overriding pure `virtual` function.
+    enum class cpp_virtual_flags
     {
-        cpp_virtual_none,     //< Not `virtual`.
-        cpp_virtual_pure,     //< Pure `virtual` function.
-        cpp_virtual_new,      //< New `virtual` function.
-        cpp_virtual_override, //< Overriden `virtual` function (attribute doesn't matter).
-        cpp_virtual_final,    //< `final` `virtual` function.
+        pure,     //< Set if the function is pure.
+        override, //< Set if the function overrides a base class function.
+        final,    //< Set if the function is marked `final`.
     };
+} // namespace cppast
 
-    /// \returns Whether or not the given flag means the function is `virtual`.
-    inline bool is_virtual(cpp_virtual virt) noexcept
+/// \exclude
+namespace type_safe
+{
+    template <>
+    struct flag_set_traits<cppast::cpp_virtual_flags> : std::true_type
     {
-        return virt != cpp_virtual_none;
+        static constexpr std::size_t size() noexcept
+        {
+            return 3u;
+        }
+    };
+} // namespace type_safe
+
+namespace cppast
+{
+    /// The `virtual` information of a member function.
+    ///
+    /// This is an optional of the combination of the [cppast::cpp_virtual_flags]().
+    /// If the optional has a value, the member function is `virtual`,
+    /// and the [ts::flag_set]() describes additional information.
+    using cpp_virtual = type_safe::optional<type_safe::flag_set<cpp_virtual_flags>>;
+
+    /// \returns Whether or not a member function is `virtual`.
+    inline bool is_virtual(const cpp_virtual& virt) noexcept
+    {
+        return virt.has_value();
     }
 
-    /// \returns Whether or not the given flag means the function overrides a `virtual` function.
-    inline bool is_overriden(cpp_virtual virt) noexcept
+    /// \returns Whether or not a member function is pure.
+    inline bool is_pure(const cpp_virtual& virt) noexcept
     {
-        return virt == cpp_virtual_override || virt == cpp_virtual_final;
+        return static_cast<bool>(virt.value_or(cpp_virtual_flags::final) & cpp_virtual_flags::pure);
+    }
+
+    /// \returns Whether or not a member function overrides another one.
+    inline bool is_overriding(const cpp_virtual& virt) noexcept
+    {
+        return static_cast<bool>(virt.value_or(cpp_virtual_flags::pure)
+                                 & cpp_virtual_flags::override);
+    }
+
+    /// \returns Whether or not a member function is `final`.
+    inline bool is_final(const cpp_virtual& virt) noexcept
+    {
+        return static_cast<bool>(virt.value_or(cpp_virtual_flags::pure) & cpp_virtual_flags::final);
     }
 
     /// Base classes for all regular member function.
@@ -43,8 +85,14 @@ namespace cppast
             return *return_type_;
         }
 
+        /// \returns Whether or not it is `virtual`.
+        bool is_virtual() const noexcept
+        {
+            return virtual_info().has_value();
+        }
+
         /// \returns The `virtual`-ness of the member function.
-        cpp_virtual virtual_info() const noexcept
+        const cpp_virtual& virtual_info() const noexcept
         {
             return virtual_;
         }
@@ -88,7 +136,7 @@ namespace cppast
             }
 
             /// \effects Sets the `virtual`-ness of the function.
-            void virtual_info(cpp_virtual virt) noexcept
+            void virtual_info(type_safe::flag_set<cpp_virtual_flags> virt) noexcept
             {
                 static_cast<cpp_member_function_base&>(*this->function).virtual_ = virt;
             }
@@ -104,7 +152,6 @@ namespace cppast
         cpp_member_function_base(std::string name, std::unique_ptr<cpp_type> return_type)
         : cpp_function_base(std::move(name)),
           return_type_(std::move(return_type)),
-          virtual_(cpp_virtual_none),
           cv_(cpp_cv_none),
           ref_(cpp_ref_none),
           constexpr_(false)
@@ -123,6 +170,8 @@ namespace cppast
     class cpp_member_function final : public cpp_member_function_base
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// Builder for [cppast::cpp_member_function]().
         class builder : public basic_member_builder<cpp_member_function>
         {
@@ -134,6 +183,8 @@ namespace cppast
         using cpp_member_function_base::cpp_member_function_base;
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;
+
+        friend basic_member_builder<cpp_member_function>;
     };
 
     /// A [cppast::cpp_entity]() modelling a C++ conversion operator.
@@ -238,6 +289,12 @@ namespace cppast
             using basic_builder::is_variadic;
         };
 
+        /// \returns Whether or not it is `virtual`.
+        bool is_virtual() const noexcept
+        {
+            return virtual_info().has_value();
+        }
+
         /// \returns The `virtual`-ness of the constructor.
         cpp_virtual virtual_info() const noexcept
         {
@@ -245,8 +302,7 @@ namespace cppast
         }
 
     private:
-        cpp_destructor(std::string name)
-        : cpp_function_base(std::move(name)), virtual_(cpp_virtual_none)
+        cpp_destructor(std::string name) : cpp_function_base(std::move(name))
         {
         }
 
