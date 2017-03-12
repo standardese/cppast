@@ -243,6 +243,8 @@ namespace cppast
     class cpp_constructor final : public cpp_function_base
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// Builder for [cppast::cpp_constructor]().
         class builder : public basic_builder<cpp_constructor>
         {
@@ -284,6 +286,8 @@ namespace cppast
 
         bool explicit_;
         bool constexpr_;
+
+        friend basic_builder<cpp_constructor>;
     };
 
     /// A [cppast::cpp_entity]() modelling a C++ destructor.

@@ -23,6 +23,13 @@ std::unique_ptr<cpp_function_parameter> cpp_function_parameter::build(
     return result;
 }
 
+std::unique_ptr<cpp_function_parameter> cpp_function_parameter::build(
+    std::unique_ptr<cpp_type> type, std::unique_ptr<cpp_expression> def)
+{
+    return std::unique_ptr<cpp_function_parameter>(
+        new cpp_function_parameter("", std::move(type), std::move(def)));
+}
+
 cpp_entity_kind cpp_function_parameter::do_get_entity_kind() const noexcept
 {
     return kind();

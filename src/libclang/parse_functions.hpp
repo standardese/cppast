@@ -91,6 +91,8 @@ namespace cppast
                                                               const CXCursor&      cur);
         std::unique_ptr<cpp_entity> parse_cpp_conversion_op(const parse_context& context,
                                                             const CXCursor&      cur);
+        std::unique_ptr<cpp_entity> parse_cpp_constructor(const parse_context& context,
+                                                          const CXCursor&      cur);
 
         std::unique_ptr<cpp_entity> parse_entity(const parse_context& context, const CXCursor& cur);
     }

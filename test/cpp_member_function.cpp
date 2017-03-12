@@ -185,3 +185,51 @@ struct foo
     });
     REQUIRE(count == 3u);
 }
+
+TEST_CASE("cpp_constructor")
+{
+    auto code = R"(
+// only test constructor specific stuff
+struct foo
+{
+    foo() noexcept = default;
+    explicit foo(int);
+    constexpr foo(int, char) = delete;
+};
+)";
+
+    cpp_entity_index idx;
+    auto             file = parse(idx, "cpp_constructor.cpp", code);
+    auto count            = test_visit<cpp_constructor>(*file, [&](const cpp_constructor& cont) {
+        REQUIRE(!cont.is_variadic());
+
+        if (count_children(cont) == 0u)
+        {
+            REQUIRE(cont.noexcept_condition());
+            REQUIRE(
+                equal_expressions(cont.noexcept_condition().value(),
+                                  *cpp_literal_expression::build(cpp_builtin_type::build("bool"),
+                                                                 "true")));
+            REQUIRE(!cont.is_explicit());
+            REQUIRE(!cont.is_constexpr());
+            REQUIRE(cont.body_kind() == cpp_function_defaulted);
+        }
+        else if (count_children(cont) == 1u)
+        {
+            REQUIRE(!cont.noexcept_condition());
+            REQUIRE(cont.is_explicit());
+            REQUIRE(!cont.is_constexpr());
+            REQUIRE(cont.body_kind() == cpp_function_declaration);
+        }
+        else if (count_children(cont) == 2u)
+        {
+            REQUIRE(!cont.noexcept_condition());
+            REQUIRE(!cont.is_explicit());
+            REQUIRE(cont.is_constexpr());
+            REQUIRE(cont.body_kind() == cpp_function_deleted);
+        }
+        else
+            REQUIRE(false);
+    });
+    REQUIRE(count == 3u);
+}

@@ -26,8 +26,12 @@ namespace
             default_value = detail::parse_expression(context, child);
         });
 
-        return cpp_function_parameter::build(*context.idx, detail::get_entity_id(cur), name.c_str(),
-                                             std::move(type), std::move(default_value));
+        if (name.empty())
+            return cpp_function_parameter::build(std::move(type), std::move(default_value));
+        else
+            return cpp_function_parameter::build(*context.idx, detail::get_entity_id(cur),
+                                                 name.c_str(), std::move(type),
+                                                 std::move(default_value));
     }
 
     template <class Builder>
@@ -163,12 +167,14 @@ namespace
         return cpp_function_declaration;
     }
 
-    void parse_body(detail::token_stream& stream, suffix_info& result)
+    void parse_body(detail::token_stream& stream, suffix_info& result, bool allow_virtual)
     {
         auto pure_virtual = false;
         result.body_kind  = parse_body_kind(stream, pure_virtual);
         if (pure_virtual)
         {
+            DEBUG_ASSERT(allow_virtual, detail::parse_error_handler{}, stream.cursor(),
+                         "unexpected token");
             if (result.virtual_keywords)
                 result.virtual_keywords.value() &= cpp_virtual_flags::pure;
             else
@@ -178,14 +184,18 @@ namespace
 
     // precondition: we've skipped the function parameters
     suffix_info parse_suffix_info(detail::token_stream&        stream,
-                                  const detail::parse_context& context)
+                                  const detail::parse_context& context, bool allow_qualifier,
+                                  bool allow_virtual)
     {
         suffix_info result(stream.cursor());
 
         // syntax: <attribute> <cv> <ref> <exception>
         detail::skip_attribute(stream);
-        result.cv_qualifier  = parse_cv(stream);
-        result.ref_qualifier = parse_ref(stream);
+        if (allow_qualifier)
+        {
+            result.cv_qualifier  = parse_cv(stream);
+            result.ref_qualifier = parse_ref(stream);
+        }
         if (detail::skip_if(stream, "throw"))
             // just because I can
             detail::skip_brackets(stream);
@@ -213,6 +223,8 @@ namespace
                     detail::skip_brackets(stream);
                 else if (detail::skip_if(stream, "override"))
                 {
+                    DEBUG_ASSERT(allow_virtual, detail::parse_error_handler{}, stream.cursor(),
+                                 "unexpected token");
                     if (result.virtual_keywords)
                         result.virtual_keywords.value() |= cpp_virtual_flags::override;
                     else
@@ -220,13 +232,15 @@ namespace
                 }
                 else if (detail::skip_if(stream, "final"))
                 {
+                    DEBUG_ASSERT(allow_virtual, detail::parse_error_handler{}, stream.cursor(),
+                                 "unexpected token");
                     if (result.virtual_keywords)
                         result.virtual_keywords.value() |= cpp_virtual_flags::final;
                     else
                         result.virtual_keywords = cpp_virtual_flags::final;
                 }
                 else if (detail::skip_if(stream, "="))
-                    parse_body(stream, result);
+                    parse_body(stream, result, allow_virtual);
                 else
                     stream.bump();
             }
@@ -236,19 +250,23 @@ namespace
             // syntax: <virtuals> <body>
             if (detail::skip_if(stream, "override"))
             {
+                DEBUG_ASSERT(allow_virtual, detail::parse_error_handler{}, stream.cursor(),
+                             "unexpected token");
                 result.virtual_keywords = cpp_virtual_flags::override;
                 if (detail::skip_if(stream, "final"))
                     result.virtual_keywords.value() |= cpp_virtual_flags::final;
             }
             else if (detail::skip_if(stream, "final"))
             {
+                DEBUG_ASSERT(allow_virtual, detail::parse_error_handler{}, stream.cursor(),
+                             "unexpected token");
                 result.virtual_keywords = cpp_virtual_flags::final;
                 if (detail::skip_if(stream, "override"))
                     result.virtual_keywords.value() |= cpp_virtual_flags::override;
             }
 
             if (detail::skip_if(stream, "="))
-                parse_body(stream, result);
+                parse_body(stream, result, allow_virtual);
         }
 
         return result;
@@ -277,10 +295,7 @@ namespace
 
         skip_parameters(stream);
 
-        auto suffix = parse_suffix_info(stream, context);
-        DEBUG_ASSERT(suffix.cv_qualifier == cpp_cv_none && suffix.ref_qualifier == cpp_ref_none
-                         && !suffix.virtual_keywords,
-                     detail::parse_error_handler{}, cur, "unexpected tokens in function suffix");
+        auto suffix = parse_suffix_info(stream, context, false, false);
         if (suffix.noexcept_condition)
             builder.noexcept_condition(std::move(suffix.noexcept_condition));
 
@@ -363,7 +378,7 @@ namespace
                                               const CXCursor& cur, Builder& builder,
                                               detail::token_stream& stream, bool is_virtual)
     {
-        auto suffix = parse_suffix_info(stream, context);
+        auto suffix = parse_suffix_info(stream, context, true, true);
         builder.cv_ref_qualifier(suffix.cv_qualifier, suffix.ref_qualifier);
         if (suffix.noexcept_condition)
             builder.noexcept_condition(move(suffix.noexcept_condition));
@@ -444,4 +459,38 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
     }
 
     return handle_suffix(context, cur, builder, stream, is_virtual);
+}
+
+std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_context& context,
+                                                          const CXCursor&              cur)
+{
+    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_Constructor, detail::assert_handler{});
+    auto name = detail::get_cursor_name(cur);
+
+    cpp_constructor::builder builder(name.c_str());
+    add_parameters(context, builder, cur);
+    if (clang_Cursor_isVariadic(cur))
+        builder.is_variadic();
+
+    detail::tokenizer    tokenizer(context.tu, context.file, cur);
+    detail::token_stream stream(tokenizer, cur);
+
+    // parse prefix
+    while (!detail::skip_if(stream, name.c_str()))
+    {
+        if (detail::skip_if(stream, "constexpr"))
+            builder.is_constexpr();
+        else if (detail::skip_if(stream, "explicit"))
+            builder.is_explicit();
+        else
+            stream.bump();
+    }
+
+    skip_parameters(stream);
+
+    auto suffix = parse_suffix_info(stream, context, false, false);
+    if (suffix.noexcept_condition)
+        builder.noexcept_condition(std::move(suffix.noexcept_condition));
+
+    return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
 }

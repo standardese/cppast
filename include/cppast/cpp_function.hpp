@@ -24,6 +24,11 @@ namespace cppast
             const cpp_entity_index& idx, cpp_entity_id id, std::string name,
             std::unique_ptr<cpp_type> type, std::unique_ptr<cpp_expression> def = nullptr);
 
+        /// \returns A newly created unnamed function parameter.
+        /// \notes It will not be registered, as nothing can refer to it.
+        static std::unique_ptr<cpp_function_parameter> build(
+            std::unique_ptr<cpp_type> type, std::unique_ptr<cpp_expression> def = nullptr);
+
     private:
         cpp_function_parameter(std::string name, std::unique_ptr<cpp_type> type,
                                std::unique_ptr<cpp_expression> def)

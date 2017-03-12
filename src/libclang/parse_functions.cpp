@@ -94,6 +94,8 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         return parse_cpp_member_function(context, cur);
     case CXCursor_ConversionFunction:
         return parse_cpp_conversion_op(context, cur);
+    case CXCursor_Constructor:
+        return parse_cpp_constructor(context, cur);
 
     default:
         break;
