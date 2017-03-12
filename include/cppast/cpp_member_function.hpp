@@ -294,6 +294,8 @@ namespace cppast
     class cpp_destructor final : public cpp_function_base
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// Builds a [cppast::cpp_destructor]().
         class builder : public basic_builder<cpp_destructor>
         {
@@ -331,6 +333,8 @@ namespace cppast
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
         cpp_virtual virtual_;
+
+        friend basic_builder<cpp_destructor>;
     };
 } // namespace cppast
 

@@ -202,6 +202,7 @@ struct foo
     auto             file = parse(idx, "cpp_constructor.cpp", code);
     auto count            = test_visit<cpp_constructor>(*file, [&](const cpp_constructor& cont) {
         REQUIRE(!cont.is_variadic());
+        REQUIRE(cont.name() == "foo");
 
         if (count_children(cont) == 0u)
         {
@@ -232,4 +233,69 @@ struct foo
             REQUIRE(false);
     });
     REQUIRE(count == 3u);
+}
+
+TEST_CASE("cpp_destructor")
+{
+    auto code = R"(
+struct a
+{
+    ~a();
+};
+
+struct b
+{
+    ~b() noexcept(false) {}
+};
+
+struct c
+{
+    virtual ~c() = default;
+};
+
+struct d : c
+{
+    ~d() final;
+};
+)";
+
+    auto file  = parse({}, "cpp_destructor.cpp", code);
+    auto count = test_visit<cpp_destructor>(*file, [&](const cpp_destructor& dtor) {
+        REQUIRE(count_children(dtor) == 0u);
+        REQUIRE(!dtor.is_variadic());
+
+        if (dtor.name() == "~a")
+        {
+            REQUIRE(!dtor.is_virtual());
+            REQUIRE(dtor.is_declaration());
+            REQUIRE(!dtor.noexcept_condition());
+        }
+        else if (dtor.name() == "~b")
+        {
+            REQUIRE(!dtor.is_virtual());
+            REQUIRE(dtor.body_kind() == cpp_function_definition);
+            REQUIRE(dtor.noexcept_condition());
+            REQUIRE(
+                equal_expressions(dtor.noexcept_condition().value(),
+                                  *cpp_unexposed_expression::build(cpp_builtin_type::build("bool"),
+                                                                   "false")));
+        }
+        else if (dtor.name() == "~c")
+        {
+            REQUIRE(dtor.virtual_info());
+            REQUIRE(dtor.virtual_info().value() == type_safe::flag_set<cpp_virtual_flags>{});
+            REQUIRE(dtor.body_kind() == cpp_function_defaulted);
+            REQUIRE(!dtor.noexcept_condition());
+        }
+        else if (dtor.name() == "~d")
+        {
+            REQUIRE(dtor.virtual_info());
+            REQUIRE(dtor.virtual_info().value()
+                    == (cpp_virtual_flags::override | cpp_virtual_flags::final));
+            REQUIRE(!dtor.noexcept_condition());
+        }
+        else
+            REQUIRE(false);
+    });
+    REQUIRE(count == 4u);
 }

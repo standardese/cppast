@@ -374,12 +374,28 @@ namespace
     }
 
     template <class Builder>
+    auto set_qualifier(int, Builder& b, cpp_cv cv, cpp_reference ref)
+        -> decltype(b.cv_ref_qualifier(cv, ref), true)
+    {
+        b.cv_ref_qualifier(cv, ref);
+        return true;
+    }
+
+    template <class Builder>
+    bool set_qualifier(short, Builder&, cpp_cv, cpp_reference)
+    {
+        return false;
+    }
+
+    template <class Builder>
     std::unique_ptr<cpp_entity> handle_suffix(const detail::parse_context& context,
                                               const CXCursor& cur, Builder& builder,
                                               detail::token_stream& stream, bool is_virtual)
     {
-        auto suffix = parse_suffix_info(stream, context, true, true);
-        builder.cv_ref_qualifier(suffix.cv_qualifier, suffix.ref_qualifier);
+        auto allow_qualifiers = set_qualifier(0, builder, cpp_cv_none, cpp_ref_none);
+
+        auto suffix = parse_suffix_info(stream, context, allow_qualifiers, true);
+        set_qualifier(0, builder, suffix.cv_qualifier, suffix.ref_qualifier);
         if (suffix.noexcept_condition)
             builder.noexcept_condition(move(suffix.noexcept_condition));
         if (auto virt = calculate_virtual(cur, is_virtual, suffix.virtual_keywords))
@@ -434,7 +450,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
         else if (detail::skip_if(stream, "explicit"))
             builder.is_explicit();
         else
-            stream.bump();
+            DEBUG_UNREACHABLE(detail::parse_error_handler{}, cur, "unexpected token");
     }
 
     // heuristic to find arguments tokens
@@ -483,7 +499,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
         else if (detail::skip_if(stream, "explicit"))
             builder.is_explicit();
         else
-            stream.bump();
+            DEBUG_UNREACHABLE(detail::parse_error_handler{}, cur, "unexpected token");
     }
 
     skip_parameters(stream);
@@ -493,4 +509,22 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
         builder.noexcept_condition(std::move(suffix.noexcept_condition));
 
     return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
+}
+
+std::unique_ptr<cpp_entity> detail::parse_cpp_destructor(const detail::parse_context& context,
+                                                         const CXCursor&              cur)
+{
+    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_Destructor, detail::assert_handler{});
+
+    detail::tokenizer    tokenizer(context.tu, context.file, cur);
+    detail::token_stream stream(tokenizer, cur);
+
+    auto is_virtual = detail::skip_if(stream, "virtual");
+    detail::skip(stream, "~");
+    auto                    name = std::string("~") + stream.get().c_str();
+    cpp_destructor::builder builder(std::move(name));
+
+    detail::skip(stream, "(");
+    detail::skip(stream, ")");
+    return handle_suffix(context, cur, builder, stream, is_virtual);
 }
