@@ -193,3 +193,57 @@ void l()
     });
     REQUIRE(count == 12u);
 }
+
+TEST_CASE("static cpp_function")
+{
+    auto code = R"(
+// no need to test anything special
+struct foo
+{
+    static void a();
+
+    static int b() noexcept {}
+
+    static constexpr char c() = delete;
+};
+)";
+
+    cpp_entity_index idx;
+    auto             file = parse(idx, "static_cpp_function.cpp", code);
+    auto count            = test_visit<cpp_function>(*file, [&](const cpp_function& func) {
+        REQUIRE(!func.is_variadic());
+        REQUIRE(count_children(func) == 0u);
+        REQUIRE(func.storage_class() == cpp_storage_class_static);
+
+        if (func.name() == "a")
+        {
+            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("void")));
+            REQUIRE(!func.noexcept_condition());
+            REQUIRE(!func.is_constexpr());
+            REQUIRE(func.body_kind() == cpp_function_declaration);
+        }
+        else if (func.name() == "b")
+        {
+            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("int")));
+            REQUIRE(func.noexcept_condition());
+            REQUIRE(
+                equal_expressions(func.noexcept_condition().value(),
+                                  *cpp_literal_expression::build(cpp_builtin_type::build("bool"),
+                                                                 "true")));
+            REQUIRE(!func.is_constexpr());
+            REQUIRE(func.body_kind() == cpp_function_definition);
+        }
+        else if (func.name() == "c")
+        {
+            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("char")));
+            REQUIRE(!func.noexcept_condition());
+            REQUIRE(func.is_constexpr());
+            REQUIRE(func.body_kind() == cpp_function_deleted);
+        }
+        else
+            REQUIRE(false);
+    });
+    REQUIRE(count == 3u);
+}
+
+// TODO: friend functions (clang 4.0 required)

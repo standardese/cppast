@@ -82,47 +82,63 @@ namespace
                           "unexpected token for function body kind");
         return cpp_function_declaration;
     }
+
+    std::unique_ptr<cpp_entity> parse_cpp_function_impl(const detail::parse_context& context,
+                                                        const CXCursor&              cur)
+    {
+        auto name = detail::get_cursor_name(cur);
+
+        cpp_function::builder builder(name.c_str(),
+                                      detail::parse_type(context, clang_getCursorResultType(cur)));
+        add_parameters(context, builder, cur);
+        if (clang_Cursor_isVariadic(cur))
+            builder.is_variadic();
+        builder.storage_class(detail::get_storage_class(cur));
+
+        detail::tokenizer    tokenizer(context.tu, context.file, cur);
+        detail::token_stream stream(tokenizer, cur);
+
+        // parse prefix
+        while (!detail::skip_if(stream, name.c_str()))
+        {
+            if (detail::skip_if(stream, "constexpr"))
+                builder.is_constexpr();
+            else
+                stream.bump();
+        }
+        // skip parameters
+        skip_parameters(stream);
+
+        auto body =
+            clang_isCursorDefinition(cur) ? cpp_function_definition : cpp_function_declaration;
+        // parse suffix
+        // tokenizer only tokenizes signature, so !stream.done() is sufficient
+        while (!stream.done())
+        {
+            if (auto expr = try_parse_noexcept(stream, context))
+                builder.noexcept_condition(std::move(expr));
+            else if (skip_if(stream, "="))
+                body = parse_body_kind(stream);
+            else
+                stream.bump();
+        }
+
+        return builder.finish(*context.idx, detail::get_entity_id(cur), body);
+    }
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_function(const detail::parse_context& context,
                                                        const CXCursor&              cur)
 {
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_FunctionDecl, detail::assert_handler{});
-    auto name = detail::get_cursor_name(cur);
+    return parse_cpp_function_impl(context, cur);
+}
 
-    cpp_function::builder builder(name.c_str(),
-                                  detail::parse_type(context, clang_getCursorResultType(cur)));
-    add_parameters(context, builder, cur);
-    if (clang_Cursor_isVariadic(cur))
-        builder.is_variadic();
-    builder.storage_class(detail::get_storage_class(cur));
-
-    detail::tokenizer    tokenizer(context.tu, context.file, cur);
-    detail::token_stream stream(tokenizer, cur);
-
-    // parse prefix
-    while (!detail::skip_if(stream, name.c_str()))
-    {
-        if (detail::skip_if(stream, "constexpr"))
-            builder.is_constexpr();
-        else
-            stream.bump();
-    }
-    // skip parameters
-    skip_parameters(stream);
-
-    auto body = clang_isCursorDefinition(cur) ? cpp_function_definition : cpp_function_declaration;
-    // parse suffix
-    // tokenizer only tokenizes signature, so !stream.done() is sufficient
-    while (!stream.done())
-    {
-        if (auto expr = try_parse_noexcept(stream, context))
-            builder.noexcept_condition(std::move(expr));
-        else if (skip_if(stream, "="))
-            body = parse_body_kind(stream);
-        else
-            stream.bump();
-    }
-
-    return builder.finish(*context.idx, detail::get_entity_id(cur), body);
+std::unique_ptr<cpp_entity> detail::try_parse_static_cpp_function(
+    const detail::parse_context& context, const CXCursor& cur)
+{
+    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_CXXMethod, detail::assert_handler{});
+    if (clang_CXXMethod_isStatic(cur))
+        return parse_cpp_function_impl(context, cur);
+    return nullptr;
 }

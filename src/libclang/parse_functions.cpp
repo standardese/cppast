@@ -87,6 +87,11 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
 
     case CXCursor_FunctionDecl:
         return parse_cpp_function(context, cur);
+    case CXCursor_CXXMethod:
+        // check for static function
+        if (auto func = try_parse_static_cpp_function(context, cur))
+            return func;
+        break;
 
     default:
         break;
