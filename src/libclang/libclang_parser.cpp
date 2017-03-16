@@ -93,7 +93,7 @@ struct libclang_parser::impl
 {
     detail::cxindex index;
 
-    impl() : index(clang_createIndex(1, 1))
+    impl() : index(clang_createIndex(0, 0)) // no diagnostic, other one is irrelevant
     {
     }
 };
@@ -117,7 +117,46 @@ namespace
         return args;
     }
 
-    detail::cxtranslation_unit get_cxunit(const detail::cxindex&         idx,
+    type_safe::optional<severity> get_severity(const CXDiagnostic& diag)
+    {
+        switch (clang_getDiagnosticSeverity(diag))
+        {
+        case CXDiagnostic_Ignored:
+        case CXDiagnostic_Note:
+        case CXDiagnostic_Warning:
+            // ignore those diagnostics
+            return type_safe::nullopt;
+
+        case CXDiagnostic_Error:
+            return severity::error;
+        case CXDiagnostic_Fatal:
+            return severity::critical;
+        }
+
+        DEBUG_UNREACHABLE(detail::assert_handler{});
+        return type_safe::nullopt;
+    }
+
+    void print_diagnostics(const diagnostic_logger& logger, const char* path,
+                           const CXTranslationUnit& tu)
+    {
+        auto no = clang_getNumDiagnostics(tu);
+        for (auto i = 0u; i != no; ++i)
+        {
+            auto diag = clang_getDiagnostic(tu, i);
+            auto sev  = get_severity(diag);
+            if (sev)
+            {
+                auto loc  = source_location::make_file(path); // line number won't help
+                auto text = detail::cxstring(clang_getDiagnosticSpelling(diag));
+
+                logger.log("libclang parser", diagnostic{text.c_str(), loc, sev.value()});
+            }
+        }
+    }
+
+    detail::cxtranslation_unit get_cxunit(const diagnostic_logger&       logger,
+                                          const detail::cxindex&         idx,
                                           const libclang_compile_config& config, const char* path,
                                           const std::string& source)
     {
@@ -155,6 +194,7 @@ namespace
                 throw libclang_error("clang_parseTranslationUnit: AST deserialization error");
             }
         }
+        print_diagnostics(logger, path, tu);
 
         return detail::cxtranslation_unit(tu);
     }
@@ -178,8 +218,8 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
 
     // preprocess + parse
     auto preprocessed = detail::preprocess(config, path.c_str(), logger());
-    auto tu           = get_cxunit(pimpl_->index, config, path.c_str(), preprocessed.source);
-    auto file         = clang_getFile(tu.get(), path.c_str());
+    auto tu   = get_cxunit(logger(), pimpl_->index, config, path.c_str(), preprocessed.source);
+    auto file = clang_getFile(tu.get(), path.c_str());
 
     cpp_file::builder builder(path);
     auto              preprocessed_iter = preprocessed.entities.begin();

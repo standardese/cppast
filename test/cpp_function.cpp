@@ -202,7 +202,7 @@ struct foo
 {
     static void a();
 
-    static int b() noexcept {}
+    static int b() noexcept { return 0; }
 
     static constexpr char c() = delete;
 };

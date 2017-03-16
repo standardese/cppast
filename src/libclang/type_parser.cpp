@@ -330,7 +330,7 @@ namespace
         {
             auto msg = detail::format("unexpected type of kind '",
                                       detail::get_type_kind_spelling(type).c_str(), "'");
-            auto location = source_location::make(get_type_spelling(type).c_str());
+            auto location = source_location::make_entity(get_type_spelling(type).c_str());
             context.logger->log("libclang parser", diagnostic{msg, location, severity::warning});
         }
         // fallthrough

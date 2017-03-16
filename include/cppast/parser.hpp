@@ -5,6 +5,8 @@
 #ifndef CPPAST_PARSER_HPP_INCLUDED
 #define CPPAST_PARSER_HPP_INCLUDED
 
+#include <atomic>
+
 #include <cppast/compile_config.hpp>
 #include <cppast/cpp_file.hpp>
 
@@ -19,7 +21,10 @@ namespace cppast
     class diagnostic_logger
     {
     public:
-        diagnostic_logger() noexcept                = default;
+        diagnostic_logger() noexcept : error_(false)
+        {
+        }
+
         diagnostic_logger(const diagnostic_logger&) = delete;
         diagnostic_logger& operator=(const diagnostic_logger&) = delete;
         virtual ~diagnostic_logger() noexcept                  = default;
@@ -27,13 +32,21 @@ namespace cppast
         /// \effects Logs the diagnostic by invoking the `do_log()` member function.
         /// \returns Whether or not the diagnostic was logged.
         /// \notes `source` points to a string literal that gives additional context to what generates the message.
-        bool log(const char* source, const diagnostic& d) const
+        bool log(const char* source, const diagnostic& d) const;
+
+        /// \returns Whether or not a diagnostic of [severity::error]() was logged.
+        /// \notes If an error happens, the parser will still continue to build the AST,
+        /// unless the error is critical
+        /// so the result will be incomplete if this function returns `true`.
+        bool error_logged() const noexcept
         {
-            return do_log(source, d);
+            return error_;
         }
 
     private:
         virtual bool do_log(const char* source, const diagnostic& d) const = 0;
+
+        mutable std::atomic<bool> error_;
     };
 
     /// A [cppast::diagnostic_logger]() that logs to `stderr`.

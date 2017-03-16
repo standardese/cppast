@@ -19,12 +19,12 @@ namespace cppast
     {
         inline source_location make_location(const CXCursor& cur)
         {
-            return source_location::make(get_display_name(cur).c_str());
+            return source_location::make_entity(get_display_name(cur).c_str());
         }
 
         inline source_location make_location(const CXType& type)
         {
-            return source_location::make(cxstring(clang_getTypeSpelling(type)).c_str());
+            return source_location::make_entity(cxstring(clang_getTypeSpelling(type)).c_str());
         }
 
         // thrown on a parsing error

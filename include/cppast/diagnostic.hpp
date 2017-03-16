@@ -26,13 +26,19 @@ namespace cppast
         }
 
         /// \returns A source location where only file and line information is available.
-        static source_location make(std::string file, unsigned line)
+        static source_location make_file(std::string file, unsigned line)
         {
             return {type_safe::nullopt, std::move(file), line};
         }
 
+        /// \returns A source location where only the file is available.
+        static source_location make_file(std::string file)
+        {
+            return {type_safe::nullopt, std::move(file), type_safe::nullopt};
+        }
+
         /// \returns A source location where only the entity name is available.
-        static source_location make(std::string entity)
+        static source_location make_entity(std::string entity)
         {
             return {std::move(entity), type_safe::nullopt, type_safe::nullopt};
         }

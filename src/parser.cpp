@@ -11,6 +11,13 @@
 
 using namespace cppast;
 
+bool diagnostic_logger::log(const char* source, const diagnostic& d) const
+{
+    if (d.severity == severity::error)
+        error_ = true;
+    return do_log(source, d);
+}
+
 bool stderr_diagnostic_logger::do_log(const char* source, const diagnostic& d) const
 {
     std::fprintf(stderr, "[%s] [%s] %s %s\n", source, to_string(d.severity),
