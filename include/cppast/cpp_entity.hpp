@@ -50,6 +50,44 @@ namespace cppast
             return parent_;
         }
 
+        /// \returns The documentation comment associated with that entity, if any.
+        /// \notes A documentation comment can have three forms:
+        ///
+        /// * A C style doc comment. It is a C style comment starting with an additional `*`, i.e. `/**`.
+        /// One space after the leading sequence will be skipped.
+        /// It ends either with `*/` or `**/`.
+        /// After a newline all whitespace is skipped, as well as an optional `*` followed by another optional space,
+        /// as well as trailing whitespace on each line.
+        /// I.e. `/** a\n      * b */` yields the text `a\nb`.
+        /// * A C++ style doc comment. It is a C++ style comment starting with an additional `/` or '!`,
+        /// i.e. `///` or `//!`.
+        /// One space character after the leading sequence will be skipped,
+        /// as well as any trailing whitespace.
+        /// Two C++ style doc comments on two adjacent lines will be merged.
+        /// * An end of line doc comment. It is a C++ style comment starting with an '<', i.e. `//<`.
+        /// One space character after the leading sequence will be skipped,
+        /// as well as any trailing whitespace.
+        /// If the next line is a C++ style doc comment, it will be merged with that one.
+        ///
+        /// A documentation comment is associated with an entity,
+        /// if for C and C++ style doc comments, the entity declaration begins
+        /// on the line after the last line of the comment,
+        /// and if for an end of line comment, the entity declaration ends
+        /// on the same line as the end of line comment.
+        ///
+        /// This comment system is also used by [standardese](https://standardese.foonathan.net).
+        type_safe::optional_ref<const std::string> comment() const noexcept
+        {
+            return comment_.empty() ? nullptr : type_safe::opt_ref(&comment_);
+        }
+
+        /// \effects Sets the associated comment.
+        /// \requires The comment must not be empty, if there is one.
+        void set_comment(type_safe::optional<std::string> comment) noexcept
+        {
+            comment_ = std::move(comment.value());
+        }
+
     protected:
         /// \effects Creates it giving it the the name.
         cpp_entity(std::string name) : name_(std::move(name))
@@ -72,8 +110,9 @@ namespace cppast
             parent_ = parent;
         }
 
-        type_safe::optional_ref<const cpp_entity> parent_;
         std::string                               name_;
+        std::string                               comment_;
+        type_safe::optional_ref<const cpp_entity> parent_;
 
         template <typename T>
         friend struct detail::intrusive_list_access;

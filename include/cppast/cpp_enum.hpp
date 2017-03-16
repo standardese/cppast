@@ -76,6 +76,12 @@ namespace cppast
                 enum_->add_child(std::move(value));
             }
 
+            /// \returns The not yet finished enumeration.
+            cpp_enum& get() noexcept
+            {
+                return *enum_;
+            }
+
             /// \effects Registers the enum in the [cppast::cpp_entity_index](),
             /// using the given [cppast::cpp_entity_id]().
             /// \returns The finished enum.

@@ -11,6 +11,7 @@
 #include "raii_wrapper.hpp"
 #include "tokenizer.hpp"   // for convenience
 #include "parse_error.hpp" // for convenience
+#include "preprocessor.hpp"
 
 namespace cppast
 {
@@ -30,12 +31,31 @@ namespace cppast
         // note: does not handle thread_local
         cpp_storage_class_specifiers get_storage_class(const CXCursor& cur);
 
+        class comment_context
+        {
+        public:
+            explicit comment_context(std::vector<pp_doc_comment>& comments)
+            : cur_(comments.data()), end_(comments.data() + comments.size())
+            {
+            }
+
+            // must be called for entities that want an associated comment
+            // must be called *BEFORE* the children are added
+            void match(cpp_entity& e, const CXCursor& cur) const;
+            void match(cpp_entity& e, unsigned line) const;
+
+        private:
+            mutable pp_doc_comment* cur_;
+            pp_doc_comment*         end_;
+        };
+
         struct parse_context
         {
             CXTranslationUnit                              tu;
             CXFile                                         file;
             type_safe::object_ref<const diagnostic_logger> logger;
             type_safe::object_ref<const cpp_entity_index>  idx;
+            comment_context                                comments;
         };
 
         std::unique_ptr<cpp_type> parse_type(const parse_context& context, const CXType& type);

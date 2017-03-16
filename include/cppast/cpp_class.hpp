@@ -165,6 +165,12 @@ namespace cppast
                 class_->add_child(std::move(child));
             }
 
+            /// \returns The not yet finished class.
+            cpp_class& get() noexcept
+            {
+                return *class_;
+            }
+
             /// \effects Registers the class in the [cppast::cpp_entity_index](),
             /// using the given [cppast::cpp_entity_id]().
             /// \returns The finished class.

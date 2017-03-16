@@ -68,10 +68,13 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_enum(const detail::parse_context& 
     DEBUG_ASSERT(cur.kind == CXCursor_EnumDecl, detail::assert_handler{});
 
     auto builder = make_enum_builder(context, cur);
+    context.comments.match(builder.get(), cur);
     detail::visit_children(cur, [&](const CXCursor& child) {
         try
         {
             auto entity = parse_enum_value(context, child);
+            if (entity)
+                context.comments.match(*entity, child);
             builder.add_value(std::move(entity));
         }
         catch (parse_error& ex)

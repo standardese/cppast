@@ -49,6 +49,24 @@ cpp_storage_class_specifiers detail::get_storage_class(const CXCursor& cur)
     return cpp_storage_class_auto;
 }
 
+void detail::comment_context::match(cpp_entity& e, const CXCursor& cur) const
+{
+    auto     pos = clang_getRangeStart(clang_getCursorExtent(cur));
+    unsigned line;
+    clang_getSpellingLocation(pos, nullptr, &line, nullptr, nullptr);
+
+    match(e, line);
+}
+
+void detail::comment_context::match(cpp_entity& e, unsigned line) const
+{
+    // find comment
+    while (cur_ != end_ && cur_->line + 1 < line)
+        ++cur_;
+    if (cur_ != end_ && cur_->matches(e, line))
+        e.set_comment(std::move(cur_++->comment));
+}
+
 std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& context,
                                                  const CXCursor&              cur) try
 {
@@ -103,9 +121,10 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         break;
     }
 
-    auto msg = format("unhandled cursor of kind '", get_cursor_kind_spelling(cur).c_str(), "'");
+    auto msg = detail::format("unhandled cursor of kind '",
+                              detail::get_cursor_kind_spelling(cur).c_str(), "'");
     context.logger->log("libclang parser",
-                        diagnostic{std::move(msg), make_location(cur), severity::warning});
+                        diagnostic{std::move(msg), detail::make_location(cur), severity::warning});
 
     return nullptr;
 }

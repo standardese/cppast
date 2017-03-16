@@ -40,6 +40,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_namespace(const detail::parse_cont
     DEBUG_ASSERT(cur.kind == CXCursor_Namespace, detail::assert_handler{});
 
     auto builder = make_ns_builder(context, cur);
+    context.comments.match(builder.get(), cur);
     detail::visit_children(cur, [&](const CXCursor& cur) {
         auto entity = parse_entity(context, cur);
         if (entity)
@@ -91,8 +92,10 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_namespace_alias(const detail::pars
         target_name += stream.get().c_str();
 
     auto target = cpp_namespace_ref(parse_ns_target_cursor(cur), std::move(target_name));
-    return cpp_namespace_alias::build(*context.idx, get_entity_id(cur), std::move(name),
-                                      std::move(target));
+    auto result = cpp_namespace_alias::build(*context.idx, get_entity_id(cur), std::move(name),
+                                             std::move(target));
+    context.comments.match(*result, cur);
+    return result;
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_using_directive(const detail::parse_context& context,
@@ -113,7 +116,9 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_using_directive(const detail::pars
         target_name += stream.get().c_str();
 
     auto target = cpp_namespace_ref(parse_ns_target_cursor(cur), std::move(target_name));
-    return cpp_using_directive::build(target);
+    auto result = cpp_using_directive::build(target);
+    context.comments.match(*result, cur);
+    return result;
 }
 
 namespace
@@ -179,5 +184,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_using_declaration(
         target_name += stream.get().c_str();
 
     auto target = cpp_entity_ref(parse_entity_target_cursor(cur), std::move(target_name));
-    return cpp_using_declaration::build(std::move(target));
+    auto result = cpp_using_declaration::build(std::move(target));
+    context.comments.match(*result, cur);
+    return result;
 }

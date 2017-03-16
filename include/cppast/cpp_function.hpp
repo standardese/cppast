@@ -122,6 +122,12 @@ namespace cppast
                 static_cast<cpp_function_base&>(*function).noexcept_expr_ = std::move(cond);
             }
 
+            /// \returns The not yet finished function.
+            T& get() noexcept
+            {
+                return *function;
+            }
+
             /// \effects If the body is a definition, registers it.
             /// Else marks it as a declaration.
             /// \returns The finished function.

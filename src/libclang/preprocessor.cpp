@@ -134,7 +134,9 @@ namespace
                         [&](const char* str, std::size_t n) {
                             preprocessed.reserve(preprocessed.size() + n);
                             for (auto end = str + n; str != end; ++str)
-                                if (*str != '\r')
+                                if (*str == '\t')
+                                    preprocessed += "  "; // just two spaces because why not
+                                else if (*str != '\r')
                                     preprocessed.push_back(*str);
                         },
                         [&](const char* str, std::size_t n) {
@@ -247,26 +249,155 @@ namespace
         return std::strncmp(p.ptr(), str, std::strlen(str)) == 0;
     }
 
-    bool bump_c_str(position& p)
+    detail::pp_doc_comment parse_c_doc_comment(position& p)
+    {
+        detail::pp_doc_comment result;
+        result.kind = detail::pp_doc_comment::c;
+
+        if (starts_with(p, " "))
+            // skip one whitespace at most
+            p.bump();
+
+        while (!starts_with(p, "*/"))
+        {
+            if (starts_with(p, "\n"))
+            {
+                // remove trailing spaces
+                while (!result.comment.empty() && result.comment.back() == ' ')
+                    result.comment.pop_back();
+                // skip newline
+                p.bump();
+                result.comment += '\n';
+                // skip indentation
+                while (starts_with(p, " "))
+                    p.bump();
+                // skip continuation star, if any
+                if (starts_with(p, "*") && !starts_with(p, "*/"))
+                {
+                    p.bump();
+                    if (starts_with(p, " "))
+                        // skip one whitespace at most
+                        p.bump();
+                }
+            }
+            else
+            {
+                result.comment += *p.ptr();
+                p.bump();
+            }
+        }
+        p.bump(2u);
+
+        // remove trailing star
+        if (!result.comment.empty() && result.comment.back() == '*')
+            result.comment.pop_back();
+        // remove trailing spaces
+        while (!result.comment.empty() && result.comment.back() == ' ')
+            result.comment.pop_back();
+
+        result.line = p.cur_line();
+        return result;
+    }
+
+    bool bump_c_comment(position& p, detail::preprocessor_output& output)
     {
         if (!starts_with(p, "/*"))
             return false;
         p.bump(2u);
 
-        while (!starts_with(p, "*/"))
+        if (starts_with(p, "*"))
+        {
+            // doc comment
             p.bump();
-        p.bump(2u);
+            output.comments.push_back(parse_c_doc_comment(p));
+        }
+        else
+        {
+            while (!starts_with(p, "*/"))
+                p.bump();
+            p.bump(2u);
+        }
+
+        if (!starts_with(p, "\n"))
+            // ensure an additional newline after each C comment
+            // this allows matching documentation comments to entities generated from macros
+            // as the entity corresponding to the documentation comment will be on the next line
+            // otherwise all entities would have the same line number
+            p.write_str("\n");
+
         return true;
     }
 
-    bool bump_cpp_str(position& p)
+    detail::pp_doc_comment parse_cpp_doc_comment(position& p, bool end_of_line)
+    {
+        detail::pp_doc_comment result;
+        result.kind =
+            end_of_line ? detail::pp_doc_comment::end_of_line : detail::pp_doc_comment::cpp;
+        if (starts_with(p, " "))
+            // skip one whitespace at most
+            p.bump();
+
+        while (!starts_with(p, "\n"))
+        {
+            result.comment += *p.ptr();
+            p.bump();
+        }
+        // don't skip newline
+
+        // remove trailing spaces
+        while (!result.comment.empty() && result.comment.back() == ' ')
+            result.comment.pop_back();
+        result.line = p.cur_line();
+        return result;
+    }
+
+    bool can_merge_comment(const detail::pp_doc_comment& comment, unsigned cur_line)
+    {
+        return comment.line + 1 == cur_line
+               && (comment.kind == detail::pp_doc_comment::cpp
+                   || comment.kind == detail::pp_doc_comment::end_of_line);
+    }
+
+    void merge_or_add(detail::preprocessor_output& output, detail::pp_doc_comment comment)
+    {
+        if (output.comments.empty() || !can_merge_comment(output.comments.back(), comment.line))
+            output.comments.push_back(std::move(comment));
+        else
+        {
+            auto& result = output.comments.back();
+            result.comment += "\n" + std::move(comment.comment);
+            if (result.kind != detail::pp_doc_comment::end_of_line)
+                result.line = comment.line;
+        }
+    }
+
+    bool bump_cpp_comment(position& p, detail::preprocessor_output& output)
     {
         if (!starts_with(p, "//"))
             return false;
         p.bump(2u);
 
-        while (!starts_with(p, "\n"))
+        if (starts_with(p, "/") || starts_with(p, "!"))
+        {
+            // C++ style doc comment
             p.bump();
+            auto comment = parse_cpp_doc_comment(p, false);
+            merge_or_add(output, std::move(comment));
+        }
+        else if (starts_with(p, "<"))
+        {
+            // end of line doc comment
+            p.bump();
+            auto comment = parse_cpp_doc_comment(p, true);
+            output.comments.push_back(std::move(comment));
+        }
+        else
+        {
+            while (!starts_with(p, "\n"))
+                p.bump();
+            // don't skip newline
+        }
+
         return true;
     }
 
@@ -276,7 +407,8 @@ namespace
             p.skip();
     }
 
-    std::unique_ptr<cpp_macro_definition> parse_macro(position& p)
+    std::unique_ptr<cpp_macro_definition> parse_macro(position&                    p,
+                                                      detail::preprocessor_output& output)
     {
         // format (at new line): #define <name> [replacement]
         // or: #define <name>(<args>) [replacement]
@@ -303,11 +435,25 @@ namespace
         }
 
         std::string rep;
-        for (skip_spaces(p); !starts_with(p, "\n"); p.skip())
+        auto        in_c_comment = false;
+        for (skip_spaces(p); in_c_comment || !starts_with(p, "\n"); p.skip())
+        {
+            if (starts_with(p, "/*"))
+                in_c_comment = true;
+            else if (in_c_comment && starts_with(p, "*/"))
+                in_c_comment = false;
             rep += *p.ptr();
+        }
         // don't skip newline
 
-        return cpp_macro_definition::build(std::move(name), std::move(args), std::move(rep));
+        auto result = cpp_macro_definition::build(std::move(name), std::move(args), std::move(rep));
+        // match comment directly
+        if (!output.comments.empty() && output.comments.back().matches(*result, p.cur_line()))
+        {
+            result->set_comment(std::move(output.comments.back().comment));
+            output.comments.pop_back();
+        }
+        return result;
     }
 
     ts::optional<std::string> parse_undef(position& p)
@@ -325,7 +471,8 @@ namespace
         return result;
     }
 
-    std::unique_ptr<cpp_include_directive> parse_include(position& p)
+    std::unique_ptr<cpp_include_directive> parse_include(position&                    p,
+                                                         detail::preprocessor_output& output)
     {
         // format (at new line, literal <>): #include <filename>
         // or: #include "filename"
@@ -358,8 +505,14 @@ namespace
         DEBUG_ASSERT(starts_with(p, "\n"), detail::assert_handler{});
         // don't skip newline
 
-        return cpp_include_directive::build(cpp_file_ref(cpp_entity_id(filename), filename),
-                                            include_kind);
+        auto result = cpp_include_directive::build(cpp_file_ref(cpp_entity_id(filename), filename),
+                                                   include_kind);
+        if (!output.comments.empty() && output.comments.back().matches(*result, p.cur_line()))
+        {
+            result->set_comment(std::move(output.comments.back().comment));
+            output.comments.pop_back();
+        }
+        return result;
     }
 
     bool skip_pragma(position& p)
@@ -461,7 +614,7 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
     std::size_t file_depth = 0u;
     while (p)
     {
-        if (auto macro = parse_macro(p))
+        if (auto macro = parse_macro(p, result))
         {
             if (file_depth == 0u)
                 result.entities.push_back({std::move(macro), p.cur_line()});
@@ -478,7 +631,7 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                                           }),
                            result.entities.end());
         }
-        else if (auto include = parse_include(p))
+        else if (auto include = parse_include(p, result))
         {
             if (file_depth == 0u)
                 result.entities.push_back({std::move(include), p.cur_line()});
@@ -516,17 +669,21 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                 break;
             }
         }
-        else if (bump_c_str(p))
-            // write an additional newline after each string
-            // this allows matching documentation comments to entities generated from macros
-            // as the entity corresponding to the documentation comment will be on the next line
-            // otherwise all entities would have the same line number
-            p.write_str("\n");
-        else if (bump_cpp_str(p))
+        else if (bump_c_comment(p, result))
+            continue;
+        else if (bump_cpp_comment(p, result))
             continue;
         else
             p.bump();
     }
 
     return result;
+}
+
+bool detail::pp_doc_comment::matches(const cpp_entity&, unsigned e_line)
+{
+    if (kind == detail::pp_doc_comment::end_of_line)
+        return line == e_line;
+    else
+        return line + 1u == e_line;
 }

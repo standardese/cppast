@@ -88,13 +88,11 @@ namespace
     }
 }
 
-#include <iostream>
-#include "debug_helper.hpp"
-
 std::unique_ptr<cpp_entity> detail::parse_cpp_class(const detail::parse_context& context,
                                                     const CXCursor&              cur)
 {
     auto builder = make_class_builder(cur);
+    context.comments.match(builder.get(), cur);
     detail::visit_children(cur, [&](const CXCursor& child) {
         auto kind = clang_getCursorKind(child);
         if (kind == CXCursor_CXXAccessSpecifier)

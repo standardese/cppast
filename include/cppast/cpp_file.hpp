@@ -5,6 +5,8 @@
 #ifndef CPPAST_CPP_FILE_HPP_INCLUDED
 #define CPPAST_CPP_FILE_HPP_INCLUDED
 
+#include <vector>
+
 #include <cppast/cpp_entity_index.hpp>
 #include <cppast/cpp_entity_container.hpp>
 #include <cppast/cpp_entity_ref.hpp>
@@ -17,6 +19,8 @@ namespace cppast
     class cpp_file final : public cpp_entity, public cpp_entity_container<cpp_file, cpp_entity>
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// Builds a [cppast::cpp_file]().
         class builder
         {
@@ -32,6 +36,18 @@ namespace cppast
                 file_->add_child(std::move(child));
             }
 
+            /// \effects Adds an unmatched documentation comment.
+            void add_unmatched_comment(std::string str)
+            {
+                file_->comments_.push_back(std::move(str));
+            }
+
+            /// \returns The not yet finished file.
+            cpp_file& get() noexcept
+            {
+                return *file_;
+            }
+
             /// \effects Registers the file in the [cppast::cpp_entity_index]().
             /// It will use the file name as identifier.
             /// \returns The finished file.
@@ -45,6 +61,12 @@ namespace cppast
             std::unique_ptr<cpp_file> file_;
         };
 
+        /// \returns The unmatched documentation comments.
+        type_safe::array_ref<const std::string> unmatched_comments() const noexcept
+        {
+            return type_safe::ref(comments_.data(), comments_.size());
+        }
+
     private:
         cpp_file(std::string name) : cpp_entity(std::move(name))
         {
@@ -52,6 +74,8 @@ namespace cppast
 
         /// \returns [cpp_entity_type::file_t]().
         cpp_entity_kind do_get_entity_kind() const noexcept override;
+
+        std::vector<std::string> comments_;
     };
 
     /// \exclude

@@ -443,5 +443,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_type_alias(const detail::parse_con
 
     auto name = detail::get_cursor_name(cur);
     auto type = parse_type(context, clang_getTypedefDeclUnderlyingType(cur));
-    return cpp_type_alias::build(*context.idx, get_entity_id(cur), name.c_str(), std::move(type));
+    auto result =
+        cpp_type_alias::build(*context.idx, get_entity_id(cur), name.c_str(), std::move(type));
+    context.comments.match(*result, cur);
+    return result;
 }

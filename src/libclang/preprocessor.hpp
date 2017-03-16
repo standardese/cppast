@@ -18,10 +18,25 @@ namespace cppast
             unsigned                    line;
         };
 
+        struct pp_doc_comment
+        {
+            std::string comment;
+            unsigned    line;
+            enum
+            {
+                c,
+                cpp,
+                end_of_line,
+            } kind;
+
+            bool matches(const cpp_entity& e, unsigned line);
+        };
+
         struct preprocessor_output
         {
-            std::string            source;
-            std::vector<pp_entity> entities;
+            std::string                 source;
+            std::vector<pp_entity>      entities;
+            std::vector<pp_doc_comment> comments;
         };
 
         preprocessor_output preprocess(const libclang_compile_config& config, const char* path,

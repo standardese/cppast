@@ -35,6 +35,12 @@ namespace cppast
                 namespace_->add_child(std::move(child));
             }
 
+            /// \returns The not yet finished namespace.
+            cpp_namespace& get() const noexcept
+            {
+                return *namespace_;
+            }
+
             /// \effects Registers the namespace in the [cppast::cpp_entity_index](),
             /// using the given [cppast::cpp_entity_id]().
             /// \returns The finished namespace.

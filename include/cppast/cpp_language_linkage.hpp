@@ -32,6 +32,12 @@ namespace cppast
                 linkage_->add_child(std::move(child));
             }
 
+            /// \returns The not yet finished language linkage.
+            cpp_language_linkage& get() const noexcept
+            {
+                return *linkage_;
+            }
+
             /// \returns The finalized language linkage.
             /// \notes It is not registered on purpose as nothing can refer to it.
             std::unique_ptr<cpp_language_linkage> finish()

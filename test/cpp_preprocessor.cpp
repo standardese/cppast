@@ -113,3 +113,69 @@ TEST_CASE("cpp_include_directive")
     REQUIRE(count == 2u);
 }
 #endif
+
+TEST_CASE("comment matching")
+{
+    auto code = R"(
+/// u
+
+/// a
+/// a
+struct a {};
+
+/// u
+/** b
+  * b */
+void b(int, float);
+
+/** u */
+//! c
+/// c
+enum class c
+{
+    d, //< d
+    /// d
+    e, //< e
+    /// e
+
+    /** f
+f **/
+    f,
+};
+
+/// g
+/// g
+#define g(name) \
+class name \
+{ \
+    /** i
+        i */ \
+    void i(); \
+};
+
+/// h
+/// h
+g(h)
+
+/// j
+/// j
+using j = int;
+)";
+
+    auto file = parse({}, "comment-matching.cpp", code);
+    visit(*file, [&](const cpp_entity& e, visitor_info) {
+        if (e.kind() == cpp_entity_kind::file_t)
+            return true;
+        else if (e.name().empty())
+            return true;
+
+        INFO(e.name());
+        REQUIRE(e.comment());
+        REQUIRE(e.comment().value() == e.name() + "\n" + e.name());
+        return true;
+    });
+
+    for (auto& comment : file->unmatched_comments())
+        REQUIRE(comment == "u");
+    REQUIRE((file->unmatched_comments().size() == 3u));
+}

@@ -279,6 +279,7 @@ namespace
 
         cpp_function::builder builder(name.c_str(),
                                       detail::parse_type(context, clang_getCursorResultType(cur)));
+        context.comments.match(builder.get(), cur);
         add_parameters(context, builder, cur);
         if (clang_Cursor_isVariadic(cur))
             builder.is_variadic();
@@ -414,6 +415,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
     cpp_member_function::builder builder(name.c_str(),
                                          detail::parse_type(context,
                                                             clang_getCursorResultType(cur)));
+    context.comments.match(builder.get(), cur);
     add_parameters(context, builder, cur);
     if (clang_Cursor_isVariadic(cur))
         builder.is_variadic();
@@ -434,6 +436,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
 {
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_ConversionFunction, detail::assert_handler{});
     cpp_conversion_op::builder builder(detail::parse_type(context, clang_getCursorResultType(cur)));
+    context.comments.match(builder.get(), cur);
 
     detail::tokenizer    tokenizer(context.tu, context.file, cur);
     detail::token_stream stream(tokenizer, cur);
@@ -484,6 +487,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
     auto name = detail::get_cursor_name(cur);
 
     cpp_constructor::builder builder(name.c_str());
+    context.comments.match(builder.get(), cur);
     add_parameters(context, builder, cur);
     if (clang_Cursor_isVariadic(cur))
         builder.is_variadic();
@@ -523,6 +527,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_destructor(const detail::parse_con
     detail::skip(stream, "~");
     auto                    name = std::string("~") + stream.get().c_str();
     cpp_destructor::builder builder(std::move(name));
+    context.comments.match(builder.get(), cur);
 
     detail::skip(stream, "(");
     detail::skip(stream, ")");

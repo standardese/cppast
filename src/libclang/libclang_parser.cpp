@@ -185,7 +185,8 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
     auto              preprocessed_iter = preprocessed.entities.begin();
 
     // convert entity hierachies
-    detail::parse_context context{tu.get(), file, type_safe::ref(logger()), type_safe::ref(idx)};
+    detail::parse_context context{tu.get(), file, type_safe::ref(logger()), type_safe::ref(idx),
+                                  detail::comment_context(preprocessed.comments)};
     detail::visit_tu(tu, path.c_str(), [&](const CXCursor& cur) {
         // add macro if needed
         for (auto line = get_line_no(cur);
@@ -200,6 +201,12 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
 
     for (; preprocessed_iter != preprocessed.entities.end(); ++preprocessed_iter)
         builder.add_child(std::move(preprocessed_iter->entity));
+
+    for (auto& c : preprocessed.comments)
+    {
+        if (!c.comment.empty())
+            builder.add_unmatched_comment(std::move(c.comment));
+    }
 
     return builder.finish(idx);
 }
