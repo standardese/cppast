@@ -206,7 +206,7 @@ namespace cppast
             std::unique_ptr<cpp_template_template_parameter> finish(const cpp_entity_index& idx,
                                                                     cpp_entity_id           id)
             {
-                idx.register_entity(std::move(id), type_safe::ref(*parameter_));
+                idx.register_definition(std::move(id), type_safe::ref(*parameter_));
                 return std::move(parameter_);
             }
 

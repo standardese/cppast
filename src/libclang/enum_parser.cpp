@@ -85,5 +85,5 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_enum(const detail::parse_context& 
     if (clang_isCursorDefinition(cur))
         return builder.finish(*context.idx, get_entity_id(cur));
     else
-        return builder.finish_declaration(get_entity_id(cur));
+        return builder.finish_declaration(*context.idx, get_entity_id(cur));
 }

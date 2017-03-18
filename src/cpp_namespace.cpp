@@ -29,7 +29,7 @@ std::unique_ptr<cpp_namespace_alias> cpp_namespace_alias::build(const cpp_entity
 {
     auto ptr = std::unique_ptr<cpp_namespace_alias>(
         new cpp_namespace_alias(std::move(name), std::move(target)));
-    idx.register_entity(std::move(id), type_safe::ref(*ptr));
+    idx.register_definition(std::move(id), type_safe::ref(*ptr));
     return ptr;
 }
 

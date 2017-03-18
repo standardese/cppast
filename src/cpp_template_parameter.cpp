@@ -27,7 +27,7 @@ std::unique_ptr<cpp_template_type_parameter> cpp_template_type_parameter::build(
 {
     std::unique_ptr<cpp_template_type_parameter> result(
         new cpp_template_type_parameter(std::move(name), kw, variadic, std::move(default_type)));
-    idx.register_entity(std::move(id), type_safe::cref(*result));
+    idx.register_definition(std::move(id), type_safe::cref(*result));
     return result;
 }
 
@@ -48,7 +48,7 @@ std::unique_ptr<cpp_non_type_template_parameter> cpp_non_type_template_parameter
     std::unique_ptr<cpp_non_type_template_parameter> result(
         new cpp_non_type_template_parameter(std::move(name), std::move(type), is_variadic,
                                             std::move(default_value)));
-    idx.register_entity(std::move(id), type_safe::cref(*result));
+    idx.register_definition(std::move(id), type_safe::cref(*result));
     return result;
 }
 

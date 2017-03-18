@@ -69,10 +69,13 @@ namespace cppast
                                     type_safe::optional_ref<const T>>::type
         {
             if (!entity.definition())
+                // entity is definition itself
                 return type_safe::opt_cref(&entity);
             else
+                // entity is not a definition
+                // lookup the definition
                 return idx
-                    .lookup(entity.definition().value())
+                    .lookup_definition(entity.definition().value())
                     // downcast
                     .map([](const cpp_entity& e) -> const T& {
                         DEBUG_ASSERT(e.kind() == T::kind(), detail::assert_handler{});

@@ -50,7 +50,7 @@ namespace cppast
             /// \returns The finished template.
             std::unique_ptr<T> finish(const cpp_entity_index& idx, cpp_entity_id id)
             {
-                idx.register_entity(std::move(id), type_safe::cref(*template_entity));
+                idx.register_definition(std::move(id), type_safe::cref(*template_entity));
                 return std::move(template_entity);
             }
 

@@ -53,7 +53,7 @@ namespace cppast
             /// \returns The finished file.
             std::unique_ptr<cpp_file> finish(const cpp_entity_index& idx) noexcept
             {
-                idx.register_entity(cpp_entity_id(file_->name()), type_safe::ref(*file_));
+                idx.register_definition(cpp_entity_id(file_->name()), type_safe::ref(*file_));
                 return std::move(file_);
             }
 

@@ -21,7 +21,7 @@ std::unique_ptr<cpp_variable> cpp_variable::build(const cpp_entity_index& idx, c
 {
     auto result = std::unique_ptr<cpp_variable>(
         new cpp_variable(std::move(name), std::move(type), std::move(def), spec, is_constexpr));
-    idx.register_entity(std::move(id), type_safe::cref(*result));
+    idx.register_definition(std::move(id), type_safe::cref(*result));
     return result;
 }
 

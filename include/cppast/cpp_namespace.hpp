@@ -46,7 +46,7 @@ namespace cppast
             /// \returns The finished namespace.
             std::unique_ptr<cpp_namespace> finish(const cpp_entity_index& idx, cpp_entity_id id)
             {
-                idx.register_entity(std::move(id), type_safe::ref(*namespace_));
+                idx.register_definition(std::move(id), type_safe::ref(*namespace_));
                 return std::move(namespace_);
             }
 

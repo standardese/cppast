@@ -62,19 +62,40 @@ namespace cppast
     class cpp_entity_index
     {
     public:
-        /// \effects Registers a new [cppast::cpp_entity]() also giving its [cppast::cpp_entity_id]().
-        /// \requires The entity must not have been registered before,
-        /// and it must live as long as the index lives.
+        /// \effects Registers a new [cppast::cpp_entity]() which is a definition.
+        /// It will override any previously registered declarations of the same entity.
+        /// \requires If the entity has been registered before, it must be as declaration,
+        /// and the entity must live as long as the index lives.
         /// \notes This operation is thread safe.
-        void register_entity(cpp_entity_id id, type_safe::object_ref<const cpp_entity> entity) const
+        void register_definition(cpp_entity_id                           id,
+                                 type_safe::object_ref<const cpp_entity> entity) const
         {
             std::lock_guard<std::mutex> lock(mutex_);
-            auto                        result = map_.emplace(std::move(id), std::move(entity));
-            DEBUG_ASSERT(result.second, detail::precondition_error_handler{},
-                         "duplicate index registration");
+            auto                        result = map_.emplace(std::move(id), value(entity, true));
+            if (!result.second)
+            {
+                // already in map, override declaration
+                auto& value = result.first->second;
+                DEBUG_ASSERT(!value.is_definition, detail::precondition_error_handler{},
+                             "duplicate entity registration");
+                value.is_definition = true;
+                value.entity        = entity;
+            }
+        }
+
+        /// \effects Registers a new [cppast::cpp_entity]() which is a declaration.
+        /// Only the first declaration will be registered.
+        /// \requires The entity must live as long as the index lives.
+        /// \notes This operaiton is thread safe.
+        void register_forward_declaration(cpp_entity_id                           id,
+                                          type_safe::object_ref<const cpp_entity> entity) const
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            map_.emplace(std::move(id), value(entity, false));
         }
 
         /// \returns A [ts::optional_ref]() corresponding to the entity of the given [cppast::cpp_entity_id]().
+        /// If no definition has been registered, it return the first declaration that was registered.
         /// \notes This operation is thread safe.
         type_safe::optional_ref<const cpp_entity> lookup(const cpp_entity_id& id) const noexcept
         {
@@ -82,7 +103,20 @@ namespace cppast
             auto                        iter = map_.find(id);
             if (iter == map_.end())
                 return {};
-            return iter->second.get();
+            return iter->second.entity.get();
+        }
+
+        /// \returns A [ts::optional_ref]() corresponding to the entity of the given [cppast::cpp_entity_id]().
+        /// If no definition has been registered, it returns an empty optional.
+        /// \notes This operation is thread safe.
+        type_safe::optional_ref<const cpp_entity> lookup_definition(const cpp_entity_id& id) const
+            noexcept
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            auto                        iter = map_.find(id);
+            if (iter == map_.end() || !iter->second.is_definition)
+                return {};
+            return iter->second.entity.get();
         }
 
     private:
@@ -94,9 +128,19 @@ namespace cppast
             }
         };
 
+        struct value
+        {
+            type_safe::object_ref<const cpp_entity> entity;
+            bool                                    is_definition;
+
+            value(type_safe::object_ref<const cpp_entity> e, bool def)
+            : entity(std::move(e)), is_definition(def)
+            {
+            }
+        };
+
         mutable std::mutex mutex_;
-        mutable std::unordered_map<cpp_entity_id, type_safe::object_ref<const cpp_entity>, hash>
-            map_;
+        mutable std::unordered_map<cpp_entity_id, value, hash> map_;
     };
 } // namespace cppast
 

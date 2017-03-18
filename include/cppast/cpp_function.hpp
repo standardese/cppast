@@ -136,9 +136,12 @@ namespace cppast
             {
                 function->body_ = body_kind;
                 if (cppast::is_definition(body_kind))
-                    idx.register_entity(std::move(id), type_safe::cref(*function));
+                    idx.register_definition(std::move(id), type_safe::ref(*function));
                 else
+                {
                     function->set_definition(id);
+                    idx.register_forward_declaration(std::move(id), type_safe::ref(*function));
+                }
                 return std::move(function);
             }
 

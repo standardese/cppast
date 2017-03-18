@@ -9,10 +9,17 @@
 
 using namespace cppast;
 
-std::unique_ptr<cpp_class> cpp_class::builder::finish(const cpp_entity_index& idx,
-                                                      cpp_entity_id           id) noexcept
+std::unique_ptr<cpp_class> cpp_class::builder::finish(const cpp_entity_index& idx, cpp_entity_id id)
 {
-    idx.register_entity(std::move(id), type_safe::ref(*class_));
+    idx.register_definition(std::move(id), type_safe::ref(*class_));
+    return std::move(class_);
+}
+
+std::unique_ptr<cpp_class> cpp_class::builder::finish_declaration(const cpp_entity_index& idx,
+                                                                  cpp_entity_id definition_id)
+{
+    class_->set_definition(definition_id);
+    idx.register_forward_declaration(std::move(definition_id), type_safe::ref(*class_));
     return std::move(class_);
 }
 

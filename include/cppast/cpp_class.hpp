@@ -174,17 +174,13 @@ namespace cppast
             /// \effects Registers the class in the [cppast::cpp_entity_index](),
             /// using the given [cppast::cpp_entity_id]().
             /// \returns The finished class.
-            std::unique_ptr<cpp_class> finish(const cpp_entity_index& idx,
-                                              cpp_entity_id           id) noexcept;
+            std::unique_ptr<cpp_class> finish(const cpp_entity_index& idx, cpp_entity_id id);
 
             /// \effects Marks the class as forward declaration.
             /// \returns The finished class.
             /// \notes It will not be registered, as it is not the main definition.
-            std::unique_ptr<cpp_class> finish_declaration(cpp_entity_id definition_id) noexcept
-            {
-                class_->set_definition(definition_id);
-                return std::move(class_);
-            }
+            std::unique_ptr<cpp_class> finish_declaration(const cpp_entity_index& idx,
+                                                          cpp_entity_id           definition_id);
 
         private:
             std::unique_ptr<cpp_class> class_;

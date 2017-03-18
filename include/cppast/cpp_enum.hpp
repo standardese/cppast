@@ -87,16 +87,17 @@ namespace cppast
             /// \returns The finished enum.
             std::unique_ptr<cpp_enum> finish(const cpp_entity_index& idx, cpp_entity_id id) noexcept
             {
-                idx.register_entity(std::move(id), type_safe::ref(*enum_));
+                idx.register_definition(std::move(id), type_safe::ref(*enum_));
                 return std::move(enum_);
             }
 
             /// \effects Marks the enum as forward declaration.
             /// \returns The finished enum.
-            /// \notes It will not be registered, as it is not the main definition.
-            std::unique_ptr<cpp_enum> finish_declaration(cpp_entity_id definition_id) noexcept
+            std::unique_ptr<cpp_enum> finish_declaration(const cpp_entity_index& idx,
+                                                         cpp_entity_id definition_id) noexcept
             {
                 enum_->set_definition(definition_id);
+                idx.register_forward_declaration(std::move(definition_id), type_safe::ref(*enum_));
                 return std::move(enum_);
             }
 

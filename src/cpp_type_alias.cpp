@@ -18,7 +18,7 @@ std::unique_ptr<cpp_type_alias> cpp_type_alias::build(const cpp_entity_index& id
                                                       std::unique_ptr<cpp_type> type)
 {
     auto result = build(std::move(name), std::move(type));
-    idx.register_entity(std::move(id), type_safe::cref(*result));
+    idx.register_definition(std::move(id), type_safe::cref(*result));
     return result;
 }
 

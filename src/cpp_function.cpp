@@ -19,7 +19,7 @@ std::unique_ptr<cpp_function_parameter> cpp_function_parameter::build(
 {
     auto result = std::unique_ptr<cpp_function_parameter>(
         new cpp_function_parameter(std::move(name), std::move(type), std::move(def)));
-    idx.register_entity(std::move(id), type_safe::cref(*result));
+    idx.register_definition(std::move(id), type_safe::cref(*result));
     return result;
 }
 

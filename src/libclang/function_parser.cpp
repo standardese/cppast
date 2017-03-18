@@ -176,7 +176,7 @@ namespace
             DEBUG_ASSERT(allow_virtual, detail::parse_error_handler{}, stream.cursor(),
                          "unexpected token");
             if (result.virtual_keywords)
-                result.virtual_keywords.value() &= cpp_virtual_flags::pure;
+                result.virtual_keywords.value() |= cpp_virtual_flags::pure;
             else
                 result.virtual_keywords = cpp_virtual_flags::pure;
         }

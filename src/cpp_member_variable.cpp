@@ -21,7 +21,7 @@ std::unique_ptr<cpp_member_variable> cpp_member_variable::build(const cpp_entity
 {
     auto result = std::unique_ptr<cpp_member_variable>(
         new cpp_member_variable(std::move(name), std::move(type), std::move(def), is_mutable));
-    idx.register_entity(std::move(id), type_safe::cref(*result));
+    idx.register_definition(std::move(id), type_safe::cref(*result));
     return result;
 }
 
@@ -41,7 +41,7 @@ std::unique_ptr<cpp_bitfield> cpp_bitfield::build(const cpp_entity_index& idx, c
 {
     auto result = std::unique_ptr<cpp_bitfield>(
         new cpp_bitfield(std::move(name), std::move(type), no_bits, is_mutable));
-    idx.register_entity(std::move(id), type_safe::cref(*result));
+    idx.register_definition(std::move(id), type_safe::cref(*result));
     return result;
 }
 
