@@ -101,8 +101,9 @@ namespace cppast
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
         cpp_include_directive(const cpp_file_ref& target, cpp_include_kind kind)
-        : cpp_entity(target.name()), target_(target.id()), kind_(kind)
+        : cpp_entity(target.name()), target_(target.id()[0u]), kind_(kind)
         {
+            DEBUG_ASSERT(!target.is_overloaded(), detail::precondition_error_handler{});
         }
 
         cpp_entity_id    target_;

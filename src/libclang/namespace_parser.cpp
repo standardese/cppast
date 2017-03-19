@@ -123,9 +123,9 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_using_directive(const detail::pars
 
 namespace
 {
-    cpp_entity_id parse_entity_target_cursor(const CXCursor& cur)
+    std::vector<cpp_entity_id> parse_entity_target_cursor(const CXCursor& cur)
     {
-        cpp_entity_id result("");
+        std::vector<cpp_entity_id> result;
         detail::visit_children(cur,
                                [&](const CXCursor& child) {
                                    switch (clang_getCursorKind(child))
@@ -136,7 +136,7 @@ namespace
                                    case CXCursor_VariableRef:
                                    {
                                        auto referenced = clang_getCursorReferenced(child);
-                                       result          = detail::get_entity_id(referenced);
+                                       result.push_back(detail::get_entity_id(referenced));
                                        break;
                                    }
 
@@ -144,12 +144,9 @@ namespace
                                    {
                                        auto size = clang_getNumOverloadedDecls(child);
                                        DEBUG_ASSERT(size >= 1u, detail::assert_handler{});
-                                       if (size == 1u)
-                                           result = detail::get_entity_id(
-                                               clang_getOverloadedDecl(child, 0u));
-                                       else
-                                           result = detail::get_entity_id(
-                                               clang_getCursorReferenced(child));
+                                       for (auto i = 0u; i != size; ++i)
+                                           result.push_back(detail::get_entity_id(
+                                               clang_getOverloadedDecl(child, i)));
                                        break;
                                    }
 

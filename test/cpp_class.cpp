@@ -179,7 +179,8 @@ struct g
                     REQUIRE(base.access_specifier() == cpp_private);
                     REQUIRE(!base.is_virtual());
 
-                    auto entity = base.entity().get(idx);
+                    REQUIRE(!base.entity().is_overloaded());
+                    auto entity = base.entity().get(idx)[0u];
                     REQUIRE(entity);
                     REQUIRE(entity.value().name() == "a");
                 }
@@ -188,7 +189,8 @@ struct g
                     REQUIRE(base.access_specifier() == cpp_private);
                     REQUIRE(!base.is_virtual());
 
-                    auto entity = base.entity().get(idx);
+                    REQUIRE(!base.entity().is_overloaded());
+                    auto entity = base.entity().get(idx)[0u];
                     REQUIRE(entity);
                     REQUIRE(entity.value().name() == "d");
                 }
@@ -214,7 +216,8 @@ struct g
                     REQUIRE(base.access_specifier() == cpp_public);
                     REQUIRE(!base.is_virtual());
 
-                    auto entity = base.entity().get(idx);
+                    REQUIRE(!base.entity().is_overloaded());
+                    auto entity = base.entity().get(idx)[0u];
                     REQUIRE(entity);
                     REQUIRE(entity.value().name() == "base");
                     REQUIRE(full_name(entity.value()) == "ns::base");
@@ -224,7 +227,8 @@ struct g
                     REQUIRE(base.access_specifier() == cpp_protected);
                     REQUIRE(base.is_virtual());
 
-                    auto entity = base.entity().get(idx);
+                    REQUIRE(!base.entity().is_overloaded());
+                    auto entity = base.entity().get(idx)[0u];
                     REQUIRE(entity);
                     REQUIRE(entity.value().name() == "e");
                 }
@@ -250,7 +254,8 @@ struct g
                     REQUIRE(base.access_specifier() == cpp_public);
                     REQUIRE(!base.is_virtual());
 
-                    auto entity = base.entity().get(idx);
+                    REQUIRE(!base.entity().is_overloaded());
+                    auto entity = base.entity().get(idx)[0u];
                     REQUIRE(entity);
                     REQUIRE(entity.value().name() == "base");
                     REQUIRE(full_name(entity.value()) == "ns::base");

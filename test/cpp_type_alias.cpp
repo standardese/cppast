@@ -28,7 +28,9 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         auto user_synthesized = static_cast<const cpp_user_defined_type&>(synthesized).entity();
         if (user_parsed.name() != user_synthesized.name())
             return false;
-        auto entity = user_parsed.get(idx);
+        else if (user_parsed.is_overloaded())
+            return false;
+        auto entity = user_parsed.get(idx)[0u];
         return entity.has_value() && (entity.value().name().empty()
                                       || full_name(entity.value()) == user_parsed.name());
     }

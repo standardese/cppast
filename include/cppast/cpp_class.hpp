@@ -101,8 +101,9 @@ namespace cppast
 
     private:
         cpp_base_class(const cpp_type_ref& base, cpp_access_specifier_kind access, bool is_virtual)
-        : cpp_entity(base.name()), base_id_(base.id()), access_(access), virtual_(is_virtual)
+        : cpp_entity(base.name()), base_id_(base.id()[0u]), access_(access), virtual_(is_virtual)
         {
+            DEBUG_ASSERT(!base.is_overloaded(), detail::precondition_error_handler{});
         }
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;

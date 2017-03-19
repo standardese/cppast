@@ -183,10 +183,10 @@ namespace cppast
         /// \effects Sets the entity that is being templated and the primary template.
         cpp_template_specialization(std::unique_ptr<cpp_entity> entity,
                                     const cpp_template_ref&     templ)
-        : cpp_template(std::move(entity)), templ_(templ.id())
+        : cpp_template(std::move(entity)), templ_(templ.id()[0u])
         {
-            DEBUG_ASSERT(templ.name() == entity->name(), detail::precondition_error_handler{},
-                         "invalid name of template ref");
+            DEBUG_ASSERT(!templ.is_overloaded() && templ.name() == entity->name(),
+                         detail::precondition_error_handler{}, "invalid name of template ref");
         }
 
     private:

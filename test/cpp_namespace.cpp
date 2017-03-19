@@ -77,8 +77,9 @@ namespace f = outer::c;
                            const char* target_full_name) {
         auto& target = alias.target();
         REQUIRE(target.name() == target_name);
+        REQUIRE(!target.is_overloaded());
 
-        auto entity = target.get(idx);
+        auto entity = target.get(idx)[0u];
         REQUIRE(entity);
         REQUIRE(full_name(entity.value()) == target_full_name);
     };
@@ -132,8 +133,9 @@ using namespace outer::ns;
     cpp_entity_index idx;
     auto check_directive = [&](const cpp_using_directive& directive, const char* target_full_name) {
         auto target = directive.target();
+        REQUIRE(!target.is_overloaded());
 
-        auto entity = target.get(idx);
+        auto entity = target.get(idx)[0u];
         REQUIRE(entity);
         REQUIRE(full_name(entity.value()) == target_full_name);
     };
@@ -164,7 +166,6 @@ using namespace outer::ns;
 
 TEST_CASE("cpp_using_declaration")
 {
-    // TODO: test overloaded functions
     auto code = R"(
 namespace ns1
 {
@@ -193,34 +194,49 @@ namespace outer
 
 using outer::ns::c;
 using outer::c;
+
+namespace ns
+{
+    void d(int);
+    void d(float);
+}
+
+using ns::d;
 )";
 
     cpp_entity_index idx;
-    auto check_declaration = [&](const cpp_using_declaration& decl, const char* target_full_name) {
+    auto check_declaration = [&](const cpp_using_declaration& decl, const char* target_full_name,
+                                 unsigned no) {
         auto target = decl.target();
-
-        auto entity = target.get(idx);
-        REQUIRE(entity);
-        REQUIRE(full_name(entity.value()) == target_full_name);
+        REQUIRE((target.no_overloaded() == no));
+        for (auto entity : target.get(idx))
+        {
+            REQUIRE(entity);
+            REQUIRE(full_name(entity.value()) == target_full_name);
+        }
     };
 
     auto file  = parse(idx, "cpp_using_declaration.cpp", code);
     auto count = test_visit<cpp_using_declaration>(*file, [&](const cpp_using_declaration& decl) {
+        REQUIRE(decl.name().empty());
+
         if (decl.target().name() == "ns1::a")
-            check_declaration(decl, "ns1::a");
+            check_declaration(decl, "ns1::a", 1u);
         else if (decl.target().name() == "ns2::b")
-            check_declaration(decl, "ns2::b");
+            check_declaration(decl, "ns2::b", 1u);
         else if (decl.target().name() == "ns::c")
         {
             check_parent(decl, "outer", "");
-            check_declaration(decl, "outer::ns::c");
+            check_declaration(decl, "outer::ns::c", 1u);
         }
         else if (decl.target().name() == "outer::ns::c")
-            check_declaration(decl, "outer::ns::c");
+            check_declaration(decl, "outer::ns::c", 1u);
         else if (decl.target().name() == "outer::c")
-            check_declaration(decl, "outer::ns::c");
+            check_declaration(decl, "outer::ns::c", 1u);
+        else if (decl.target().name() == "ns::d")
+            check_declaration(decl, "ns::d", 2u);
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 5u);
+    REQUIRE(count == 6u);
 }
