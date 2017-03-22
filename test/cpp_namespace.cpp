@@ -54,18 +54,18 @@ namespace c
 TEST_CASE("cpp_namespace_alias")
 {
     auto code = R"(
-namespace ns1 {}
-namespace ns2 {}
+namespace outer {}
+namespace ns {}
 
-namespace a = ns1;
-namespace b = ns2;
+namespace a = outer;
+namespace b = ns;
 
 namespace outer
 {
     namespace ns {}
 
     namespace c = ns;
-    namespace d = ns1;
+    namespace d = ::outer;
 }
 
 namespace e = outer::ns;
@@ -74,36 +74,37 @@ namespace f = outer::c;
 
     cpp_entity_index idx;
     auto check_alias = [&](const cpp_namespace_alias& alias, const char* target_name,
-                           const char* target_full_name) {
+                           const char* target_full_name, unsigned no) {
         auto& target = alias.target();
         REQUIRE(target.name() == target_name);
         REQUIRE(!target.is_overloaded());
 
-        auto entity = target.get(idx)[0u];
-        REQUIRE(entity);
-        REQUIRE(full_name(entity.value()) == target_full_name);
+        auto entities = target.get(idx);
+        REQUIRE(entities.size() == no);
+        for (auto& entity : entities)
+            REQUIRE(full_name(*entity) == target_full_name);
     };
 
     auto file  = parse(idx, "cpp_namespace_alias.cpp", code);
     auto count = test_visit<cpp_namespace_alias>(*file, [&](const cpp_namespace_alias& alias) {
         if (alias.name() == "a")
-            check_alias(alias, "ns1", "ns1");
+            check_alias(alias, "outer", "outer", 2u);
         else if (alias.name() == "b")
-            check_alias(alias, "ns2", "ns2");
+            check_alias(alias, "ns", "ns", 1u);
         else if (alias.name() == "c")
         {
             check_parent(alias, "outer", "outer::c");
-            check_alias(alias, "ns", "outer::ns");
+            check_alias(alias, "ns", "outer::ns", 1u);
         }
         else if (alias.name() == "d")
         {
             check_parent(alias, "outer", "outer::d");
-            check_alias(alias, "ns1", "ns1");
+            check_alias(alias, "::outer", "outer", 2u);
         }
         else if (alias.name() == "e")
-            check_alias(alias, "outer::ns", "outer::ns");
+            check_alias(alias, "outer::ns", "outer::ns", 1u);
         else if (alias.name() == "f")
-            check_alias(alias, "outer::c", "outer::ns");
+            check_alias(alias, "outer::c", "outer::ns", 1u);
         else
             REQUIRE(false);
     });
@@ -135,9 +136,9 @@ using namespace outer::ns;
         auto target = directive.target();
         REQUIRE(!target.is_overloaded());
 
-        auto entity = target.get(idx)[0u];
-        REQUIRE(entity);
-        REQUIRE(full_name(entity.value()) == target_full_name);
+        auto entities = target.get(idx);
+        REQUIRE(entities.size() == 1u);
+        REQUIRE(full_name(*entities[0u]) == target_full_name);
     };
 
     auto file  = parse(idx, "cpp_using_directive.cpp", code);
@@ -195,13 +196,13 @@ namespace outer
 using outer::ns::c;
 using outer::c;
 
-namespace ns
+namespace ns1
 {
     void d(int);
     void d(float);
 }
 
-using ns::d;
+using ns1::d;
 )";
 
     cpp_entity_index idx;
@@ -211,8 +212,7 @@ using ns::d;
         REQUIRE((target.no_overloaded() == no));
         for (auto entity : target.get(idx))
         {
-            REQUIRE(entity);
-            REQUIRE(full_name(entity.value()) == target_full_name);
+            REQUIRE(full_name(*entity) == target_full_name);
         }
     };
 
@@ -233,8 +233,8 @@ using ns::d;
             check_declaration(decl, "outer::ns::c", 1u);
         else if (decl.target().name() == "outer::c")
             check_declaration(decl, "outer::ns::c", 1u);
-        else if (decl.target().name() == "ns::d")
-            check_declaration(decl, "ns::d", 2u);
+        else if (decl.target().name() == "ns1::d")
+            check_declaration(decl, "ns1::d", 2u);
         else
             REQUIRE(false);
     });

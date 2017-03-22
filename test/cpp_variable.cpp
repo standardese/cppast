@@ -69,12 +69,15 @@ static struct {} l;
         else if (var.name() == "b")
             check_variable(var, *cpp_builtin_type::build("unsigned long long"),
                            // unexposed due to implicit cast, I think
-                           *cpp_unexposed_expression::build(cpp_builtin_type::build("int"), "42"),
+                           type_safe::ref(
+                               *cpp_unexposed_expression::build(cpp_builtin_type::build("int"),
+                                                                "42")),
                            cpp_storage_class_none, false, false);
         else if (var.name() == "c")
             check_variable(var, *cpp_builtin_type::build("float"),
-                           *cpp_unexposed_expression::build(cpp_builtin_type::build("float"),
-                                                            "3.f+0.14f"),
+                           type_safe::ref(
+                               *cpp_unexposed_expression::build(cpp_builtin_type::build("float"),
+                                                                "3.f+0.14f")),
                            cpp_storage_class_none, false, false);
         else if (var.name() == "d")
             check_variable(var, *int_type, nullptr, cpp_storage_class_extern, false, true);
@@ -88,7 +91,9 @@ static struct {} l;
         else if (var.name() == "h")
             check_variable(var, *cpp_cv_qualified_type::build(cpp_builtin_type::build("int"),
                                                               cpp_cv_const),
-                           *cpp_literal_expression::build(cpp_builtin_type::build("int"), "12"),
+                           type_safe::ref(
+                               *cpp_literal_expression::build(cpp_builtin_type::build("int"),
+                                                              "12")),
                            cpp_storage_class_none, true, false);
         else if (var.name() == "i")
             check_variable(var,
@@ -99,18 +104,20 @@ static struct {} l;
                                                                   cpp_type_ref(cpp_entity_id(""),
                                                                                "bar")),
                                                               cpp_cv_const),
-                           *cpp_unexposed_expression::build(cpp_user_defined_type::build(
-                                                                cpp_type_ref(cpp_entity_id(""),
-                                                                             "bar")),
-                                                            "bar()"),
+                           type_safe::ref(
+                               *cpp_unexposed_expression::build(cpp_user_defined_type::build(
+                                                                    cpp_type_ref(cpp_entity_id(""),
+                                                                                 "bar")),
+                                                                "bar()")),
                            cpp_storage_class_none, false, false);
         else if (var.name() == "k")
             check_variable(var,
                            *cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "baz")),
-                           *cpp_unexposed_expression::build(cpp_user_defined_type::build(
-                                                                cpp_type_ref(cpp_entity_id(""),
-                                                                             "baz")),
-                                                            "{}"),
+                           type_safe::ref(
+                               *cpp_unexposed_expression::build(cpp_user_defined_type::build(
+                                                                    cpp_type_ref(cpp_entity_id(""),
+                                                                                 "baz")),
+                                                                "{}")),
                            cpp_storage_class_none, false, false);
         else if (var.name() == "l")
             check_variable(var, *cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "")),

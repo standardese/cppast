@@ -33,7 +33,10 @@ inline std::unique_ptr<cppast::cpp_file> parse(const cppast::cpp_entity_index& i
 
     static stderr_diagnostic_logger logger;
     libclang_parser                 p(type_safe::ref(logger));
-    return p.parse(idx, name, config);
+
+    auto result = p.parse(idx, name, config);
+    REQUIRE(!logger.error_logged());
+    return result;
 }
 
 template <typename T, typename Func>

@@ -5,19 +5,19 @@
 #ifndef CPPAST_CPP_ENTITY_INDEX_HPP_INCLUDED
 #define CPPAST_CPP_ENTITY_INDEX_HPP_INCLUDED
 
-#include <unordered_map>
 #include <mutex>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 #include <type_safe/optional_ref.hpp>
 #include <type_safe/reference.hpp>
 #include <type_safe/strong_typedef.hpp>
 
-#include <cppast/detail/assert.hpp>
-
 namespace cppast
 {
     class cpp_entity;
+    class cpp_namespace;
 
     /// \exclude
     namespace detail
@@ -36,7 +36,7 @@ namespace cppast
     ///
     /// It is comparable for equality.
     struct cpp_entity_id : type_safe::strong_typedef<cpp_entity_id, std::size_t>,
-                           type_safe::strong_typedef_op::equality_comparison<cpp_entity_id, bool>
+                           type_safe::strong_typedef_op::equality_comparison<cpp_entity_id>
     {
         explicit cpp_entity_id(const std::string& str) : cpp_entity_id(str.c_str())
         {
@@ -66,58 +66,42 @@ namespace cppast
         /// It will override any previously registered declarations of the same entity.
         /// \requires If the entity has been registered before, it must be as declaration,
         /// and the entity must live as long as the index lives.
+        /// \requires The entity must not be a namespace.
         /// \notes This operation is thread safe.
         void register_definition(cpp_entity_id                           id,
-                                 type_safe::object_ref<const cpp_entity> entity) const
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            auto                        result = map_.emplace(std::move(id), value(entity, true));
-            if (!result.second)
-            {
-                // already in map, override declaration
-                auto& value = result.first->second;
-                DEBUG_ASSERT(!value.is_definition, detail::precondition_error_handler{},
-                             "duplicate entity registration");
-                value.is_definition = true;
-                value.entity        = entity;
-            }
-        }
+                                 type_safe::object_ref<const cpp_entity> entity) const;
 
         /// \effects Registers a new [cppast::cpp_entity]() which is a declaration.
         /// Only the first declaration will be registered.
         /// \requires The entity must live as long as the index lives.
-        /// \notes This operaiton is thread safe.
-        void register_forward_declaration(cpp_entity_id                           id,
-                                          type_safe::object_ref<const cpp_entity> entity) const
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            map_.emplace(std::move(id), value(entity, false));
-        }
-
-        /// \returns A [ts::optional_ref]() corresponding to the entity of the given [cppast::cpp_entity_id]().
-        /// If no definition has been registered, it return the first declaration that was registered.
+        /// \requires The entity must not be a namespace.
         /// \notes This operation is thread safe.
-        type_safe::optional_ref<const cpp_entity> lookup(const cpp_entity_id& id) const noexcept
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            auto                        iter = map_.find(id);
-            if (iter == map_.end())
-                return {};
-            return iter->second.entity.get();
-        }
+        void register_forward_declaration(cpp_entity_id                           id,
+                                          type_safe::object_ref<const cpp_entity> entity) const;
+
+        /// \effects Registers a new [cppast::cpp_namespace]().
+        /// \notes The namespace object must live as long as the index lives.
+        /// \notes This operation is thread safe.
+        void register_namespace(cpp_entity_id                              id,
+                                type_safe::object_ref<const cpp_namespace> ns) const;
+
+        /// \returns A [ts::optional_ref]() corresponding to the entity(/ies) of the given [cppast::cpp_entity_id]().
+        /// If no definition has been registered, it return the first declaration that was registered.
+        /// If the id resolves to a namespaces, returns an empty optional.
+        /// \notes This operation is thread safe.
+        type_safe::optional_ref<const cpp_entity> lookup(const cpp_entity_id& id) const noexcept;
 
         /// \returns A [ts::optional_ref]() corresponding to the entity of the given [cppast::cpp_entity_id]().
         /// If no definition has been registered, it returns an empty optional.
         /// \notes This operation is thread safe.
         type_safe::optional_ref<const cpp_entity> lookup_definition(const cpp_entity_id& id) const
-            noexcept
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            auto                        iter = map_.find(id);
-            if (iter == map_.end() || !iter->second.is_definition)
-                return {};
-            return iter->second.entity.get();
-        }
+            noexcept;
+
+        /// \returns A [ts::array_ref]() of references to all namespaces matching the given [cppast::cpp_entity_id]().
+        /// If no namespace is found, it returns an empty array reference.
+        /// \notes This operation is thread safe.
+        auto lookup_namespace(const cpp_entity_id& id) const noexcept
+            -> type_safe::array_ref<type_safe::object_ref<const cpp_namespace>>;
 
     private:
         struct hash
@@ -141,6 +125,9 @@ namespace cppast
 
         mutable std::mutex mutex_;
         mutable std::unordered_map<cpp_entity_id, value, hash> map_;
+        mutable std::unordered_map<cpp_entity_id,
+                                   std::vector<type_safe::object_ref<const cpp_namespace>>, hash>
+            ns_;
     };
 } // namespace cppast
 

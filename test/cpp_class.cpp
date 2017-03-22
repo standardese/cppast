@@ -180,9 +180,9 @@ struct g
                     REQUIRE(!base.is_virtual());
 
                     REQUIRE(!base.entity().is_overloaded());
-                    auto entity = base.entity().get(idx)[0u];
-                    REQUIRE(entity);
-                    REQUIRE(entity.value().name() == "a");
+                    auto entities = base.entity().get(idx);
+                    REQUIRE(entities.size() == 1u);
+                    REQUIRE(entities[0u]->name() == "a");
                 }
                 else if (base.name() == "d")
                 {
@@ -190,9 +190,9 @@ struct g
                     REQUIRE(!base.is_virtual());
 
                     REQUIRE(!base.entity().is_overloaded());
-                    auto entity = base.entity().get(idx)[0u];
-                    REQUIRE(entity);
-                    REQUIRE(entity.value().name() == "d");
+                    auto entities = base.entity().get(idx);
+                    REQUIRE(entities.size() == 1u);
+                    REQUIRE(entities[0u]->name() == "d");
                 }
                 else
                     REQUIRE(false);
@@ -217,10 +217,10 @@ struct g
                     REQUIRE(!base.is_virtual());
 
                     REQUIRE(!base.entity().is_overloaded());
-                    auto entity = base.entity().get(idx)[0u];
-                    REQUIRE(entity);
-                    REQUIRE(entity.value().name() == "base");
-                    REQUIRE(full_name(entity.value()) == "ns::base");
+                    auto entities = base.entity().get(idx);
+                    REQUIRE(entities.size() == 1u);
+                    REQUIRE(entities[0u]->name() == "base");
+                    REQUIRE(full_name(*entities[0u]) == "ns::base");
                 }
                 else if (base.name() == "e")
                 {
@@ -228,9 +228,9 @@ struct g
                     REQUIRE(base.is_virtual());
 
                     REQUIRE(!base.entity().is_overloaded());
-                    auto entity = base.entity().get(idx)[0u];
-                    REQUIRE(entity);
-                    REQUIRE(entity.value().name() == "e");
+                    auto entities = base.entity().get(idx);
+                    REQUIRE(entities.size() == 1u);
+                    REQUIRE(entities[0u]->name() == "e");
                 }
                 else
                     REQUIRE(false);
@@ -255,10 +255,10 @@ struct g
                     REQUIRE(!base.is_virtual());
 
                     REQUIRE(!base.entity().is_overloaded());
-                    auto entity = base.entity().get(idx)[0u];
-                    REQUIRE(entity);
-                    REQUIRE(entity.value().name() == "base");
-                    REQUIRE(full_name(entity.value()) == "ns::base");
+                    auto entities = base.entity().get(idx);
+                    REQUIRE(entities.size() == 1u);
+                    REQUIRE(entities[0u]->name() == "base");
+                    REQUIRE(full_name(*entities[0u]) == "ns::base");
                 }
                 else
                     REQUIRE(false);

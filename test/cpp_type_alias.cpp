@@ -30,9 +30,9 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
             return false;
         else if (user_parsed.is_overloaded())
             return false;
-        auto entity = user_parsed.get(idx)[0u];
-        return entity.has_value() && (entity.value().name().empty()
-                                      || full_name(entity.value()) == user_parsed.name());
+        auto entities = user_parsed.get(idx);
+        REQUIRE(entities.size() == 1u);
+        return entities[0u]->name().empty() || full_name(*entities[0u]) == user_parsed.name();
     }
 
     case cpp_type_kind::cv_qualified:

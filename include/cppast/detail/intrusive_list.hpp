@@ -130,7 +130,7 @@ namespace cppast
                 if (last_)
                 {
                     auto ptr = intrusive_list_access<T>::set_next(last_.value(), std::move(obj));
-                    last_    = *ptr;
+                    last_    = type_safe::ref(*ptr);
                 }
                 else
                 {

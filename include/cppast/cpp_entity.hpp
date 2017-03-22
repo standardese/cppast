@@ -107,7 +107,7 @@ namespace cppast
 
         void on_insert(const cpp_entity& parent) noexcept
         {
-            parent_ = parent;
+            parent_ = type_safe::ref(parent);
         }
 
         std::string                               name_;

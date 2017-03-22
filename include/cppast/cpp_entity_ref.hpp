@@ -70,110 +70,43 @@ namespace cppast
             }
         }
 
-    private:
-        class ref_impl
-        {
-        public:
-            ref_impl(type_safe::object_ref<const cpp_entity_index> idx,
-                     type_safe::array_ref<const cpp_entity_id>     ids)
-            : ids_(ids), index_(idx)
-            {
-            }
-
-            class iterator
-            {
-            public:
-                using value_type        = type_safe::optional_ref<const T>;
-                using reference         = value_type;
-                using pointer           = value_type*;
-                using difference_type   = std::ptrdiff_t;
-                using iterator_category = std::forward_iterator_tag;
-
-                reference operator*() const noexcept
-                {
-                    return (*ref_)[i_];
-                }
-
-                pointer operator->() const noexcept
-                {
-                    return &(*ref_)[i_];
-                }
-
-                iterator& operator++() noexcept
-                {
-                    ++i_;
-                    return *this;
-                }
-
-                iterator operator++(int)noexcept
-                {
-                    auto tmp = *this;
-                    ++(*this);
-                    return tmp;
-                }
-
-                friend bool operator==(const iterator& a, const iterator& b) noexcept
-                {
-                    return a.ref_ == b.ref_ && a.i_ == b.i_;
-                }
-
-                friend bool operator!=(const iterator& a, const iterator& b) noexcept
-                {
-                    return !(a == b);
-                }
-
-            private:
-                iterator(type_safe::object_ref<const ref_impl> ref, type_safe::index_t i)
-                : ref_(ref), i_(i)
-                {
-                }
-
-                type_safe::object_ref<const ref_impl> ref_;
-                type_safe::index_t                    i_;
-
-                friend ref_impl;
-            };
-
-            iterator begin() const noexcept
-            {
-                return iterator(type_safe::ref(*this), 0u);
-            }
-
-            iterator end() const noexcept
-            {
-                return iterator(type_safe::ref(*this), size());
-            }
-
-            type_safe::optional_ref<const T> operator[](type_safe::index_t i) const
-            {
-                return index_->lookup(ids_[i]).map([](const cpp_entity& e) -> const T& {
-                    DEBUG_ASSERT(Predicate{}(e), detail::precondition_error_handler{},
-                                 "predicate not fulfilled");
-                    return static_cast<const T&>(e);
-                });
-            }
-
-            type_safe::size_t size() const noexcept
-            {
-                return ids_.size();
-            }
-
-        private:
-            type_safe::array_ref<const cpp_entity_id>     ids_;
-            type_safe::object_ref<const cpp_entity_index> index_;
-        };
-
-    public:
         /// \returns An array reference to the entities it refers to.
         /// The return type provides `operator[]` + `size()`,
         /// as well as `begin()` and `end()` returning forward iterators.
         /// \exclude return
-        ref_impl get(const cpp_entity_index& idx) const noexcept
+        std::vector<type_safe::object_ref<const T>> get(const cpp_entity_index& idx) const
         {
-            return ref_impl(type_safe::ref(idx), id());
+            std::vector<type_safe::object_ref<const T>> result;
+            get_impl(std::is_convertible<cpp_namespace&, T&>{}, result, idx);
+            return result;
         }
 
     private:
+        void get_impl(std::true_type, std::vector<type_safe::object_ref<const T>>& result,
+                      const cpp_entity_index& idx) const
+        {
+            for (auto& cur : id())
+                for (auto& ns : idx.lookup_namespace(cur))
+                    result.push_back(ns);
+            if (!std::is_same<T, cpp_namespace>::value)
+                get_impl(std::false_type{}, result, idx);
+        }
+
+        void get_impl(std::false_type, std::vector<type_safe::object_ref<const T>>& result,
+                      const cpp_entity_index& idx) const
+        {
+            for (auto& cur : id())
+            {
+                auto entity = idx.lookup(cur).map([](const cpp_entity& e) {
+                    DEBUG_ASSERT(Predicate{}(e), detail::precondition_error_handler{},
+                                 "invalid entity type");
+                    return type_safe::ref(static_cast<const T&>(e));
+                });
+                if (entity)
+                    result.push_back(type_safe::ref(entity.value()));
+            }
+        }
+
         type_safe::variant<cpp_entity_id, std::vector<cpp_entity_id>> target_;
         std::string name_;
     };

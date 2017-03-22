@@ -77,9 +77,9 @@ namespace cppast
                 return idx
                     .lookup_definition(entity.definition().value())
                     // downcast
-                    .map([](const cpp_entity& e) -> const T& {
+                    .map([](const cpp_entity& e) {
                         DEBUG_ASSERT(e.kind() == T::kind(), detail::assert_handler{});
-                        return static_cast<const T&>(e);
+                        return type_safe::ref(static_cast<const T&>(e));
                     });
         }
 
