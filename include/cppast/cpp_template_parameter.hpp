@@ -48,6 +48,8 @@ namespace cppast
     class cpp_template_type_parameter final : public cpp_template_parameter
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// \returns A newly created and registered template type parameter.
         /// \notes The `default_type` may be `nullptr` in which case the parameter has no default.
         static std::unique_ptr<cpp_template_type_parameter> build(

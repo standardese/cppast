@@ -14,6 +14,8 @@ namespace cppast
     class cpp_alias_template final : public cpp_template
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// Builder for [cppast::cpp_alias_template]().
         class builder : public basic_builder<cpp_alias_template, cpp_type_alias>
         {

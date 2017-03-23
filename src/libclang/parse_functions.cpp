@@ -68,7 +68,7 @@ void detail::comment_context::match(cpp_entity& e, unsigned line) const
 }
 
 std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& context,
-                                                 const CXCursor&              cur) try
+                                                 const CXCursor& cur, bool as_template) try
 {
     auto kind = clang_getCursorKind(cur);
     switch (kind)
@@ -90,7 +90,7 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
 
     case CXCursor_TypeAliasDecl:
     case CXCursor_TypedefDecl:
-        return parse_cpp_type_alias(context, cur);
+        return parse_cpp_type_alias(context, cur, as_template);
     case CXCursor_EnumDecl:
         return parse_cpp_enum(context, cur);
     case CXCursor_ClassDecl:
@@ -116,6 +116,9 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         return parse_cpp_constructor(context, cur);
     case CXCursor_Destructor:
         return parse_cpp_destructor(context, cur);
+
+    case CXCursor_TypeAliasTemplateDecl:
+        return parse_cpp_alias_template(context, cur);
 
     default:
         break;

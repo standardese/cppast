@@ -8,7 +8,12 @@
 
 using namespace cppast;
 
-cpp_entity_kind cpp_alias_template::do_get_entity_kind() const noexcept
+cpp_entity_kind cpp_alias_template::kind() noexcept
 {
     return cpp_entity_kind::alias_template_t;
+}
+
+cpp_entity_kind cpp_alias_template::do_get_entity_kind() const noexcept
+{
+    return kind();
 }

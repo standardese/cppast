@@ -60,6 +60,13 @@ namespace cppast
 
         std::unique_ptr<cpp_type> parse_type(const parse_context& context, const CXType& type);
 
+        // parse the type starting at the current token stream
+        // and ends at the given iterator
+        // this is required for situations where there is no type exposed,
+        // like default type of a template type parameter
+        std::unique_ptr<cpp_type> parse_raw_type(const parse_context& context, token_stream& stream,
+                                                 token_iterator end);
+
         std::unique_ptr<cpp_expression> parse_expression(const parse_context& context,
                                                          const CXCursor&      cur);
         // parse the expression starting at the current token in the stream
@@ -93,7 +100,7 @@ namespace cppast
                                                                 const CXCursor&      cur);
 
         std::unique_ptr<cpp_entity> parse_cpp_type_alias(const parse_context& context,
-                                                         const CXCursor&      cur);
+                                                         const CXCursor& cur, bool as_template);
         std::unique_ptr<cpp_entity> parse_cpp_enum(const parse_context& context,
                                                    const CXCursor&      cur);
         std::unique_ptr<cpp_entity> parse_cpp_class(const parse_context& context,
@@ -116,7 +123,12 @@ namespace cppast
         std::unique_ptr<cpp_entity> parse_cpp_destructor(const parse_context& context,
                                                          const CXCursor&      cur);
 
-        std::unique_ptr<cpp_entity> parse_entity(const parse_context& context, const CXCursor& cur);
+        std::unique_ptr<cpp_entity> parse_cpp_alias_template(const parse_context& context,
+                                                             const CXCursor&      cur);
+
+        // as_template: true, iff currently parsing a template
+        std::unique_ptr<cpp_entity> parse_entity(const parse_context& context, const CXCursor& cur,
+                                                 bool as_template = false);
     }
 } // namespace cppast::detail
 

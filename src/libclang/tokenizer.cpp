@@ -80,14 +80,17 @@ namespace
     // this function returns the actual CXSourceRange that covers all parts required for parsing
     // might include more tokens
     // this function is the reason you shouldn't use libclang
-    CXSourceRange get_extent(const CXTranslationUnit& tu, const CXFile& file, const CXCursor& cur)
+    CXSourceRange get_extent(const CXTranslationUnit& tu, const CXFile& file, const CXCursor& cur,
+                             bool& unmunch)
     {
+        unmunch = false;
+
         auto extent = clang_getCursorExtent(cur);
         auto begin  = clang_getRangeStart(extent);
         auto end    = clang_getRangeEnd(extent);
 
-        if (cursor_is_function(clang_getCursorKind(cur))
-            || cursor_is_function(clang_getTemplateCursorKind(cur)))
+        auto kind = clang_getCursorKind(cur);
+        if (cursor_is_function(kind) || cursor_is_function(clang_getTemplateCursorKind(cur)))
         {
             auto range_shrunk = false;
 
@@ -114,37 +117,69 @@ namespace
                     end = get_next_location(tu, file, end);
                 } while (!token_after_is(tu, file, cur, end, ";"));
             }
-            else if (clang_getCursorKind(cur) == CXCursor_CXXMethod)
+            else if (kind == CXCursor_CXXMethod)
                 // necessary for some reason
                 begin = get_next_location(tu, file, begin, -1);
         }
-        else if (clang_getCursorKind(cur) == CXCursor_TemplateTypeParameter
-                 || clang_getCursorKind(cur) == CXCursor_NonTypeTemplateParameter
-                 || clang_getCursorKind(cur) == CXCursor_TemplateTemplateParameter
-                 || clang_getCursorKind(cur) == CXCursor_ParmDecl)
+        else if (kind == CXCursor_TemplateTypeParameter && token_after_is(tu, file, cur, end, "("))
         {
-            if (clang_getCursorKind(cur) == CXCursor_TemplateTypeParameter
-                && token_after_is(tu, file, cur, end, "("))
+            // if you have decltype as default argument for a type template parameter
+            // libclang doesn't include the parameters
+            auto next = get_next_location(tu, file, end);
+            auto prev = end;
+            for (auto paren_count = 1; paren_count != 0; next = get_next_location(tu, file, next))
             {
-                // if you have decltype as default argument for a type template parameter
-                // libclang doesn't include the parameters
-                auto next = get_next_location(tu, file, end);
-                auto prev = end;
-                for (auto paren_count = 1; paren_count != 0;
-                     next             = get_next_location(tu, file, next))
-                {
-                    if (token_after_is(tu, file, cur, next, "("))
-                        ++paren_count;
-                    else if (token_after_is(tu, file, cur, next, ")"))
-                        --paren_count;
-                    prev = next;
-                }
-                end = prev;
+                if (token_after_is(tu, file, cur, next, "("))
+                    ++paren_count;
+                else if (token_after_is(tu, file, cur, next, ")"))
+                    --paren_count;
+                prev = next;
             }
+            end = prev;
         }
-        else if (clang_isExpression(clang_getCursorKind(cur))
-                 || clang_getCursorKind(cur) == CXCursor_CXXBaseSpecifier
-                 || clang_getCursorKind(cur) == CXCursor_FieldDecl)
+        else if (kind == CXCursor_TemplateTemplateParameter
+                 && token_after_is(tu, file, cur, end, "<"))
+        {
+            // if you have a template template parameter in a template template parameter,
+            // the tokens are all messed up, only contain the `template`
+
+            // first: skip to closing angle bracket
+            // luckily no need to handle expressions here
+            auto next = get_next_location(tu, file, end, 2);
+            for (auto angle_count = 1; angle_count != 0; next = get_next_location(tu, file, next))
+            {
+                if (token_after_is(tu, file, cur, next, ">"))
+                    --angle_count;
+                else if (token_after_is(tu, file, cur, next, ">>"))
+                    angle_count -= 2;
+                else if (token_after_is(tu, file, cur, next, "<"))
+                    ++angle_count;
+            }
+
+            // second: skip until end of parameter
+            // no need to handle default, so look for '>' or ','
+            while (!token_after_is(tu, file, cur, next, ">")
+                   && !token_after_is(tu, file, cur, next, ","))
+                next = get_next_location(tu, file, next);
+            // now we found the proper end of the token
+            end = get_next_location(tu, file, next, -1);
+        }
+        else if ((kind == CXCursor_TemplateTypeParameter
+                  || kind == CXCursor_NonTypeTemplateParameter
+                  || kind == CXCursor_TemplateTemplateParameter)
+                 && !token_after_is(tu, file, cur, end, ">")
+                 && !token_after_is(tu, file, cur, end, ","))
+        {
+            DEBUG_ASSERT(token_after_is(tu, file, cur, get_next_location(tu, file, end, -2), ">>"),
+                         detail::assert_handler{});
+            unmunch = true;
+            // need to shrink range anyway
+            end = get_next_location(tu, file, end, -1);
+        }
+        else if (clang_isExpression(kind) || kind == CXCursor_CXXBaseSpecifier
+                 || kind == CXCursor_FieldDecl || kind == CXCursor_TemplateTypeParameter
+                 || kind == CXCursor_NonTypeTemplateParameter
+                 || kind == CXCursor_TemplateTemplateParameter)
             // need to shrink range by one
             end = get_next_location(tu, file, end, -1);
 
@@ -154,7 +189,7 @@ namespace
 
 detail::tokenizer::tokenizer(const CXTranslationUnit& tu, const CXFile& file, const CXCursor& cur)
 {
-    auto extent = get_extent(tu, file, cur);
+    auto extent = get_extent(tu, file, cur, unmunch_);
 
     simple_tokenizer tokenizer(tu, extent, cur);
     tokens_.reserve(tokenizer.size());
@@ -164,10 +199,14 @@ detail::tokenizer::tokenizer(const CXTranslationUnit& tu, const CXFile& file, co
 
 void detail::skip(detail::token_stream& stream, const char* str)
 {
-    auto& token = stream.peek();
-    DEBUG_ASSERT(token == str, parse_error_handler{}, stream.cursor(),
-                 format("expected '", str, "', got '", token.c_str(), "'"));
-    stream.bump();
+    if (*str)
+    {
+        // non-empty
+        auto& token = stream.peek();
+        DEBUG_ASSERT(token == str, parse_error_handler{}, stream.cursor(),
+                     format("expected '", str, "', got '", token.c_str(), "'"));
+        stream.bump();
+    }
 }
 
 namespace
@@ -185,6 +224,8 @@ namespace
 
 bool detail::skip_if(detail::token_stream& stream, const char* str, bool multi_token)
 {
+    if (!*str)
+        return true;
     auto save = stream.cur();
     do
     {
@@ -212,7 +253,7 @@ detail::token_iterator detail::find_closing_bracket(detail::token_stream stream)
         close_bracket = "]";
     else if (skip_if(stream, "<"))
     {
-        close_bracket    = "<";
+        close_bracket    = ">";
         template_bracket = true;
     }
     else

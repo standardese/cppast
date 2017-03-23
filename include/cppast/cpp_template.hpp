@@ -39,11 +39,19 @@ namespace cppast
             {
             }
 
+            basic_builder(basic_builder&&) = default;
+
             /// \effects Adds a parameter.
             void add_parameter(std::unique_ptr<cpp_template_parameter> parameter)
             {
                 static_cast<cpp_template&>(*template_entity)
                     .parameters_.push_back(*template_entity, std::move(parameter));
+            }
+
+            /// \returns The not yet finished template.
+            T& get() const noexcept
+            {
+                return *template_entity;
             }
 
             /// \effects Registers the template.

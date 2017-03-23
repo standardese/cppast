@@ -76,15 +76,28 @@ namespace cppast
                 return tokens_.end();
             }
 
+            // if it returns true, the last token is ">>",
+            // but should haven been ">"
+            // only a problem for template parameters
+            bool unmunch() const noexcept
+            {
+                return unmunch_;
+            }
+
         private:
             std::vector<token> tokens_;
+            bool               unmunch_;
         };
 
         class token_stream
         {
         public:
             explicit token_stream(const tokenizer& tokenizer, const CXCursor& cur)
-            : cursor_(cur), begin_(tokenizer.begin()), cur_(begin_), end_(tokenizer.end())
+            : cursor_(cur),
+              begin_(tokenizer.begin()),
+              cur_(begin_),
+              end_(tokenizer.end()),
+              unmunch_(tokenizer.unmunch())
             {
             }
 
@@ -144,9 +157,15 @@ namespace cppast
                 cur_ = iter;
             }
 
+            bool unmunch() const noexcept
+            {
+                return unmunch_;
+            }
+
         private:
             CXCursor       cursor_;
             token_iterator begin_, cur_, end_;
+            bool           unmunch_;
         };
 
         // skips the next token

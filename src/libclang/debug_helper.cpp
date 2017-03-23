@@ -39,6 +39,13 @@ void detail::print_cursor_info(const CXCursor& cur) noexcept
                 cxstring(clang_getCursorUSR(cur)).c_str());
 }
 
+void detail::print_type_info(const CXType& type) noexcept
+{
+    std::lock_guard<std::mutex> lock(mtx);
+    std::printf("[debug] type '%s' (%s)\n", cxstring(clang_getTypeSpelling(type)).c_str(),
+                get_type_kind_spelling(type).c_str());
+}
+
 void detail::print_tokens(const CXTranslationUnit& tu, const CXFile& file,
                           const CXCursor& cur) noexcept
 {

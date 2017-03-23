@@ -31,9 +31,14 @@ std::unique_ptr<cpp_template_type_parameter> cpp_template_type_parameter::build(
     return result;
 }
 
-cpp_entity_kind cpp_template_type_parameter::do_get_entity_kind() const noexcept
+cpp_entity_kind cpp_template_type_parameter::kind() noexcept
 {
     return cpp_entity_kind::template_type_parameter_t;
+}
+
+cpp_entity_kind cpp_template_type_parameter::do_get_entity_kind() const noexcept
+{
+    return kind();
 }
 
 bool detail::cpp_template_parameter_ref_predicate::operator()(const cpp_entity& e)

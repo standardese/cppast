@@ -435,16 +435,51 @@ std::unique_ptr<cpp_type> detail::parse_type(const detail::parse_context& contex
     return std::move(result);
 }
 
+namespace
+{
+    bool is_identifier(char c)
+    {
+        return std::isalnum(c) || c == '_';
+    }
+}
+
+std::unique_ptr<cpp_type> detail::parse_raw_type(const detail::parse_context&,
+                                                 detail::token_stream&  stream,
+                                                 detail::token_iterator end)
+{
+    std::string result;
+    while (stream.cur() != end)
+    {
+        auto& token = stream.get();
+        if (!result.empty() && is_identifier(result.back()) && is_identifier(token.value()[0u]))
+            result += ' ';
+        result += token.c_str();
+    }
+    if (stream.unmunch())
+    {
+        DEBUG_ASSERT(!result.empty() && result.back() == '>', detail::assert_handler{});
+        result.pop_back();
+        DEBUG_ASSERT(!result.empty() && result.back() == '>', detail::assert_handler{});
+    }
+    return cpp_unexposed_type::build(std::move(result));
+}
+
 std::unique_ptr<cpp_entity> detail::parse_cpp_type_alias(const detail::parse_context& context,
-                                                         const CXCursor&              cur)
+                                                         const CXCursor& cur, bool as_template)
 {
     DEBUG_ASSERT(cur.kind == CXCursor_TypeAliasDecl || cur.kind == CXCursor_TypedefDecl,
                  detail::assert_handler{});
 
     auto name = detail::get_cursor_name(cur);
     auto type = parse_type(context, clang_getTypedefDeclUnderlyingType(cur));
-    auto result =
-        cpp_type_alias::build(*context.idx, get_entity_id(cur), name.c_str(), std::move(type));
-    context.comments.match(*result, cur);
-    return result;
+
+    if (as_template)
+        return cpp_type_alias::build(name.c_str(), std::move(type));
+    else
+    {
+        auto result =
+            cpp_type_alias::build(*context.idx, get_entity_id(cur), name.c_str(), std::move(type));
+        context.comments.match(*result, cur);
+        return result;
+    }
 }
