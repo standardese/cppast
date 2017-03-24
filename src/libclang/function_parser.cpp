@@ -16,7 +16,7 @@ namespace
                                                             const CXCursor&              cur)
     {
         auto name = detail::get_cursor_name(cur);
-        auto type = detail::parse_type(context, clang_getCursorType(cur));
+        auto type = detail::parse_type(context, cur, clang_getCursorType(cur));
 
         std::unique_ptr<cpp_expression> default_value;
         detail::visit_children(cur, [&](const CXCursor& child) {
@@ -278,7 +278,8 @@ namespace
         auto name = detail::get_cursor_name(cur);
 
         cpp_function::builder builder(name.c_str(),
-                                      detail::parse_type(context, clang_getCursorResultType(cur)));
+                                      detail::parse_type(context, cur,
+                                                         clang_getCursorResultType(cur)));
         context.comments.match(builder.get(), cur);
         add_parameters(context, builder, cur);
         if (clang_Cursor_isVariadic(cur))
@@ -413,7 +414,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
     auto name = detail::get_cursor_name(cur);
 
     cpp_member_function::builder builder(name.c_str(),
-                                         detail::parse_type(context,
+                                         detail::parse_type(context, cur,
                                                             clang_getCursorResultType(cur)));
     context.comments.match(builder.get(), cur);
     add_parameters(context, builder, cur);
@@ -435,7 +436,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
                                                             const CXCursor&              cur)
 {
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_ConversionFunction, detail::assert_handler{});
-    cpp_conversion_op::builder builder(detail::parse_type(context, clang_getCursorResultType(cur)));
+    cpp_conversion_op::builder builder(
+        detail::parse_type(context, cur, clang_getCursorResultType(cur)));
     context.comments.match(builder.get(), cur);
 
     detail::tokenizer    tokenizer(context.tu, context.file, cur);

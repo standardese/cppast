@@ -56,7 +56,7 @@ namespace
         std::unique_ptr<cpp_type> type;
         if (detail::skip_if(stream, ":"))
             // parse type, explictly given one
-            type = detail::parse_type(context, clang_getEnumDeclIntegerType(cur));
+            type = detail::parse_type(context, cur, clang_getEnumDeclIntegerType(cur));
 
         return cpp_enum::builder(name.c_str(), scoped, std::move(type));
     }

@@ -29,7 +29,7 @@ std::unique_ptr<cpp_expression> detail::parse_expression(const detail::parse_con
     detail::tokenizer    tokenizer(context.tu, context.file, cur);
     detail::token_stream stream(tokenizer, cur);
 
-    auto type = parse_type(context, clang_getCursorType(cur));
+    auto type = parse_type(context, cur, clang_getCursorType(cur));
     auto expr = get_expression_str(stream, stream.end());
     if (kind == CXCursor_CallExpr && (expr.empty() || expr.back() != ')'))
     {

@@ -164,8 +164,8 @@ namespace cppast
 
     class cpp_template;
 
-    /// A reference to a [cppast::cpp_template]().
-    using cpp_template_ref = basic_cpp_entity_ref<cpp_template, detail::cpp_template_ref_predicate>;
+    /// A reference to a [cppast::cpp_template]() or a [cppast::cpp_template_template_parameter]().
+    using cpp_template_ref = basic_cpp_entity_ref<cpp_entity, detail::cpp_template_ref_predicate>;
 
     /// A [cppast::cpp_entity]() modelling a C++ template template parameter.
     class cpp_template_template_parameter final
@@ -243,12 +243,67 @@ namespace cppast
 
     /// An argument for a [cppast::cpp_template_parameter]().
     ///
-    /// It is a [ts::variant]() of [cppast::cpp_type]() (for [cppast::cpp_template_type_parameter]()),
+    /// It is based on a [ts::variant]() of [cppast::cpp_type]() (for [cppast::cpp_template_type_parameter]()),
     /// [cppast::cpp_expression]() (for [cppast::cpp_non_type_template_parameter]()) and [cppast::cpp_template_ref]()
     /// (for [cppast::cpp_template_template_parameter]().
-    using cpp_template_argument =
+    class cpp_template_argument
+    {
+    public:
+        /// \effects Initializes it passing a type as argument.
+        /// This corresponds to a [cppast::cpp_template_type_parameter]().
+        /// \notes This constructor only participates in overload resolution if `T` is dervied from [cppast::cpp_type]().
+        /// \param 1
+        /// \exclude
+        template <typename T,
+                  typename std::enable_if<std::is_base_of<cpp_type, T>::value, int>::type = 0>
+        cpp_template_argument(std::unique_ptr<T> type)
+        : arg_(std::unique_ptr<cpp_type>(std::move(type)))
+        {
+        }
+
+        /// \effects Initializes it passing an expression as argument.
+        /// This corresponds to a [cppast::cpp_non_type_template_parameter]().
+        /// \notes This constructor only participates in overload resolution if `T` is dervied from [cppast::cpp_expression]().
+        /// \param 1
+        /// \exclude
+        template <
+            typename T,
+            typename = typename std::enable_if<std::is_base_of<cpp_expression, T>::value>::type>
+        cpp_template_argument(std::unique_ptr<T> expr)
+        : arg_(std::unique_ptr<cpp_expression>(std::move(expr)))
+        {
+        }
+
+        /// \effects Initializes it passing a template as argument.
+        /// This corresponds to a [cppast::cpp_template_template_parameter]().
+        cpp_template_argument(cpp_template_ref templ) : arg_(std::move(templ))
+        {
+        }
+
+        type_safe::optional_ref<const cpp_type> type() const noexcept
+        {
+            return arg_.optional_value(type_safe::variant_type<std::unique_ptr<cpp_type>>{})
+                .map([](const std::unique_ptr<cpp_type>& type) { return type_safe::ref(*type); });
+        }
+
+        type_safe::optional_ref<const cpp_expression> expression() const noexcept
+        {
+            return arg_.optional_value(type_safe::variant_type<std::unique_ptr<cpp_expression>>{})
+                .map([](const std::unique_ptr<cpp_expression>& expr) {
+                    return type_safe::ref(*expr);
+                });
+        }
+
+        type_safe::optional_ref<const cpp_template_ref> template_ref() const noexcept
+        {
+            return arg_.optional_value(type_safe::variant_type<cpp_template_ref>{});
+        }
+
+    private:
         type_safe::variant<std::unique_ptr<cpp_type>, std::unique_ptr<cpp_expression>,
-                           cpp_template_ref>;
+                           cpp_template_ref>
+            arg_;
+    };
 } // namespace cppast
 
 #endif // CPPAST_CPP_TEMPLATE_PARAMETER_HPP_INCLUDED

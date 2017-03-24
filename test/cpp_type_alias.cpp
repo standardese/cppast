@@ -6,10 +6,29 @@
 
 #include <cppast/cpp_array_type.hpp>
 #include <cppast/cpp_function_type.hpp>
+#include <cppast/cpp_template.hpp>
+#include <cppast/cpp_template_parameter.hpp>
 
 #include "test_parser.hpp"
 
 using namespace cppast;
+
+template <typename T, class Predicate>
+bool equal_ref(const cpp_entity_index& idx, const basic_cpp_entity_ref<T, Predicate>& parsed,
+               const basic_cpp_entity_ref<T, Predicate>& synthesized)
+{
+    if (parsed.name() != synthesized.name())
+        return false;
+    else if (parsed.is_overloaded() != synthesized.is_overloaded())
+        return false;
+    else if (parsed.is_overloaded())
+        return false;
+
+    auto entities = parsed.get(idx);
+    if (entities.size() != 1u)
+        return synthesized.id()[0u] == cpp_entity_id("magic-allow-empty");
+    return entities[0u]->name().empty() || full_name(*entities[0u]) == parsed.name();
+}
 
 bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_type& synthesized)
 {
@@ -24,15 +43,9 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
 
     case cpp_type_kind::user_defined:
     {
-        auto user_parsed      = static_cast<const cpp_user_defined_type&>(parsed).entity();
-        auto user_synthesized = static_cast<const cpp_user_defined_type&>(synthesized).entity();
-        if (user_parsed.name() != user_synthesized.name())
-            return false;
-        else if (user_parsed.is_overloaded())
-            return false;
-        auto entities = user_parsed.get(idx);
-        REQUIRE(entities.size() == 1u);
-        return entities[0u]->name().empty() || full_name(*entities[0u]) == user_parsed.name();
+        auto& user_parsed      = static_cast<const cpp_user_defined_type&>(parsed);
+        auto& user_synthesized = static_cast<const cpp_user_defined_type&>(synthesized);
+        return equal_ref(idx, user_parsed.entity(), user_synthesized.entity());
     }
 
     case cpp_type_kind::cv_qualified:
@@ -69,16 +82,7 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
 
         auto& size_a = array_a.size().value();
         auto& size_b = array_b.size().value();
-        if (size_a.kind() != size_b.kind())
-            return false;
-        else if (size_a.kind() == cpp_expression_kind::literal)
-            return static_cast<const cpp_literal_expression&>(size_a).value()
-                   == static_cast<const cpp_literal_expression&>(size_b).value();
-        else if (size_a.kind() == cpp_expression_kind::unexposed)
-            return static_cast<const cpp_unexposed_expression&>(size_a).expression()
-                   == static_cast<const cpp_unexposed_expression&>(size_b).expression();
-        else
-            break;
+        return equal_expressions(size_a, size_b);
     }
 
     case cpp_type_kind::function:
@@ -92,7 +96,7 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
             return false;
 
         auto iter_a = func_a.parameter_types().begin();
-        auto iter_b = func_a.parameter_types().begin();
+        auto iter_b = func_b.parameter_types().begin();
         while (iter_a != func_a.parameter_types().end() && iter_b != func_b.parameter_types().end())
         {
             if (!equal_types(idx, *iter_a, *iter_b))
@@ -115,7 +119,7 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
             return false;
 
         auto iter_a = func_a.parameter_types().begin();
-        auto iter_b = func_a.parameter_types().begin();
+        auto iter_b = func_b.parameter_types().begin();
         while (iter_a != func_a.parameter_types().end() && iter_b != func_b.parameter_types().end())
         {
             if (!equal_types(idx, *iter_a, *iter_b))
@@ -135,11 +139,50 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         return equal_types(idx, obj_a.object_type(), obj_b.object_type());
     }
 
-    // TODO: implement equality when those can be parsed
     case cpp_type_kind::template_parameter:
-        break;
+    {
+        auto& entity_parsed = static_cast<const cpp_template_parameter_type&>(parsed).entity();
+        auto& entity_synthesized =
+            static_cast<const cpp_template_parameter_type&>(synthesized).entity();
+        return equal_ref(idx, entity_parsed, entity_synthesized);
+    }
     case cpp_type_kind::template_instantiation:
-        break;
+    {
+        auto& inst_parsed      = static_cast<const cpp_template_instantiation_type&>(parsed);
+        auto& inst_synthesized = static_cast<const cpp_template_instantiation_type&>(synthesized);
+
+        if (!equal_ref(idx, inst_parsed.primary_template(), inst_synthesized.primary_template()))
+            return false;
+
+        auto iter_a = inst_parsed.arguments().begin();
+        auto iter_b = inst_synthesized.arguments().begin();
+        while (iter_a != inst_parsed.arguments().end()
+               && iter_b != inst_synthesized.arguments().end())
+        {
+            if (iter_a->type().has_value() && iter_b->type().has_value())
+            {
+                if (!equal_types(idx, iter_a->type().value(), iter_b->type().value()))
+                    return false;
+            }
+            else if (iter_a->expression().has_value() && iter_b->expression().has_value())
+            {
+                if (!equal_expressions(iter_a->expression().value(), iter_b->expression().value()))
+                    return false;
+            }
+            else if (iter_a->template_ref().has_value() && iter_b->template_ref().has_value())
+            {
+                if (!equal_ref(idx, iter_a->template_ref().value(), iter_b->template_ref().value()))
+                    return false;
+            }
+            else
+                return false;
+            ++iter_a;
+            ++iter_b;
+        }
+        return iter_a == inst_parsed.arguments().end()
+               && iter_b == inst_synthesized.arguments().end();
+    }
+    // TODO: implement equality when those can be parsed
     case cpp_type_kind::dependent:
         break;
 

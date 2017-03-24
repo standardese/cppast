@@ -64,7 +64,7 @@ cpp_entity_kind cpp_non_type_template_parameter::do_get_entity_kind() const noex
 
 bool detail::cpp_template_ref_predicate::operator()(const cpp_entity& e)
 {
-    return is_template(e.kind());
+    return is_template(e.kind()) || e.kind() == cpp_entity_kind::template_template_parameter_t;
 }
 
 cpp_entity_kind cpp_template_template_parameter::do_get_entity_kind() const noexcept

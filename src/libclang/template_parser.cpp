@@ -12,8 +12,8 @@ using namespace cppast;
 namespace
 {
     template <typename TemplateT, typename EntityT>
-    typename TemplateT::builder get_builder(const detail::parse_context& context,
-                                            const CXCursor&              cur)
+    type_safe::optional<typename TemplateT::builder> get_builder(
+        const detail::parse_context& context, const CXCursor& cur)
     {
         // we need the actual entity first, then the parameters
         // so two visit calls are required
@@ -31,7 +31,9 @@ namespace
         DEBUG_ASSERT(!clang_Cursor_isNull(result), detail::parse_error_handler{}, cur,
                      "missing child of template");
 
-        auto entity = detail::parse_entity(context, result, true);
+        auto entity = detail::parse_entity(context, result, cur);
+        if (!entity)
+            return type_safe::nullopt;
         DEBUG_ASSERT(entity->kind() == EntityT::kind(), detail::parse_error_handler{}, cur,
                      "wrong child of template");
         return typename TemplateT::builder(
@@ -111,7 +113,7 @@ namespace
 
         return cpp_non_type_template_parameter::build(*context.idx, detail::get_entity_id(cur),
                                                       name.c_str(),
-                                                      detail::parse_type(context, type),
+                                                      detail::parse_type(context, cur, type),
                                                       is_variadic, std::move(def));
     }
 
@@ -205,7 +207,9 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_alias_template(const detail::parse
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_TypeAliasTemplateDecl,
                  detail::assert_handler{});
     auto builder = get_builder<cpp_alias_template, cpp_type_alias>(context, cur);
-    context.comments.match(builder.get(), cur);
-    parse_parameters(builder, context, cur);
-    return builder.finish(*context.idx, detail::get_entity_id(cur));
+    if (!builder)
+        return nullptr;
+    context.comments.match(builder.value().get(), cur);
+    parse_parameters(builder.value(), context, cur);
+    return builder.value().finish(*context.idx, detail::get_entity_id(cur));
 }

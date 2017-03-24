@@ -65,6 +65,7 @@ namespace cppast
     bool is_type(cpp_entity_kind kind) noexcept;
 
     /// \returns Whether or not a given entity kind is a C++ template.
+    /// \notes A template template parameter is not considered a template for this function.
     bool is_template(cpp_entity_kind kind) noexcept;
 } // namespace cppast
 

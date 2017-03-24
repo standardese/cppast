@@ -7,9 +7,12 @@
 #include <cppast/cpp_array_type.hpp>
 #include <cppast/cpp_expression.hpp>
 #include <cppast/cpp_function_type.hpp>
+#include <cppast/cpp_template.hpp>
+#include <cppast/cpp_template_parameter.hpp>
 #include <cppast/cpp_type.hpp>
 #include <cppast/cpp_type_alias.hpp>
-#include <clang-c/Index.h>
+
+#include "libclang_visitor.hpp"
 
 using namespace cppast;
 
@@ -171,6 +174,8 @@ namespace
         remove_prefix(spelling, "union");
 
         auto entity = b(std::move(spelling));
+        if (!entity)
+            return nullptr;
         return make_cv_qualified(std::move(entity), cv);
     }
 
@@ -184,7 +189,7 @@ namespace
     }
 
     std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context,
-                                              const CXType&                type);
+                                              const CXCursor& cur, const CXType& type);
 
     std::unique_ptr<cpp_expression> parse_array_size(const CXType& type)
     {
@@ -218,7 +223,7 @@ namespace
     }
 
     std::unique_ptr<cpp_type> try_parse_array_type(const detail::parse_context& context,
-                                                   const CXType&                type)
+                                                   const CXCursor& cur, const CXType& type)
     {
         auto canonical  = clang_getCanonicalType(type);
         auto value_type = clang_getArrayElementType(type);
@@ -236,18 +241,18 @@ namespace
         }
 
         auto size = parse_array_size(canonical); // type may not work, see above
-        return cpp_array_type::build(parse_type_impl(context, value_type), std::move(size));
+        return cpp_array_type::build(parse_type_impl(context, cur, value_type), std::move(size));
     }
 
     template <class Builder>
     std::unique_ptr<cpp_type> add_parameters(Builder& builder, const detail::parse_context& context,
-                                             const CXType& type)
+                                             const CXCursor& cur, const CXType& type)
     {
         auto no_args = clang_getNumArgTypes(type);
         DEBUG_ASSERT(no_args >= 0, detail::parse_error_handler{}, type,
                      "invalid number of arguments");
         for (auto i = 0u; i != unsigned(no_args); ++i)
-            builder.add_parameter(parse_type_impl(context, clang_getArgType(type, i)));
+            builder.add_parameter(parse_type_impl(context, cur, clang_getArgType(type, i)));
 
         if (clang_isFunctionTypeVariadic(type))
             builder.is_variadic();
@@ -256,15 +261,15 @@ namespace
     }
 
     std::unique_ptr<cpp_type> try_parse_function_type(const detail::parse_context& context,
-                                                      const CXType&                type)
+                                                      const CXCursor& cur, const CXType& type)
     {
         auto result = clang_getResultType(type);
         if (result.kind == CXType_Invalid)
             // not a function type
             return nullptr;
 
-        cpp_function_type::builder builder(parse_type_impl(context, result));
-        return add_parameters(builder, context, type);
+        cpp_function_type::builder builder(parse_type_impl(context, cur, result));
+        return add_parameters(builder, context, cur, type);
     }
 
     cpp_reference member_function_ref_qualifier(std::string& spelling)
@@ -284,7 +289,7 @@ namespace
     }
 
     std::unique_ptr<cpp_type> parse_member_pointee_type(const detail::parse_context& context,
-                                                        const CXType&                type)
+                                                        const CXCursor& cur, const CXType& type)
     {
         auto spelling = get_type_spelling(type);
         auto ref      = member_function_ref_qualifier(spelling);
@@ -292,7 +297,7 @@ namespace
 
         auto class_t = clang_Type_getClassType(type);
         auto class_entity =
-            make_ref_qualified(make_cv_qualified(parse_type_impl(context, class_t), cv), ref);
+            make_ref_qualified(make_cv_qualified(parse_type_impl(context, cur, class_t), cv), ref);
 
         auto pointee = clang_getPointeeType(type); // for everything except the class type
         auto result  = clang_getResultType(pointee);
@@ -300,18 +305,227 @@ namespace
         {
             // member data pointer
             return cpp_member_object_type::build(std::move(class_entity),
-                                                 parse_type_impl(context, pointee));
+                                                 parse_type_impl(context, cur, pointee));
         }
         else
         {
             cpp_member_function_type::builder builder(std::move(class_entity),
-                                                      parse_type_impl(context, result));
-            return add_parameters(builder, context, pointee);
+                                                      parse_type_impl(context, cur, result));
+            return add_parameters(builder, context, cur, pointee);
         }
     }
 
+    bool is_direct_templated(const CXCursor& cur)
+    {
+        // TODO: variable template
+        auto kind = clang_getCursorKind(cur);
+        return kind == CXCursor_TypeAliasTemplateDecl || kind == CXCursor_ClassTemplate
+               || kind == CXCursor_ClassTemplatePartialSpecialization
+               || kind == CXCursor_FunctionTemplate;
+    }
+
+    bool check_parent(const CXCursor& parent)
+    {
+        if (clang_Cursor_isNull(parent))
+            return false;
+        auto kind = clang_getCursorKind(parent);
+        return kind != CXCursor_Namespace && kind != CXCursor_TranslationUnit;
+    }
+
+    CXCursor get_template(CXCursor cur)
+    {
+        do
+        {
+            if (is_direct_templated(cur))
+                return cur;
+            cur = clang_getCursorSemanticParent(cur);
+        } while (check_parent(cur));
+        return clang_getNullCursor();
+    }
+
+    std::unique_ptr<cpp_type> try_parse_template_parameter_type(
+        const detail::parse_context& context, const CXCursor& cur, const CXType& type)
+    {
+        // see if we have a parent template
+        auto templ = get_template(cur);
+        if (clang_Cursor_isNull(templ))
+            // not a template
+            return nullptr;
+
+        // doesn't respect cv qualifiers properly
+        auto result =
+            make_leave_type(type, [&](std::string&& type_spelling) -> std::unique_ptr<cpp_type> {
+                // look at the template parameters,
+                // see if we find a matching one
+                auto param = clang_getNullCursor();
+                detail::visit_children(templ, [&](const CXCursor& child) {
+                    if (clang_getCursorKind(child) == CXCursor_TemplateTypeParameter
+                        && get_type_spelling(clang_getCursorType(child)) == type_spelling)
+                    {
+                        // found one
+                        DEBUG_ASSERT(clang_Cursor_isNull(param), detail::assert_handler{});
+                        param = child;
+                    }
+                });
+
+                if (clang_Cursor_isNull(param))
+                    return nullptr;
+                else
+                    // found matching parameter
+                    return cpp_template_parameter_type::build(
+                        cpp_template_type_parameter_ref(detail::get_entity_id(param),
+                                                        std::move(type_spelling)));
+            });
+
+        if (result)
+            return result;
+        else
+            // try again in a possible parent template
+            return try_parse_template_parameter_type(context, clang_getCursorSemanticParent(templ),
+                                                     type);
+    }
+
+    const char* find_closing_bracket(const char* ptr)
+    {
+        for (auto paren_count = 0; *ptr; ++ptr)
+        {
+            if (*ptr == '(' || *ptr == '[' || *ptr == '{')
+                ++paren_count;
+            else if (*ptr == ')' || *ptr == ']' || *ptr == '}')
+                --paren_count;
+            else if (paren_count == 0 && *ptr == '>' && !std::isalnum(*ptr) && *ptr != '_')
+                // heuristic: this could be in fact a closing bracket
+                return ptr;
+        }
+
+        return nullptr;
+    }
+
+    std::string parse_argument(const CXCursor& cur, const char*& ptr, bool is_expression)
+    {
+        std::string arg;
+
+        auto paren_count   = 0; // non angle brackets
+        auto bracket_count = 0; // angle brackets
+        while (*ptr && ((paren_count + bracket_count) != 0 || *ptr != ','))
+        {
+            if (*ptr == '(' || *ptr == '[' || *ptr == '{')
+                ++paren_count;
+            else if (*ptr == ')' || *ptr == ']' || *ptr == '}')
+                --paren_count;
+            // angle brackets are tricky
+            // as they can be both brackets and operators
+            // we only need to take care of those that aren't nested inside other brackets, luckily
+            else if (paren_count == 0)
+            {
+                if (is_expression && *ptr == '<')
+                {
+                    // treat as brackets and see if it got a closing one
+                    auto closing = find_closing_bracket(ptr);
+                    if (closing)
+                    {
+                        // assume this is a closing bracket
+                        while (ptr != closing)
+                            arg += *ptr++;
+                    }
+                }
+                // not an expression
+                // all top-level angle brackets are actually brackets
+                else if (*ptr == '<')
+                    ++bracket_count;
+                else if (*ptr == '>')
+                    --bracket_count;
+            }
+
+            arg += *ptr++;
+        }
+
+        DEBUG_ASSERT(*ptr == ',', detail::parse_error_handler{}, cur,
+                     "unable to parse template argument");
+        ++ptr;
+
+        while (*ptr == ' ')
+            ++ptr;
+        while (!arg.empty() && arg.back() == ' ')
+            arg.pop_back();
+
+        return arg;
+    }
+
+    CXCursor get_instantiation_template(const CXCursor& cur, const CXType& type,
+                                        const std::string& templ_name)
+    {
+        // look if the type has a declaration that is a template
+        auto decl = clang_getTypeDeclaration(type);
+        if (is_direct_templated(decl))
+            return decl;
+
+        // look if the templ_name matches a template template parameter
+        auto param = clang_getNullCursor();
+        detail::visit_children(cur, [&](const CXCursor& child) {
+            if (clang_getCursorKind(child) == CXCursor_TemplateTemplateParameter
+                && detail::get_cursor_name(child) == templ_name.c_str())
+            {
+                DEBUG_ASSERT(clang_Cursor_isNull(param), detail::parse_error_handler{}, cur,
+                             "multiple template template parameters with the same name?!");
+                param = child;
+            }
+        });
+        return param;
+    }
+
+    std::unique_ptr<cpp_type> try_parse_instantiation_type(const detail::parse_context& context,
+                                                           const CXCursor& cur, const CXType& type)
+    {
+        return make_leave_type(type, [&](std::string&& spelling) -> std::unique_ptr<cpp_type> {
+            spelling.back() = ','; // to easily terminate the last argument
+            auto        ptr = spelling.c_str();
+            std::string templ_name;
+            for (; *ptr && *ptr != '<'; ++ptr)
+                templ_name += *ptr;
+            ++ptr;
+
+            auto templ = get_instantiation_template(cur, type, templ_name);
+            if (clang_Cursor_isNull(templ))
+                return nullptr;
+
+            cpp_template_instantiation_type::builder builder(
+                cpp_template_ref(detail::get_entity_id(templ), std::move(templ_name)));
+
+            // parse arguments
+            // visit children of declaration to get the kind of argument expected
+            // then parse the string
+            detail::visit_children(templ, [&](const CXCursor& child) {
+                if (!*ptr)
+                    return;
+
+                auto kind = clang_getCursorKind(child);
+                if (kind == CXCursor_TemplateTypeParameter)
+                {
+                    auto arg = parse_argument(cur, ptr, false);
+                    builder.add_argument(
+                        std::unique_ptr<cpp_type>(cpp_unexposed_type::build(std::move(arg))));
+                }
+                else if (kind == CXCursor_NonTypeTemplateParameter)
+                {
+                    auto arg      = parse_argument(cur, ptr, true);
+                    auto arg_type = detail::parse_type(context, child, clang_getCursorType(child));
+                    builder.add_argument(std::unique_ptr<cpp_expression>(
+                        cpp_unexposed_expression::build(std::move(arg_type), std::move(arg))));
+                }
+                else if (kind == CXCursor_TemplateTemplateParameter)
+                {
+                    auto arg = parse_argument(cur, ptr, false);
+                    builder.add_argument(cpp_template_ref(cpp_entity_id(""), std::move(arg)));
+                }
+            });
+
+            return builder.finish();
+        });
+    }
+
     std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context,
-                                              const CXType&                type)
+                                              const CXCursor& cur, const CXType& type)
     {
         switch (type.kind)
         {
@@ -335,13 +549,19 @@ namespace
         }
         // fallthrough
         case CXType_Unexposed:
-            if (auto ftype = try_parse_function_type(context, type))
+            if (auto ftype = try_parse_function_type(context, cur, type))
                 // guess what: after you've called clang_getPointeeType() on a function pointer
                 // you'll get an unexposed type
                 return ftype;
-            else if (auto atype = try_parse_array_type(context, type))
+            else if (auto atype = try_parse_array_type(context, cur, type))
                 // same deal here
                 return atype;
+            else if (auto itype = try_parse_instantiation_type(context, cur, type))
+                // instantiation unexposed
+                return itype;
+            else if (auto ptype = try_parse_template_parameter_type(context, cur, type))
+                // template parameter type is unexposed
+                return ptype;
             return cpp_unexposed_type::build(get_type_spelling(type).c_str());
 
         case CXType_Void:
@@ -386,7 +606,7 @@ namespace
 
         case CXType_Pointer:
         {
-            auto pointee = parse_type_impl(context, clang_getPointeeType(type));
+            auto pointee = parse_type_impl(context, cur, clang_getPointeeType(type));
             auto pointer = cpp_pointer_type::build(std::move(pointee));
 
             auto spelling = get_type_spelling(type);
@@ -396,7 +616,7 @@ namespace
         case CXType_LValueReference:
         case CXType_RValueReference:
         {
-            auto referee = parse_type_impl(context, clang_getPointeeType(type));
+            auto referee = parse_type_impl(context, cur, clang_getPointeeType(type));
             return cpp_reference_type::build(std::move(referee), get_reference_kind(type));
         }
 
@@ -404,14 +624,14 @@ namespace
         case CXType_VariableArray:
         case CXType_DependentSizedArray:
         case CXType_ConstantArray:
-            return try_parse_array_type(context, type);
+            return try_parse_array_type(context, cur, type);
 
         case CXType_FunctionNoProto:
         case CXType_FunctionProto:
-            return try_parse_function_type(context, type);
+            return try_parse_function_type(context, cur, type);
 
         case CXType_MemberPointer:
-            return cpp_pointer_type::build(parse_member_pointee_type(context, type));
+            return cpp_pointer_type::build(parse_member_pointee_type(context, cur, type));
 
         // TODO: everything template related
         case CXType_Dependent:
@@ -428,9 +648,9 @@ namespace
 }
 
 std::unique_ptr<cpp_type> detail::parse_type(const detail::parse_context& context,
-                                             const CXType&                type)
+                                             const CXCursor& cur, const CXType& type)
 {
-    auto result = parse_type_impl(context, type);
+    auto result = parse_type_impl(context, cur, type);
     DEBUG_ASSERT(result && is_valid(*result), detail::parse_error_handler{}, type, "invalid type");
     return std::move(result);
 }
@@ -465,15 +685,17 @@ std::unique_ptr<cpp_type> detail::parse_raw_type(const detail::parse_context&,
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_type_alias(const detail::parse_context& context,
-                                                         const CXCursor& cur, bool as_template)
+                                                         const CXCursor&              cur,
+                                                         const CXCursor&              template_cur)
 {
     DEBUG_ASSERT(cur.kind == CXCursor_TypeAliasDecl || cur.kind == CXCursor_TypedefDecl,
                  detail::assert_handler{});
 
     auto name = detail::get_cursor_name(cur);
-    auto type = parse_type(context, clang_getTypedefDeclUnderlyingType(cur));
+    auto type = parse_type(context, clang_Cursor_isNull(template_cur) ? cur : template_cur,
+                           clang_getTypedefDeclUnderlyingType(cur));
 
-    if (as_template)
+    if (!clang_Cursor_isNull(template_cur))
         return cpp_type_alias::build(name.c_str(), std::move(type));
     else
     {

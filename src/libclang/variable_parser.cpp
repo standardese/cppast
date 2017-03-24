@@ -36,7 +36,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_variable(const detail::parse_conte
     DEBUG_ASSERT(cur.kind == CXCursor_VarDecl, detail::assert_handler{});
 
     auto name          = get_cursor_name(cur);
-    auto type          = parse_type(context, clang_getCursorType(cur));
+    auto type          = parse_type(context, cur, clang_getCursorType(cur));
     auto storage_class = get_storage_class(cur);
     auto is_constexpr  = false;
 
@@ -71,7 +71,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_variable(const detail::pars
     DEBUG_ASSERT(cur.kind == CXCursor_FieldDecl, detail::assert_handler{});
 
     auto name       = get_cursor_name(cur);
-    auto type       = parse_type(context, clang_getCursorType(cur));
+    auto type       = parse_type(context, cur, clang_getCursorType(cur));
     auto is_mutable = clang_CXXField_isMutable(cur) != 0u;
 
     std::unique_ptr<cpp_member_variable_base> result;
@@ -94,8 +94,9 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_variable(const detail::pars
         // look for the equal sign, default value starts there
         while (!stream.done() && !skip_if(stream, "="))
             stream.bump();
-        auto default_value = parse_raw_expression(context, stream, stream.end(),
-                                                  parse_type(context, clang_getCursorType(cur)));
+        auto default_value =
+            parse_raw_expression(context, stream, stream.end(),
+                                 parse_type(context, cur, clang_getCursorType(cur)));
 
         result = cpp_member_variable::build(*context.idx, get_entity_id(cur), name.c_str(),
                                             std::move(type), std::move(default_value), is_mutable);

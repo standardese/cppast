@@ -58,7 +58,8 @@ namespace cppast
             comment_context                                comments;
         };
 
-        std::unique_ptr<cpp_type> parse_type(const parse_context& context, const CXType& type);
+        std::unique_ptr<cpp_type> parse_type(const parse_context& context, const CXCursor& cur,
+                                             const CXType& type);
 
         // parse the type starting at the current token stream
         // and ends at the given iterator
@@ -100,7 +101,8 @@ namespace cppast
                                                                 const CXCursor&      cur);
 
         std::unique_ptr<cpp_entity> parse_cpp_type_alias(const parse_context& context,
-                                                         const CXCursor& cur, bool as_template);
+                                                         const CXCursor&      cur,
+                                                         const CXCursor&      template_cur);
         std::unique_ptr<cpp_entity> parse_cpp_enum(const parse_context& context,
                                                    const CXCursor&      cur);
         std::unique_ptr<cpp_entity> parse_cpp_class(const parse_context& context,
@@ -127,8 +129,9 @@ namespace cppast
                                                              const CXCursor&      cur);
 
         // as_template: true, iff currently parsing a template
-        std::unique_ptr<cpp_entity> parse_entity(const parse_context& context, const CXCursor& cur,
-                                                 bool as_template = false);
+        std::unique_ptr<cpp_entity> parse_entity(
+            const parse_context& context, const CXCursor& cur,
+            const CXCursor& template_cur = clang_getNullCursor());
     }
 } // namespace cppast::detail
 

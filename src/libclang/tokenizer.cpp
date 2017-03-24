@@ -272,9 +272,9 @@ detail::token_iterator detail::find_closing_bracket(detail::token_stream stream)
         else if (paren_count == 0 && template_bracket && cur == ">>")
             // maximal munch
             bracket_count -= 2u;
-        else if (cur == "(")
+        else if (cur == "(" || cur == "{" || cur == "[")
             ++paren_count;
-        else if (cur == ")")
+        else if (cur == ")" || cur == "}" || cur == "]")
             --paren_count;
     }
     stream.bump_back();
