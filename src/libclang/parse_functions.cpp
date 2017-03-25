@@ -22,6 +22,9 @@ detail::cxstring detail::get_cursor_name(const CXCursor& cur)
 
 cpp_storage_class_specifiers detail::get_storage_class(const CXCursor& cur)
 {
+    if (clang_getTemplateCursorKind(cur) != CXCursor_NoDeclFound)
+        return cpp_storage_class_none;
+
     switch (clang_Cursor_getStorageClass(cur))
     {
     case CX_SC_Invalid:
@@ -42,11 +45,11 @@ cpp_storage_class_specifiers detail::get_storage_class(const CXCursor& cur)
     case CX_SC_PrivateExtern:
     case CX_SC_OpenCLWorkGroupLocal:
         // non-exposed storage classes
-        return cpp_storage_class_auto;
+        return cpp_storage_class_none;
     }
 
     DEBUG_UNREACHABLE(detail::parse_error_handler{}, cur, "unexpected storage class");
-    return cpp_storage_class_auto;
+    return cpp_storage_class_none;
 }
 
 void detail::comment_context::match(cpp_entity& e, const CXCursor& cur) const
@@ -120,6 +123,8 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
 
     case CXCursor_TypeAliasTemplateDecl:
         return parse_cpp_alias_template(context, cur);
+    case CXCursor_FunctionTemplate:
+        return parse_cpp_function_template(context, cur);
 
     default:
         break;

@@ -37,41 +37,26 @@ template <typename T>
 using h = g<T, a>;
 )";
 
-    auto check_parameters =
-        [](const cpp_alias_template& alias,
-           std::initializer_list<std::pair<cpp_entity_kind, const char*>> params) {
-            // no need to check more
-            auto cur = params.begin();
-            for (auto& param : alias.parameters())
-            {
-                REQUIRE(cur != params.end());
-                REQUIRE(param.kind() == cur->first);
-                REQUIRE(param.name() == cur->second);
-                ++cur;
-            }
-            REQUIRE(cur == params.end());
-        };
-
     cpp_entity_index idx;
     auto             file = parse(idx, "cpp_alias_template.cpp", code);
     auto count = test_visit<cpp_alias_template>(*file, [&](const cpp_alias_template& alias) {
         if (alias.name() == "a")
         {
-            check_parameters(alias, {{cpp_entity_kind::template_type_parameter_t, "T"}});
+            check_template_parameters(alias, {{cpp_entity_kind::template_type_parameter_t, "T"}});
             REQUIRE(equal_types(idx, alias.type_alias().underlying_type(),
                                 *cpp_builtin_type::build("int")));
         }
         else if (alias.name() == "b")
         {
-            check_parameters(alias, {{cpp_entity_kind::non_type_template_parameter_t, "I"},
-                                     {cpp_entity_kind::template_type_parameter_t, "T"}});
+            check_template_parameters(alias, {{cpp_entity_kind::non_type_template_parameter_t, "I"},
+                                              {cpp_entity_kind::template_type_parameter_t, "T"}});
             REQUIRE(equal_types(idx, alias.type_alias().underlying_type(),
                                 *cpp_template_parameter_type::build(
                                     cpp_template_type_parameter_ref(cpp_entity_id(""), "T"))));
         }
         else if (alias.name() == "c")
         {
-            check_parameters(alias, {{cpp_entity_kind::template_type_parameter_t, "T"}});
+            check_template_parameters(alias, {{cpp_entity_kind::template_type_parameter_t, "T"}});
             auto param = cpp_template_parameter_type::build(
                 cpp_template_type_parameter_ref(cpp_entity_id(""), "T"));
             REQUIRE(equal_types(idx, alias.type_alias().underlying_type(),
@@ -80,7 +65,7 @@ using h = g<T, a>;
         }
         else if (alias.name() == "d")
         {
-            check_parameters(alias, {{cpp_entity_kind::template_type_parameter_t, "T"}});
+            check_template_parameters(alias, {{cpp_entity_kind::template_type_parameter_t, "T"}});
 
             cpp_template_instantiation_type::builder builder(
                 cpp_template_ref(cpp_entity_id(""), "a"));
@@ -89,7 +74,8 @@ using h = g<T, a>;
         }
         else if (alias.name() == "e")
         {
-            check_parameters(alias, {{cpp_entity_kind::non_type_template_parameter_t, "I"}});
+            check_template_parameters(alias,
+                                      {{cpp_entity_kind::non_type_template_parameter_t, "I"}});
 
             cpp_template_instantiation_type::builder builder(
                 cpp_template_ref(cpp_entity_id(""), "b"));
@@ -100,7 +86,8 @@ using h = g<T, a>;
         }
         else if (alias.name() == "f")
         {
-            check_parameters(alias, {{cpp_entity_kind::non_type_template_parameter_t, "I"}});
+            check_template_parameters(alias,
+                                      {{cpp_entity_kind::non_type_template_parameter_t, "I"}});
 
             cpp_template_instantiation_type::builder builder(
                 cpp_template_ref(cpp_entity_id(""), "b"));
@@ -111,8 +98,9 @@ using h = g<T, a>;
         }
         else if (alias.name() == "g")
         {
-            check_parameters(alias, {{cpp_entity_kind::template_type_parameter_t, "T"},
-                                     {cpp_entity_kind::template_template_parameter_t, "Templ"}});
+            check_template_parameters(alias,
+                                      {{cpp_entity_kind::template_type_parameter_t, "T"},
+                                       {cpp_entity_kind::template_template_parameter_t, "Templ"}});
 
             cpp_template_instantiation_type::builder builder(
                 cpp_template_ref(cpp_entity_id(""), "Templ"));
@@ -121,7 +109,7 @@ using h = g<T, a>;
         }
         else if (alias.name() == "h")
         {
-            check_parameters(alias, {{cpp_entity_kind::template_type_parameter_t, "T"}});
+            check_template_parameters(alias, {{cpp_entity_kind::template_type_parameter_t, "T"}});
 
             cpp_template_instantiation_type::builder builder(
                 cpp_template_ref(cpp_entity_id(""), "g"));

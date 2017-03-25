@@ -135,6 +135,8 @@ namespace cppast
                                                   public cpp_variable_base
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// \returns A newly created and registered non type template parameter.
         /// \notes The `default_value` may be `nullptr` in which case the parameter has no default.
         static std::unique_ptr<cpp_non_type_template_parameter> build(
@@ -173,6 +175,8 @@ namespace cppast
           public cpp_entity_container<cpp_template_template_parameter, cpp_template_parameter>
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// Builds a [cppast::cpp_template_template_parameter]().
         class builder
         {

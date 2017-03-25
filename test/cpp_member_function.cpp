@@ -151,7 +151,6 @@ struct foo
     cpp_entity_index idx;
     auto             file = parse(idx, "cpp_conversion_op.cpp", code);
     auto count            = test_visit<cpp_conversion_op>(*file, [&](const cpp_conversion_op& op) {
-        REQUIRE(op.name().empty());
         REQUIRE(count_children(op) == 0u);
         REQUIRE(!op.is_variadic());
         REQUIRE(op.body_kind() == cpp_function_declaration);
@@ -161,20 +160,21 @@ struct foo
 
         if (!op.is_explicit() && !op.is_constexpr())
         {
+            REQUIRE(op.name() == "operator int &");
             REQUIRE(equal_types(idx, op.return_type(),
                                 *cpp_reference_type::build(cpp_builtin_type::build("int"),
                                                            cpp_ref_lvalue)));
             REQUIRE(op.cv_qualifier() == cpp_cv_none);
-            REQUIRE(!op.is_explicit());
-            REQUIRE(!op.is_constexpr());
         }
         else if (op.is_explicit() && !op.is_constexpr())
         {
+            REQUIRE(op.name() == "operator bool");
             REQUIRE(equal_types(idx, op.return_type(), *cpp_builtin_type::build("bool")));
             REQUIRE(op.cv_qualifier() == cpp_cv_const);
         }
         else if (!op.is_explicit() && op.is_constexpr())
         {
+            REQUIRE(op.name() == "operator ns::type");
             REQUIRE(equal_types(idx, op.return_type(),
                                 *cpp_user_defined_type::build(
                                     cpp_type_ref(cpp_entity_id(""), "ns::type"))));

@@ -57,9 +57,14 @@ std::unique_ptr<cpp_non_type_template_parameter> cpp_non_type_template_parameter
     return result;
 }
 
-cpp_entity_kind cpp_non_type_template_parameter::do_get_entity_kind() const noexcept
+cpp_entity_kind cpp_non_type_template_parameter::kind() noexcept
 {
     return cpp_entity_kind::non_type_template_parameter_t;
+}
+
+cpp_entity_kind cpp_non_type_template_parameter::do_get_entity_kind() const noexcept
+{
+    return kind();
 }
 
 bool detail::cpp_template_ref_predicate::operator()(const cpp_entity& e)
@@ -67,7 +72,12 @@ bool detail::cpp_template_ref_predicate::operator()(const cpp_entity& e)
     return is_template(e.kind()) || e.kind() == cpp_entity_kind::template_template_parameter_t;
 }
 
-cpp_entity_kind cpp_template_template_parameter::do_get_entity_kind() const noexcept
+cpp_entity_kind cpp_template_template_parameter::kind() noexcept
 {
     return cpp_entity_kind::template_template_parameter_t;
+}
+
+cpp_entity_kind cpp_template_template_parameter::do_get_entity_kind() const noexcept
+{
+    return kind();
 }

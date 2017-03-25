@@ -4,12 +4,17 @@
 
 #include <cppast/cpp_entity.hpp>
 
+#include <cppast/cpp_entity_kind.hpp>
+
 using namespace cppast;
 
 std::string cppast::full_name(const cpp_entity& e)
 {
     if (e.name().empty())
         return "";
+    else if (is_parameter(e.kind()))
+        // parameters don't have a full name
+        return e.name();
 
     std::string scopes;
 

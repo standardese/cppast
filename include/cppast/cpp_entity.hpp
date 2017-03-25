@@ -85,7 +85,7 @@ namespace cppast
         /// \requires The comment must not be empty, if there is one.
         void set_comment(type_safe::optional<std::string> comment) noexcept
         {
-            comment_ = std::move(comment.value());
+            comment_ = std::move(comment.value_or(""));
         }
 
     protected:

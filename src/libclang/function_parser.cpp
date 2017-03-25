@@ -20,8 +20,10 @@ namespace
 
         std::unique_ptr<cpp_expression> default_value;
         detail::visit_children(cur, [&](const CXCursor& child) {
-            DEBUG_ASSERT(clang_isExpression(child.kind) && !default_value,
-                         detail::parse_error_handler{}, child,
+            if (!clang_isExpression(clang_getCursorKind(child)))
+                return;
+
+            DEBUG_ASSERT(!default_value, detail::parse_error_handler{}, child,
                          "unexpected child cursor of function parameter");
             default_value = detail::parse_expression(context, child);
         });
@@ -281,6 +283,7 @@ namespace
                                       detail::parse_type(context, cur,
                                                          clang_getCursorResultType(cur)));
         context.comments.match(builder.get(), cur);
+
         add_parameters(context, builder, cur);
         if (clang_Cursor_isVariadic(cur))
             builder.is_variadic();
@@ -301,21 +304,28 @@ namespace
         if (suffix.noexcept_condition)
             builder.noexcept_condition(std::move(suffix.noexcept_condition));
 
-        return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
+        if (clang_getTemplateCursorKind(cur) == CXCursor_NoDeclFound)
+            return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
+        else
+            return builder.finish(suffix.body_kind);
     }
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_function(const detail::parse_context& context,
                                                        const CXCursor&              cur)
 {
-    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_FunctionDecl, detail::assert_handler{});
+    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_FunctionDecl
+                     || clang_getTemplateCursorKind(cur) == CXCursor_FunctionDecl,
+                 detail::assert_handler{});
     return parse_cpp_function_impl(context, cur);
 }
 
 std::unique_ptr<cpp_entity> detail::try_parse_static_cpp_function(
     const detail::parse_context& context, const CXCursor& cur)
 {
-    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_CXXMethod, detail::assert_handler{});
+    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_CXXMethod
+                     || clang_getTemplateCursorKind(cur) == CXCursor_CXXMethod,
+                 detail::assert_handler{});
     if (clang_CXXMethod_isStatic(cur))
         return parse_cpp_function_impl(context, cur);
     return nullptr;
@@ -410,7 +420,9 @@ namespace
 std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::parse_context& context,
                                                               const CXCursor&              cur)
 {
-    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_CXXMethod, detail::assert_handler{});
+    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_CXXMethod
+                     || clang_getTemplateCursorKind(cur) == CXCursor_CXXMethod,
+                 detail::assert_handler{});
     auto name = detail::get_cursor_name(cur);
 
     cpp_member_function::builder builder(name.c_str(),
@@ -435,9 +447,14 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
 std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_context& context,
                                                             const CXCursor&              cur)
 {
-    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_ConversionFunction, detail::assert_handler{});
-    cpp_conversion_op::builder builder(
-        detail::parse_type(context, cur, clang_getCursorResultType(cur)));
+    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_ConversionFunction
+                     || clang_getTemplateCursorKind(cur) == CXCursor_ConversionFunction,
+                 detail::assert_handler{});
+
+    auto                       type = clang_getCursorResultType(cur);
+    cpp_conversion_op::builder builder(std::string("operator ")
+                                           + cxstring(clang_getTypeSpelling(type)).c_str(),
+                                       detail::parse_type(context, cur, type));
     context.comments.match(builder.get(), cur);
 
     detail::tokenizer    tokenizer(context.tu, context.file, cur);
@@ -455,7 +472,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
         else if (detail::skip_if(stream, "explicit"))
             builder.is_explicit();
         else
-            DEBUG_UNREACHABLE(detail::parse_error_handler{}, cur, "unexpected token");
+            stream.bump();
     }
 
     // heuristic to find arguments tokens
@@ -485,7 +502,9 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
 std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_context& context,
                                                           const CXCursor&              cur)
 {
-    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_Constructor, detail::assert_handler{});
+    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_Constructor
+                     || clang_getTemplateCursorKind(cur) == CXCursor_Constructor,
+                 detail::assert_handler{});
     auto name = detail::get_cursor_name(cur);
 
     cpp_constructor::builder builder(name.c_str());
@@ -505,7 +524,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
         else if (detail::skip_if(stream, "explicit"))
             builder.is_explicit();
         else
-            DEBUG_UNREACHABLE(detail::parse_error_handler{}, cur, "unexpected token");
+            stream.bump();
     }
 
     skip_parameters(stream);

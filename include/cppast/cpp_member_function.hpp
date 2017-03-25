@@ -201,13 +201,7 @@ namespace cppast
         class builder : public basic_member_builder<cpp_conversion_op>
         {
         public:
-            /// \effects Creates it giving it the return type.
-            /// \notes It does not have a name as it is given by the return type.
-            builder(std::unique_ptr<cpp_type> type)
-            {
-                function =
-                    std::unique_ptr<cpp_conversion_op>(new cpp_conversion_op(std::move(type)));
-            }
+            using basic_member_builder::basic_member_builder;
 
             /// \effects Marks the conversion operator `explicit`.
             void is_explicit() noexcept
@@ -227,8 +221,8 @@ namespace cppast
         }
 
     private:
-        cpp_conversion_op(std::unique_ptr<cpp_type> return_t)
-        : cpp_member_function_base("", std::move(return_t)), explicit_(false)
+        cpp_conversion_op(std::string name, std::unique_ptr<cpp_type> return_t)
+        : cpp_member_function_base(std::move(name), std::move(return_t)), explicit_(false)
         {
         }
 

@@ -3,6 +3,9 @@
 // found in the top-level directory of this distribution.
 
 #include <cppast/cpp_alias_template.hpp>
+#include <cppast/cpp_function_template.hpp>
+
+#include <cppast/cpp_entity_kind.hpp>
 
 #include "libclang_visitor.hpp"
 #include "parse_functions.hpp"
@@ -11,9 +14,9 @@ using namespace cppast;
 
 namespace
 {
-    template <typename TemplateT, typename EntityT>
+    template <typename TemplateT, typename EntityT, typename Predicate>
     type_safe::optional<typename TemplateT::builder> get_builder(
-        const detail::parse_context& context, const CXCursor& cur)
+        const detail::parse_context& context, const CXCursor& cur, Predicate p)
     {
         // we need the actual entity first, then the parameters
         // so two visit calls are required
@@ -34,7 +37,7 @@ namespace
         auto entity = detail::parse_entity(context, result, cur);
         if (!entity)
             return type_safe::nullopt;
-        DEBUG_ASSERT(entity->kind() == EntityT::kind(), detail::parse_error_handler{}, cur,
+        DEBUG_ASSERT(p(entity->kind()), detail::parse_error_handler{}, cur,
                      "wrong child of template");
         return typename TemplateT::builder(
             std::unique_ptr<EntityT>(static_cast<EntityT*>(entity.release())));
@@ -206,10 +209,55 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_alias_template(const detail::parse
 {
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_TypeAliasTemplateDecl,
                  detail::assert_handler{});
-    auto builder = get_builder<cpp_alias_template, cpp_type_alias>(context, cur);
+    auto builder =
+        get_builder<cpp_alias_template, cpp_type_alias>(context, cur, [](cpp_entity_kind k) {
+            return k == cpp_entity_kind::type_alias_t;
+        });
     if (!builder)
         return nullptr;
     context.comments.match(builder.value().get(), cur);
     parse_parameters(builder.value(), context, cur);
     return builder.value().finish(*context.idx, detail::get_entity_id(cur));
+}
+
+std::unique_ptr<cpp_entity> detail::parse_cpp_function_template(
+    const detail::parse_context& context, const CXCursor& cur)
+{
+    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_FunctionTemplate, detail::assert_handler{});
+
+    std::unique_ptr<cpp_entity> func;
+    switch (clang_getTemplateCursorKind(cur))
+    {
+    case CXCursor_FunctionDecl:
+        func = detail::parse_cpp_function(context, cur);
+        break;
+    case CXCursor_CXXMethod:
+        if (auto sfunc = detail::try_parse_static_cpp_function(context, cur))
+            func = std::move(sfunc);
+        else
+            func = detail::parse_cpp_member_function(context, cur);
+        break;
+    case CXCursor_ConversionFunction:
+        func = detail::parse_cpp_conversion_op(context, cur);
+        break;
+    case CXCursor_Constructor:
+        func = detail::parse_cpp_constructor(context, cur);
+        break;
+
+    default:
+        DEBUG_UNREACHABLE(detail::parse_error_handler{}, cur, "unexpected template cursor kind");
+    }
+
+    if (!func)
+        return nullptr;
+
+    // steal comment
+    auto comment = type_safe::copy(func->comment());
+    func->set_comment(type_safe::nullopt);
+
+    cpp_function_template::builder builder(
+        std::unique_ptr<cpp_function_base>(static_cast<cpp_function_base*>(func.release())));
+    builder.get().set_comment(std::move(comment));
+    parse_parameters(builder, context, cur);
+    return builder.finish(*context.idx, detail::get_entity_id(cur));
 }

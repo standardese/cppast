@@ -147,8 +147,9 @@ namespace cppast
 
             /// \returns The finished function without registering it.
             /// \notes This is intended for templated functions only.
-            std::unique_ptr<T> finish()
+            std::unique_ptr<T> finish(cpp_function_body_kind body_kind)
             {
+                function->body_ = body_kind;
                 return std::move(function);
             }
 

@@ -100,4 +100,20 @@ inline bool equal_expressions(const cppast::cpp_expression& parsed,
     return false;
 }
 
+template <typename T>
+void check_template_parameters(
+    const T& templ, std::initializer_list<std::pair<cppast::cpp_entity_kind, const char*>> params)
+{
+    // no need to check more
+    auto cur = params.begin();
+    for (auto& param : templ.parameters())
+    {
+        REQUIRE(cur != params.end());
+        REQUIRE(param.kind() == cur->first);
+        REQUIRE(param.name() == cur->second);
+        ++cur;
+    }
+    REQUIRE(cur == params.end());
+}
+
 #endif // CPPAST_TEST_PARSER_HPP_INCLUDED
