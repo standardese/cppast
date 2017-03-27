@@ -584,8 +584,8 @@ std::unique_ptr<cpp_type> detail::parse_type(const detail::parse_context& contex
                                              const CXCursor& cur, const CXType& type)
 {
     auto result = parse_type_impl(context, cur, type);
-    DEBUG_ASSERT(result && is_valid(*result), detail::parse_error_handler{}, type, "invalid type");
-    return std::move(result);
+    DEBUG_ASSERT(result != nullptr, detail::parse_error_handler{}, type, "invalid type");
+    return result;
 }
 
 std::unique_ptr<cpp_type> detail::parse_raw_type(const detail::parse_context&,
