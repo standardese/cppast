@@ -14,6 +14,8 @@ namespace cppast
     class cpp_variable_template final : public cpp_template
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// Builder for [cppast::cpp_variable_template]().
         class builder : public basic_builder<cpp_variable_template, cpp_variable>
         {
