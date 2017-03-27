@@ -132,6 +132,8 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         return parse_cpp_alias_template(context, cur);
     case CXCursor_FunctionTemplate:
         return parse_cpp_function_template(context, cur);
+    case CXCursor_ClassTemplate:
+        return parse_cpp_class_template(context, cur);
 
     default:
         break;

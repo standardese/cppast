@@ -133,6 +133,8 @@ namespace cppast
                                                              const CXCursor&      cur);
         std::unique_ptr<cpp_entity> parse_cpp_function_template(const parse_context& context,
                                                                 const CXCursor&      cur);
+        std::unique_ptr<cpp_entity> parse_cpp_class_template(const parse_context& context,
+                                                             const CXCursor&      cur);
 
         // as_template: true, iff currently parsing a template
         std::unique_ptr<cpp_entity> parse_entity(

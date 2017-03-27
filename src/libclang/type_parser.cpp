@@ -451,6 +451,7 @@ namespace
         case CXType_Vector:
         case CXType_ObjCInterface:
         case CXType_ObjCObjectPointer:
+        case CXType_Dependent:
         {
             auto msg = detail::format("unexpected type of kind '",
                                       detail::get_type_kind_spelling(type).c_str(), "'");
@@ -542,10 +543,6 @@ namespace
 
         case CXType_MemberPointer:
             return cpp_pointer_type::build(parse_member_pointee_type(context, cur, type));
-
-        // TODO: everything template related
-        case CXType_Dependent:
-            break;
 
         // TODO: auto/decltype
         case CXType_Auto:

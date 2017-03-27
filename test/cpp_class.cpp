@@ -179,20 +179,18 @@ struct g
                     REQUIRE(base.access_specifier() == cpp_private);
                     REQUIRE(!base.is_virtual());
 
-                    REQUIRE(!base.entity().is_overloaded());
-                    auto entities = base.entity().get(idx);
-                    REQUIRE(entities.size() == 1u);
-                    REQUIRE(entities[0u]->name() == "a");
+                    REQUIRE(
+                        equal_types(idx, base.type(), *cpp_user_defined_type::build(
+                                                          cpp_type_ref(cpp_entity_id(""), "a"))));
                 }
                 else if (base.name() == "d")
                 {
                     REQUIRE(base.access_specifier() == cpp_private);
                     REQUIRE(!base.is_virtual());
 
-                    REQUIRE(!base.entity().is_overloaded());
-                    auto entities = base.entity().get(idx);
-                    REQUIRE(entities.size() == 1u);
-                    REQUIRE(entities[0u]->name() == "d");
+                    REQUIRE(
+                        equal_types(idx, base.type(), *cpp_user_defined_type::build(
+                                                          cpp_type_ref(cpp_entity_id(""), "d"))));
                 }
                 else
                     REQUIRE(false);
@@ -216,21 +214,18 @@ struct g
                     REQUIRE(base.access_specifier() == cpp_public);
                     REQUIRE(!base.is_virtual());
 
-                    REQUIRE(!base.entity().is_overloaded());
-                    auto entities = base.entity().get(idx);
-                    REQUIRE(entities.size() == 1u);
-                    REQUIRE(entities[0u]->name() == "base");
-                    REQUIRE(full_name(*entities[0u]) == "ns::base");
+                    REQUIRE(equal_types(idx, base.type(),
+                                        *cpp_user_defined_type::build(
+                                            cpp_type_ref(cpp_entity_id(""), "ns::base"))));
                 }
                 else if (base.name() == "e")
                 {
                     REQUIRE(base.access_specifier() == cpp_protected);
                     REQUIRE(base.is_virtual());
 
-                    REQUIRE(!base.entity().is_overloaded());
-                    auto entities = base.entity().get(idx);
-                    REQUIRE(entities.size() == 1u);
-                    REQUIRE(entities[0u]->name() == "e");
+                    REQUIRE(
+                        equal_types(idx, base.type(), *cpp_user_defined_type::build(
+                                                          cpp_type_ref(cpp_entity_id(""), "e"))));
                 }
                 else
                     REQUIRE(false);
@@ -254,11 +249,9 @@ struct g
                     REQUIRE(base.access_specifier() == cpp_public);
                     REQUIRE(!base.is_virtual());
 
-                    REQUIRE(!base.entity().is_overloaded());
-                    auto entities = base.entity().get(idx);
-                    REQUIRE(entities.size() == 1u);
-                    REQUIRE(entities[0u]->name() == "base");
-                    REQUIRE(full_name(*entities[0u]) == "ns::base");
+                    REQUIRE(equal_types(idx, base.type(),
+                                        *cpp_user_defined_type::build(
+                                            cpp_type_ref(cpp_entity_id(""), "ns::base"))));
                 }
                 else
                     REQUIRE(false);

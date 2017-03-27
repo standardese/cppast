@@ -14,7 +14,10 @@ namespace
 {
     cpp_class_kind parse_class_kind(const CXCursor& cur)
     {
-        switch (clang_getCursorKind(cur))
+        auto kind = clang_getTemplateCursorKind(cur);
+        if (kind == CXCursor_NoDeclFound)
+            kind = clang_getCursorKind(cur);
+        switch (kind)
         {
         case CXCursor_ClassDecl:
             return cpp_class_kind::class_t;
@@ -62,7 +65,7 @@ namespace
     }
 
     void add_base_class(cpp_class::builder& builder, const detail::parse_context& context,
-                        const CXCursor& cur)
+                        const CXCursor& cur, const CXCursor& class_cur)
     {
         DEBUG_ASSERT(cur.kind == CXCursor_CXXBaseSpecifier, detail::assert_handler{});
         auto access     = convert_access(cur);
@@ -82,9 +85,8 @@ namespace
         while (!stream.done())
             name += stream.get().c_str();
 
-        auto type =
-            cpp_type_ref(detail::get_entity_id(clang_getCursorReferenced(cur)), std::move(name));
-        builder.base_class(type, access, is_virtual);
+        auto type = detail::parse_type(context, class_cur, clang_getCursorType(cur));
+        builder.base_class(std::move(name), std::move(type), access, is_virtual);
     }
 }
 
@@ -98,14 +100,19 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class(const detail::parse_context&
         if (kind == CXCursor_CXXAccessSpecifier)
             add_access_specifier(builder, child);
         else if (kind == CXCursor_CXXBaseSpecifier)
-            add_base_class(builder, context, child);
+            add_base_class(builder, context, child, cur);
         else if (kind == CXCursor_CXXFinalAttr)
             builder.is_final();
+        else if (kind == CXCursor_TemplateTypeParameter || kind == CXCursor_NonTypeTemplateParameter
+                 || kind == CXCursor_TemplateTemplateParameter)
+            return;
         else if (auto entity = parse_entity(context, child))
             builder.add_child(std::move(entity));
     });
+    auto is_templated = clang_getTemplateCursorKind(cur) != CXCursor_NoDeclFound;
     if (clang_isCursorDefinition(cur))
-        return builder.finish(*context.idx, get_entity_id(cur));
+        return is_templated ? builder.finish() : builder.finish(*context.idx, get_entity_id(cur));
     else
-        return builder.finish_declaration(*context.idx, get_entity_id(cur));
+        return is_templated ? builder.finish_declaration(detail::get_entity_id(cur)) :
+                              builder.finish_declaration(*context.idx, get_entity_id(cur));
 }

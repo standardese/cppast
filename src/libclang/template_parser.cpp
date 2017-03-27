@@ -3,6 +3,7 @@
 // found in the top-level directory of this distribution.
 
 #include <cppast/cpp_alias_template.hpp>
+#include <cppast/cpp_class_template.hpp>
 #include <cppast/cpp_function_template.hpp>
 
 #include <cppast/cpp_entity_kind.hpp>
@@ -217,7 +218,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_alias_template(const detail::parse
         return nullptr;
     context.comments.match(builder.value().get(), cur);
     parse_parameters(builder.value(), context, cur);
-    return builder.value().finish(*context.idx, detail::get_entity_id(cur));
+    return builder.value().finish(*context.idx, detail::get_entity_id(cur), true);
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_function_template(
@@ -259,13 +260,14 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_function_template(
         std::unique_ptr<cpp_function_base>(static_cast<cpp_function_base*>(func.release())));
     builder.get().set_comment(std::move(comment));
     parse_parameters(builder, context, cur);
-    return builder.finish(*context.idx, detail::get_entity_id(cur));
+    return builder.finish(*context.idx, detail::get_entity_id(cur),
+                          builder.get().function().is_definition());
 }
 
 namespace
 {
     template <class Builder>
-    void add_arguments(Builder& b, const detail::parse_context& context, const CXCursor& cur)
+    void parse_arguments(Builder& b, const detail::parse_context& context, const CXCursor& cur)
     {
         detail::tokenizer    tokenizer(context.tu, context.file, cur);
         detail::token_stream stream(tokenizer, cur);
@@ -320,10 +322,36 @@ std::unique_ptr<cpp_entity> detail::try_parse_cpp_function_template_specializati
     if (!func)
         return nullptr;
 
+    // steal comment
+    auto comment = type_safe::copy(func->comment());
+    func->set_comment(type_safe::nullopt);
+
     cpp_function_template_specialization::builder
         builder(std::unique_ptr<cpp_function_base>(static_cast<cpp_function_base*>(func.release())),
                 cpp_template_ref(detail::get_entity_id(templ), ""));
+    builder.get().set_comment(std::move(comment));
+    parse_arguments(builder, context, cur);
+    return builder.finish(*context.idx, detail::get_entity_id(cur),
+                          builder.get().function().is_definition());
+}
 
-    add_arguments(builder, context, cur);
-    return builder.finish(*context.idx, detail::get_entity_id(cur));
+std::unique_ptr<cpp_entity> detail::parse_cpp_class_template(const detail::parse_context& context,
+                                                             const CXCursor&              cur)
+{
+    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_ClassTemplate, detail::assert_handler{});
+
+    auto c = detail::parse_cpp_class(context, cur);
+    if (!c)
+        return nullptr;
+
+    // steal comment
+    auto comment = type_safe::copy(c->comment());
+    c->set_comment(type_safe::nullopt);
+
+    cpp_class_template::builder builder(
+        std::unique_ptr<cpp_class>(static_cast<cpp_class*>(c.release())));
+    builder.get().set_comment(std::move(comment));
+    parse_parameters(builder, context, cur);
+    return builder.finish(*context.idx, detail::get_entity_id(cur),
+                          builder.get().class_().is_definition());
 }

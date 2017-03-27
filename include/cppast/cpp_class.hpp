@@ -74,17 +74,19 @@ namespace cppast
         /// \returns A newly created base class specifier.
         /// \notes It is not meant to be registered at the [cppast::cpp_entity_index](),
         /// as nothing can refer to the specifier itself.
-        static std::unique_ptr<cpp_base_class> build(const cpp_type_ref&       base,
+        static std::unique_ptr<cpp_base_class> build(std::string               name,
+                                                     std::unique_ptr<cpp_type> base,
                                                      cpp_access_specifier_kind access,
                                                      bool                      is_virtual)
         {
-            return std::unique_ptr<cpp_base_class>(new cpp_base_class(base, access, is_virtual));
+            return std::unique_ptr<cpp_base_class>(
+                new cpp_base_class(std::move(name), std::move(base), access, is_virtual));
         }
 
-        /// \returns An entity reference to the base class.
-        cpp_type_ref entity() const
+        /// \returns The type of the base class.
+        const cpp_type& type() const
         {
-            return cpp_type_ref(base_id_, name());
+            return *type_;
         }
 
         /// \returns The access specifier of the base class.
@@ -100,15 +102,15 @@ namespace cppast
         }
 
     private:
-        cpp_base_class(const cpp_type_ref& base, cpp_access_specifier_kind access, bool is_virtual)
-        : cpp_entity(base.name()), base_id_(base.id()[0u]), access_(access), virtual_(is_virtual)
+        cpp_base_class(std::string name, std::unique_ptr<cpp_type> base,
+                       cpp_access_specifier_kind access, bool is_virtual)
+        : cpp_entity(std::move(name)), type_(std::move(base)), access_(access), virtual_(is_virtual)
         {
-            DEBUG_ASSERT(!base.is_overloaded(), detail::precondition_error_handler{});
         }
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
-        cpp_entity_id             base_id_;
+        std::unique_ptr<cpp_type> type_;
         cpp_access_specifier_kind access_;
         bool                      virtual_;
     };
@@ -142,10 +144,11 @@ namespace cppast
             }
 
             /// \effects Builds a [cppast::cpp_base_class]() and adds it.
-            void base_class(const cpp_type_ref& base, cpp_access_specifier_kind access,
-                            bool is_virtual)
+            void base_class(std::string name, std::unique_ptr<cpp_type> type,
+                            cpp_access_specifier_kind access, bool is_virtual)
             {
-                add_base_class(cpp_base_class::build(base, access, is_virtual));
+                add_base_class(
+                    cpp_base_class::build(std::move(name), std::move(type), access, is_virtual));
             }
 
             /// \effects Adds a new base class.
@@ -179,9 +182,16 @@ namespace cppast
 
             /// \effects Marks the class as forward declaration.
             /// \returns The finished class.
-            /// \notes It will not be registered, as it is not the main definition.
             std::unique_ptr<cpp_class> finish_declaration(const cpp_entity_index& idx,
                                                           cpp_entity_id           definition_id);
+
+            /// \effects Returns the finished class without registering it.
+            /// \notes This is intended for templated classes only.
+            std::unique_ptr<cpp_class> finish();
+
+            /// \effects Returns the finish class without registering it and marks it as forward declaration.
+            /// \notes This is intended for templated classes only.
+            std::unique_ptr<cpp_class> finish_declaration(cpp_entity_id definition_id);
 
         private:
             std::unique_ptr<cpp_class> class_;

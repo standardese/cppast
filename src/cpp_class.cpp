@@ -23,6 +23,17 @@ std::unique_ptr<cpp_class> cpp_class::builder::finish_declaration(const cpp_enti
     return std::move(class_);
 }
 
+std::unique_ptr<cpp_class> cpp_class::builder::finish()
+{
+    return std::move(class_);
+}
+
+std::unique_ptr<cpp_class> cpp_class::builder::finish_declaration(cpp_entity_id definition_id)
+{
+    class_->set_definition(definition_id);
+    return std::move(class_);
+}
+
 const char* cppast::to_string(cpp_class_kind kind) noexcept
 {
     switch (kind)

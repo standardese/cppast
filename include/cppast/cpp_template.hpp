@@ -58,9 +58,14 @@ namespace cppast
 
             /// \effects Registers the template.
             /// \returns The finished template.
-            std::unique_ptr<T> finish(const cpp_entity_index& idx, cpp_entity_id id)
+            std::unique_ptr<T> finish(const cpp_entity_index& idx, cpp_entity_id id,
+                                      bool is_definition)
             {
-                idx.register_definition(std::move(id), type_safe::cref(*template_entity));
+                if (is_definition)
+                    idx.register_definition(std::move(id), type_safe::cref(*template_entity));
+                else
+                    idx.register_forward_declaration(std::move(id),
+                                                     type_safe::cref(*template_entity));
                 return std::move(template_entity);
             }
 
