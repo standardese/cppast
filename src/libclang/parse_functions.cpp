@@ -100,6 +100,8 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
     case CXCursor_ClassDecl:
     case CXCursor_StructDecl:
     case CXCursor_UnionDecl:
+        if (auto spec = try_parse_full_cpp_class_template_specialization(context, cur))
+            return spec;
         return parse_cpp_class(context, cur);
 
     case CXCursor_VarDecl:
@@ -134,6 +136,8 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         return parse_cpp_function_template(context, cur);
     case CXCursor_ClassTemplate:
         return parse_cpp_class_template(context, cur);
+    case CXCursor_ClassTemplatePartialSpecialization:
+        return parse_cpp_class_template_specialization(context, cur);
 
     default:
         break;

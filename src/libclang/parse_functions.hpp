@@ -95,6 +95,10 @@ namespace cppast
         std::unique_ptr<cpp_entity> try_parse_cpp_function_template_specialization(
             const parse_context& context, const CXCursor& cur);
 
+        // on class cursors
+        std::unique_ptr<cpp_entity> try_parse_full_cpp_class_template_specialization(
+            const parse_context& context, const CXCursor& cur);
+
         std::unique_ptr<cpp_entity> parse_cpp_namespace(const parse_context& context,
                                                         const CXCursor&      cur);
         std::unique_ptr<cpp_entity> parse_cpp_namespace_alias(const parse_context& context,
@@ -135,6 +139,8 @@ namespace cppast
                                                                 const CXCursor&      cur);
         std::unique_ptr<cpp_entity> parse_cpp_class_template(const parse_context& context,
                                                              const CXCursor&      cur);
+        std::unique_ptr<cpp_entity> parse_cpp_class_template_specialization(
+            const parse_context& context, const CXCursor& cur);
 
         // as_template: true, iff currently parsing a template
         std::unique_ptr<cpp_entity> parse_entity(

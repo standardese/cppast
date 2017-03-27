@@ -44,14 +44,13 @@ namespace cppast
     class cpp_class_template_specialization final : public cpp_template_specialization
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// Builder for [cppast::cpp_class_template_specialization]().
         class builder : public specialization_builder<cpp_class_template_specialization, cpp_class>
         {
         public:
             using specialization_builder::specialization_builder;
-
-        private:
-            using specialization_builder::add_parameter;
         };
 
         /// A reference to the class that is being specialized.

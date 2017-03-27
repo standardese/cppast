@@ -41,6 +41,20 @@ struct e
     template <typename U>
     T func(U);
 };
+
+// full specialization
+template <>
+class a<int> {};
+
+template <>
+struct b<0, int> {};
+
+// partial specialization
+template <typename T>
+class a<T*> {};
+
+template <typename T>
+struct b<0, T> {};
 )";
 
     cpp_entity_index idx;
@@ -168,4 +182,45 @@ struct e
         }
     });
     REQUIRE(count == 5u);
+
+    count = test_visit<cpp_class_template_specialization>(
+        *file, [&](const cpp_class_template_specialization& templ) {
+            REQUIRE(!templ.arguments_exposed());
+
+            if (templ.name() == "a")
+            {
+                REQUIRE(equal_ref(idx, templ.primary_template(),
+                                  cpp_template_ref(cpp_entity_id(""), "a")));
+                if (templ.is_full_specialization())
+                {
+                    check_template_parameters(templ, {});
+                    REQUIRE(templ.unexposed_arguments() == "int");
+                }
+                else
+                {
+                    check_template_parameters(templ,
+                                              {{cpp_entity_kind::template_type_parameter_t, "T"}});
+                    REQUIRE(templ.unexposed_arguments() == "T*");
+                }
+            }
+            else if (templ.name() == "b")
+            {
+                REQUIRE(equal_ref(idx, templ.primary_template(),
+                                  cpp_template_ref(cpp_entity_id(""), "b")));
+                if (templ.is_full_specialization())
+                {
+                    check_template_parameters(templ, {});
+                    REQUIRE(templ.unexposed_arguments() == "0,int");
+                }
+                else
+                {
+                    check_template_parameters(templ,
+                                              {{cpp_entity_kind::template_type_parameter_t, "T"}});
+                    REQUIRE(templ.unexposed_arguments() == "0,T");
+                }
+            }
+            else
+                REQUIRE(false);
+        });
+    REQUIRE(count == 4u);
 }

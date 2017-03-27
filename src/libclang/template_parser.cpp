@@ -355,3 +355,45 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class_template(const detail::parse
     return builder.finish(*context.idx, detail::get_entity_id(cur),
                           builder.get().class_().is_definition());
 }
+
+std::unique_ptr<cpp_entity> detail::try_parse_full_cpp_class_template_specialization(
+    const detail::parse_context& context, const CXCursor& cur)
+{
+    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_ClassDecl
+                     || clang_getCursorKind(cur) == CXCursor_StructDecl
+                     || clang_getCursorKind(cur) == CXCursor_UnionDecl,
+                 detail::assert_handler{});
+
+    auto templ = clang_getSpecializedCursorTemplate(cur);
+    if (clang_Cursor_isNull(templ))
+        return nullptr;
+    return detail::parse_cpp_class_template_specialization(context, cur);
+}
+
+std::unique_ptr<cpp_entity> detail::parse_cpp_class_template_specialization(
+    const detail::parse_context& context, const CXCursor& cur)
+{
+    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_ClassTemplatePartialSpecialization
+                     || clang_getCursorKind(cur) == CXCursor_ClassDecl
+                     || clang_getCursorKind(cur) == CXCursor_StructDecl
+                     || clang_getCursorKind(cur) == CXCursor_UnionDecl,
+                 detail::assert_handler{});
+
+    auto primary = clang_getSpecializedCursorTemplate(cur);
+    auto c       = detail::parse_cpp_class(context, cur);
+    if (!c)
+        return nullptr;
+
+    // steal comment
+    auto comment = type_safe::copy(c->comment());
+    c->set_comment(type_safe::nullopt);
+
+    cpp_class_template_specialization::builder
+        builder(std::unique_ptr<cpp_class>(static_cast<cpp_class*>(c.release())),
+                cpp_template_ref(detail::get_entity_id(primary), ""));
+    builder.get().set_comment(std::move(comment));
+    parse_parameters(builder, context, cur);
+    parse_arguments(builder, context, cur);
+    return builder.finish(*context.idx, detail::get_entity_id(cur),
+                          builder.get().class_().is_definition());
+}

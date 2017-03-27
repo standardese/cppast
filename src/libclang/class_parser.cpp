@@ -104,12 +104,15 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class(const detail::parse_context&
         else if (kind == CXCursor_CXXFinalAttr)
             builder.is_final();
         else if (kind == CXCursor_TemplateTypeParameter || kind == CXCursor_NonTypeTemplateParameter
-                 || kind == CXCursor_TemplateTemplateParameter)
+                 || kind == CXCursor_TemplateTemplateParameter || clang_isExpression(kind)
+                 || clang_isReference(kind))
+            // other children due to templates and stuff
             return;
         else if (auto entity = parse_entity(context, child))
             builder.add_child(std::move(entity));
     });
-    auto is_templated = clang_getTemplateCursorKind(cur) != CXCursor_NoDeclFound;
+    auto is_templated = (clang_getTemplateCursorKind(cur) != CXCursor_NoDeclFound
+                         || !clang_Cursor_isNull(clang_getSpecializedCursorTemplate(cur)));
     if (clang_isCursorDefinition(cur))
         return is_templated ? builder.finish() : builder.finish(*context.idx, get_entity_id(cur));
     else
