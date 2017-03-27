@@ -5,6 +5,7 @@
 #include <cppast/cpp_type_alias.hpp>
 
 #include <cppast/cpp_array_type.hpp>
+#include <cppast/cpp_decltype_type.hpp>
 #include <cppast/cpp_function_type.hpp>
 #include <cppast/cpp_template.hpp>
 #include <cppast/cpp_template_parameter.hpp>
@@ -32,6 +33,11 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
     }
 
     case cpp_type_kind::auto_:
+        return true;
+    case cpp_type_kind::decltype_:
+        return equal_expressions(static_cast<const cpp_decltype_type&>(parsed).expression(),
+                                 static_cast<const cpp_decltype_type&>(synthesized).expression());
+    case cpp_type_kind::decltype_auto:
         return true;
 
     case cpp_type_kind::cv_qualified:
@@ -233,6 +239,9 @@ using s = int(foo::*);
 using t = struct t_ {};
 using u = const struct u_ {}*;
 using v = struct {};
+
+// decltype
+using w = decltype(0);
 )";
     }
     SECTION("typedef")
@@ -279,6 +288,9 @@ typedef int(foo::*s);
 typedef struct t_ {} t;
 typedef const struct u_ {}* u;
 typedef struct {} v;
+
+// decltype
+typedef decltype(0) w;
 )";
     }
 
@@ -456,8 +468,14 @@ typedef struct {} v;
             auto type = cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "v"));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
+        else if (alias.name() == "w")
+        {
+            auto type = cpp_decltype_type::build(
+                cpp_literal_expression::build(cpp_builtin_type::build("int"), "0"));
+            REQUIRE(equal_types(idx, alias.underlying_type(), *type));
+        }
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 22u);
+    REQUIRE(count == 23u);
 }

@@ -5,6 +5,7 @@
 #include "parse_functions.hpp"
 
 #include <cppast/cpp_array_type.hpp>
+#include <cppast/cpp_decltype_type.hpp>
 #include <cppast/cpp_expression.hpp>
 #include <cppast/cpp_function_type.hpp>
 #include <cppast/cpp_template.hpp>
@@ -434,6 +435,29 @@ namespace
         });
     }
 
+    std::unique_ptr<cpp_type> try_parse_decltype_type(const detail::parse_context& context,
+                                                      const CXCursor& cur, const CXType& type)
+    {
+        if (clang_isExpression(clang_getCursorKind(cur)))
+            return nullptr; // don't use decltype here
+
+        return make_leave_type(type, [&](std::string&& spelling) -> std::unique_ptr<cpp_type> {
+            if (!remove_prefix(spelling, "decltype("))
+                return nullptr;
+
+            std::unique_ptr<cpp_expression> expr;
+            detail::visit_children(cur, [&](const CXCursor& child) {
+                if (!expr && clang_isExpression(clang_getCursorKind(child)))
+                    // first expression child belongs to the decltype
+                    expr = detail::parse_expression(context, child);
+            });
+            DEBUG_ASSERT(expr != nullptr, detail::parse_error_handler{}, cur,
+                         "missing child of cursor");
+
+            return cpp_decltype_type::build(std::move(expr));
+        });
+    }
+
     std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context,
                                               const CXCursor& cur, const CXType& type)
     {
@@ -467,6 +491,9 @@ namespace
             else if (auto atype = try_parse_array_type(context, cur, type))
                 // same deal here
                 return atype;
+            else if (auto dtype = try_parse_decltype_type(context, cur, type))
+                // decltype unexposed
+                return dtype;
             else if (auto itype = try_parse_instantiation_type(context, cur, type))
                 // instantiation unexposed
                 return itype;
@@ -545,7 +572,7 @@ namespace
             return cpp_pointer_type::build(parse_member_pointee_type(context, cur, type));
 
         case CXType_Auto:
-            return make_leave_type(type, [](std::string&&) { return cpp_auto_type::build(); });
+            return make_leave_type(type, [&](std::string&&) { return cpp_auto_type::build(); });
         }
 
         DEBUG_UNREACHABLE(detail::assert_handler{});

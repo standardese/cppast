@@ -4,6 +4,8 @@
 
 #include <cppast/cpp_variable.hpp>
 
+#include <cppast/cpp_decltype_type.hpp>
+
 #include "test_parser.hpp"
 
 using namespace cppast;
@@ -34,6 +36,10 @@ static struct {} l;
 // auto
 auto m = 128;
 const auto& n = m;
+
+// decltype
+decltype(0) o;
+const decltype(o)& p = o;
 )";
 
     cpp_entity_index idx;
@@ -141,10 +147,28 @@ const auto& n = m;
                                *cpp_unexposed_expression::build(cpp_builtin_type::build("int"),
                                                                 "m")),
                            cpp_storage_class_none, false, false);
+        else if (var.name() == "o")
+            check_variable(var,
+                           *cpp_decltype_type::build(
+                               cpp_literal_expression::build(cpp_builtin_type::build("int"), "0")),
+                           nullptr, cpp_storage_class_none, false, false);
+        else if (var.name() == "p")
+            check_variable(var,
+                           *cpp_reference_type::
+                               build(cpp_cv_qualified_type::
+                                         build(cpp_decltype_type::build(
+                                                   cpp_unexposed_expression::
+                                                       build(cpp_builtin_type::build("int"), "o")),
+                                               cpp_cv_const),
+                                     cpp_ref_lvalue),
+                           type_safe::ref(
+                               *cpp_unexposed_expression::build(cpp_builtin_type::build("int"),
+                                                                "o")),
+                           cpp_storage_class_none, false, false);
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 14u);
+    REQUIRE(count == 16u);
 }
 
 TEST_CASE("static cpp_variable")

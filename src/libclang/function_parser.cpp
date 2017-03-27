@@ -15,17 +15,23 @@ namespace
     std::unique_ptr<cpp_function_parameter> parse_parameter(const detail::parse_context& context,
                                                             const CXCursor&              cur)
     {
-        auto name = detail::get_cursor_name(cur);
-        auto type = detail::parse_type(context, cur, clang_getCursorType(cur));
+        auto name        = detail::get_cursor_name(cur);
+        auto type        = detail::parse_type(context, cur, clang_getCursorType(cur));
+        auto is_decltype = type->kind() == cpp_type_kind::decltype_;
 
         std::unique_ptr<cpp_expression> default_value;
         detail::visit_children(cur, [&](const CXCursor& child) {
             if (!clang_isExpression(clang_getCursorKind(child)))
                 return;
-
-            DEBUG_ASSERT(!default_value, detail::parse_error_handler{}, child,
-                         "unexpected child cursor of function parameter");
-            default_value = detail::parse_expression(context, child);
+            else if (is_decltype)
+                // skip first expression then
+                is_decltype = false;
+            else
+            {
+                DEBUG_ASSERT(!default_value, detail::parse_error_handler{}, child,
+                             "unexpected child cursor of function parameter");
+                default_value = detail::parse_expression(context, child);
+            }
         });
 
         if (name.empty())

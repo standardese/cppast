@@ -3,7 +3,9 @@
 // found in the top-level directory of this distribution.
 
 #include <cppast/cpp_function.hpp>
+
 #include <cppast/cpp_array_type.hpp>
+#include <cppast/cpp_decltype_type.hpp>
 
 #include "test_parser.hpp"
 
@@ -15,7 +17,7 @@ TEST_CASE("cpp_function")
 // parameters and return type are only tested here
 void a();
 int b(int a, float* b = nullptr);
-int (&c(int a, ...))[10];
+int (&c(decltype(42) a, ...))[10];
 
 // noexcept conditions
 void d() noexcept;
@@ -115,7 +117,12 @@ void ns::l()
                 {
                     if (param.name() == "a")
                     {
-                        REQUIRE(equal_types(idx, param.type(), *cpp_builtin_type::build("int")));
+                        REQUIRE(
+                            equal_types(idx, param.type(),
+                                        *cpp_decltype_type::build(
+                                            cpp_literal_expression::build(cpp_builtin_type::build(
+                                                                              "int"),
+                                                                          "42"))));
                         REQUIRE(!param.default_value());
                     }
                     else

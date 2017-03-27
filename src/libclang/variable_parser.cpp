@@ -15,16 +15,23 @@ using namespace cppast;
 namespace
 {
     std::unique_ptr<cpp_expression> parse_default_value(const detail::parse_context& context,
-                                                        const CXCursor&              cur)
+                                                        const CXCursor& cur, bool uses_decltype)
     {
         std::unique_ptr<cpp_expression> expression;
         detail::visit_children(cur, [&](const CXCursor& child) {
             if (clang_isDeclaration(clang_getCursorKind(child)))
                 return;
-            DEBUG_ASSERT(clang_isExpression(child.kind) && !expression,
-                         detail::parse_error_handler{}, cur, "unexpected child cursor of variable");
+            else if (uses_decltype)
+                // skip first expression, belongs to the decltype
+                uses_decltype = false;
+            else
+            {
+                DEBUG_ASSERT(!expression && clang_isExpression(child.kind),
+                             detail::parse_error_handler{}, cur,
+                             "unexpected child cursor of variable");
 
-            expression = detail::parse_expression(context, child);
+                expression = detail::parse_expression(context, child);
+            }
         });
         return expression;
     }
@@ -39,6 +46,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_variable(const detail::parse_conte
     auto type          = parse_type(context, cur, clang_getCursorType(cur));
     auto storage_class = get_storage_class(cur);
     auto is_constexpr  = false;
+    auto uses_decltype = false;
 
     // just look for thread local or constexpr
     // can't appear anywhere else, so good enough
@@ -49,11 +57,13 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_variable(const detail::parse_conte
                 cpp_storage_class_specifiers(storage_class | cpp_storage_class_thread_local);
         else if (token.value() == "constexpr")
             is_constexpr = true;
+        else if (token.value() == "decltype")
+            uses_decltype = true;
 
     std::unique_ptr<cpp_variable> result;
     if (clang_isCursorDefinition(cur))
     {
-        auto default_value = parse_default_value(context, cur);
+        auto default_value = parse_default_value(context, cur, uses_decltype);
         result =
             cpp_variable::build(*context.idx, get_entity_id(cur), name.c_str(), std::move(type),
                                 std::move(default_value), storage_class, is_constexpr);

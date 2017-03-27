@@ -19,6 +19,8 @@ namespace cppast
         user_defined,
 
         auto_,
+        decltype_,
+        decltype_auto,
 
         cv_qualified,
         pointer,
