@@ -30,6 +30,10 @@ struct foo {} i;
 const struct bar {} j = bar();
 struct baz {} k{};
 static struct {} l;
+
+// auto
+auto m = 128;
+const auto& n = m;
 )";
 
     cpp_entity_index idx;
@@ -122,10 +126,25 @@ static struct {} l;
         else if (var.name() == "l")
             check_variable(var, *cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "")),
                            nullptr, cpp_storage_class_static, false, false);
+        else if (var.name() == "m")
+            check_variable(var, *cpp_auto_type::build(),
+                           type_safe::ref(
+                               *cpp_literal_expression::build(cpp_builtin_type::build("int"),
+                                                              "128")),
+                           cpp_storage_class_none, false, false);
+        else if (var.name() == "n")
+            check_variable(var, *cpp_reference_type::
+                                    build(cpp_cv_qualified_type::build(cpp_auto_type::build(),
+                                                                       cpp_cv_const),
+                                          cpp_ref_lvalue),
+                           type_safe::ref(
+                               *cpp_unexposed_expression::build(cpp_builtin_type::build("int"),
+                                                                "m")),
+                           cpp_storage_class_none, false, false);
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 12u);
+    REQUIRE(count == 14u);
 }
 
 TEST_CASE("static cpp_variable")

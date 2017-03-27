@@ -31,6 +31,9 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         return equal_ref(idx, user_parsed.entity(), user_synthesized.entity());
     }
 
+    case cpp_type_kind::auto_:
+        return true;
+
     case cpp_type_kind::cv_qualified:
     {
         auto& cv_a = static_cast<const cpp_cv_qualified_type&>(parsed);

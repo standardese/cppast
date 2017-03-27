@@ -18,6 +18,8 @@ namespace cppast
         builtin,
         user_defined,
 
+        auto_,
+
         cv_qualified,
         pointer,
         reference,
@@ -174,6 +176,25 @@ namespace cppast
         }
 
         cpp_type_ref entity_;
+    };
+
+    /// A [cppast::cpp_type]() that isn't given but deduced by `auto`.
+    class cpp_auto_type final : public cpp_type
+    {
+    public:
+        /// \returns A newly created `auto` type.
+        static std::unique_ptr<cpp_auto_type> build()
+        {
+            return std::unique_ptr<cpp_auto_type>(new cpp_auto_type);
+        }
+
+    private:
+        cpp_auto_type() = default;
+
+        cpp_type_kind do_get_kind() const noexcept override
+        {
+            return cpp_type_kind::auto_;
+        }
     };
 
     class cpp_template_parameter_type;

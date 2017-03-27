@@ -544,9 +544,8 @@ namespace
         case CXType_MemberPointer:
             return cpp_pointer_type::build(parse_member_pointee_type(context, cur, type));
 
-        // TODO: auto/decltype
         case CXType_Auto:
-            break;
+            return make_leave_type(type, [](std::string&&) { return cpp_auto_type::build(); });
         }
 
         DEBUG_UNREACHABLE(detail::assert_handler{});
