@@ -62,6 +62,7 @@ struct b<0, T> {};
     auto count = test_visit<cpp_class_template>(*file, [&](const cpp_class_template& templ) {
         auto& c = templ.class_();
         REQUIRE(!c.is_final());
+        REQUIRE(is_templated(c));
 
         if (templ.name() == "a")
         {

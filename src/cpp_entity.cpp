@@ -8,6 +8,15 @@
 
 using namespace cppast;
 
+bool cppast::is_templated(const cpp_entity& e) noexcept
+{
+    if (!e.parent())
+        return false;
+    else if (!is_template(e.parent().value().kind()))
+        return false;
+    return e.parent().value().name() == e.name();
+}
+
 std::string cppast::full_name(const cpp_entity& e)
 {
     if (e.name().empty())

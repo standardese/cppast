@@ -54,6 +54,8 @@ d::d(const int&);
     cpp_entity_index idx;
     auto             file = parse(idx, "cpp_function_template.cpp", code);
     auto count = test_visit<cpp_function_template>(*file, [&](const cpp_function_template& tfunc) {
+        REQUIRE(is_templated(tfunc.function()));
+
         if (tfunc.name() == "a")
         {
             check_template_parameters(tfunc, {{cpp_entity_kind::template_type_parameter_t, "T"}});

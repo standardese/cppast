@@ -61,7 +61,7 @@ namespace
         });
     }
 
-    bool is_templated(const CXCursor& cur)
+    bool is_templated_cursor(const CXCursor& cur)
     {
         return clang_getTemplateCursorKind(cur) != CXCursor_NoDeclFound
                || !clang_Cursor_isNull(clang_getSpecializedCursorTemplate(cur));
@@ -376,7 +376,7 @@ namespace
         if (suffix.noexcept_condition)
             builder.noexcept_condition(std::move(suffix.noexcept_condition));
 
-        if (is_templated(cur))
+        if (is_templated_cursor(cur))
             return builder.finish(suffix.body_kind);
         else
             return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
@@ -485,7 +485,7 @@ namespace
         if (auto virt = calculate_virtual(cur, is_virtual, suffix.virtual_keywords))
             builder.virtual_info(virt.value());
 
-        if (is_templated(cur))
+        if (is_templated_cursor(cur))
             return builder.finish(suffix.body_kind);
         else
             return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
@@ -610,7 +610,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
     if (suffix.noexcept_condition)
         builder.noexcept_condition(std::move(suffix.noexcept_condition));
 
-    if (is_templated(cur))
+    if (is_templated_cursor(cur))
         return builder.finish(suffix.body_kind);
     else
         return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
