@@ -46,7 +46,7 @@ using h = g<T, a>;
         {
             check_template_parameters(alias, {{cpp_entity_kind::template_type_parameter_t, "T"}});
             REQUIRE(equal_types(idx, alias.type_alias().underlying_type(),
-                                *cpp_builtin_type::build("int")));
+                                *cpp_builtin_type::build(cpp_int)));
         }
         else if (alias.name() == "b")
         {

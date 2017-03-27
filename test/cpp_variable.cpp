@@ -72,21 +72,21 @@ const decltype(o)& p = o;
 
     auto file = parse(idx, "cpp_variable.cpp", code);
 
-    auto int_type = cpp_builtin_type::build("int");
+    auto int_type = cpp_builtin_type::build(cpp_int);
     auto count    = test_visit<cpp_variable>(*file, [&](const cpp_variable& var) {
         if (var.name() == "a")
             check_variable(var, *int_type, nullptr, cpp_storage_class_none, false, false);
         else if (var.name() == "b")
-            check_variable(var, *cpp_builtin_type::build("unsigned long long"),
+            check_variable(var, *cpp_builtin_type::build(cpp_ulonglong),
                            // unexposed due to implicit cast, I think
                            type_safe::ref(
-                               *cpp_unexposed_expression::build(cpp_builtin_type::build("int"),
+                               *cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
                                                                 "42")),
                            cpp_storage_class_none, false, false);
         else if (var.name() == "c")
-            check_variable(var, *cpp_builtin_type::build("float"),
+            check_variable(var, *cpp_builtin_type::build(cpp_float),
                            type_safe::ref(
-                               *cpp_unexposed_expression::build(cpp_builtin_type::build("float"),
+                               *cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_float),
                                                                 "3.f+0.14f")),
                            cpp_storage_class_none, false, false);
         else if (var.name() == "d")
@@ -99,10 +99,10 @@ const decltype(o)& p = o;
             check_variable(var, *int_type, nullptr,
                            cpp_storage_class_static | cpp_storage_class_thread_local, false, false);
         else if (var.name() == "h")
-            check_variable(var, *cpp_cv_qualified_type::build(cpp_builtin_type::build("int"),
+            check_variable(var, *cpp_cv_qualified_type::build(cpp_builtin_type::build(cpp_int),
                                                               cpp_cv_const),
                            type_safe::ref(
-                               *cpp_literal_expression::build(cpp_builtin_type::build("int"),
+                               *cpp_literal_expression::build(cpp_builtin_type::build(cpp_int),
                                                               "12")),
                            cpp_storage_class_none, true, false);
         else if (var.name() == "i")
@@ -135,7 +135,7 @@ const decltype(o)& p = o;
         else if (var.name() == "m")
             check_variable(var, *cpp_auto_type::build(),
                            type_safe::ref(
-                               *cpp_literal_expression::build(cpp_builtin_type::build("int"),
+                               *cpp_literal_expression::build(cpp_builtin_type::build(cpp_int),
                                                               "128")),
                            cpp_storage_class_none, false, false);
         else if (var.name() == "n")
@@ -144,25 +144,25 @@ const decltype(o)& p = o;
                                                                        cpp_cv_const),
                                           cpp_ref_lvalue),
                            type_safe::ref(
-                               *cpp_unexposed_expression::build(cpp_builtin_type::build("int"),
+                               *cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
                                                                 "m")),
                            cpp_storage_class_none, false, false);
         else if (var.name() == "o")
-            check_variable(var,
-                           *cpp_decltype_type::build(
-                               cpp_literal_expression::build(cpp_builtin_type::build("int"), "0")),
+            check_variable(var, *cpp_decltype_type::build(
+                                    cpp_literal_expression::build(cpp_builtin_type::build(cpp_int),
+                                                                  "0")),
                            nullptr, cpp_storage_class_none, false, false);
         else if (var.name() == "p")
-            check_variable(var,
-                           *cpp_reference_type::
-                               build(cpp_cv_qualified_type::
-                                         build(cpp_decltype_type::build(
-                                                   cpp_unexposed_expression::
-                                                       build(cpp_builtin_type::build("int"), "o")),
-                                               cpp_cv_const),
-                                     cpp_ref_lvalue),
+            check_variable(var, *cpp_reference_type::
+                                    build(cpp_cv_qualified_type::
+                                              build(cpp_decltype_type::build(
+                                                        cpp_unexposed_expression::
+                                                            build(cpp_builtin_type::build(cpp_int),
+                                                                  "o")),
+                                                    cpp_cv_const),
+                                          cpp_ref_lvalue),
                            type_safe::ref(
-                               *cpp_unexposed_expression::build(cpp_builtin_type::build("int"),
+                               *cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
                                                                 "o")),
                            cpp_storage_class_none, false, false);
         else
@@ -191,14 +191,14 @@ struct test
         REQUIRE(is_static(var.storage_class()));
 
         if (var.name() == "a")
-            REQUIRE(equal_types({}, var.type(), *cpp_builtin_type::build("int")));
+            REQUIRE(equal_types({}, var.type(), *cpp_builtin_type::build(cpp_int)));
         else if (var.name() == "b")
             REQUIRE(equal_types({}, var.type(),
-                                *cpp_cv_qualified_type::build(cpp_builtin_type::build("int"),
+                                *cpp_cv_qualified_type::build(cpp_builtin_type::build(cpp_int),
                                                               cpp_cv_const)));
         else if (var.name() == "c")
         {
-            REQUIRE(equal_types({}, var.type(), *cpp_builtin_type::build("int")));
+            REQUIRE(equal_types({}, var.type(), *cpp_builtin_type::build(cpp_int)));
             REQUIRE(is_thread_local(var.storage_class()));
         }
         else

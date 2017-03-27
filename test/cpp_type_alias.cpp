@@ -22,8 +22,8 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
     switch (parsed.kind())
     {
     case cpp_type_kind::builtin:
-        return static_cast<const cpp_builtin_type&>(parsed).name()
-               == static_cast<const cpp_builtin_type&>(synthesized).name();
+        return static_cast<const cpp_builtin_type&>(parsed).builtin_type_kind()
+               == static_cast<const cpp_builtin_type&>(synthesized).builtin_type_kind();
 
     case cpp_type_kind::user_defined:
     {
@@ -299,7 +299,7 @@ typedef decltype(0) w;
     };
 
     auto make_size = [](std::string size, bool literal) -> std::unique_ptr<cpp_expression> {
-        auto type = cpp_builtin_type::build("unsigned long long");
+        auto type = cpp_builtin_type::build(cpp_ulonglong);
         if (literal)
             return cpp_literal_expression::build(std::move(type), std::move(size));
         else
@@ -311,41 +311,41 @@ typedef decltype(0) w;
     auto count            = test_visit<cpp_type_alias>(*file, [&](const cpp_type_alias& alias) {
         if (alias.name() == "a")
         {
-            auto type = cpp_builtin_type::build("int");
+            auto type = cpp_builtin_type::build(cpp_int);
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else if (alias.name() == "b")
         {
-            auto type = add_cv(cpp_builtin_type::build("long double"), cpp_cv_const_volatile);
+            auto type = add_cv(cpp_builtin_type::build(cpp_longdouble), cpp_cv_const_volatile);
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else if (alias.name() == "c")
         {
-            auto type = cpp_pointer_type::build(cpp_builtin_type::build("int"));
+            auto type = cpp_pointer_type::build(cpp_builtin_type::build(cpp_int));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else if (alias.name() == "d")
         {
-            auto type = cpp_pointer_type::build(
-                add_cv(cpp_builtin_type::build("unsigned int"), cpp_cv_const));
+            auto type =
+                cpp_pointer_type::build(add_cv(cpp_builtin_type::build(cpp_uint), cpp_cv_const));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else if (alias.name() == "e")
         {
             auto type = add_cv(cpp_pointer_type::build(
-                                   add_cv(cpp_builtin_type::build("unsigned int"), cpp_cv_const)),
+                                   add_cv(cpp_builtin_type::build(cpp_uint), cpp_cv_const)),
                                cpp_cv_volatile);
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else if (alias.name() == "f")
         {
-            auto type = cpp_reference_type::build(cpp_builtin_type::build("int"), cpp_ref_lvalue);
+            auto type = cpp_reference_type::build(cpp_builtin_type::build(cpp_int), cpp_ref_lvalue);
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else if (alias.name() == "g")
         {
             auto type =
-                cpp_reference_type::build(add_cv(cpp_builtin_type::build("int"), cpp_cv_const),
+                cpp_reference_type::build(add_cv(cpp_builtin_type::build(cpp_int), cpp_cv_const),
                                           cpp_ref_rvalue);
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
@@ -369,26 +369,26 @@ typedef decltype(0) w;
         else if (alias.name() == "k")
         {
             auto type =
-                cpp_array_type::build(cpp_builtin_type::build("int"), make_size("42", true));
+                cpp_array_type::build(cpp_builtin_type::build(cpp_int), make_size("42", true));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else if (alias.name() == "l")
         {
             auto type =
-                cpp_array_type::build(cpp_pointer_type::build(cpp_builtin_type::build("float")),
+                cpp_array_type::build(cpp_pointer_type::build(cpp_builtin_type::build(cpp_float)),
                                       nullptr);
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else if (alias.name() == "m")
         {
             auto type =
-                cpp_array_type::build(cpp_builtin_type::build("char"), make_size("42", true));
+                cpp_array_type::build(cpp_builtin_type::build(cpp_char), make_size("42", true));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else if (alias.name() == "n")
         {
-            cpp_function_type::builder builder(cpp_builtin_type::build("void"));
-            builder.add_parameter(cpp_builtin_type::build("int"));
+            cpp_function_type::builder builder(cpp_builtin_type::build(cpp_void));
+            builder.add_parameter(cpp_builtin_type::build(cpp_int));
             auto type = cpp_pointer_type::build(builder.finish());
 
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
@@ -396,9 +396,9 @@ typedef decltype(0) w;
         else if (alias.name() == "o")
         {
             cpp_function_type::builder builder(
-                cpp_pointer_type::build(cpp_builtin_type::build("char")));
+                cpp_pointer_type::build(cpp_builtin_type::build(cpp_char)));
             builder.add_parameter(
-                cpp_reference_type::build(add_cv(cpp_builtin_type::build("int"), cpp_cv_const),
+                cpp_reference_type::build(add_cv(cpp_builtin_type::build(cpp_int), cpp_cv_const),
                                           cpp_ref_lvalue));
             builder.is_variadic();
             auto type = cpp_reference_type::build(builder.finish(), cpp_ref_lvalue);
@@ -409,7 +409,7 @@ typedef decltype(0) w;
         {
             cpp_function_type::builder builder(
                 cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "n")));
-            builder.add_parameter(cpp_builtin_type::build("int"));
+            builder.add_parameter(cpp_builtin_type::build(cpp_int));
             builder.add_parameter(
                 cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "o")));
             auto type = cpp_pointer_type::build(builder.finish());
@@ -420,8 +420,8 @@ typedef decltype(0) w;
         {
             cpp_member_function_type::builder builder(cpp_user_defined_type::build(
                                                           cpp_type_ref(cpp_entity_id(""), "foo")),
-                                                      cpp_builtin_type::build("void"));
-            builder.add_parameter(cpp_builtin_type::build("int"));
+                                                      cpp_builtin_type::build(cpp_void));
+            builder.add_parameter(cpp_builtin_type::build(cpp_int));
             auto type = cpp_pointer_type::build(builder.finish());
 
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
@@ -434,8 +434,8 @@ typedef decltype(0) w;
                                                  cpp_ref_lvalue);
 
             cpp_member_function_type::builder builder(std::move(obj),
-                                                      cpp_builtin_type::build("void"));
-            builder.add_parameter(cpp_builtin_type::build("int"));
+                                                      cpp_builtin_type::build(cpp_void));
+            builder.add_parameter(cpp_builtin_type::build(cpp_int));
             builder.is_variadic();
             auto type = cpp_pointer_type::build(builder.finish());
 
@@ -471,7 +471,7 @@ typedef decltype(0) w;
         else if (alias.name() == "w")
         {
             auto type = cpp_decltype_type::build(
-                cpp_literal_expression::build(cpp_builtin_type::build("int"), "0"));
+                cpp_literal_expression::build(cpp_builtin_type::build(cpp_int), "0"));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else

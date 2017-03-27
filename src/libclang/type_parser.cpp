@@ -196,7 +196,7 @@ namespace
     {
         auto size = clang_getArraySize(type);
         if (size != -1)
-            return cpp_literal_expression::build(cpp_builtin_type::build("unsigned long long"),
+            return cpp_literal_expression::build(cpp_builtin_type::build(cpp_ulonglong),
                                                  std::to_string(size));
 
         auto spelling = get_type_spelling(type);
@@ -218,7 +218,7 @@ namespace
 
         return size_expr.empty() ?
                    nullptr :
-                   cpp_unexposed_expression::build(cpp_builtin_type::build("unsigned long long"),
+                   cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_ulonglong),
                                                    std::string(size_expr.rbegin(),
                                                                size_expr.rend()));
     }
@@ -503,31 +503,91 @@ namespace
             return cpp_unexposed_type::build(get_type_spelling(type).c_str());
 
         case CXType_Void:
+            return make_leave_type(type,
+                                   [](std::string&&) { return cpp_builtin_type::build(cpp_void); });
         case CXType_Bool:
-        case CXType_Char_U:
+            return make_leave_type(type,
+                                   [](std::string&&) { return cpp_builtin_type::build(cpp_bool); });
         case CXType_UChar:
-        case CXType_Char16:
-        case CXType_Char32:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_uchar);
+            });
         case CXType_UShort:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_ushort);
+            });
         case CXType_UInt:
+            return make_leave_type(type,
+                                   [](std::string&&) { return cpp_builtin_type::build(cpp_uint); });
         case CXType_ULong:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_ulong);
+            });
         case CXType_ULongLong:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_ulonglong);
+            });
         case CXType_UInt128:
-        case CXType_Char_S:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_uint128);
+            });
         case CXType_SChar:
-        case CXType_WChar:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_schar);
+            });
         case CXType_Short:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_short);
+            });
         case CXType_Int:
+            return make_leave_type(type,
+                                   [](std::string&&) { return cpp_builtin_type::build(cpp_int); });
         case CXType_Long:
+            return make_leave_type(type,
+                                   [](std::string&&) { return cpp_builtin_type::build(cpp_long); });
         case CXType_LongLong:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_longlong);
+            });
         case CXType_Int128:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_int128);
+            });
         case CXType_Float:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_float);
+            });
         case CXType_Double:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_double);
+            });
         case CXType_LongDouble:
-        case CXType_NullPtr:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_longdouble);
+            });
         case CXType_Float128:
-            return make_leave_type(type, [](std::string&& spelling) {
-                return cpp_builtin_type::build(std::move(spelling));
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_float128);
+            });
+        case CXType_Char_U:
+        case CXType_Char_S:
+            return make_leave_type(type,
+                                   [](std::string&&) { return cpp_builtin_type::build(cpp_char); });
+        case CXType_Char16:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_char16);
+            });
+        case CXType_Char32:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_char32);
+            });
+        case CXType_WChar:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_wchar);
+            });
+        case CXType_NullPtr:
+            return make_leave_type(type, [](std::string&&) {
+                return cpp_builtin_type::build(cpp_nullptr);
             });
 
         case CXType_Record:

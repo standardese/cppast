@@ -24,18 +24,18 @@ struct foo
     auto count = test_visit<cpp_member_variable>(*file, [&](const cpp_member_variable& var) {
         if (var.name() == "a")
         {
-            auto type = cpp_builtin_type::build("int");
+            auto type = cpp_builtin_type::build(cpp_int);
             REQUIRE(equal_types(idx, var.type(), *type));
             REQUIRE(!var.default_value());
             REQUIRE(!var.is_mutable());
         }
         else if (var.name() == "b")
         {
-            auto type = cpp_builtin_type::build("float");
+            auto type = cpp_builtin_type::build(cpp_float);
             REQUIRE(equal_types(idx, var.type(), *type));
 
             // all initializers are unexposed
-            auto def = cpp_unexposed_expression::build(cpp_builtin_type::build("float"), "3.14f");
+            auto def = cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_float), "3.14f");
             REQUIRE(var.default_value());
             REQUIRE(equal_expressions(var.default_value().value(), *def));
 
@@ -43,7 +43,7 @@ struct foo
         }
         else if (var.name() == "c")
         {
-            auto type = cpp_builtin_type::build("char");
+            auto type = cpp_builtin_type::build(cpp_char);
             REQUIRE(equal_types(idx, var.type(), *type));
             REQUIRE(!var.default_value());
             REQUIRE(var.is_mutable());
@@ -70,7 +70,7 @@ struct foo
     auto file  = parse({}, "cpp_bitfield.cpp", code);
     auto count = test_visit<cpp_bitfield>(*file, [&](const cpp_bitfield& bf) {
         REQUIRE(!bf.default_value());
-        REQUIRE(equal_types({}, bf.type(), *cpp_builtin_type::build("char")));
+        REQUIRE(equal_types({}, bf.type(), *cpp_builtin_type::build(cpp_char)));
 
         if (bf.name() == "a")
         {

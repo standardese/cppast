@@ -37,7 +37,7 @@ using e = void;
     auto             file = parse(idx, "cpp_template_type_parameter.cpp", code);
     auto count = test_visit<cpp_alias_template>(*file, [&](const cpp_alias_template& alias) {
         REQUIRE(equal_types(idx, alias.type_alias().underlying_type(),
-                            *cpp_builtin_type::build("void")));
+                            *cpp_builtin_type::build(cpp_void)));
 
         for (auto& p : alias.parameters())
         {
@@ -112,7 +112,7 @@ using d = void;
     auto             file = parse(idx, "cpp_non_type_template_parameter.cpp", code);
     auto count = test_visit<cpp_alias_template>(*file, [&](const cpp_alias_template& alias) {
         REQUIRE(equal_types(idx, alias.type_alias().underlying_type(),
-                            *cpp_builtin_type::build("void")));
+                            *cpp_builtin_type::build(cpp_void)));
 
         for (auto& p : alias.parameters())
         {
@@ -122,7 +122,7 @@ using d = void;
             if (param.name() == "A")
             {
                 REQUIRE(alias.name() == "a");
-                REQUIRE(equal_types(idx, param.type(), *cpp_builtin_type::build("int")));
+                REQUIRE(equal_types(idx, param.type(), *cpp_builtin_type::build(cpp_int)));
                 REQUIRE(!param.is_variadic());
                 REQUIRE(!param.default_value());
             }
@@ -130,18 +130,18 @@ using d = void;
             {
                 REQUIRE(alias.name() == "b");
                 REQUIRE(equal_types(idx, param.type(),
-                                    *cpp_pointer_type::build(cpp_builtin_type::build("char"))));
+                                    *cpp_pointer_type::build(cpp_builtin_type::build(cpp_char))));
                 REQUIRE(!param.is_variadic());
                 REQUIRE(param.default_value());
                 REQUIRE(equal_expressions(param.default_value().value(),
                                           *cpp_literal_expression::build(cpp_builtin_type::build(
-                                                                             "nullptr_t"),
+                                                                             cpp_nullptr),
                                                                          "nullptr")));
             }
             else if (param.name() == "C")
             {
                 REQUIRE(alias.name() == "c");
-                REQUIRE(equal_types(idx, param.type(), *cpp_builtin_type::build("int")));
+                REQUIRE(equal_types(idx, param.type(), *cpp_builtin_type::build(cpp_int)));
                 REQUIRE(param.is_variadic());
                 REQUIRE(!param.default_value());
             }
@@ -149,7 +149,7 @@ using d = void;
             {
                 REQUIRE(alias.name() == "d");
 
-                cpp_function_type::builder builder(cpp_builtin_type::build("void"));
+                cpp_function_type::builder builder(cpp_builtin_type::build(cpp_void));
                 builder.is_variadic();
                 REQUIRE(equal_types(idx, param.type(), *cpp_pointer_type::build(builder.finish())));
 
@@ -190,7 +190,7 @@ using d = void;
     auto             file = parse(idx, "cpp_template_template_parameter.cpp", code);
     auto count = test_visit<cpp_alias_template>(*file, [&](const cpp_alias_template& alias) {
         REQUIRE(equal_types(idx, alias.type_alias().underlying_type(),
-                            *cpp_builtin_type::build("void")));
+                            *cpp_builtin_type::build(cpp_void)));
         if (alias.name() == "def")
             return;
 

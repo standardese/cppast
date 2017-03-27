@@ -208,7 +208,7 @@ namespace
         if (!detail::skip_if(stream, "noexcept"))
             return nullptr;
 
-        auto type = cpp_builtin_type::build("bool");
+        auto type = cpp_builtin_type::build(cpp_bool);
         if (stream.peek().value() != "(")
             return cpp_literal_expression::build(std::move(type), "true");
 

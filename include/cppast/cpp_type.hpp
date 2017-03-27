@@ -101,6 +101,43 @@ namespace cppast
         std::string name_;
     };
 
+    /// The C++ builtin types.
+    enum cpp_builtin_type_kind
+    {
+        cpp_void, //< `void`
+
+        cpp_bool, //< `bool`
+
+        cpp_uchar,     //< `unsigned char`
+        cpp_ushort,    //< `unsigned short`
+        cpp_uint,      //< `unsigned int`
+        cpp_ulong,     //< `unsigned long`
+        cpp_ulonglong, //< `unsigned long long`
+        cpp_uint128,   //< `unsigned __int128`
+
+        cpp_schar,    //< `signed char`
+        cpp_short,    //< `short`
+        cpp_int,      //< `int`
+        cpp_long,     //< `long`
+        cpp_longlong, //< `long long`
+        cpp_int128,   //< `__int128`
+
+        cpp_float,      //< `float`
+        cpp_double,     //< `double`
+        cpp_longdouble, //< `long double`
+        cpp_float128,   //< `__float128`
+
+        cpp_char,   //< `char`
+        cpp_wchar,  //< `wchar_t`
+        cpp_char16, //< `char16_t`
+        cpp_char32, //< `char32_t`
+
+        cpp_nullptr, //< `decltype(nullptr)` aka `std::nullptr_t`
+    };
+
+    /// \returns The string representing the spelling of that type in the source code.
+    const char* to_string(cpp_builtin_type_kind kind) noexcept;
+
     /// A builtin [cppast::cpp_type]().
     ///
     /// This is one where there is no associated [cppast::cpp_entity]().
@@ -108,19 +145,19 @@ namespace cppast
     {
     public:
         /// \returns A newly created builtin type.
-        static std::unique_ptr<cpp_builtin_type> build(std::string name)
+        static std::unique_ptr<cpp_builtin_type> build(cpp_builtin_type_kind kind)
         {
-            return std::unique_ptr<cpp_builtin_type>(new cpp_builtin_type(std::move(name)));
+            return std::unique_ptr<cpp_builtin_type>(new cpp_builtin_type(kind));
         }
 
-        /// \returns The name of the type.
-        const std::string& name() const noexcept
+        /// \returns Which builtin type it is.
+        cpp_builtin_type_kind builtin_type_kind() const noexcept
         {
-            return name_;
+            return kind_;
         }
 
     private:
-        cpp_builtin_type(std::string name) : name_(std::move(name))
+        cpp_builtin_type(cpp_builtin_type_kind kind) : kind_(kind)
         {
         }
 
@@ -129,7 +166,7 @@ namespace cppast
             return cpp_type_kind::builtin;
         }
 
-        std::string name_;
+        cpp_builtin_type_kind kind_;
     };
 
     /// \exclude

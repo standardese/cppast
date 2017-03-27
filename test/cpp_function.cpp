@@ -65,32 +65,32 @@ void ns::l()
 
             if (func.name() == "a")
             {
-                REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("void")));
+                REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
                 REQUIRE(count_children(func) == 0u);
                 REQUIRE(!func.is_variadic());
             }
             else if (func.name() == "b")
             {
-                REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("int")));
+                REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_int)));
 
                 auto count = 0u;
                 for (auto& param : func)
                 {
                     if (param.name() == "a")
                     {
-                        REQUIRE(equal_types(idx, param.type(), *cpp_builtin_type::build("int")));
+                        REQUIRE(equal_types(idx, param.type(), *cpp_builtin_type::build(cpp_int)));
                         REQUIRE(!param.default_value());
                     }
                     else if (param.name() == "b")
                     {
-                        REQUIRE(
-                            equal_types(idx, param.type(), *cpp_pointer_type::build(
-                                                               cpp_builtin_type::build("float"))));
+                        REQUIRE(equal_types(idx, param.type(),
+                                            *cpp_pointer_type::build(
+                                                cpp_builtin_type::build(cpp_float))));
                         REQUIRE(param.default_value());
                         REQUIRE(equal_expressions(param.default_value().value(),
                                                   *cpp_unexposed_expression::
                                                       build(cpp_pointer_type::build(
-                                                                cpp_builtin_type::build("float")),
+                                                                cpp_builtin_type::build(cpp_float)),
                                                             "nullptr")));
                     }
                     else
@@ -105,10 +105,10 @@ void ns::l()
                 REQUIRE(
                     equal_types(idx, func.return_type(),
                                 *cpp_reference_type::
-                                    build(cpp_array_type::build(cpp_builtin_type::build("int"),
+                                    build(cpp_array_type::build(cpp_builtin_type::build(cpp_int),
                                                                 cpp_literal_expression::
                                                                     build(cpp_builtin_type::build(
-                                                                              "unsigned long long"),
+                                                                              cpp_ulonglong),
                                                                           "10")),
                                           cpp_ref_lvalue)));
 
@@ -121,7 +121,7 @@ void ns::l()
                             equal_types(idx, param.type(),
                                         *cpp_decltype_type::build(
                                             cpp_literal_expression::build(cpp_builtin_type::build(
-                                                                              "int"),
+                                                                              cpp_int),
                                                                           "42"))));
                         REQUIRE(!param.default_value());
                     }
@@ -135,7 +135,7 @@ void ns::l()
         }
         else if (func.name() == "d" || func.name() == "e" || func.name() == "f")
         {
-            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("void")));
+            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
             REQUIRE(count_children(func) == 0u);
             REQUIRE(!func.is_variadic());
             REQUIRE(func.storage_class() == cpp_storage_class_none);
@@ -143,7 +143,7 @@ void ns::l()
             REQUIRE(func.noexcept_condition());
             check_body(func, cpp_function_declaration);
 
-            auto bool_t = cpp_builtin_type::build("bool");
+            auto bool_t = cpp_builtin_type::build(cpp_bool);
             if (func.name() == "d")
                 REQUIRE(
                     equal_expressions(func.noexcept_condition().value(),
@@ -160,7 +160,7 @@ void ns::l()
         else if (func.name() == "g" || func.name() == "h" || func.name() == "i"
                  || func.name() == "j")
         {
-            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("void")));
+            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
             REQUIRE(count_children(func) == 0u);
             REQUIRE(!func.is_variadic());
             REQUIRE(!func.noexcept_condition());
@@ -189,7 +189,7 @@ void ns::l()
         }
         else if (func.name() == "k" || func.name() == "l" || func.name() == "ns::l")
         {
-            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("void")));
+            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
             REQUIRE(count_children(func) == 0u);
             REQUIRE(!func.is_variadic());
             REQUIRE(!func.noexcept_condition());
@@ -234,7 +234,7 @@ void foo::a() {}
 
         if (func.name() == "a" || func.name() == "foo::a")
         {
-            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("void")));
+            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
             REQUIRE(!func.noexcept_condition());
             REQUIRE(!func.is_constexpr());
 
@@ -245,18 +245,18 @@ void foo::a() {}
         }
         else if (func.name() == "b")
         {
-            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("int")));
+            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_int)));
             REQUIRE(func.noexcept_condition());
             REQUIRE(
                 equal_expressions(func.noexcept_condition().value(),
-                                  *cpp_literal_expression::build(cpp_builtin_type::build("bool"),
+                                  *cpp_literal_expression::build(cpp_builtin_type::build(cpp_bool),
                                                                  "true")));
             REQUIRE(!func.is_constexpr());
             REQUIRE(func.body_kind() == cpp_function_definition);
         }
         else if (func.name() == "c")
         {
-            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("char")));
+            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_char)));
             REQUIRE(!func.noexcept_condition());
             REQUIRE(func.is_constexpr());
             REQUIRE(func.body_kind() == cpp_function_deleted);

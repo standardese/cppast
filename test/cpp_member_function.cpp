@@ -42,7 +42,7 @@ struct bar : foo
         REQUIRE(count_children(func) == 0u);
         REQUIRE(!func.is_variadic());
         REQUIRE(!func.is_constexpr());
-        REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("void")));
+        REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
         if (func.name() != "b")
             REQUIRE(!func.noexcept_condition());
         if (func.name() != "g" && func.name() != "h")
@@ -60,7 +60,7 @@ struct bar : foo
             REQUIRE(func.noexcept_condition());
             REQUIRE(
                 equal_expressions(func.noexcept_condition().value(),
-                                  *cpp_literal_expression::build(cpp_builtin_type::build("bool"),
+                                  *cpp_literal_expression::build(cpp_builtin_type::build(cpp_bool),
                                                                  "true")));
             REQUIRE(func.cv_qualifier() == cpp_cv_none);
             REQUIRE(func.ref_qualifier() == cpp_ref_none);
@@ -162,14 +162,14 @@ struct foo
         {
             REQUIRE(op.name() == "operator int&");
             REQUIRE(equal_types(idx, op.return_type(),
-                                *cpp_reference_type::build(cpp_builtin_type::build("int"),
+                                *cpp_reference_type::build(cpp_builtin_type::build(cpp_int),
                                                            cpp_ref_lvalue)));
             REQUIRE(op.cv_qualifier() == cpp_cv_none);
         }
         else if (op.is_explicit() && !op.is_constexpr())
         {
             REQUIRE(op.name() == "operator bool");
-            REQUIRE(equal_types(idx, op.return_type(), *cpp_builtin_type::build("bool")));
+            REQUIRE(equal_types(idx, op.return_type(), *cpp_builtin_type::build(cpp_bool)));
             REQUIRE(op.cv_qualifier() == cpp_cv_const);
         }
         else if (!op.is_explicit() && op.is_constexpr())
@@ -209,7 +209,7 @@ struct foo
             REQUIRE(cont.noexcept_condition());
             REQUIRE(
                 equal_expressions(cont.noexcept_condition().value(),
-                                  *cpp_literal_expression::build(cpp_builtin_type::build("bool"),
+                                  *cpp_literal_expression::build(cpp_builtin_type::build(cpp_bool),
                                                                  "true")));
             REQUIRE(!cont.is_explicit());
             REQUIRE(!cont.is_constexpr());
@@ -275,10 +275,10 @@ struct d : c
             REQUIRE(!dtor.is_virtual());
             REQUIRE(dtor.body_kind() == cpp_function_definition);
             REQUIRE(dtor.noexcept_condition());
-            REQUIRE(
-                equal_expressions(dtor.noexcept_condition().value(),
-                                  *cpp_unexposed_expression::build(cpp_builtin_type::build("bool"),
-                                                                   "false")));
+            REQUIRE(equal_expressions(dtor.noexcept_condition().value(),
+                                      *cpp_unexposed_expression::build(cpp_builtin_type::build(
+                                                                           cpp_bool),
+                                                                       "false")));
         }
         else if (dtor.name() == "~c")
         {

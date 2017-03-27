@@ -178,7 +178,7 @@ d::d(const int&);
                 REQUIRE(tfunc.function().kind() == cpp_entity_kind::function_t);
                 auto& func = static_cast<const cpp_function&>(tfunc.function());
 
-                REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("int")));
+                REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_int)));
 
                 auto count = 0u;
                 for (auto& param : func)
@@ -188,7 +188,7 @@ d::d(const int&);
                         equal_types(idx, param.type(),
                                     *cpp_reference_type::
                                         build(cpp_cv_qualified_type::build(cpp_builtin_type::build(
-                                                                               "int"),
+                                                                               cpp_int),
                                                                            cpp_cv_const),
                                               cpp_ref_lvalue)));
                 }
@@ -210,7 +210,7 @@ d::d(const int&);
                 for (auto& param : func)
                 {
                     ++count;
-                    REQUIRE(equal_types(idx, param.type(), *cpp_builtin_type::build("int")));
+                    REQUIRE(equal_types(idx, param.type(), *cpp_builtin_type::build(cpp_int)));
                 }
                 REQUIRE(count == 1u);
             }
@@ -222,7 +222,7 @@ d::d(const int&);
                 auto& func = static_cast<const cpp_member_function&>(tfunc.function());
                 REQUIRE(func.cv_qualifier() == cpp_cv_none);
 
-                REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("int")));
+                REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_int)));
             }
             else if (tfunc.name() == "d::operator int")
             {
@@ -232,7 +232,7 @@ d::d(const int&);
                 auto& func = static_cast<const cpp_conversion_op&>(tfunc.function());
                 REQUIRE(func.cv_qualifier() == cpp_cv_const);
 
-                REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("int")));
+                REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_int)));
             }
             else if (tfunc.name() == "d::d")
             {
@@ -249,7 +249,7 @@ d::d(const int&);
                         equal_types(idx, param.type(),
                                     *cpp_reference_type::
                                         build(cpp_cv_qualified_type::build(cpp_builtin_type::build(
-                                                                               "int"),
+                                                                               cpp_int),
                                                                            cpp_cv_const),
                                               cpp_ref_lvalue)));
                 }

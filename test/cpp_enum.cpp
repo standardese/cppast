@@ -57,8 +57,7 @@ enum c : int;
                     REQUIRE(expr.kind() == cpp_expression_kind::unexposed);
                     REQUIRE(static_cast<const cpp_unexposed_expression&>(expr).expression()
                             == "42");
-                    REQUIRE(
-                        equal_types(idx, expr.type(), *cpp_builtin_type::build("unsigned int")));
+                    REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_uint)));
                 }
                 else if (val.name() == "a_d")
                 {
@@ -69,8 +68,7 @@ enum c : int;
                     REQUIRE(expr.kind() == cpp_expression_kind::unexposed);
                     REQUIRE(static_cast<const cpp_unexposed_expression&>(expr).expression()
                             == "a_a+2");
-                    REQUIRE(
-                        equal_types(idx, expr.type(), *cpp_builtin_type::build("unsigned int")));
+                    REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_uint)));
                 }
                 else
                     REQUIRE(false);
@@ -84,8 +82,8 @@ enum c : int;
             if (e.is_definition())
             {
                 REQUIRE(e.underlying_type());
-                REQUIRE(
-                    equal_types(idx, e.underlying_type().value(), *cpp_builtin_type::build("int")));
+                REQUIRE(equal_types(idx, e.underlying_type().value(),
+                                    *cpp_builtin_type::build(cpp_int)));
 
                 auto no_vals = 0u;
                 for (auto& val : e)
@@ -103,7 +101,7 @@ enum c : int;
                         auto& expr = val.value().value();
                         REQUIRE(expr.kind() == cpp_expression_kind::literal);
                         REQUIRE(static_cast<const cpp_literal_expression&>(expr).value() == "42");
-                        REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build("int")));
+                        REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_int)));
                     }
                     else
                         REQUIRE(false);
@@ -128,7 +126,8 @@ enum c : int;
             REQUIRE(e.is_declaration());
             REQUIRE(!e.is_definition());
             REQUIRE(!e.is_scoped());
-            REQUIRE(equal_types(idx, e.underlying_type().value(), *cpp_builtin_type::build("int")));
+            REQUIRE(
+                equal_types(idx, e.underlying_type().value(), *cpp_builtin_type::build(cpp_int)));
             REQUIRE(count_children(e) == 0u);
 
             auto definition = get_definition(idx, e);
