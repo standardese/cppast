@@ -160,6 +160,11 @@ g(h)
 /// j
 /// j
 using j = int;
+
+/// k
+/// k
+template <typename T>
+void k();
 )";
 
     auto file = parse({}, "comment-matching.cpp", code);
@@ -167,6 +172,8 @@ using j = int;
         if (e.kind() == cpp_entity_kind::file_t)
             return true;
         else if (e.name().empty())
+            return true;
+        else if (is_templated(e))
             return true;
 
         INFO(e.name());
