@@ -91,6 +91,10 @@ namespace cppast
         std::unique_ptr<cpp_entity> try_parse_static_cpp_function(const parse_context& context,
                                                                   const CXCursor&      cur);
 
+        // on all function cursors except on destructor
+        std::unique_ptr<cpp_entity> try_parse_cpp_function_template_specialization(
+            const parse_context& context, const CXCursor& cur);
+
         std::unique_ptr<cpp_entity> parse_cpp_namespace(const parse_context& context,
                                                         const CXCursor&      cur);
         std::unique_ptr<cpp_entity> parse_cpp_namespace_alias(const parse_context& context,

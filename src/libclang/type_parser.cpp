@@ -385,73 +385,6 @@ namespace
                                                      type);
     }
 
-    const char* find_closing_bracket(const char* ptr)
-    {
-        for (auto paren_count = 0; *ptr; ++ptr)
-        {
-            if (*ptr == '(' || *ptr == '[' || *ptr == '{')
-                ++paren_count;
-            else if (*ptr == ')' || *ptr == ']' || *ptr == '}')
-                --paren_count;
-            else if (paren_count == 0 && *ptr == '>' && !std::isalnum(*ptr) && *ptr != '_')
-                // heuristic: this could be in fact a closing bracket
-                return ptr;
-        }
-
-        return nullptr;
-    }
-
-    std::string parse_argument(const CXCursor& cur, const char*& ptr, bool is_expression)
-    {
-        std::string arg;
-
-        auto paren_count   = 0; // non angle brackets
-        auto bracket_count = 0; // angle brackets
-        while (*ptr && ((paren_count + bracket_count) != 0 || *ptr != ','))
-        {
-            if (*ptr == '(' || *ptr == '[' || *ptr == '{')
-                ++paren_count;
-            else if (*ptr == ')' || *ptr == ']' || *ptr == '}')
-                --paren_count;
-            // angle brackets are tricky
-            // as they can be both brackets and operators
-            // we only need to take care of those that aren't nested inside other brackets, luckily
-            else if (paren_count == 0)
-            {
-                if (is_expression && *ptr == '<')
-                {
-                    // treat as brackets and see if it got a closing one
-                    auto closing = find_closing_bracket(ptr);
-                    if (closing)
-                    {
-                        // assume this is a closing bracket
-                        while (ptr != closing)
-                            arg += *ptr++;
-                    }
-                }
-                // not an expression
-                // all top-level angle brackets are actually brackets
-                else if (*ptr == '<')
-                    ++bracket_count;
-                else if (*ptr == '>')
-                    --bracket_count;
-            }
-
-            arg += *ptr++;
-        }
-
-        DEBUG_ASSERT(*ptr == ',', detail::parse_error_handler{}, cur,
-                     "unable to parse template argument");
-        ++ptr;
-
-        while (*ptr == ' ')
-            ++ptr;
-        while (!arg.empty() && arg.back() == ' ')
-            arg.pop_back();
-
-        return arg;
-    }
-
     CXCursor get_instantiation_template(const CXCursor& cur, const CXType& type,
                                         const std::string& templ_name)
     {
@@ -474,11 +407,10 @@ namespace
         return param;
     }
 
-    std::unique_ptr<cpp_type> try_parse_instantiation_type(const detail::parse_context& context,
+    std::unique_ptr<cpp_type> try_parse_instantiation_type(const detail::parse_context&,
                                                            const CXCursor& cur, const CXType& type)
     {
         return make_leave_type(type, [&](std::string&& spelling) -> std::unique_ptr<cpp_type> {
-            spelling.back() = ','; // to easily terminate the last argument
             auto        ptr = spelling.c_str();
             std::string templ_name;
             for (; *ptr && *ptr != '<'; ++ptr)
@@ -493,32 +425,10 @@ namespace
                 cpp_template_ref(detail::get_entity_id(templ), std::move(templ_name)));
 
             // parse arguments
-            // visit children of declaration to get the kind of argument expected
-            // then parse the string
-            detail::visit_children(templ, [&](const CXCursor& child) {
-                if (!*ptr)
-                    return;
-
-                auto kind = clang_getCursorKind(child);
-                if (kind == CXCursor_TemplateTypeParameter)
-                {
-                    auto arg = parse_argument(cur, ptr, false);
-                    builder.add_argument(
-                        std::unique_ptr<cpp_type>(cpp_unexposed_type::build(std::move(arg))));
-                }
-                else if (kind == CXCursor_NonTypeTemplateParameter)
-                {
-                    auto arg      = parse_argument(cur, ptr, true);
-                    auto arg_type = detail::parse_type(context, child, clang_getCursorType(child));
-                    builder.add_argument(std::unique_ptr<cpp_expression>(
-                        cpp_unexposed_expression::build(std::move(arg_type), std::move(arg))));
-                }
-                else if (kind == CXCursor_TemplateTemplateParameter)
-                {
-                    auto arg = parse_argument(cur, ptr, false);
-                    builder.add_argument(cpp_template_ref(cpp_entity_id(""), std::move(arg)));
-                }
-            });
+            // i.e. not parse really, just add the string
+            DEBUG_ASSERT(!spelling.empty() && spelling.back() == '>', detail::assert_handler{});
+            spelling.pop_back();
+            builder.add_unexposed_arguments(ptr);
 
             return builder.finish();
         });
@@ -655,32 +565,11 @@ std::unique_ptr<cpp_type> detail::parse_type(const detail::parse_context& contex
     return std::move(result);
 }
 
-namespace
-{
-    bool is_identifier(char c)
-    {
-        return std::isalnum(c) || c == '_';
-    }
-}
-
 std::unique_ptr<cpp_type> detail::parse_raw_type(const detail::parse_context&,
                                                  detail::token_stream&  stream,
                                                  detail::token_iterator end)
 {
-    std::string result;
-    while (stream.cur() != end)
-    {
-        auto& token = stream.get();
-        if (!result.empty() && is_identifier(result.back()) && is_identifier(token.value()[0u]))
-            result += ' ';
-        result += token.c_str();
-    }
-    if (stream.unmunch())
-    {
-        DEBUG_ASSERT(!result.empty() && result.back() == '>', detail::assert_handler{});
-        result.pop_back();
-        DEBUG_ASSERT(!result.empty() && result.back() == '>', detail::assert_handler{});
-    }
+    auto result = detail::to_string(stream, end);
     return cpp_unexposed_type::build(std::move(result));
 }
 

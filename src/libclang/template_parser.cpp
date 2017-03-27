@@ -261,3 +261,69 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_function_template(
     parse_parameters(builder, context, cur);
     return builder.finish(*context.idx, detail::get_entity_id(cur));
 }
+
+namespace
+{
+    template <class Builder>
+    void add_arguments(Builder& b, const detail::parse_context& context, const CXCursor& cur)
+    {
+        detail::tokenizer    tokenizer(context.tu, context.file, cur);
+        detail::token_stream stream(tokenizer, cur);
+
+        while (!stream.done()
+               && !detail::skip_if(stream, detail::get_cursor_name(cur).c_str(), true))
+            stream.bump();
+
+        if (stream.peek() == "<")
+        {
+            auto iter = detail::find_closing_bracket(stream);
+            stream.bump();
+
+            auto args = detail::to_string(stream, iter);
+            b.add_unexposed_arguments(std::move(args));
+        }
+        else
+            b.add_unexposed_arguments("");
+    }
+}
+
+std::unique_ptr<cpp_entity> detail::try_parse_cpp_function_template_specialization(
+    const detail::parse_context& context, const CXCursor& cur)
+{
+    auto templ = clang_getSpecializedCursorTemplate(cur);
+    if (clang_Cursor_isNull(templ))
+        return nullptr;
+
+    std::unique_ptr<cpp_entity> func;
+    switch (clang_getCursorKind(cur))
+    {
+    case CXCursor_FunctionDecl:
+        func = detail::parse_cpp_function(context, cur);
+        break;
+    case CXCursor_CXXMethod:
+        if (auto sfunc = detail::try_parse_static_cpp_function(context, cur))
+            func = std::move(sfunc);
+        else
+            func = detail::parse_cpp_member_function(context, cur);
+        break;
+    case CXCursor_ConversionFunction:
+        func = detail::parse_cpp_conversion_op(context, cur);
+        break;
+    case CXCursor_Constructor:
+        func = detail::parse_cpp_constructor(context, cur);
+        break;
+
+    default:
+        DEBUG_UNREACHABLE(detail::parse_error_handler{}, cur,
+                          "unexpected function kind that is being specialized");
+    }
+    if (!func)
+        return nullptr;
+
+    cpp_function_template_specialization::builder
+        builder(std::unique_ptr<cpp_function_base>(static_cast<cpp_function_base*>(func.release())),
+                cpp_template_ref(detail::get_entity_id(templ), ""));
+
+    add_arguments(builder, context, cur);
+    return builder.finish(*context.idx, detail::get_entity_id(cur));
+}

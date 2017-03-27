@@ -7,6 +7,8 @@
 
 #include <vector>
 
+#include <type_safe/variant.hpp>
+
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_container.hpp>
 #include <cppast/cpp_template_parameter.hpp>
@@ -94,9 +96,18 @@ namespace cppast
             }
 
             /// \effects Adds the next argument.
+            /// \requires No call to `add_unexposed_arguments()` has happened before.
             void add_argument(cpp_template_argument arg)
             {
-                result_->arguments_.push_back(std::move(arg));
+                result_->arguments_
+                    .value(type_safe::variant_type<std::vector<cpp_template_argument>>{})
+                    .push_back(std::move(arg));
+            }
+
+            /// \effects Adds unexposed arguments as string.
+            void add_unexposed_arguments(std::string arg)
+            {
+                result_->arguments_ = std::move(arg);
             }
 
             /// \returns The finished instantiation.
@@ -117,15 +128,33 @@ namespace cppast
             return templ_;
         }
 
-        /// \returns An iteratable object iterating over the [cppast::cpp_template_argument]()s.
-        /// \exclude return
-        const std::vector<cpp_template_argument>& arguments() const noexcept
+        /// \returns Whether or not the arguments are exposed.
+        bool arguments_exposed() const noexcept
         {
-            return arguments_;
+            return arguments_.has_value(
+                type_safe::variant_type<std::vector<cpp_template_argument>>{});
+        }
+
+        /// \returns An iteratable object iterating over the [cppast::cpp_template_argument]()s.
+        /// \requires The arguments are exposed, i.e. `arguments_exposed()` returns `true`.
+        type_safe::array_ref<const cpp_template_argument> arguments() const noexcept
+        {
+            auto& vec =
+                arguments_.value(type_safe::variant_type<std::vector<cpp_template_argument>>{});
+            return type_safe::ref(vec.data(), vec.size());
+        }
+
+        /// \returns The unexposed arguments as string.
+        /// \requires The arguments are not exposed, i.e. `arguments_exposed()` returns `false`.
+        const std::string& unexposed_arguments() const noexcept
+        {
+            return arguments_.value(type_safe::variant_type<std::string>{});
         }
 
     private:
-        cpp_template_instantiation_type(cpp_template_ref ref) : templ_(std::move(ref))
+        cpp_template_instantiation_type(cpp_template_ref ref)
+        : arguments_(type_safe::variant_type<std::vector<cpp_template_argument>>{}),
+          templ_(std::move(ref))
         {
         }
 
@@ -134,8 +163,8 @@ namespace cppast
             return cpp_type_kind::template_instantiation;
         }
 
-        std::vector<cpp_template_argument> arguments_;
-        cpp_template_ref                   templ_;
+        type_safe::variant<std::vector<cpp_template_argument>, std::string> arguments_;
+        cpp_template_ref templ_;
     };
 
     /// Base class for all entities modelling a C++ template specialization.
@@ -148,11 +177,31 @@ namespace cppast
             return cpp_template_ref(templ_, name());
         }
 
-        /// \returns An iteratable object iterating over the [cppast::cpp_template_argument]()s.
-        /// \exclude return
-        const std::vector<cpp_template_argument>& arguments() const noexcept
+        /// \returns Whether or not the arguments are exposed.
+        bool arguments_exposed() const noexcept
         {
-            return arguments_;
+            return arguments_.has_value(
+                type_safe::variant_type<std::vector<cpp_template_argument>>{});
+        }
+
+        /// \returns An iteratable object iterating over the [cppast::cpp_template_argument]()s.
+        /// \requires The arguments are exposed, i.e. `arguments_exposed()` returns `true`.
+        /// \notes For function template specializations it can be empty,
+        /// meaning that the arguments are not explictly given but deduced from the signature.
+        type_safe::array_ref<const cpp_template_argument> arguments() const noexcept
+        {
+            auto& vec =
+                arguments_.value(type_safe::variant_type<std::vector<cpp_template_argument>>{});
+            return type_safe::ref(vec.data(), vec.size());
+        }
+
+        /// \returns The unexposed arguments as string.
+        /// \requires The arguments are not exposed, i.e. `arguments_exposed()` returns `false`.
+        /// \notes For function template specializations it can be empty,
+        /// meaning that the arguments are not explictly given but deduced from the signature.
+        const std::string& unexposed_arguments() const noexcept
+        {
+            return arguments_.value(type_safe::variant_type<std::string>{});
         }
 
         /// \returns Whether or not the specialization is a full specialization.
@@ -177,11 +226,22 @@ namespace cppast
             }
 
             /// \effects Adds the next argument for the [cppast::cpp_template_parameter]() of the primary template.
+            /// \requires No call to `add_unexposed_arguments()` has happened before.
             void add_argument(cpp_template_argument arg)
             {
-                auto specialization =
-                    static_cast<const cpp_template_specialization&>(*this->template_entity);
-                specialization.arguments_.push_back(std::move(arg));
+                auto& specialization =
+                    static_cast<cpp_template_specialization&>(*this->template_entity);
+                specialization.arguments_
+                    .value(type_safe::variant_type<std::vector<cpp_template_argument>>{})
+                    .push_back(std::move(arg));
+            }
+
+            /// \effects Adds unexposed arguments as string.
+            void add_unexposed_arguments(std::string arg)
+            {
+                auto& specialization =
+                    static_cast<cpp_template_specialization&>(*this->template_entity);
+                specialization.arguments_ = std::move(arg);
             }
 
         protected:
@@ -191,15 +251,18 @@ namespace cppast
         /// \effects Sets the entity that is being templated and the primary template.
         cpp_template_specialization(std::unique_ptr<cpp_entity> entity,
                                     const cpp_template_ref&     templ)
-        : cpp_template(std::move(entity)), templ_(templ.id()[0u])
+        : cpp_template(std::move(entity)),
+          arguments_(type_safe::variant_type<std::vector<cpp_template_argument>>{}),
+          templ_(templ.id()[0u])
         {
-            DEBUG_ASSERT(!templ.is_overloaded() && templ.name() == entity->name(),
+            DEBUG_ASSERT(!templ.is_overloaded()
+                             && (templ.name().empty() || templ.name() == begin()->name()),
                          detail::precondition_error_handler{}, "invalid name of template ref");
         }
 
     private:
-        std::vector<cpp_template_argument> arguments_;
-        cpp_entity_id                      templ_;
+        type_safe::variant<std::vector<cpp_template_argument>, std::string> arguments_;
+        cpp_entity_id templ_;
     };
 } // namespace cppast
 

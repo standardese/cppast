@@ -160,7 +160,7 @@ struct foo
 
         if (!op.is_explicit() && !op.is_constexpr())
         {
-            REQUIRE(op.name() == "operator int &");
+            REQUIRE(op.name() == "operator int&");
             REQUIRE(equal_types(idx, op.return_type(),
                                 *cpp_reference_type::build(cpp_builtin_type::build("int"),
                                                            cpp_ref_lvalue)));

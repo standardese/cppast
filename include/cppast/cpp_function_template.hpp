@@ -44,6 +44,8 @@ namespace cppast
     class cpp_function_template_specialization final : public cpp_template_specialization
     {
     public:
+        static cpp_entity_kind kind() noexcept;
+
         /// Builder for [cppast::cpp_function_template_specialization]().
         class builder
             : public specialization_builder<cpp_function_template_specialization, cpp_function_base>

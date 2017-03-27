@@ -13,23 +13,6 @@
 
 using namespace cppast;
 
-template <typename T, class Predicate>
-bool equal_ref(const cpp_entity_index& idx, const basic_cpp_entity_ref<T, Predicate>& parsed,
-               const basic_cpp_entity_ref<T, Predicate>& synthesized)
-{
-    if (parsed.name() != synthesized.name())
-        return false;
-    else if (parsed.is_overloaded() != synthesized.is_overloaded())
-        return false;
-    else if (parsed.is_overloaded())
-        return false;
-
-    auto entities = parsed.get(idx);
-    if (entities.size() != 1u)
-        return synthesized.id()[0u] == cpp_entity_id("magic-allow-empty");
-    return entities[0u]->name().empty() || full_name(*entities[0u]) == parsed.name();
-}
-
 bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_type& synthesized)
 {
     if (parsed.kind() != synthesized.kind())
@@ -153,6 +136,10 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
 
         if (!equal_ref(idx, inst_parsed.primary_template(), inst_synthesized.primary_template()))
             return false;
+        else if (inst_parsed.arguments_exposed() != inst_synthesized.arguments_exposed())
+            return false;
+        else if (!inst_parsed.arguments_exposed())
+            return inst_parsed.unexposed_arguments() == inst_synthesized.unexposed_arguments();
 
         auto iter_a = inst_parsed.arguments().begin();
         auto iter_b = inst_synthesized.arguments().begin();

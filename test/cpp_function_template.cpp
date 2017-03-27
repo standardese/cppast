@@ -14,11 +14,11 @@ TEST_CASE("cpp_function_template")
 {
     // only check templated related stuff
     auto code = R"(
-template <typename T>
-T a(const T& t);
-
 template <int I>
 using type = int;
+
+template <typename T>
+T a(const T& t);
 
 struct d
 {
@@ -34,6 +34,21 @@ struct d
     template <typename T>
     d(const T&);
 };
+
+template <>
+int a(const int& t);
+
+template <>
+type<0> d::b<0, int>(int);
+
+template <>
+auto d::c() -> int;
+
+template <>
+d::operator int() const;
+
+template <>
+d::d(const int&);
 )";
 
     cpp_entity_index idx;
@@ -75,8 +90,7 @@ struct d
 
             cpp_template_instantiation_type::builder builder(
                 cpp_template_ref(cpp_entity_id(""), "type"));
-            builder.add_argument(
-                cpp_unexposed_expression::build(cpp_builtin_type::build("int"), "I"));
+            builder.add_unexposed_arguments("I");
             REQUIRE(equal_types(idx, func.return_type(), *builder.finish()));
 
             auto type_parameter = cpp_template_type_parameter_ref(cpp_entity_id(""), "T");
@@ -91,6 +105,7 @@ struct d
         }
         else if (tfunc.name() == "c")
         {
+            check_parent(tfunc, "d", "d::c");
             check_template_parameters(tfunc, {{cpp_entity_kind::template_type_parameter_t, "T"}});
 
             REQUIRE(tfunc.function().kind() == cpp_entity_kind::member_function_t);
@@ -103,6 +118,7 @@ struct d
         }
         else if (tfunc.name() == "operator T")
         {
+            check_parent(tfunc, "d", "d::operator T");
             check_template_parameters(tfunc, {{cpp_entity_kind::template_type_parameter_t, "T"}});
 
             REQUIRE(tfunc.function().kind() == cpp_entity_kind::conversion_op_t);
@@ -115,6 +131,7 @@ struct d
         }
         else if (tfunc.name() == "d")
         {
+            check_parent(tfunc, "d", "d::d");
             check_template_parameters(tfunc, {{cpp_entity_kind::template_type_parameter_t, "T"}});
 
             REQUIRE(tfunc.function().kind() == cpp_entity_kind::constructor_t);
@@ -138,5 +155,106 @@ struct d
         else
             REQUIRE(false);
     });
+    REQUIRE(count == 5u);
+
+    count = test_visit<cpp_function_template_specialization>(
+        *file, [&](const cpp_function_template_specialization& tfunc) {
+            REQUIRE(tfunc.is_full_specialization());
+            REQUIRE(!tfunc.arguments_exposed());
+
+            auto templ = tfunc.primary_template();
+            if (tfunc.name() == "d::operator int")
+                REQUIRE(equal_ref(idx, templ, cpp_template_ref(cpp_entity_id(""), tfunc.name()),
+                                  "d::operator T"));
+            else
+                REQUIRE(equal_ref(idx, templ, cpp_template_ref(cpp_entity_id(""), tfunc.name())));
+
+            if (tfunc.name() == "a")
+            {
+                REQUIRE(tfunc.unexposed_arguments() == "");
+
+                REQUIRE(tfunc.function().kind() == cpp_entity_kind::function_t);
+                auto& func = static_cast<const cpp_function&>(tfunc.function());
+
+                REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("int")));
+
+                auto count = 0u;
+                for (auto& param : func)
+                {
+                    ++count;
+                    REQUIRE(
+                        equal_types(idx, param.type(),
+                                    *cpp_reference_type::
+                                        build(cpp_cv_qualified_type::build(cpp_builtin_type::build(
+                                                                               "int"),
+                                                                           cpp_cv_const),
+                                              cpp_ref_lvalue)));
+                }
+                REQUIRE(count == 1u);
+            }
+            else if (tfunc.name() == "d::b")
+            {
+                REQUIRE(tfunc.unexposed_arguments() == "0,int");
+
+                REQUIRE(tfunc.function().kind() == cpp_entity_kind::function_t);
+                auto& func = static_cast<const cpp_function&>(tfunc.function());
+
+                cpp_template_instantiation_type::builder builder(
+                    cpp_template_ref(cpp_entity_id(""), "type"));
+                builder.add_unexposed_arguments("0");
+                REQUIRE(equal_types(idx, func.return_type(), *builder.finish()));
+
+                auto count = 0u;
+                for (auto& param : func)
+                {
+                    ++count;
+                    REQUIRE(equal_types(idx, param.type(), *cpp_builtin_type::build("int")));
+                }
+                REQUIRE(count == 1u);
+            }
+            else if (tfunc.name() == "d::c")
+            {
+                REQUIRE(tfunc.unexposed_arguments() == "");
+
+                REQUIRE(tfunc.function().kind() == cpp_entity_kind::member_function_t);
+                auto& func = static_cast<const cpp_member_function&>(tfunc.function());
+                REQUIRE(func.cv_qualifier() == cpp_cv_none);
+
+                REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("int")));
+            }
+            else if (tfunc.name() == "d::operator int")
+            {
+                REQUIRE(tfunc.unexposed_arguments() == "");
+
+                REQUIRE(tfunc.function().kind() == cpp_entity_kind::conversion_op_t);
+                auto& func = static_cast<const cpp_conversion_op&>(tfunc.function());
+                REQUIRE(func.cv_qualifier() == cpp_cv_const);
+
+                REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("int")));
+            }
+            else if (tfunc.name() == "d::d")
+            {
+                REQUIRE(tfunc.unexposed_arguments() == "");
+
+                REQUIRE(tfunc.function().kind() == cpp_entity_kind::constructor_t);
+                auto& func = static_cast<const cpp_constructor&>(tfunc.function());
+
+                auto count = 0u;
+                for (auto& param : func)
+                {
+                    ++count;
+                    REQUIRE(
+                        equal_types(idx, param.type(),
+                                    *cpp_reference_type::
+                                        build(cpp_cv_qualified_type::build(cpp_builtin_type::build(
+                                                                               "int"),
+                                                                           cpp_cv_const),
+                                              cpp_ref_lvalue)));
+                }
+                REQUIRE(count == 1u);
+            }
+            else
+                REQUIRE(false);
+        });
     REQUIRE(count == 5u);
 }

@@ -55,33 +55,97 @@ namespace
         });
     }
 
+    bool is_templated(const CXCursor& cur)
+    {
+        return clang_getTemplateCursorKind(cur) != CXCursor_NoDeclFound
+               || !clang_Cursor_isNull(clang_getSpecializedCursorTemplate(cur));
+    }
+
+    // precondition: after the name
     void skip_parameters(detail::token_stream& stream)
     {
+        if (stream.peek() == "<")
+            // specialization arguments
+            detail::skip_brackets(stream);
         detail::skip_brackets(stream);
     }
 
     // just the tokens occurring in the prefix
     struct prefix_info
     {
-        bool is_constexpr = false;
-        bool is_virtual   = false;
+        std::string scope_name;
+        bool        is_constexpr = false;
+        bool        is_virtual   = false;
+        bool        is_explicit  = false;
     };
 
-    prefix_info parse_prefix_info(detail::token_stream& stream, const detail::cxstring& name)
+    bool prefix_end(detail::token_stream& stream, const char* name)
+    {
+        auto cur = stream.cur();
+        // name can have multiple tokens if it is an operator
+        if (!detail::skip_if(stream, name, true))
+            return false;
+        else if (stream.peek() == "::")
+        {
+            // was a class name of constructor
+            stream.set_cur(cur);
+            return false;
+        }
+        else
+            return true;
+    }
+
+    prefix_info parse_prefix_info(detail::token_stream& stream, const char* name)
     {
         prefix_info result;
 
-        // just check for keywords until we've reached the function name
-        // notes: name can have multiple tokens if it is an operator
-        while (!detail::skip_if(stream, name.c_str(), true))
+        std::string scope;
+        while (!prefix_end(stream, name))
         {
             if (detail::skip_if(stream, "constexpr"))
+            {
                 result.is_constexpr = true;
+                scope.clear();
+            }
             else if (detail::skip_if(stream, "virtual"))
+            {
                 result.is_virtual = true;
+                scope.clear();
+            }
+            else if (detail::skip_if(stream, "explicit"))
+            {
+                result.is_explicit = true;
+                scope.clear();
+            }
+            // add identifiers and "::" to current scope name,
+            // clear if there is any other token in between, or mismatched combination
+            else if (stream.peek().kind() == CXToken_Identifier)
+            {
+                if (!scope.empty() && scope.back() != ':')
+                    scope.clear();
+                scope += stream.get().c_str();
+            }
+            else if (stream.peek() == "::")
+            {
+                if (!scope.empty() && scope.back() == ':')
+                    scope.clear();
+                scope += stream.get().c_str();
+            }
+            else if (stream.peek() == "<")
+            {
+                auto iter = detail::find_closing_bracket(stream);
+                scope += detail::to_string(stream, iter);
+                detail::skip(stream, ">");
+                scope += ">";
+            }
             else
+            {
                 stream.bump();
+                scope.clear();
+            }
         }
+        if (!scope.empty() && scope.back() == ':')
+            result.scope_name = std::move(scope);
 
         return result;
     }
@@ -275,11 +339,18 @@ namespace
     }
 
     std::unique_ptr<cpp_entity> parse_cpp_function_impl(const detail::parse_context& context,
-                                                        const CXCursor&              cur)
+                                                        const CXCursor& cur, bool is_static)
     {
         auto name = detail::get_cursor_name(cur);
 
-        cpp_function::builder builder(name.c_str(),
+        detail::tokenizer    tokenizer(context.tu, context.file, cur);
+        detail::token_stream stream(tokenizer, cur);
+
+        auto prefix = parse_prefix_info(stream, name.c_str());
+        DEBUG_ASSERT(!prefix.is_virtual && !prefix.is_explicit, detail::parse_error_handler{}, cur,
+                     "free function cannot be virtual or explicit");
+
+        cpp_function::builder builder(prefix.scope_name + name.c_str(),
                                       detail::parse_type(context, cur,
                                                          clang_getCursorResultType(cur)));
         context.comments.match(builder.get(), cur);
@@ -287,14 +358,9 @@ namespace
         add_parameters(context, builder, cur);
         if (clang_Cursor_isVariadic(cur))
             builder.is_variadic();
-        builder.storage_class(detail::get_storage_class(cur));
-
-        detail::tokenizer    tokenizer(context.tu, context.file, cur);
-        detail::token_stream stream(tokenizer, cur);
-
-        auto prefix = parse_prefix_info(stream, name);
-        DEBUG_ASSERT(!prefix.is_virtual, detail::parse_error_handler{}, cur,
-                     "free function cannot be virtual");
+        builder.storage_class(cpp_storage_class_specifiers(
+            detail::get_storage_class(cur)
+            | (is_static ? cpp_storage_class_static : cpp_storage_class_none)));
         if (prefix.is_constexpr)
             builder.is_constexpr();
 
@@ -304,10 +370,10 @@ namespace
         if (suffix.noexcept_condition)
             builder.noexcept_condition(std::move(suffix.noexcept_condition));
 
-        if (clang_getTemplateCursorKind(cur) == CXCursor_NoDeclFound)
-            return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
-        else
+        if (is_templated(cur))
             return builder.finish(suffix.body_kind);
+        else
+            return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
     }
 }
 
@@ -317,7 +383,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_function(const detail::parse_conte
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_FunctionDecl
                      || clang_getTemplateCursorKind(cur) == CXCursor_FunctionDecl,
                  detail::assert_handler{});
-    return parse_cpp_function_impl(context, cur);
+    return parse_cpp_function_impl(context, cur, false);
 }
 
 std::unique_ptr<cpp_entity> detail::try_parse_static_cpp_function(
@@ -327,7 +393,7 @@ std::unique_ptr<cpp_entity> detail::try_parse_static_cpp_function(
                      || clang_getTemplateCursorKind(cur) == CXCursor_CXXMethod,
                  detail::assert_handler{});
     if (clang_CXXMethod_isStatic(cur))
-        return parse_cpp_function_impl(context, cur);
+        return parse_cpp_function_impl(context, cur, true);
     return nullptr;
 }
 
@@ -413,7 +479,10 @@ namespace
         if (auto virt = calculate_virtual(cur, is_virtual, suffix.virtual_keywords))
             builder.virtual_info(virt.value());
 
-        return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
+        if (is_templated(cur))
+            return builder.finish(suffix.body_kind);
+        else
+            return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
     }
 }
 
@@ -425,7 +494,14 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
                  detail::assert_handler{});
     auto name = detail::get_cursor_name(cur);
 
-    cpp_member_function::builder builder(name.c_str(),
+    detail::tokenizer    tokenizer(context.tu, context.file, cur);
+    detail::token_stream stream(tokenizer, cur);
+
+    auto prefix = parse_prefix_info(stream, name.c_str());
+    DEBUG_ASSERT(!prefix.is_explicit, detail::parse_error_handler{}, cur,
+                 "member function cannot be explicit");
+
+    cpp_member_function::builder builder(prefix.scope_name + name.c_str(),
                                          detail::parse_type(context, cur,
                                                             clang_getCursorResultType(cur)));
     context.comments.match(builder.get(), cur);
@@ -433,10 +509,6 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
     if (clang_Cursor_isVariadic(cur))
         builder.is_variadic();
 
-    detail::tokenizer    tokenizer(context.tu, context.file, cur);
-    detail::token_stream stream(tokenizer, cur);
-
-    auto prefix = parse_prefix_info(stream, name);
     if (prefix.is_constexpr)
         builder.is_constexpr();
 
@@ -451,32 +523,13 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
                      || clang_getTemplateCursorKind(cur) == CXCursor_ConversionFunction,
                  detail::assert_handler{});
 
-    auto                       type = clang_getCursorResultType(cur);
-    cpp_conversion_op::builder builder(std::string("operator ")
-                                           + cxstring(clang_getTypeSpelling(type)).c_str(),
-                                       detail::parse_type(context, cur, type));
-    context.comments.match(builder.get(), cur);
-
     detail::tokenizer    tokenizer(context.tu, context.file, cur);
     detail::token_stream stream(tokenizer, cur);
 
-    // look for constexpr, explicit, virtual
-    // must come before the operator token
-    auto is_virtual = false;
-    while (!detail::skip_if(stream, "operator"))
-    {
-        if (detail::skip_if(stream, "virtual"))
-            is_virtual = true;
-        else if (detail::skip_if(stream, "constexpr"))
-            builder.is_constexpr();
-        else if (detail::skip_if(stream, "explicit"))
-            builder.is_explicit();
-        else
-            stream.bump();
-    }
-
+    auto prefix = parse_prefix_info(stream, "operator");
     // heuristic to find arguments tokens
     // skip forward, skipping inside brackets
+    auto type_start = stream.cur();
     while (true)
     {
         if (detail::skip_if(stream, "("))
@@ -495,8 +548,29 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
         else
             stream.bump();
     }
+    // bump arguments back
+    stream.bump_back();
+    stream.bump_back();
+    auto type_end = stream.cur();
 
-    return handle_suffix(context, cur, builder, stream, is_virtual);
+    // read the type
+    stream.set_cur(type_start);
+    auto type_spelling = detail::to_string(stream, type_end);
+
+    // parse arguments again
+    detail::skip(stream, "(");
+    detail::skip(stream, ")");
+
+    auto                       type = clang_getCursorResultType(cur);
+    cpp_conversion_op::builder builder(prefix.scope_name + "operator " + type_spelling,
+                                       detail::parse_type(context, cur, type));
+    context.comments.match(builder.get(), cur);
+    if (prefix.is_explicit)
+        builder.is_explicit();
+    else if (prefix.is_constexpr)
+        builder.is_constexpr();
+
+    return handle_suffix(context, cur, builder, stream, prefix.is_virtual);
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_context& context,
@@ -507,25 +581,22 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
                  detail::assert_handler{});
     auto name = detail::get_cursor_name(cur);
 
-    cpp_constructor::builder builder(name.c_str());
+    detail::tokenizer    tokenizer(context.tu, context.file, cur);
+    detail::token_stream stream(tokenizer, cur);
+
+    auto prefix = parse_prefix_info(stream, name.c_str());
+    DEBUG_ASSERT(!prefix.is_virtual, detail::parse_error_handler{}, cur,
+                 "constructor cannot be virtual");
+
+    cpp_constructor::builder builder(prefix.scope_name + name.c_str());
     context.comments.match(builder.get(), cur);
     add_parameters(context, builder, cur);
     if (clang_Cursor_isVariadic(cur))
         builder.is_variadic();
-
-    detail::tokenizer    tokenizer(context.tu, context.file, cur);
-    detail::token_stream stream(tokenizer, cur);
-
-    // parse prefix
-    while (!detail::skip_if(stream, name.c_str()))
-    {
-        if (detail::skip_if(stream, "constexpr"))
-            builder.is_constexpr();
-        else if (detail::skip_if(stream, "explicit"))
-            builder.is_explicit();
-        else
-            stream.bump();
-    }
+    if (prefix.is_constexpr)
+        builder.is_constexpr();
+    else if (prefix.is_explicit)
+        builder.is_explicit();
 
     skip_parameters(stream);
 
@@ -533,7 +604,10 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
     if (suffix.noexcept_condition)
         builder.noexcept_condition(std::move(suffix.noexcept_condition));
 
-    return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
+    if (is_templated(cur))
+        return builder.finish(suffix.body_kind);
+    else
+        return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_destructor(const detail::parse_context& context,

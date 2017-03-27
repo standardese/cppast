@@ -108,15 +108,22 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         return parse_cpp_member_variable(context, cur);
 
     case CXCursor_FunctionDecl:
+        if (auto tfunc = try_parse_cpp_function_template_specialization(context, cur))
+            return tfunc;
         return parse_cpp_function(context, cur);
     case CXCursor_CXXMethod:
-        // check for static function
-        if (auto func = try_parse_static_cpp_function(context, cur))
+        if (auto tfunc = try_parse_cpp_function_template_specialization(context, cur))
+            return tfunc;
+        else if (auto func = try_parse_static_cpp_function(context, cur))
             return func;
         return parse_cpp_member_function(context, cur);
     case CXCursor_ConversionFunction:
+        if (auto tfunc = try_parse_cpp_function_template_specialization(context, cur))
+            return tfunc;
         return parse_cpp_conversion_op(context, cur);
     case CXCursor_Constructor:
+        if (auto tfunc = try_parse_cpp_function_template_specialization(context, cur))
+            return tfunc;
         return parse_cpp_constructor(context, cur);
     case CXCursor_Destructor:
         return parse_cpp_destructor(context, cur);

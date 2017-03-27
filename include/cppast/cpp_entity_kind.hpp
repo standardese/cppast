@@ -74,6 +74,9 @@ namespace cppast
     /// \notes A template template parameter is not considered a template for this function.
     /// \notes Template specializations are also considered templates here.
     bool is_template(cpp_entity_kind kind) noexcept;
+
+    /// \returns Whether or not a given entity kind is a specialization of a C++ template.
+    bool is_template_specialization(cpp_entity_kind kind) noexcept;
 } // namespace cppast
 
 #endif // CPPAST_CPP_ENTITY_KIND_HPP_INCLUDED

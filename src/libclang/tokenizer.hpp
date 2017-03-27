@@ -188,6 +188,9 @@ namespace cppast
 
         // skips an attribute
         bool skip_attribute(token_stream& stream);
+
+        // converts a token range to a string, adding whitespace where necessary
+        std::string to_string(token_stream& stream, token_iterator end);
     }
 } // namespace cppast::detail
 

@@ -69,7 +69,7 @@ using h = g<T, a>;
 
             cpp_template_instantiation_type::builder builder(
                 cpp_template_ref(cpp_entity_id(""), "a"));
-            builder.add_argument(cpp_unexposed_type::build("void"));
+            builder.add_unexposed_arguments("void");
             REQUIRE(equal_types(idx, alias.type_alias().underlying_type(), *builder.finish()));
         }
         else if (alias.name() == "e")
@@ -79,8 +79,7 @@ using h = g<T, a>;
 
             cpp_template_instantiation_type::builder builder(
                 cpp_template_ref(cpp_entity_id(""), "b"));
-            builder.add_argument(
-                cpp_unexposed_expression::build(cpp_builtin_type::build("int"), "I"));
+            builder.add_unexposed_arguments("I");
             REQUIRE(equal_types(idx, alias.type_alias().underlying_type(),
                                 *cpp_cv_qualified_type::build(builder.finish(), cpp_cv_const)));
         }
@@ -91,9 +90,7 @@ using h = g<T, a>;
 
             cpp_template_instantiation_type::builder builder(
                 cpp_template_ref(cpp_entity_id(""), "b"));
-            builder.add_argument(cpp_unexposed_expression::build(cpp_builtin_type::build("int"),
-                                                                 "I < a<int>{(0 , 1)}"));
-            builder.add_argument(cpp_unexposed_type::build("int"));
+            builder.add_unexposed_arguments("I < a<int>{(0 , 1)}, int");
             REQUIRE(equal_types(idx, alias.type_alias().underlying_type(), *builder.finish()));
         }
         else if (alias.name() == "g")
@@ -104,7 +101,7 @@ using h = g<T, a>;
 
             cpp_template_instantiation_type::builder builder(
                 cpp_template_ref(cpp_entity_id(""), "Templ"));
-            builder.add_argument(cpp_unexposed_type::build("T"));
+            builder.add_unexposed_arguments("T");
             REQUIRE(equal_types(idx, alias.type_alias().underlying_type(), *builder.finish()));
         }
         else if (alias.name() == "h")
@@ -113,8 +110,7 @@ using h = g<T, a>;
 
             cpp_template_instantiation_type::builder builder(
                 cpp_template_ref(cpp_entity_id(""), "g"));
-            builder.add_argument(cpp_unexposed_type::build("T"));
-            builder.add_argument(cpp_template_ref(cpp_entity_id("magic-allow-empty"), "a"));
+            builder.add_unexposed_arguments("T, a");
             REQUIRE(equal_types(idx, alias.type_alias().underlying_type(), *builder.finish()));
         }
         else

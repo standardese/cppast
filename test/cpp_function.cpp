@@ -29,8 +29,14 @@ constexpr void i();
 static constexpr void j();
 
 // body
-void k() = delete;
-void l()
+namespace ns
+{
+    void k() = delete;
+
+    void l();
+}
+
+void ns::l()
 {
     // might confuse parser
     auto b = noexcept(g());
@@ -174,7 +180,7 @@ void l()
                 REQUIRE(func.storage_class() == cpp_storage_class_static);
             }
         }
-        else if (func.name() == "k" || func.name() == "l")
+        else if (func.name() == "k" || func.name() == "l" || func.name() == "ns::l")
         {
             REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("void")));
             REQUIRE(count_children(func) == 0u);
@@ -186,12 +192,14 @@ void l()
             if (func.name() == "k")
                 check_body(func, cpp_function_deleted);
             else if (func.name() == "l")
+                check_body(func, cpp_function_declaration);
+            else if (func.name() == "ns::l")
                 check_body(func, cpp_function_definition);
         }
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 12u);
+    REQUIRE(count == 13u);
 }
 
 TEST_CASE("static cpp_function")
@@ -206,6 +214,8 @@ struct foo
 
     static constexpr char c() = delete;
 };
+
+void foo::a() {}
 )";
 
     cpp_entity_index idx;
@@ -215,12 +225,16 @@ struct foo
         REQUIRE(count_children(func) == 0u);
         REQUIRE(func.storage_class() == cpp_storage_class_static);
 
-        if (func.name() == "a")
+        if (func.name() == "a" || func.name() == "foo::a")
         {
             REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build("void")));
             REQUIRE(!func.noexcept_condition());
             REQUIRE(!func.is_constexpr());
-            REQUIRE(func.body_kind() == cpp_function_declaration);
+
+            if (func.name() == "a")
+                REQUIRE(func.body_kind() == cpp_function_declaration);
+            else
+                REQUIRE(func.body_kind() == cpp_function_definition);
         }
         else if (func.name() == "b")
         {
@@ -243,7 +257,7 @@ struct foo
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 3u);
+    REQUIRE(count == 4u);
 }
 
 // TODO: friend functions (clang 4.0 required)

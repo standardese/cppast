@@ -8,18 +8,6 @@
 
 using namespace cppast;
 
-namespace
-{
-    std::string get_expression_str(detail::token_stream& stream, detail::token_iterator end)
-    {
-        // just concat everything
-        std::string expr;
-        while (stream.cur() != end)
-            expr += stream.get().c_str();
-        return expr;
-    }
-}
-
 std::unique_ptr<cpp_expression> detail::parse_expression(const detail::parse_context& context,
                                                          const CXCursor&              cur)
 {
@@ -30,7 +18,7 @@ std::unique_ptr<cpp_expression> detail::parse_expression(const detail::parse_con
     detail::token_stream stream(tokenizer, cur);
 
     auto type = parse_type(context, cur, clang_getCursorType(cur));
-    auto expr = get_expression_str(stream, stream.end());
+    auto expr = to_string(stream, stream.end());
     if (kind == CXCursor_CallExpr && (expr.empty() || expr.back() != ')'))
     {
         // we have a call expression that doesn't end in a closing parentheses
@@ -54,6 +42,6 @@ std::unique_ptr<cpp_expression> detail::parse_raw_expression(const parse_context
 {
     if (stream.done())
         return nullptr;
-    auto expr = get_expression_str(stream, end);
+    auto expr = to_string(stream, end);
     return cpp_unexposed_expression::build(std::move(type), std::move(expr));
 }

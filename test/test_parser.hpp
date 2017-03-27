@@ -100,6 +100,26 @@ inline bool equal_expressions(const cppast::cpp_expression& parsed,
     return false;
 }
 
+template <typename T, class Predicate>
+bool equal_ref(const cppast::cpp_entity_index& idx,
+               const cppast::basic_cpp_entity_ref<T, Predicate>& parsed,
+               const cppast::basic_cpp_entity_ref<T, Predicate>& synthesized,
+               const char* full_name_override = nullptr)
+{
+    if (parsed.name() != synthesized.name())
+        return false;
+    else if (parsed.is_overloaded() != synthesized.is_overloaded())
+        return false;
+    else if (parsed.is_overloaded())
+        return false;
+
+    auto entities = parsed.get(idx);
+    if (entities.size() != 1u)
+        return false;
+    return entities[0u]->name().empty()
+           || full_name(*entities[0u]) == (full_name_override ? full_name_override : parsed.name());
+}
+
 template <typename T>
 void check_template_parameters(
     const T& templ, std::initializer_list<std::pair<cppast::cpp_entity_kind, const char*>> params)

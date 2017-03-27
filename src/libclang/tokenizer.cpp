@@ -332,3 +332,30 @@ bool detail::skip_attribute(detail::token_stream& stream)
         any = true;
     return any;
 }
+
+namespace
+{
+    bool is_identifier(char c)
+    {
+        return std::isalnum(c) || c == '_';
+    }
+}
+
+std::string detail::to_string(token_stream& stream, token_iterator end)
+{
+    std::string result;
+    while (stream.cur() != end)
+    {
+        auto& token = stream.get();
+        if (!result.empty() && is_identifier(result.back()) && is_identifier(token.value()[0u]))
+            result += ' ';
+        result += token.c_str();
+    }
+    if (stream.unmunch())
+    {
+        DEBUG_ASSERT(!result.empty() && result.back() == '>', detail::assert_handler{});
+        result.pop_back();
+        DEBUG_ASSERT(!result.empty() && result.back() == '>', detail::assert_handler{});
+    }
+    return result;
+}
