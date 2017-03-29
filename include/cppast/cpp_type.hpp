@@ -9,34 +9,35 @@
 
 #include <cppast/detail/intrusive_list.hpp>
 #include <cppast/cpp_entity_ref.hpp>
+#include <cppast/code_generator.hpp>
 
 namespace cppast
 {
     /// The kinds of a [cppast::cpp_type]().
     enum class cpp_type_kind
     {
-        builtin,
-        user_defined,
+        builtin_t,
+        user_defined_t,
 
-        auto_,
-        decltype_,
-        decltype_auto,
+        auto_t,
+        decltype_t,
+        decltype_auto_t,
 
-        cv_qualified,
-        pointer,
-        reference,
+        cv_qualified_t,
+        pointer_t,
+        reference_t,
 
-        array,
-        function,
-        member_function,
-        member_object,
+        array_t,
+        function_t,
+        member_function_t,
+        member_object_t,
 
-        template_parameter,
-        template_instantiation,
+        template_parameter_t,
+        template_instantiation_t,
 
-        dependent,
+        dependent_t,
 
-        unexposed,
+        unexposed_t,
     };
 
     /// Base class for all C++ types.
@@ -95,7 +96,7 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::unexposed;
+            return cpp_type_kind::unexposed_t;
         }
 
         std::string name_;
@@ -163,7 +164,7 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::builtin;
+            return cpp_type_kind::builtin_t;
         }
 
         cpp_builtin_type_kind kind_;
@@ -207,7 +208,7 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::user_defined;
+            return cpp_type_kind::user_defined_t;
         }
 
         cpp_type_ref entity_;
@@ -228,7 +229,7 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::auto_;
+            return cpp_type_kind::auto_t;
         }
     };
 
@@ -269,7 +270,7 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::dependent;
+            return cpp_type_kind::dependent_t;
         }
 
         std::string               name_;
@@ -331,7 +332,7 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::cv_qualified;
+            return cpp_type_kind::cv_qualified_t;
         }
 
         std::unique_ptr<cpp_type> type_;
@@ -361,7 +362,7 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::pointer;
+            return cpp_type_kind::pointer_t;
         }
 
         std::unique_ptr<cpp_type> pointee_;
@@ -409,12 +410,31 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::reference;
+            return cpp_type_kind::reference_t;
         }
 
         std::unique_ptr<cpp_type> referee_;
         cpp_reference             ref_;
     };
+
+    /// \exclude
+    namespace detail
+    {
+        // whether or not it requires special treatment when printing it
+        // i.e. function pointer types are complex as the identifier has to be put inside
+        bool is_complex_type(const cpp_type& type) noexcept;
+
+        // write part of the type that comes before the variable name
+        void write_type_prefix(code_generator::output& output, const cpp_type& type);
+
+        // write part of the type that comes after the name
+        // for non-complex types, this does nothing
+        void write_type_suffix(code_generator::output& output, const cpp_type& type);
+
+        // write prefix, variadic, name, suffix
+        void write_type(code_generator::output& output, const cpp_type& type, std::string name,
+                        bool is_variadic = false);
+    } // namespace detail
 } // namespace cppast
 
 #endif // CPPAST_CPP_TYPE_HPP_INCLUDED

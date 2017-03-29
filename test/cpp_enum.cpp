@@ -11,6 +11,12 @@ using namespace cppast;
 TEST_CASE("cpp_enum")
 {
     auto code = R"(
+/// enum a{
+///   a_a,
+///   a_b=42,
+///   a_c,
+///   a_d=a_a+2
+/// };
 enum a
 {
     a_a,
@@ -19,8 +25,15 @@ enum a
     a_d = a_a + 2,
 };
 
+/// enum class b;
 enum class b; // forward declaration
 
+/// enum class b
+/// :int{
+///   b_a,
+///   b_b=42,
+///   b_c
+/// };
 enum class b : int
 {
     b_a,
@@ -28,6 +41,8 @@ enum class b : int
     b_c
 };
 
+/// enum c
+/// :int;
 enum c : int;
 )";
 
@@ -54,7 +69,7 @@ enum c : int;
                     ++no_vals;
                     REQUIRE(val.value());
                     auto& expr = val.value().value();
-                    REQUIRE(expr.kind() == cpp_expression_kind::unexposed);
+                    REQUIRE(expr.kind() == cpp_expression_kind::unexposed_t);
                     REQUIRE(static_cast<const cpp_unexposed_expression&>(expr).expression()
                             == "42");
                     REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_uint)));
@@ -65,7 +80,7 @@ enum c : int;
                     REQUIRE(val.value());
                     auto& expr = val.value().value();
                     // this is unexposed for some reason
-                    REQUIRE(expr.kind() == cpp_expression_kind::unexposed);
+                    REQUIRE(expr.kind() == cpp_expression_kind::unexposed_t);
                     REQUIRE(static_cast<const cpp_unexposed_expression&>(expr).expression()
                             == "a_a+2");
                     REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_uint)));
@@ -99,7 +114,7 @@ enum c : int;
                         ++no_vals;
                         REQUIRE(val.value());
                         auto& expr = val.value().value();
-                        REQUIRE(expr.kind() == cpp_expression_kind::literal);
+                        REQUIRE(expr.kind() == cpp_expression_kind::literal_t);
                         REQUIRE(static_cast<const cpp_literal_expression&>(expr).value() == "42");
                         REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_int)));
                     }

@@ -11,12 +11,22 @@ using namespace cppast;
 TEST_CASE("cpp_namespace")
 {
     auto code = R"(
+/// namespace a{
+/// }
 namespace a {}
 
+/// inline namespace b{
+/// }
 inline namespace b {}
 
+/// namespace c{
+///   namespace d{
+///   }
+/// }
 namespace c
 {
+    /// namespace d{
+    /// }
     namespace d {}
 }
 )";
@@ -57,18 +67,24 @@ TEST_CASE("cpp_namespace_alias")
 namespace outer {}
 namespace ns {}
 
+/// namespace a=outer;
 namespace a = outer;
+/// namespace b=ns;
 namespace b = ns;
 
 namespace outer
 {
     namespace ns {}
 
+    /// namespace c=ns;
     namespace c = ns;
+    /// namespace d=::outer;
     namespace d = ::outer;
 }
 
+/// namespace e=outer::ns;
 namespace e = outer::ns;
+/// namespace f=outer::c;
 namespace f = outer::c;
 )";
 
@@ -117,17 +133,22 @@ TEST_CASE("cpp_using_directive")
 namespace ns1 {}
 namespace ns2 {}
 
+/// using namespace ns1;
 using namespace ns1;
+/// using namespace ns2;
 using namespace ns2;
 
 namespace outer
 {
     namespace ns {}
 
+    /// using namespace ns;
     using namespace ns;
+    /// using namespace ::ns1;
     using namespace ::ns1;
 }
 
+/// using namespace outer::ns;
 using namespace outer::ns;
 )";
 
@@ -180,7 +201,9 @@ namespace ns2
     enum b {};
 }
 
+/// using ns1::a;
 using ns1::a;
+/// using ns2::b;
 using ns2::b;
 
 namespace outer
@@ -190,10 +213,13 @@ namespace outer
         enum c {};
     }
 
+    /// using ns::c;
     using ns::c;
 }
 
+/// using outer::ns::c;
 using outer::ns::c;
+/// using outer::c;
 using outer::c;
 
 namespace ns1
@@ -202,6 +228,7 @@ namespace ns1
     void d(float);
 }
 
+/// using ns1::d;
 using ns1::d;
 )";
 

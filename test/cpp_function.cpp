@@ -15,29 +15,42 @@ TEST_CASE("cpp_function")
 {
     auto code = R"(
 // parameters and return type are only tested here
+/// void a();
 void a();
+/// int b(int a,float* b=nullptr);
 int b(int a, float* b = nullptr);
+/// auto c(decltype(42) a,...)->int(&)[10];
 int (&c(decltype(42) a, ...))[10];
 
 // noexcept conditions
+/// void d()noexcept;
 void d() noexcept;
+/// void e()noexcept(false);
 void e() noexcept(false);
+/// void f()noexcept(noexcept(d()));
 void f() noexcept(noexcept(d()));
 
 // storage class + constexpr
+/// extern void g();
 extern void g();
+/// static void h();
 static void h();
+/// constexpr void i();
 constexpr void i();
+/// static constexpr void j();
 static constexpr void j();
 
 // body
 namespace ns
 {
+    /// void k()=delete;
     void k() = delete;
 
+    /// void l();
     void l();
 }
 
+/// void ns::l();
 void ns::l()
 {
     // might confuse parser
@@ -215,13 +228,17 @@ TEST_CASE("static cpp_function")
 // no need to test anything special
 struct foo
 {
+    /// static void a();
     static void a();
 
+    /// static int b()noexcept;
     static int b() noexcept { return 0; }
 
+    /// static constexpr char c()=delete;
     static constexpr char c() = delete;
 };
 
+/// static void foo::a();
 void foo::a() {}
 )";
 

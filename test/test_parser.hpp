@@ -9,6 +9,7 @@
 
 #include <catch.hpp>
 
+#include <cppast/code_generator.hpp>
 #include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_expression.hpp>
 #include <cppast/cpp_type.hpp>
@@ -39,8 +40,72 @@ inline std::unique_ptr<cppast::cpp_file> parse(const cppast::cpp_entity_index& i
     return result;
 }
 
+class test_generator : public cppast::code_generator
+{
+public:
+    const std::string& str() const noexcept
+    {
+        return str_;
+    }
+
+private:
+    void do_indent() override
+    {
+        ++indent_;
+    }
+
+    void do_unindent() override
+    {
+        if (indent_)
+            --indent_;
+    }
+
+    void do_write_token_seq(cppast::string_view tokens)
+    {
+        if (was_newline_)
+        {
+            str_ += std::string(indent_ * 2u, ' ');
+            was_newline_ = false;
+        }
+        str_ += tokens.c_str();
+    }
+
+    void do_write_newline() override
+    {
+        str_ += "\n";
+        was_newline_ = true;
+    }
+
+    std::string str_;
+    unsigned    indent_      = 0;
+    bool        was_newline_ = false;
+};
+
+inline std::string get_code(const cppast::cpp_entity& e)
+{
+    test_generator generator;
+    cppast::generate_code(generator, e);
+    auto str = generator.str();
+    if (!str.empty() && str.back() == '\n')
+        str.pop_back();
+    return str;
+}
+
+template <typename Func, typename T>
+auto visit_callback(bool, Func f, const T& t) -> decltype(f(t) == true)
+{
+    return f(t);
+}
+
+template <typename Func, typename T>
+bool visit_callback(int check, Func f, const T& t)
+{
+    f(t);
+    return check == 1;
+}
+
 template <typename T, typename Func>
-unsigned test_visit(const cppast::cpp_file& file, Func f)
+unsigned test_visit(const cppast::cpp_file& file, Func f, bool check_code = true)
 {
     auto count = 0u;
     cppast::visit(file, [&](const cppast::cpp_entity& e, cppast::visitor_info info) {
@@ -49,9 +114,16 @@ unsigned test_visit(const cppast::cpp_file& file, Func f)
 
         if (e.kind() == T::kind())
         {
-            auto& obj = static_cast<const T&>(e);
-            f(obj);
+            auto& obj       = static_cast<const T&>(e);
+            auto  check_cur = visit_callback(check_code, f, obj);
             ++count;
+
+            if (check_cur)
+            {
+                INFO(e.name());
+                REQUIRE(e.comment());
+                REQUIRE(e.comment().value() == get_code(e));
+            }
         }
 
         return true;
@@ -88,11 +160,11 @@ inline bool equal_expressions(const cppast::cpp_expression& parsed,
         return false;
     switch (parsed.kind())
     {
-    case cpp_expression_kind::unexposed:
+    case cpp_expression_kind::unexposed_t:
         return static_cast<const cpp_unexposed_expression&>(parsed).expression()
                == static_cast<const cpp_unexposed_expression&>(synthesized).expression();
 
-    case cpp_expression_kind::literal:
+    case cpp_expression_kind::literal_t:
         return static_cast<const cpp_literal_expression&>(parsed).value()
                == static_cast<const cpp_literal_expression&>(synthesized).value();
     }

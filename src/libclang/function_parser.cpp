@@ -17,7 +17,7 @@ namespace
     {
         auto name        = detail::get_cursor_name(cur);
         auto type        = detail::parse_type(context, cur, clang_getCursorType(cur));
-        auto is_decltype = type->kind() == cpp_type_kind::decltype_;
+        auto is_decltype = type->kind() == cpp_type_kind::decltype_t;
 
         std::unique_ptr<cpp_expression> default_value;
         detail::visit_children(cur, [&](const CXCursor& child) {

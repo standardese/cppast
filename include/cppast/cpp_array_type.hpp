@@ -44,7 +44,7 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::array;
+            return cpp_type_kind::array_t;
         }
 
         std::unique_ptr<cpp_type>       type_;

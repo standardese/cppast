@@ -33,7 +33,7 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::decltype_;
+            return cpp_type_kind::decltype_t;
         }
 
         std::unique_ptr<cpp_expression> expr_;
@@ -54,7 +54,7 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::decltype_auto;
+            return cpp_type_kind::decltype_auto_t;
         }
     };
 } // namespace cppast

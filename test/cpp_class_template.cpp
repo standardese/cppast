@@ -16,20 +16,45 @@ TEST_CASE("cpp_class_template")
 {
     auto code = R"(
 // check everything not related to members first
+/// template<typename T>
+/// class a{
+/// };
 template <typename T>
 class a {};
 
+/// template<int I,typename T>
+/// struct b{
+/// };
 template <int I, typename T>
 struct b {};
 
+/// template<template<typename>class T>
+/// union c;
 template <template <typename> class T>
 union c;
 
 // bases
+/// template<typename T>
+/// struct d
+/// :T,a<T>,T::type,a<T>::type{
+/// };
 template <typename T>
 struct d : T, a<T>, T::type, a<T>::type {};
 
 // members
+/// template<typename T>
+/// struct e{
+///   T var_a;
+///
+///   a<T> var_b;
+///
+///   typename T::type var_c;
+///
+///   typename a<T>::type var_d;
+///
+///   template<typename U>
+///   T func(U);
+/// };
 template <typename T>
 struct e
 {
@@ -43,16 +68,28 @@ struct e
 };
 
 // full specialization
+/// template<>
+/// class a<int>{
+/// };
 template <>
 class a<int> {};
 
+/// template<>
+/// struct b<0,int>{
+/// };
 template <>
 struct b<0, int> {};
 
 // partial specialization
+/// template<typename T>
+/// class a<T*>{
+/// };
 template <typename T>
 class a<T*> {};
 
+/// template<typename T>
+/// struct b<0,T>{
+/// };
 template <typename T>
 struct b<0, T> {};
 )";

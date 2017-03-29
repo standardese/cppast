@@ -124,7 +124,7 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::template_parameter;
+            return cpp_type_kind::template_parameter_t;
         }
 
         cpp_template_type_parameter_ref parameter_;

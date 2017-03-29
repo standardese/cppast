@@ -21,26 +21,26 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
 
     switch (parsed.kind())
     {
-    case cpp_type_kind::builtin:
+    case cpp_type_kind::builtin_t:
         return static_cast<const cpp_builtin_type&>(parsed).builtin_type_kind()
                == static_cast<const cpp_builtin_type&>(synthesized).builtin_type_kind();
 
-    case cpp_type_kind::user_defined:
+    case cpp_type_kind::user_defined_t:
     {
         auto& user_parsed      = static_cast<const cpp_user_defined_type&>(parsed);
         auto& user_synthesized = static_cast<const cpp_user_defined_type&>(synthesized);
         return equal_ref(idx, user_parsed.entity(), user_synthesized.entity());
     }
 
-    case cpp_type_kind::auto_:
+    case cpp_type_kind::auto_t:
         return true;
-    case cpp_type_kind::decltype_:
+    case cpp_type_kind::decltype_t:
         return equal_expressions(static_cast<const cpp_decltype_type&>(parsed).expression(),
                                  static_cast<const cpp_decltype_type&>(synthesized).expression());
-    case cpp_type_kind::decltype_auto:
+    case cpp_type_kind::decltype_auto_t:
         return true;
 
-    case cpp_type_kind::cv_qualified:
+    case cpp_type_kind::cv_qualified_t:
     {
         auto& cv_a = static_cast<const cpp_cv_qualified_type&>(parsed);
         auto& cv_b = static_cast<const cpp_cv_qualified_type&>(synthesized);
@@ -48,10 +48,10 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
                && equal_types(idx, cv_a.type(), cv_b.type());
     }
 
-    case cpp_type_kind::pointer:
+    case cpp_type_kind::pointer_t:
         return equal_types(idx, static_cast<const cpp_pointer_type&>(parsed).pointee(),
                            static_cast<const cpp_pointer_type&>(synthesized).pointee());
-    case cpp_type_kind::reference:
+    case cpp_type_kind::reference_t:
     {
         auto& ref_a = static_cast<const cpp_reference_type&>(parsed);
         auto& ref_b = static_cast<const cpp_reference_type&>(synthesized);
@@ -59,7 +59,7 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
                && equal_types(idx, ref_a.referee(), ref_b.referee());
     }
 
-    case cpp_type_kind::array:
+    case cpp_type_kind::array_t:
     {
         auto& array_a = static_cast<const cpp_array_type&>(parsed);
         auto& array_b = static_cast<const cpp_array_type&>(synthesized);
@@ -77,7 +77,7 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         return equal_expressions(size_a, size_b);
     }
 
-    case cpp_type_kind::function:
+    case cpp_type_kind::function_t:
     {
         auto& func_a = static_cast<const cpp_function_type&>(parsed);
         auto& func_b = static_cast<const cpp_function_type&>(synthesized);
@@ -98,7 +98,7 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         }
         return iter_a == func_a.parameter_types().end() && iter_b == func_b.parameter_types().end();
     }
-    case cpp_type_kind::member_function:
+    case cpp_type_kind::member_function_t:
     {
         auto& func_a = static_cast<const cpp_member_function_type&>(parsed);
         auto& func_b = static_cast<const cpp_member_function_type&>(synthesized);
@@ -121,7 +121,7 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         }
         return iter_a == func_a.parameter_types().end() && iter_b == func_b.parameter_types().end();
     }
-    case cpp_type_kind::member_object:
+    case cpp_type_kind::member_object_t:
     {
         auto& obj_a = static_cast<const cpp_member_object_type&>(parsed);
         auto& obj_b = static_cast<const cpp_member_object_type&>(synthesized);
@@ -131,14 +131,14 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         return equal_types(idx, obj_a.object_type(), obj_b.object_type());
     }
 
-    case cpp_type_kind::template_parameter:
+    case cpp_type_kind::template_parameter_t:
     {
         auto& entity_parsed = static_cast<const cpp_template_parameter_type&>(parsed).entity();
         auto& entity_synthesized =
             static_cast<const cpp_template_parameter_type&>(synthesized).entity();
         return equal_ref(idx, entity_parsed, entity_synthesized);
     }
-    case cpp_type_kind::template_instantiation:
+    case cpp_type_kind::template_instantiation_t:
     {
         auto& inst_parsed      = static_cast<const cpp_template_instantiation_type&>(parsed);
         auto& inst_synthesized = static_cast<const cpp_template_instantiation_type&>(synthesized);
@@ -179,10 +179,10 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
                && iter_b == inst_synthesized.arguments().end();
     }
     // TODO: implement equality when those can be parsed
-    case cpp_type_kind::dependent:
+    case cpp_type_kind::dependent_t:
         break;
 
-    case cpp_type_kind::unexposed:
+    case cpp_type_kind::unexposed_t:
         return static_cast<const cpp_unexposed_type&>(parsed).name()
                == static_cast<const cpp_unexposed_type&>(synthesized).name();
     }
@@ -194,45 +194,66 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
 // other test cases don't need that anymore
 TEST_CASE("cpp_type_alias")
 {
-    const char* code = nullptr;
+    const char* code       = nullptr;
+    auto        check_code = false;
     SECTION("using")
     {
-        code = R"(
+        check_code = true;
+        code       = R"(
 // basic
+/// using a=int;
 using a = int;
+/// using b=long double const volatile;
 using b = const long double volatile;
 
 // pointers
+/// using c=int*;
 using c = int*;
+/// using d=unsigned int const*;
 using d = const unsigned int*;
+/// using e=unsigned int const* volatile;
 using e = unsigned const * volatile;
 
 // references
+/// using f=int&;
 using f = int&;
+/// using g=int const&&;
 using g = const int&&;
 
 // user-defined types
+/// using h=c;
 using h = c;
+/// using i=d const;
 using i = const d;
+/// using j=e*;
 using j = e*;
 
 // arrays
+/// using k=int[42];
 using k = int[42];
+/// using l=float*[];
 using l = float*[];
+/// using m=char[42];
 using m = char[3 * 2 + 4 ? 42 : 43];
 
 // function pointers
+/// using n=void(*)(int);
 using n = void(*)(int);
+/// using o=char*(&)(int const&,...);
 using o = char*(&)(const int&,...);
+/// using p=n(*)(int,o);
 using p = n(*)(int, o);
 
 struct foo {};
 
 // member function pointers
+/// using q=void(foo::*)(int);
 using q = void(foo::*)(int);
+/// using r=void(foo::*)(int,...)const&;
 using r = void(foo::*)(int,...) const &;
 
 // member data pointers
+/// using s=int(foo::*);
 using s = int(foo::*);
 
 // user-defined types inline definition
@@ -241,12 +262,14 @@ using u = const struct u_ {}*;
 using v = struct {};
 
 // decltype
+/// using w=decltype(0);
 using w = decltype(0);
 )";
     }
     SECTION("typedef")
     {
-        code = R"(
+        check_code = false; // will always generate using
+        code       = R"(
 // basic
 typedef int a;
 typedef const long double volatile b;
@@ -455,6 +478,8 @@ typedef decltype(0) w;
         {
             auto type = cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "t_"));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
+            return false; // inhibit comment check for next three entities
+            // as they can't be documented (will always apply to the inline type)
         }
         else if (alias.name() == "u")
         {
@@ -462,11 +487,13 @@ typedef decltype(0) w;
                 add_cv(cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "u_")),
                        cpp_cv_const));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
+            return false;
         }
         else if (alias.name() == "v")
         {
             auto type = cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "v"));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
+            return false;
         }
         else if (alias.name() == "w")
         {
@@ -476,6 +503,8 @@ typedef decltype(0) w;
         }
         else
             REQUIRE(false);
+
+        return check_code;
     });
     REQUIRE(count == 23u);
 }

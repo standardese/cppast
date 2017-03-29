@@ -13,15 +13,21 @@ TEST_CASE("cpp_macro_definition")
     auto        code    = R"(
 #include <iostream>
 #define G
+/// #define A
 #define A
+/// #define B hello
 #define B hello
 namespace ns {}
+/// #define C(x,y) x##_name
 #define C(x, y) x##_name
+/// #define D(...) __VA_ARGS__
 #define D(...) __VA_ARGS__
+/// #define E() barbaz
 #define E() bar\
 baz
 namespace ns2
 {
+/// #define F () bar
 #define F () bar
 #undef G
 }

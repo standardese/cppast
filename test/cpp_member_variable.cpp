@@ -13,8 +13,11 @@ TEST_CASE("cpp_member_variable")
     auto code = R"(
 struct foo
 {
+    /// int a;
     int a;
+    /// float b=3.14f;
     float b = 3.14f;
+    /// mutable char c;
     mutable char c;
 };
 )";
@@ -59,10 +62,15 @@ TEST_CASE("cpp_bitfield")
     auto code = R"(
 struct foo
 {
+    /// char a:3;
     char a : 3;
+    /// mutable char b:2;
     mutable char b : 2;
+    /// char:0;
     char : 0;
+    /// char c:3;
     char c : 3;
+    /// char:4;
     char : 4;
 };
 )";

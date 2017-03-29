@@ -299,13 +299,13 @@ namespace
         return result;
     }
 
-    bool bump_c_comment(position& p, detail::preprocessor_output& output)
+    bool bump_c_comment(position& p, detail::preprocessor_output& output, bool in_main_file)
     {
         if (!starts_with(p, "/*"))
             return false;
         p.bump(2u);
 
-        if (starts_with(p, "*"))
+        if (in_main_file && starts_with(p, "*"))
         {
             // doc comment
             p.bump();
@@ -371,20 +371,20 @@ namespace
         }
     }
 
-    bool bump_cpp_comment(position& p, detail::preprocessor_output& output)
+    bool bump_cpp_comment(position& p, detail::preprocessor_output& output, bool in_main_file)
     {
         if (!starts_with(p, "//"))
             return false;
         p.bump(2u);
 
-        if (starts_with(p, "/") || starts_with(p, "!"))
+        if (in_main_file && (starts_with(p, "/") || starts_with(p, "!")))
         {
             // C++ style doc comment
             p.bump();
             auto comment = parse_cpp_doc_comment(p, false);
             merge_or_add(output, std::move(comment));
         }
-        else if (starts_with(p, "<"))
+        else if (in_main_file && starts_with(p, "<"))
         {
             // end of line doc comment
             p.bump();
@@ -408,7 +408,8 @@ namespace
     }
 
     std::unique_ptr<cpp_macro_definition> parse_macro(position&                    p,
-                                                      detail::preprocessor_output& output)
+                                                      detail::preprocessor_output& output,
+                                                      bool                         in_main_file)
     {
         // format (at new line): #define <name> [replacement]
         // or: #define <name>(<args>) [replacement]
@@ -446,6 +447,9 @@ namespace
         }
         // don't skip newline
 
+        if (!in_main_file)
+            return nullptr;
+
         auto result = cpp_macro_definition::build(std::move(name), std::move(args), std::move(rep));
         // match comment directly
         if (!output.comments.empty() && output.comments.back().matches(*result, p.cur_line()))
@@ -472,7 +476,8 @@ namespace
     }
 
     std::unique_ptr<cpp_include_directive> parse_include(position&                    p,
-                                                         detail::preprocessor_output& output)
+                                                         detail::preprocessor_output& output,
+                                                         bool                         in_main_file)
     {
         // format (at new line, literal <>): #include <filename>
         // or: #include "filename"
@@ -504,6 +509,9 @@ namespace
         p.skip();
         DEBUG_ASSERT(starts_with(p, "\n"), detail::assert_handler{});
         // don't skip newline
+
+        if (!in_main_file)
+            return nullptr;
 
         auto result = cpp_include_directive::build(cpp_file_ref(cpp_entity_id(filename), filename),
                                                    include_kind);
@@ -614,10 +622,9 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
     std::size_t file_depth = 0u;
     while (p)
     {
-        if (auto macro = parse_macro(p, result))
+        if (auto macro = parse_macro(p, result, file_depth == 0u))
         {
-            if (file_depth == 0u)
-                result.entities.push_back({std::move(macro), p.cur_line()});
+            result.entities.push_back({std::move(macro), p.cur_line()});
         }
         else if (auto undef = parse_undef(p))
         {
@@ -631,7 +638,7 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                                           }),
                            result.entities.end());
         }
-        else if (auto include = parse_include(p, result))
+        else if (auto include = parse_include(p, result, file_depth == 0u))
         {
             if (file_depth == 0u)
                 result.entities.push_back({std::move(include), p.cur_line()});
@@ -669,9 +676,9 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                 break;
             }
         }
-        else if (bump_c_comment(p, result))
+        else if (bump_c_comment(p, result, file_depth == 0u))
             continue;
-        else if (bump_cpp_comment(p, result))
+        else if (bump_cpp_comment(p, result, file_depth == 0u))
             continue;
         else
             p.bump();

@@ -14,9 +14,9 @@ namespace cppast
     /// The kind of a [cppast::cpp_expression]().
     enum class cpp_expression_kind
     {
-        literal,
+        literal_t,
 
-        unexposed,
+        unexposed_t,
     };
 
     /// Base class for all C++ expressions.
@@ -83,7 +83,7 @@ namespace cppast
 
         cpp_expression_kind do_get_kind() const noexcept override
         {
-            return cpp_expression_kind::unexposed;
+            return cpp_expression_kind::unexposed_t;
         }
 
         std::string str_;
@@ -115,11 +115,17 @@ namespace cppast
 
         cpp_expression_kind do_get_kind() const noexcept override
         {
-            return cpp_expression_kind::literal;
+            return cpp_expression_kind::literal_t;
         }
 
         std::string value_;
     };
+
+    /// \exclude
+    namespace detail
+    {
+        void write_expression(code_generator::output& output, const cpp_expression& expr);
+    } // namespace detail
 } // namespace cppast
 
 #endif // CPPAST_CPP_EXPRESSION_HPP_INCLUDED

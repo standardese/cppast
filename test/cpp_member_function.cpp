@@ -14,24 +14,36 @@ TEST_CASE("cpp_member_function")
 // no need to test parameters/return types
 struct foo
 {
+    /// void a();
     void a();
+    /// void b()noexcept;
     void b() noexcept;
 
+    /// void c()const;
     void c() const;
-    auto d() const volatile -> void;
+    /// void d()const volatile noexcept;
+    auto d() const volatile noexcept -> void;
+    /// void e()&;
     void e() &;
+    /// void f()const volatile&&;
     void f() const volatile &&;
 
+    /// virtual void g();
     virtual void g();
+    /// virtual void h()=0;
     virtual void h() = 0;
 
+    /// void i();
     void i() {}
+    /// void j()=delete;
     void j() = delete;
 };
 
 struct bar : foo
 {
+    /// virtual void g() override;
     void g();
+    /// virtual void h() override final;
     virtual auto h() -> void override final;
 };
 )";
@@ -43,7 +55,7 @@ struct bar : foo
         REQUIRE(!func.is_variadic());
         REQUIRE(!func.is_constexpr());
         REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
-        if (func.name() != "b")
+        if (func.name() != "b" && func.name() != "d")
             REQUIRE(!func.noexcept_condition());
         if (func.name() != "g" && func.name() != "h")
             REQUIRE(!func.virtual_info());
@@ -142,8 +154,11 @@ namespace ns
 // most of it only need to be check in member function
 struct foo
 {
+    /// operator int&();
     operator int&();
+    /// explicit operator bool()const;
     explicit operator bool() const;
+    /// constexpr operator ns::type();
     constexpr operator ns::type();
 };
 )";
@@ -192,8 +207,11 @@ TEST_CASE("cpp_constructor")
 // only test constructor specific stuff
 struct foo
 {
+    /// foo()noexcept=default;
     foo() noexcept = default;
+    /// explicit foo(int);
     explicit foo(int);
+    /// constexpr foo(int,char)=delete;
     constexpr foo(int, char) = delete;
 };
 )";
@@ -240,21 +258,25 @@ TEST_CASE("cpp_destructor")
     auto code = R"(
 struct a
 {
+    /// ~a();
     ~a();
 };
 
 struct b
 {
+    /// ~b()noexcept(false);
     ~b() noexcept(false) {}
 };
 
 struct c
 {
+    /// virtual ~c()=default;
     virtual ~c() = default;
 };
 
 struct d : c
 {
+    /// virtual ~d() override final;
     ~d() final;
 };
 )";

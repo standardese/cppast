@@ -14,17 +14,25 @@ TEST_CASE("cpp_variable")
 {
     auto code = R"(
 // basic
+/// int a;
 int a;
+/// unsigned long long b=42;
 unsigned long long b = 42;
+/// float c=3.f+0.14f;
 float c = 3.f + 0.14f;
 
 // with storage class specifiers
+/// extern int d;
 extern int d; // actually declaration
+/// static int e;
 static int e;
+/// thread_local int f;
 thread_local int f;
+/// static thread_local int g;
 thread_local static int g;
 
 // constexpr
+/// constexpr int const h=12;
 constexpr int h = 12;
 
 // inline definition
@@ -34,11 +42,15 @@ struct baz {} k{};
 static struct {} l;
 
 // auto
+/// auto m=128;
 auto m = 128;
+/// auto const& n=m;
 const auto& n = m;
 
 // decltype
+/// decltype(0) o;
 decltype(0) o;
+/// decltype(o) const& p=o;
 const decltype(o)& p = o;
 )";
 
@@ -106,10 +118,14 @@ const decltype(o)& p = o;
                                                               "12")),
                            cpp_storage_class_none, true, false);
         else if (var.name() == "i")
+        {
             check_variable(var,
                            *cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "foo")),
                            nullptr, cpp_storage_class_none, false, false);
+            return false; // can't check code here
+        }
         else if (var.name() == "j")
+        {
             check_variable(var, *cpp_cv_qualified_type::build(cpp_user_defined_type::build(
                                                                   cpp_type_ref(cpp_entity_id(""),
                                                                                "bar")),
@@ -120,7 +136,10 @@ const decltype(o)& p = o;
                                                                                  "bar")),
                                                                 "bar()")),
                            cpp_storage_class_none, false, false);
+            return false;
+        }
         else if (var.name() == "k")
+        {
             check_variable(var,
                            *cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "baz")),
                            type_safe::ref(
@@ -129,9 +148,14 @@ const decltype(o)& p = o;
                                                                                  "baz")),
                                                                 "{}")),
                            cpp_storage_class_none, false, false);
+            return false;
+        }
         else if (var.name() == "l")
+        {
             check_variable(var, *cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "")),
                            nullptr, cpp_storage_class_static, false, false);
+            return false;
+        }
         else if (var.name() == "m")
             check_variable(var, *cpp_auto_type::build(),
                            type_safe::ref(
@@ -167,6 +191,8 @@ const decltype(o)& p = o;
                            cpp_storage_class_none, false, false);
         else
             REQUIRE(false);
+
+        return true;
     });
     REQUIRE(count == 16u);
 }
@@ -176,8 +202,11 @@ TEST_CASE("static cpp_variable")
     auto code = R"(
 struct test
 {
+    /// static int a;
     static int a;
+    /// static int const b;
     static const int b;
+    /// static thread_local int c;
     static thread_local int c;
 };
 )";

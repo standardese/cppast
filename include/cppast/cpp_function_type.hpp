@@ -73,7 +73,7 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::function;
+            return cpp_type_kind::function_t;
         }
 
         std::unique_ptr<cpp_type>        return_type_;
@@ -154,7 +154,7 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::member_function;
+            return cpp_type_kind::member_function_t;
         }
 
         std::unique_ptr<cpp_type>        class_type_, return_type_;
@@ -197,7 +197,7 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::member_object;
+            return cpp_type_kind::member_object_t;
         }
 
         std::unique_ptr<cpp_type> class_type_, object_type_;

@@ -12,16 +12,40 @@ TEST_CASE("cpp_class")
 {
     auto code = R"(
 // forward declarations
+/// struct a;
 struct a;
+/// class b;
 class b;
+/// struct unresolved;
 struct unresolved;
 
 // basic
+/// struct a{
+/// };
 struct a {};
+/// class b final{
+/// };
 class b final {};
+/// union c{
+/// };
 union c {};
 
 // members
+/// struct d{
+///   enum m1{
+///   };
+///
+///   enum m2{
+///   };
+///
+/// private:
+///   enum m3{
+///   };
+///
+/// protected:
+///   enum m4{
+///   };
+/// };
 struct d
 {
     enum m1 {};
@@ -38,20 +62,31 @@ protected:
 };
 
 // bases
+/// class e
+/// :a,d{
+/// };
 class e
 : a, private d {};
 
 namespace ns
 {
+    /// struct base{
+    /// };
     struct base {};
 }
 
+/// struct f
+/// :ns::base,virtual protected e{
+/// };
 struct f
 : public ns::base, virtual protected e
 {};
 
 using namespace ns;
 
+/// struct g
+/// :base{
+/// };
 struct g
 : base {};
 )";

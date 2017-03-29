@@ -12,27 +12,43 @@ TEST_CASE("cpp_alias_template")
 {
     // no need to check advanced types here nor template parameters
     auto code = R"(
+/// template<typename T>
+/// using a=int;
 template <typename T>
 using a = int;
 
+/// template<int I,typename T=void>
+/// using b=T;
 template <int I, typename T = void>
 using b = T;
 
+/// template<typename T>
+/// using c=T const*;
 template <typename T>
 using c = const T*;
 
+/// template<typename T>
+/// using d=a<void>;
 template <typename T>
 using d = a<void>;
 
+/// template<int I>
+/// using e=b<I> const;
 template <int I>
 using e = const b<I>;
 
+/// template<int I>
+/// using f=b<I < a<int>{(0 , 1)}, int>;
 template <int I>
 using f = b<I < a<int>{(0,1)}, int>;
 
+/// template<typename T,template<typename>class Templ>
+/// using g=Templ<T>;
 template <typename T, template <typename> class Templ>
 using g = Templ<T>;
 
+/// template<typename T>
+/// using h=g<T, a>;
 template <typename T>
 using h = g<T, a>;
 )";

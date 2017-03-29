@@ -17,36 +17,56 @@ TEST_CASE("cpp_function_template")
 template <int I>
 using type = int;
 
+/// template<typename T>
+/// T a(T const& t);
 template <typename T>
 T a(const T& t);
 
 struct d
 {
+    /// template<int I,typename T>
+    /// static type<I> b(T);
     template <int I, typename T>
     static type<I> b(T);
 
+    /// template<typename T=const int>
+    /// T c();
     template <typename T = const int>
     auto c() -> T;
 
+    /// template<typename T>
+    /// operator T()const;
     template <typename T>
     operator T() const;
 
+    /// template<typename T>
+    /// d(T const&);
     template <typename T>
     d(const T&);
 };
 
+/// template<>
+/// int a(int const& t);
 template <>
 int a(const int& t);
 
+/// template<>
+/// static type<0> d::b<0,int>(int);
 template <>
 type<0> d::b<0, int>(int);
 
+/// template<>
+/// int d::c();
 template <>
 auto d::c() -> int;
 
+/// template<>
+/// d::operator int()const;
 template <>
 d::operator int() const;
 
+/// template<>
+/// d::d(int const&);
 template <>
 d::d(const int&);
 )";

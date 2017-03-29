@@ -165,7 +165,7 @@ namespace cppast
 
         cpp_type_kind do_get_kind() const noexcept override
         {
-            return cpp_type_kind::template_instantiation;
+            return cpp_type_kind::template_instantiation_t;
         }
 
         type_safe::variant<std::vector<cpp_template_argument>, std::string> arguments_;
