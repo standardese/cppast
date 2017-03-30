@@ -55,6 +55,8 @@ namespace cppast
         class_template_t,
         class_template_specialization_t,
 
+        unexposed_t,
+
         count,
     };
 

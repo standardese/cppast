@@ -85,6 +85,9 @@ const char* cppast::to_string(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::class_template_specialization_t:
         return "class tempalte specialization";
 
+    case cpp_entity_kind::unexposed_t:
+        return "unexposed entity";
+
     case cpp_entity_kind::count:
         break;
     }
@@ -130,6 +133,7 @@ bool cppast::is_type(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::function_template_specialization_t:
     case cpp_entity_kind::class_template_t:
     case cpp_entity_kind::class_template_specialization_t:
+    case cpp_entity_kind::unexposed_t:
     case cpp_entity_kind::count:
         break;
     }
@@ -175,6 +179,7 @@ bool cppast::is_function(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::function_template_specialization_t:
     case cpp_entity_kind::class_template_t:
     case cpp_entity_kind::class_template_specialization_t:
+    case cpp_entity_kind::unexposed_t:
     case cpp_entity_kind::count:
         break;
     }
@@ -220,6 +225,7 @@ bool cppast::is_parameter(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::function_template_specialization_t:
     case cpp_entity_kind::class_template_t:
     case cpp_entity_kind::class_template_specialization_t:
+    case cpp_entity_kind::unexposed_t:
     case cpp_entity_kind::count:
         break;
     }
@@ -264,6 +270,7 @@ bool cppast::is_template(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::template_type_parameter_t:
     case cpp_entity_kind::non_type_template_parameter_t:
     case cpp_entity_kind::template_template_parameter_t:
+    case cpp_entity_kind::unexposed_t:
     case cpp_entity_kind::count:
         break;
     }
@@ -309,6 +316,7 @@ bool cppast::is_template_specialization(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::variable_template_t:
     case cpp_entity_kind::function_template_t:
     case cpp_entity_kind::class_template_t:
+    case cpp_entity_kind::unexposed_t:
     case cpp_entity_kind::count:
         break;
     }

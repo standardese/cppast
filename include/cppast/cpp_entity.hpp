@@ -119,6 +119,40 @@ namespace cppast
         friend detail::intrusive_list_node<cpp_entity>;
     };
 
+    /// A [cppast::cpp_entity]() that isn't exposed directly.
+    ///
+    /// The only information available is the raw source code.
+    class cpp_unexposed_entity final : public cpp_entity
+    {
+    public:
+        static cpp_entity_kind kind() noexcept;
+
+        /// \returns A newly built and registered unexposed entity.
+        /// \notes It will be registered as a declaration.
+        static std::unique_ptr<cpp_entity> build(const cpp_entity_index& index, cpp_entity_id id,
+                                                 std::string name, std::string spelling);
+
+        /// \returns A newly built unnamed unexposed entity.
+        /// It will not be registered.
+        static std::unique_ptr<cpp_entity> build(std::string spelling);
+
+        /// \returns The spelling of that entity.
+        const std::string& spelling() const noexcept
+        {
+            return spelling_;
+        }
+
+    private:
+        cpp_unexposed_entity(std::string name, std::string spelling)
+        : cpp_entity(std::move(name)), spelling_(std::move(spelling))
+        {
+        }
+
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
+
+        std::string spelling_;
+    };
+
     /// \returns Whether or not the entity is templated.
     /// If this function returns `true` that means the entity is not the "real" entity,
     /// but contains just the information for the template which is the parent entity.

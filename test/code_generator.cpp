@@ -32,7 +32,8 @@ enum class bar
 void func(int(*)(int));
 
 extern void(* ptr)(int(*)(int))=&func;
-)";
+
+template<typename T>int var;)";
 
     auto file = parse({}, "code_generator.cpp", code);
     REQUIRE(get_code(*file) == code);

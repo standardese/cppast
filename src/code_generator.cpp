@@ -810,6 +810,13 @@ namespace
             generate_class(generator, templ.class_(), type_safe::ref(templ));
         }
     }
+
+    void generate_unexposed(code_generator& generator, const cpp_unexposed_entity& entity)
+    {
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(entity), false);
+        if (output)
+            output << token_seq(entity.spelling());
+    }
 }
 
 void cppast::generate_code(code_generator& generator, const cpp_entity& e)
@@ -862,6 +869,10 @@ void cppast::generate_code(code_generator& generator, const cpp_entity& e)
         CPPAST_DETAIL_HANDLE(function_template_specialization)
         CPPAST_DETAIL_HANDLE(class_template)
         CPPAST_DETAIL_HANDLE(class_template_specialization)
+
+    case cpp_entity_kind::unexposed_t:
+        generate_unexposed(generator, static_cast<const cpp_unexposed_entity&>(e));
+        break;
 
 #undef CPPAST_DETAIL_HANDLE
 

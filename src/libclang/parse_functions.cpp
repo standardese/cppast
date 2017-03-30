@@ -148,7 +148,16 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
     context.logger->log("libclang parser",
                         diagnostic{std::move(msg), detail::make_location(cur), severity::warning});
 
-    return nullptr;
+    // build unexposed entity
+    auto                 name = detail::get_cursor_name(cur);
+    detail::tokenizer    tokenizer(context.tu, context.file, cur);
+    detail::token_stream stream(tokenizer, cur);
+    auto                 spelling = detail::to_string(stream, stream.end());
+    if (name.empty())
+        return cpp_unexposed_entity::build(std::move(spelling));
+    else
+        return cpp_unexposed_entity::build(*context.idx, detail::get_entity_id(cur), name.c_str(),
+                                           std::move(spelling));
 }
 catch (parse_error& ex)
 {
