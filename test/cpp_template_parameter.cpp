@@ -159,9 +159,9 @@ using d = void;
                     REQUIRE(param.default_value());
                     REQUIRE(
                         equal_expressions(param.default_value().value(),
-                                          *cpp_literal_expression::build(cpp_builtin_type::build(
-                                                                             cpp_nullptr),
-                                                                         "nullptr")));
+                                          *cpp_unexposed_expression::build(cpp_builtin_type::build(
+                                                                               cpp_nullptr),
+                                                                           "nullptr")));
                 }
                 else if (param.name() == "C")
                 {

@@ -133,9 +133,9 @@ void ns::l()
                         REQUIRE(
                             equal_types(idx, param.type(),
                                         *cpp_decltype_type::build(
-                                            cpp_literal_expression::build(cpp_builtin_type::build(
-                                                                              cpp_int),
-                                                                          "42"))));
+                                            cpp_unexposed_expression::build(cpp_builtin_type::build(
+                                                                                cpp_int),
+                                                                            "42"))));
                         REQUIRE(!param.default_value());
                     }
                     else

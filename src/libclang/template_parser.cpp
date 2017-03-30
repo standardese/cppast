@@ -85,14 +85,7 @@ namespace
 
         auto name = detail::get_cursor_name(cur);
         auto type = clang_getCursorType(cur);
-
-        std::unique_ptr<cpp_expression> def;
-        detail::visit_children(cur, [&](const CXCursor& child) {
-            DEBUG_ASSERT(clang_isExpression(clang_getCursorKind(child)) && !def,
-                         detail::parse_error_handler{}, cur,
-                         "unexpected child cursor of non type template parameter");
-            def = detail::parse_expression(context, child);
-        });
+        auto def  = detail::parse_default_value(context, cur, name.c_str());
 
         detail::tokenizer    tokenizer(context.tu, context.file, cur);
         detail::token_stream stream(tokenizer, cur);

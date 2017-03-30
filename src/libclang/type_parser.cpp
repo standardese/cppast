@@ -444,17 +444,13 @@ namespace
         return make_leave_type(type, [&](std::string&& spelling) -> std::unique_ptr<cpp_type> {
             if (!remove_prefix(spelling, "decltype("))
                 return nullptr;
-
-            std::unique_ptr<cpp_expression> expr;
-            detail::visit_children(cur, [&](const CXCursor& child) {
-                if (!expr && clang_isExpression(clang_getCursorKind(child)))
-                    // first expression child belongs to the decltype
-                    expr = detail::parse_expression(context, child);
-            });
-            DEBUG_ASSERT(expr != nullptr, detail::parse_error_handler{}, cur,
-                         "missing child of cursor");
-
-            return cpp_decltype_type::build(std::move(expr));
+            DEBUG_ASSERT(!spelling.empty() && spelling.back() == ')', detail::parse_error_handler{},
+                         type, "unexpected spelling");
+            spelling.pop_back();
+            return cpp_decltype_type::build(
+                cpp_unexposed_expression::build(detail::parse_type(context, cur,
+                                                                   clang_getCanonicalType(type)),
+                                                spelling));
         });
     }
 

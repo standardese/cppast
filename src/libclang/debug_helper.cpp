@@ -34,16 +34,16 @@ namespace
 void detail::print_cursor_info(const CXCursor& cur) noexcept
 {
     std::lock_guard<std::mutex> lock(mtx);
-    std::printf("[debug] cursor '%s' (%s): %s\n", get_display_name(cur).c_str(),
-                cxstring(clang_getCursorKindSpelling(cur.kind)).c_str(),
-                cxstring(clang_getCursorUSR(cur)).c_str());
+    std::fprintf(stderr, "[debug] cursor '%s' (%s): %s\n", get_display_name(cur).c_str(),
+                 cxstring(clang_getCursorKindSpelling(cur.kind)).c_str(),
+                 cxstring(clang_getCursorUSR(cur)).c_str());
 }
 
 void detail::print_type_info(const CXType& type) noexcept
 {
     std::lock_guard<std::mutex> lock(mtx);
-    std::printf("[debug] type '%s' (%s)\n", cxstring(clang_getTypeSpelling(type)).c_str(),
-                get_type_kind_spelling(type).c_str());
+    std::fprintf(stderr, "[debug] type '%s' (%s)\n", cxstring(clang_getTypeSpelling(type)).c_str(),
+                 get_type_kind_spelling(type).c_str());
 }
 
 void detail::print_tokens(const CXTranslationUnit& tu, const CXFile& file,
@@ -52,6 +52,6 @@ void detail::print_tokens(const CXTranslationUnit& tu, const CXFile& file,
     std::lock_guard<std::mutex> lock(mtx);
     detail::tokenizer           tokenizer(tu, file, cur);
     for (auto& token : tokenizer)
-        std::printf("%s ", token.c_str());
-    std::puts("\n");
+        std::fprintf(stderr, "%s ", token.c_str());
+    std::fputs("\n", stderr);
 }

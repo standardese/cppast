@@ -177,7 +177,8 @@ namespace
             end = get_next_location(tu, file, end, -1);
         }
         else if (clang_isExpression(kind) || kind == CXCursor_CXXBaseSpecifier
-                 || kind == CXCursor_FieldDecl || kind == CXCursor_TemplateTypeParameter
+                 || kind == CXCursor_FieldDecl || kind == CXCursor_ParmDecl
+                 || kind == CXCursor_TemplateTypeParameter
                  || kind == CXCursor_NonTypeTemplateParameter
                  || kind == CXCursor_TemplateTemplateParameter)
             // need to shrink range by one

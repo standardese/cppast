@@ -58,6 +58,10 @@ namespace cppast
             comment_context                                comments;
         };
 
+        // parse default value of variable, function parameter...
+        std::unique_ptr<cpp_expression> parse_default_value(const parse_context& context,
+                                                            const CXCursor& cur, const char* name);
+
         std::unique_ptr<cpp_type> parse_type(const parse_context& context, const CXCursor& cur,
                                              const CXType& type);
 

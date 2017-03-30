@@ -43,5 +43,7 @@ std::unique_ptr<cpp_expression> detail::parse_raw_expression(const parse_context
     if (stream.done())
         return nullptr;
     auto expr = to_string(stream, end);
+    if (!expr.empty() && expr.back() == ';')
+        expr.pop_back();
     return cpp_unexposed_expression::build(std::move(type), std::move(expr));
 }

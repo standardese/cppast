@@ -498,7 +498,7 @@ typedef decltype(0) w;
         else if (alias.name() == "w")
         {
             auto type = cpp_decltype_type::build(
-                cpp_literal_expression::build(cpp_builtin_type::build(cpp_int), "0"));
+                cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int), "0"));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else

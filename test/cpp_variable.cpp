@@ -4,6 +4,7 @@
 
 #include <cppast/cpp_variable.hpp>
 
+#include <cppast/cpp_array_type.hpp>
 #include <cppast/cpp_decltype_type.hpp>
 
 #include "test_parser.hpp"
@@ -52,6 +53,12 @@ const auto& n = m;
 decltype(0) o;
 /// decltype(o) const& p=o;
 const decltype(o)& p = o;
+
+// array
+/// int q[42];
+int q[42];
+/// int r[1]={0};
+int r[] = {0};
 )";
 
     cpp_entity_index idx;
@@ -73,6 +80,7 @@ const decltype(o)& p = o;
         if (var.default_value())
         {
             REQUIRE(default_value);
+            INFO(get_code(var));
             REQUIRE(equal_expressions(var.default_value().value(), default_value.value()));
         }
         else
@@ -114,8 +122,8 @@ const decltype(o)& p = o;
             check_variable(var, *cpp_cv_qualified_type::build(cpp_builtin_type::build(cpp_int),
                                                               cpp_cv_const),
                            type_safe::ref(
-                               *cpp_literal_expression::build(cpp_builtin_type::build(cpp_int),
-                                                              "12")),
+                               *cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
+                                                                "12")),
                            cpp_storage_class_none, true, false);
         else if (var.name() == "i")
         {
@@ -142,12 +150,7 @@ const decltype(o)& p = o;
         {
             check_variable(var,
                            *cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "baz")),
-                           type_safe::ref(
-                               *cpp_unexposed_expression::build(cpp_user_defined_type::build(
-                                                                    cpp_type_ref(cpp_entity_id(""),
-                                                                                 "baz")),
-                                                                "{}")),
-                           cpp_storage_class_none, false, false);
+                           nullptr, cpp_storage_class_none, false, false);
             return false;
         }
         else if (var.name() == "l")
@@ -159,8 +162,8 @@ const decltype(o)& p = o;
         else if (var.name() == "m")
             check_variable(var, *cpp_auto_type::build(),
                            type_safe::ref(
-                               *cpp_literal_expression::build(cpp_builtin_type::build(cpp_int),
-                                                              "128")),
+                               *cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
+                                                                "128")),
                            cpp_storage_class_none, false, false);
         else if (var.name() == "n")
             check_variable(var, *cpp_reference_type::
@@ -172,9 +175,10 @@ const decltype(o)& p = o;
                                                                 "m")),
                            cpp_storage_class_none, false, false);
         else if (var.name() == "o")
-            check_variable(var, *cpp_decltype_type::build(
-                                    cpp_literal_expression::build(cpp_builtin_type::build(cpp_int),
-                                                                  "0")),
+            check_variable(var,
+                           *cpp_decltype_type::build(
+                               cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
+                                                               "0")),
                            nullptr, cpp_storage_class_none, false, false);
         else if (var.name() == "p")
             check_variable(var, *cpp_reference_type::
@@ -189,12 +193,29 @@ const decltype(o)& p = o;
                                *cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
                                                                 "o")),
                            cpp_storage_class_none, false, false);
+        else if (var.name() == "q")
+            check_variable(var,
+                           *cpp_array_type::build(cpp_builtin_type::build(cpp_int),
+                                                  cpp_literal_expression::
+                                                      build(cpp_builtin_type::build(cpp_ulonglong),
+                                                            "42")),
+                           nullptr, cpp_storage_class_none, false, false);
+        else if (var.name() == "r")
+            check_variable(var,
+                           *cpp_array_type::build(cpp_builtin_type::build(cpp_int),
+                                                  cpp_literal_expression::
+                                                      build(cpp_builtin_type::build(cpp_ulonglong),
+                                                            "1")),
+                           type_safe::ref(
+                               *cpp_unexposed_expression::build(cpp_unexposed_type::build(""),
+                                                                "{0}")),
+                           cpp_storage_class_none, false, false);
         else
             REQUIRE(false);
 
         return true;
     });
-    REQUIRE(count == 16u);
+    REQUIRE(count == 18u);
 }
 
 TEST_CASE("static cpp_variable")
