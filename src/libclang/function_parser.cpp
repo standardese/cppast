@@ -31,20 +31,41 @@ namespace
     template <class Builder>
     void add_parameters(const detail::parse_context& context, Builder& builder, const CXCursor& cur)
     {
-        detail::visit_children(cur, [&](const CXCursor& child) {
-            if (clang_getCursorKind(child) != CXCursor_ParmDecl)
-                return;
+        if (clang_getCursorKind(cur) == CXCursor_FunctionTemplate)
+        {
+            // clang_Cursor_getNumArguments() doesn't work here
+            // (of course it doesn't...)
+            detail::visit_children(cur, [&](const CXCursor& child) {
+                if (clang_getCursorKind(child) != CXCursor_ParmDecl)
+                    return;
 
-            try
-            {
-                auto parameter = parse_parameter(context, child);
-                builder.add_parameter(std::move(parameter));
-            }
-            catch (detail::parse_error& ex)
-            {
-                context.logger->log("libclang parser", ex.get_diagnostic());
-            }
-        });
+                try
+                {
+                    auto parameter = parse_parameter(context, child);
+                    builder.add_parameter(std::move(parameter));
+                }
+                catch (detail::parse_error& ex)
+                {
+                    context.logger->log("libclang parser", ex.get_diagnostic());
+                }
+            });
+        }
+        else
+        {
+            auto no = clang_Cursor_getNumArguments(cur);
+            DEBUG_ASSERT(no != -1, detail::parse_error_handler{}, cur,
+                         "unexpected number of arguments");
+            for (auto i = 0; i != no; ++i)
+                try
+                {
+                    auto parameter = parse_parameter(context, clang_Cursor_getArgument(cur, i));
+                    builder.add_parameter(std::move(parameter));
+                }
+                catch (detail::parse_error& ex)
+                {
+                    context.logger->log("libclang parser", ex.get_diagnostic());
+                }
+        }
     }
 
     bool is_templated_cursor(const CXCursor& cur)

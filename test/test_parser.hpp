@@ -32,8 +32,8 @@ inline std::unique_ptr<cppast::cpp_file> parse(const cppast::cpp_entity_index& i
     libclang_compile_config config;
     config.set_flags(cpp_standard::cpp_latest);
 
-    static stderr_diagnostic_logger logger;
-    libclang_parser                 p(type_safe::ref(logger));
+    stderr_diagnostic_logger logger;
+    libclang_parser          p(type_safe::ref(logger));
 
     auto result = p.parse(idx, name, config);
     REQUIRE(!logger.error_logged());

@@ -15,13 +15,13 @@ TEST_CASE("code_generator")
 struct foo{
   int a;
 
-  auto func(int)->int(*)[];
+  auto func(int)->int(*(*)(int))[42];
 
 private:
   int const b=42;
 };
 
-int(*(foo::* mptr)(int))[];
+int(*(*(foo::* mptr)(int))(int))[42];
 
 enum class bar
 :int{
