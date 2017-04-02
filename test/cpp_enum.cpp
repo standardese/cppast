@@ -141,6 +141,7 @@ enum c : int;
             REQUIRE(e.is_declaration());
             REQUIRE(!e.is_definition());
             REQUIRE(!e.is_scoped());
+            REQUIRE(e.underlying_type().has_value());
             REQUIRE(
                 equal_types(idx, e.underlying_type().value(), *cpp_builtin_type::build(cpp_int)));
             REQUIRE(count_children(e) == 0u);

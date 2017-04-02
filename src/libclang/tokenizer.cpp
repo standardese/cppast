@@ -104,9 +104,7 @@ namespace
                     auto child_extent = clang_getCursorExtent(child);
                     end               = clang_getRangeStart(child_extent);
                     range_shrunk      = true;
-                    return CXChildVisit_Break;
                 }
-                return CXChildVisit_Continue;
             });
 
             if (!range_shrunk && !token_after_is(tu, file, cur, end, ";"))
@@ -135,7 +133,11 @@ namespace
                     --paren_count;
                 prev = next;
             }
+#if CINDEX_VERSION_MINOR < 37
             end = prev;
+#else
+            end = next;
+#endif
         }
         else if (kind == CXCursor_TemplateTemplateParameter
                  && token_after_is(tu, file, cur, end, "<"))
@@ -176,9 +178,16 @@ namespace
             // need to shrink range anyway
             end = get_next_location(tu, file, end, -1);
         }
-        else if (clang_isExpression(kind) || kind == CXCursor_CXXBaseSpecifier
+        else if (kind == CXCursor_EnumDecl && !token_after_is(tu, file, cur, end, ";"))
+        {
+            while (!token_after_is(tu, file, cur, end, ";"))
+                end = get_next_location(tu, file, end);
+        }
+        else if (clang_isExpression(kind)
+#if CINDEX_VERSION_MINOR < 37
+                 || kind == CXCursor_CXXBaseSpecifier || kind == CXCursor_TemplateTypeParameter
+#endif
                  || kind == CXCursor_FieldDecl || kind == CXCursor_ParmDecl
-                 || kind == CXCursor_TemplateTypeParameter
                  || kind == CXCursor_NonTypeTemplateParameter
                  || kind == CXCursor_TemplateTemplateParameter)
             // need to shrink range by one
@@ -202,7 +211,9 @@ void detail::skip(detail::token_stream& stream, const char* str)
 {
     if (*str)
     {
-        // non-empty
+        // non-empty string
+        DEBUG_ASSERT(!stream.done(), parse_error_handler{}, stream.cursor(),
+                     format("expected '", str, "', got exhausted stream"));
         auto& token = stream.peek();
         DEBUG_ASSERT(token == str, parse_error_handler{}, stream.cursor(),
                      format("expected '", str, "', got '", token.c_str(), "'"));
@@ -227,6 +238,8 @@ bool detail::skip_if(detail::token_stream& stream, const char* str, bool multi_t
 {
     if (!*str)
         return true;
+    else if (stream.done())
+        return false;
     auto save = stream.cur();
     do
     {

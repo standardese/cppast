@@ -88,7 +88,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_namespace_alias(const detail::pars
 
     // <nested identifier>;
     std::string target_name;
-    while (!detail::skip_if(stream, ";"))
+    while (!stream.done() && !detail::skip_if(stream, ";"))
         target_name += stream.get().c_str();
 
     auto target = cpp_namespace_ref(parse_ns_target_cursor(cur), std::move(target_name));
@@ -112,7 +112,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_using_directive(const detail::pars
 
     // <nested identifier>;
     std::string target_name;
-    while (!detail::skip_if(stream, ";"))
+    while (!stream.done() && !detail::skip_if(stream, ";"))
         target_name += stream.get().c_str();
 
     auto target = cpp_namespace_ref(parse_ns_target_cursor(cur), std::move(target_name));
@@ -177,7 +177,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_using_declaration(
 
     // <nested identifier>;
     std::string target_name;
-    while (!detail::skip_if(stream, ";"))
+    while (!stream.done() && !detail::skip_if(stream, ";"))
         target_name += stream.get().c_str();
 
     auto target = cpp_entity_ref(parse_entity_target_cursor(cur), std::move(target_name));
