@@ -80,7 +80,7 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
     case CXCursor_UnexposedDecl:
         // go through all the try_parse_XXX functions
         if (auto entity = try_parse_cpp_language_linkage(context, cur))
-            return std::move(entity);
+            return entity;
         break;
 
     case CXCursor_Namespace:

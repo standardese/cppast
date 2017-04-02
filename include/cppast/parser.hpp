@@ -13,7 +13,7 @@
 namespace cppast
 {
     class cpp_entity_index;
-    class diagnostic;
+    struct diagnostic;
 
     /// Base class for a [cppast::diagnostic]() logger.
     ///

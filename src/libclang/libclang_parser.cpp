@@ -30,8 +30,8 @@ const std::vector<std::string>& detail::libclang_compile_config_access::flags(
 
 libclang_compile_config::libclang_compile_config() : compile_config({})
 {
-    set_clang_binary("clang++");
-    add_include_dir(LIBCLANG_SYSTEM_INCLUDE_DIR);
+    set_clang_binary(CPPAST_CLANG_BINARY);
+    add_include_dir(CPPAST_LIBCLANG_SYSTEM_INCLUDE_DIR);
 }
 
 void libclang_compile_config::do_set_flags(cpp_standard                      standard,

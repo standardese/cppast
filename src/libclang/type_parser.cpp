@@ -154,7 +154,7 @@ namespace
     std::unique_ptr<cpp_type> make_cv_qualified(std::unique_ptr<cpp_type> entity, cpp_cv cv)
     {
         if (cv == cpp_cv_none)
-            return std::move(entity);
+            return entity;
         return cpp_cv_qualified_type::build(std::move(entity), cv);
     }
 
@@ -285,7 +285,7 @@ namespace
     std::unique_ptr<cpp_type> make_ref_qualified(std::unique_ptr<cpp_type> type, cpp_reference ref)
     {
         if (ref == cpp_ref_none)
-            return std::move(type);
+            return type;
         return cpp_reference_type::build(std::move(type), ref);
     }
 

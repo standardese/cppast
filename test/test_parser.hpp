@@ -60,7 +60,7 @@ private:
             --indent_;
     }
 
-    void do_write_token_seq(cppast::string_view tokens)
+    void do_write_token_seq(cppast::string_view tokens) override
     {
         if (was_newline_)
         {

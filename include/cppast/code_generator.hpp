@@ -26,7 +26,7 @@ namespace cppast
         }
 
         /// \effects Creates it viewing the C string `str`.
-        constexpr string_view(const char* str) noexcept : str_(str), length_(std::strlen(str))
+        string_view(const char* str) noexcept : str_(str), length_(std::strlen(str))
         {
         }
 
