@@ -77,21 +77,22 @@ namespace ns2
     }
 }
 
-// requires clang 4.0, currently not available for testing
-// TODO:
-#if 0
-TEST_CASE("cpp_include_directive")
+// requires clang 4.0
+TEST_CASE("cpp_include_directive", "[!hide][clang4]")
 {
     write_file("cpp_include_directive-header.hpp", R"(
 #define FOO
 )");
 
     auto header_a = R"(
+/// #include <iostream>
 #include <iostream>
+/// #include "cpp_include_directive-header.hpp"
 #include "cpp_include_directive-header.hpp"
 )";
 
     auto header_b = R"(
+/// #include "header_a.hpp"
 #include "header_a.hpp"
 )";
 
@@ -105,20 +106,32 @@ TEST_CASE("cpp_include_directive")
             {
                 REQUIRE(include.target().name() == include.name());
                 REQUIRE(include.include_kind() == cppast::cpp_include_kind::system);
-                REQUIRE(!include.target().get(idx));
+                REQUIRE(include.target().get(idx).empty());
             }
             else if (include.name() == "cpp_include_directive-header.hpp")
             {
                 REQUIRE(include.target().name() == include.name());
                 REQUIRE(include.include_kind() == cppast::cpp_include_kind::local);
-                REQUIRE(!include.target().get(idx));
+                REQUIRE(include.target().get(idx).empty());
             }
             else
                 REQUIRE(false);
         });
     REQUIRE(count == 2u);
+
+    count = test_visit<cpp_include_directive>(*file_b, [&](const cpp_include_directive& include) {
+        if (include.name() == "header_a.hpp")
+        {
+            REQUIRE(include.target().name() == include.name());
+            REQUIRE(include.include_kind() == cppast::cpp_include_kind::local);
+            REQUIRE(
+                equal_ref(idx, include.target(), cpp_file_ref(cpp_entity_id(""), "header_a.hpp")));
+        }
+        else
+            REQUIRE(false);
+    });
+    REQUIRE(count == 1u);
 }
-#endif
 
 TEST_CASE("comment matching")
 {

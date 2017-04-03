@@ -19,6 +19,8 @@ namespace cppast
         {
             static const std::string& clang_binary(const libclang_compile_config& config);
 
+            static int clang_version(const libclang_compile_config& config);
+
             static const std::vector<std::string>& flags(const libclang_compile_config& config);
         };
     } // namespace detail
@@ -29,11 +31,12 @@ namespace cppast
     public:
         libclang_compile_config();
 
-        /// \effects Sets the path to the location of the `clang++` binary.
+        /// \effects Sets the path to the location of the `clang++` binary and the version of that binary.
         /// \notes It will be used for preprocessing.
-        void set_clang_binary(std::string binary)
+        void set_clang_binary(std::string binary, int major, int minor, int patch)
         {
-            clang_binary_ = std::move(binary);
+            clang_binary_  = std::move(binary);
+            clang_version_ = major * 10000 + minor * 100 + patch;
         }
 
     private:
@@ -51,6 +54,7 @@ namespace cppast
         }
 
         std::string clang_binary_;
+        int         clang_version_;
 
         friend detail::libclang_compile_config_access;
     };

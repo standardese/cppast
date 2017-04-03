@@ -35,14 +35,19 @@ namespace
         // -E: print preprocessor output
         // -CC: keep comments, even in macro
         // -dD: print macro definitions as well
-        // -dI: print include directives as well
+        auto flags = std::string("-E -CC -dD");
+        if (detail::libclang_compile_config_access::clang_version(c) >= 40000)
+            // -Xclang -dI: print include directives as well (clang >= 4.0.0)
+            flags += " -Xclang -dI";
         // -fno-caret-diagnostics: don't show the source extract in diagnostics
         // -fno-show-column: don't show the column number
-        // -fdiagnostics-format=msvc: use easier to parse MSVC format
+        // -fdiagnostics-format msvc: use easier to parse MSVC format
+        flags += " -fno-caret-diagnostics -fno-show-column -fdiagnostics-format=msvc";
         // -Wno-pragma-once-outside-header: hide wrong warning
-        std::string cmd(detail::libclang_compile_config_access::clang_binary(c)
-                        + " -E -CC -dD -dI -fno-caret-diagnostics -fno-show-column "
-                          "-fdiagnostics-format=msvc -Wno-pragma-once-outside-header ");
+        flags += " -Wno-pragma-once-outside-header";
+
+        std::string cmd(detail::libclang_compile_config_access::clang_binary(c) + " "
+                        + std::move(flags) + " ");
 
         // add other flags
         for (auto& flag : detail::libclang_compile_config_access::flags(c))
@@ -61,9 +66,16 @@ namespace
     {
         // format: <filename>(<line>):
         // or: <filename>:
+        auto        fallback = ptr;
         std::string filename;
         while (*ptr && *ptr != ':' && *ptr != '(')
             filename.push_back(*ptr++);
+
+        if (filename == "error" || filename == "warning" || filename == "fatal error")
+        {
+            ptr = fallback;
+            return {};
+        }
 
         type_safe::optional<unsigned> line;
         if (*ptr == '(')
@@ -87,6 +99,7 @@ namespace
     severity parse_severity(const char*& ptr)
     {
         // format: <severity>:
+        auto        fallback = ptr;
         std::string sev;
         while (*ptr && *ptr != ':')
             sev.push_back(*ptr++);
@@ -99,7 +112,7 @@ namespace
         else if (sev == "fatal error")
             return severity::critical;
         else
-            DEBUG_UNREACHABLE(detail::assert_handler{});
+            ptr = fallback;
         return severity::error;
     }
 
@@ -247,6 +260,12 @@ namespace
     bool starts_with(const position& p, const char* str)
     {
         return std::strncmp(p.ptr(), str, std::strlen(str)) == 0;
+    }
+
+    void skip(position& p, const char* str)
+    {
+        DEBUG_ASSERT(starts_with(p, str), detail::assert_handler{});
+        p.skip(std::strlen(str));
     }
 
     detail::pp_doc_comment parse_c_doc_comment(position& p)
@@ -484,6 +503,8 @@ namespace
         if (!p.was_newl() || !starts_with(p, "#include"))
             return nullptr;
         p.skip(std::strlen("#include"));
+        if (starts_with(p, "_next"))
+            p.skip(std::strlen("_next"));
         skip_spaces(p);
 
         auto include_kind = cpp_include_kind::system;
@@ -507,6 +528,7 @@ namespace
             filename += *p.ptr();
         DEBUG_ASSERT(starts_with(p, end_str), detail::assert_handler{}, "bad termination");
         p.skip();
+        skip(p, " /* clang -E -dI */");
         DEBUG_ASSERT(starts_with(p, "\n"), detail::assert_handler{});
         // don't skip newline
 

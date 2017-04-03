@@ -84,7 +84,7 @@ function(_cppast_find_llvm_config)
 endfunction()
 
 # find libclang using the config tool
-# sets: LIBCLANG_INCLUDE_DIR, LIBCLANG_SYSTEM_INCLUDE_DIR, LIBCLANG_LIBRARY and CLANG_BINARY
+# sets: LLVM_VERSION, LIBCLANG_INCLUDE_DIR, LIBCLANG_SYSTEM_INCLUDE_DIR, LIBCLANG_LIBRARY and CLANG_BINARY
 function(_cppast_find_libclang config_tool min_version force)
     # check version
     execute_process(COMMAND ${LLVM_CONFIG_BINARY} --version
@@ -93,6 +93,7 @@ function(_cppast_find_libclang config_tool min_version force)
         message(FATAL_ERROR "Outdated LLVM version ${llvm_version}, minimal supported is ${min_version}")
     else()
         message(STATUS "Using LLVM version ${llvm_version}")
+        set(LLVM_VERSION ${llvm_version} CACHE INTERNAL "")
     endif()
 
     # get include directory

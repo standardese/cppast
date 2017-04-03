@@ -22,15 +22,39 @@ const std::string& detail::libclang_compile_config_access::clang_binary(
     return config.clang_binary_;
 }
 
+int detail::libclang_compile_config_access::clang_version(const libclang_compile_config& config)
+{
+    return config.clang_version_;
+}
+
 const std::vector<std::string>& detail::libclang_compile_config_access::flags(
     const libclang_compile_config& config)
 {
     return config.get_flags();
 }
 
+namespace
+{
+    int parse_number(const char*& str)
+    {
+        auto result = 0;
+        for (; *str && *str != '.'; ++str)
+        {
+            result *= 10;
+            result += int(*str - '0');
+        }
+        return result;
+    }
+}
+
 libclang_compile_config::libclang_compile_config() : compile_config({})
 {
-    set_clang_binary(CPPAST_CLANG_BINARY);
+    auto ptr   = CPPAST_CLANG_VERSION_STRING;
+    auto major = parse_number(ptr);
+    auto minor = parse_number(ptr);
+    auto patch = parse_number(ptr);
+    set_clang_binary(CPPAST_CLANG_BINARY, major, minor, patch);
+
     add_include_dir(CPPAST_LIBCLANG_SYSTEM_INCLUDE_DIR);
 }
 
