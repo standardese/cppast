@@ -384,7 +384,7 @@ namespace
             builder.noexcept_condition(std::move(suffix.noexcept_condition));
 
         if (is_templated_cursor(cur))
-            return builder.finish(suffix.body_kind);
+            return builder.finish(detail::get_entity_id(cur), suffix.body_kind);
         else
             return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
     }
@@ -493,7 +493,7 @@ namespace
             builder.virtual_info(virt.value());
 
         if (is_templated_cursor(cur))
-            return builder.finish(suffix.body_kind);
+            return builder.finish(detail::get_entity_id(cur), suffix.body_kind);
         else
             return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
     }
@@ -618,7 +618,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
         builder.noexcept_condition(std::move(suffix.noexcept_condition));
 
     if (is_templated_cursor(cur))
-        return builder.finish(suffix.body_kind);
+        return builder.finish(detail::get_entity_id(cur), suffix.body_kind);
     else
         return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
 }

@@ -10,6 +10,7 @@
 #include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_enum.hpp>
 #include <cppast/cpp_file.hpp>
+#include <cppast/cpp_friend.hpp>
 #include <cppast/cpp_function.hpp>
 #include <cppast/cpp_function_template.hpp>
 #include <cppast/cpp_language_linkage.hpp>
@@ -279,6 +280,8 @@ namespace
         code_generator::output output(type_safe::ref(generator), type_safe::ref(c), true);
         if (output)
         {
+            if (is_friended(c))
+                output << keyword("friend") << whitespace;
             output << keyword(to_string(c.class_kind())) << whitespace;
 
             if (spec)
@@ -476,7 +479,7 @@ namespace
         code_generator::output output(type_safe::ref(generator), type_safe::ref(func), true);
         if (output)
         {
-            if (func.is_friend())
+            if (is_friended(func))
                 output << keyword("friend") << whitespace;
             write_storage_class(output, func.storage_class(), func.is_constexpr());
 
@@ -566,6 +569,8 @@ namespace
         code_generator::output output(type_safe::ref(generator), type_safe::ref(func), true);
         if (output)
         {
+            if (is_friended(func))
+                output << keyword("friend") << whitespace;
             if (func.is_constexpr())
                 output << keyword("constexpr") << whitespace;
             else
@@ -606,6 +611,8 @@ namespace
         code_generator::output output(type_safe::ref(generator), type_safe::ref(op), true);
         if (output)
         {
+            if (is_friended(op))
+                output << keyword("friend") << whitespace;
             if (op.is_explicit())
                 output << keyword("explicit") << whitespace;
             if (op.is_constexpr())
@@ -630,6 +637,8 @@ namespace
         code_generator::output output(type_safe::ref(generator), type_safe::ref(ctor), true);
         if (output)
         {
+            if (is_friended(ctor))
+                output << keyword("friend") << whitespace;
             if (ctor.is_explicit())
                 output << keyword("explicit") << whitespace;
             if (ctor.is_constexpr())
@@ -648,6 +657,8 @@ namespace
         code_generator::output output(type_safe::ref(generator), type_safe::ref(dtor), true);
         if (output)
         {
+            if (is_friended(dtor))
+                output << keyword("friend") << whitespace;
             write_prefix_virtual(output, dtor.virtual_info());
             output << identifier(dtor.name()) << punctuation("(") << punctuation(")");
             write_noexcept(output, dtor, false);
@@ -680,6 +691,24 @@ namespace
         default:
             DEBUG_UNREACHABLE(detail::assert_handler{});
             break;
+        }
+    }
+
+    void generate_friend(code_generator& generator, const cpp_friend& f)
+    {
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(f), true);
+        if (output)
+        {
+            if (auto e = f.entity())
+                generate_code(generator, e.value());
+            else if (auto type = f.type())
+            {
+                output << keyword("friend") << whitespace;
+                detail::write_type(output, type.value(), "");
+                output << punctuation(";");
+            }
+            else
+                DEBUG_UNREACHABLE(detail::assert_handler{});
         }
     }
 
@@ -785,7 +814,10 @@ namespace
         code_generator::output output(type_safe::ref(generator), type_safe::ref(func), true);
         if (output)
         {
-            write_template_parameters(output, func);
+            DEBUG_ASSERT(func.is_full_specialization(), detail::assert_handler{});
+            if (!is_friended(func))
+                // don't write template parameters in friend
+                write_template_parameters(output, func);
             generate_function_base(generator, func.function(), func);
         }
     }
@@ -858,6 +890,8 @@ void cppast::generate_code(code_generator& generator, const cpp_entity& e)
         CPPAST_DETAIL_HANDLE(conversion_op)
         CPPAST_DETAIL_HANDLE(constructor)
         CPPAST_DETAIL_HANDLE(destructor)
+
+        CPPAST_DETAIL_HANDLE(friend)
 
         CPPAST_DETAIL_HANDLE(template_type_parameter)
         CPPAST_DETAIL_HANDLE(non_type_template_parameter)

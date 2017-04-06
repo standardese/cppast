@@ -65,6 +65,9 @@ const char* cppast::to_string(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::destructor_t:
         return "destructor";
 
+    case cpp_entity_kind::friend_t:
+        return "friend";
+
     case cpp_entity_kind::template_type_parameter_t:
         return "template type parameter";
     case cpp_entity_kind::non_type_template_parameter_t:
@@ -124,6 +127,7 @@ bool cppast::is_type(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::conversion_op_t:
     case cpp_entity_kind::constructor_t:
     case cpp_entity_kind::destructor_t:
+    case cpp_entity_kind::friend_t:
     case cpp_entity_kind::template_type_parameter_t:
     case cpp_entity_kind::non_type_template_parameter_t:
     case cpp_entity_kind::template_template_parameter_t:
@@ -170,6 +174,7 @@ bool cppast::is_function(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::member_variable_t:
     case cpp_entity_kind::bitfield_t:
     case cpp_entity_kind::function_parameter_t:
+    case cpp_entity_kind::friend_t:
     case cpp_entity_kind::template_type_parameter_t:
     case cpp_entity_kind::non_type_template_parameter_t:
     case cpp_entity_kind::template_template_parameter_t:
@@ -219,6 +224,7 @@ bool cppast::is_parameter(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::conversion_op_t:
     case cpp_entity_kind::constructor_t:
     case cpp_entity_kind::destructor_t:
+    case cpp_entity_kind::friend_t:
     case cpp_entity_kind::alias_template_t:
     case cpp_entity_kind::variable_template_t:
     case cpp_entity_kind::function_template_t:
@@ -267,6 +273,7 @@ bool cppast::is_template(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::conversion_op_t:
     case cpp_entity_kind::constructor_t:
     case cpp_entity_kind::destructor_t:
+    case cpp_entity_kind::friend_t:
     case cpp_entity_kind::template_type_parameter_t:
     case cpp_entity_kind::non_type_template_parameter_t:
     case cpp_entity_kind::template_template_parameter_t:
@@ -309,6 +316,7 @@ bool cppast::is_template_specialization(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::conversion_op_t:
     case cpp_entity_kind::constructor_t:
     case cpp_entity_kind::destructor_t:
+    case cpp_entity_kind::friend_t:
     case cpp_entity_kind::template_type_parameter_t:
     case cpp_entity_kind::non_type_template_parameter_t:
     case cpp_entity_kind::template_template_parameter_t:

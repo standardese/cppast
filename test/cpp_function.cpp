@@ -67,8 +67,6 @@ void ns::l()
     cpp_entity_index idx;
     auto             file = parse(idx, "cpp_function.cpp", code);
     auto count            = test_visit<cpp_function>(*file, [&](const cpp_function& func) {
-        REQUIRE(!func.is_friend());
-
         if (func.name() == "a" || func.name() == "b" || func.name() == "c")
         {
             REQUIRE(!func.noexcept_condition());
@@ -283,5 +281,3 @@ void foo::a() {}
     });
     REQUIRE(count == 4u);
 }
-
-// TODO: friend functions (clang 4.0 required)

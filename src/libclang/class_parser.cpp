@@ -89,29 +89,40 @@ namespace
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_class(const detail::parse_context& context,
-                                                    const CXCursor&              cur)
+                                                    const CXCursor& cur, const CXCursor& parent_cur)
 {
-    auto builder = make_class_builder(cur);
-    context.comments.match(builder.get(), cur);
-    detail::visit_children(cur, [&](const CXCursor& child) {
-        auto kind = clang_getCursorKind(child);
-        if (kind == CXCursor_CXXAccessSpecifier)
-            add_access_specifier(builder, child);
-        else if (kind == CXCursor_CXXBaseSpecifier)
-            add_base_class(builder, context, child, cur);
-        else if (kind == CXCursor_CXXFinalAttr)
-            builder.is_final();
-        else if (kind == CXCursor_TemplateTypeParameter || kind == CXCursor_NonTypeTemplateParameter
-                 || kind == CXCursor_TemplateTemplateParameter || clang_isExpression(kind)
-                 || clang_isReference(kind))
-            // other children due to templates and stuff
-            return;
-        else if (auto entity = parse_entity(context, child))
-            builder.add_child(std::move(entity));
-    });
     auto is_templated = (clang_getTemplateCursorKind(cur) != CXCursor_NoDeclFound
                          || !clang_Cursor_isNull(clang_getSpecializedCursorTemplate(cur)));
-    if (clang_isCursorDefinition(cur))
+#if CPPAST_CINDEX_HAS_FRIEND
+    auto is_friend = clang_getCursorKind(parent_cur) == CXCursor_FriendDecl;
+#else
+    auto is_friend = false;
+#endif
+
+    auto builder = make_class_builder(cur);
+    if (!is_friend)
+    {
+        context.comments.match(builder.get(), cur);
+        detail::visit_children(cur, [&](const CXCursor& child) {
+            auto kind = clang_getCursorKind(child);
+            if (kind == CXCursor_CXXAccessSpecifier)
+                add_access_specifier(builder, child);
+            else if (kind == CXCursor_CXXBaseSpecifier)
+                add_base_class(builder, context, child, cur);
+            else if (kind == CXCursor_CXXFinalAttr)
+                builder.is_final();
+            else if (kind == CXCursor_TemplateTypeParameter
+                     || kind == CXCursor_NonTypeTemplateParameter
+                     || kind == CXCursor_TemplateTemplateParameter || clang_isExpression(kind)
+                     || clang_isReference(kind))
+                // other children due to templates and stuff
+                return;
+            else if (auto entity = parse_entity(context, child))
+                builder.add_child(std::move(entity));
+        });
+    }
+
+    if (!is_friend && clang_isCursorDefinition(cur))
         return is_templated ? builder.finish() : builder.finish(*context.idx, get_entity_id(cur));
     else
         return is_templated ? builder.finish_declaration(detail::get_entity_id(cur)) :

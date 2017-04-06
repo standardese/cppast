@@ -147,8 +147,10 @@ namespace cppast
 
             /// \returns The finished function without registering it.
             /// \notes This is intended for templated functions only.
-            std::unique_ptr<T> finish(cpp_function_body_kind body_kind)
+            std::unique_ptr<T> finish(cpp_entity_id id, cpp_function_body_kind body_kind)
             {
+                if (!cppast::is_definition(body_kind))
+                    function->set_definition(id);
                 function->body_ = body_kind;
                 return std::move(function);
             }
@@ -174,8 +176,7 @@ namespace cppast
     /// A [cppast::cpp_entity]() modelling a C++ function.
     /// \notes This is not a member function,
     /// use [cppast::cpp_member_function]() for that.
-    /// It can be a `static` function of a class,
-    /// or a `friend`, however.
+    /// It can be a `static` function of a class, however.
     class cpp_function final : public cpp_function_base
     {
     public:
@@ -203,12 +204,6 @@ namespace cppast
             {
                 function->constexpr_ = true;
             }
-
-            /// \effects Marks the function as `friend`.
-            void is_friend()
-            {
-                function->friend_ = true;
-            }
         };
 
         /// \returns A reference to the return [cppast::cpp_type]().
@@ -231,12 +226,6 @@ namespace cppast
             return constexpr_;
         }
 
-        /// \returns Whether the function is a `friend` function of the parent [cppast::cpp_class]().
-        bool is_friend() const noexcept
-        {
-            return friend_;
-        }
-
     private:
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
@@ -244,14 +233,12 @@ namespace cppast
         : cpp_function_base(std::move(name)),
           return_type_(std::move(ret)),
           storage_(cpp_storage_class_auto),
-          friend_(false),
           constexpr_(false)
         {
         }
 
         std::unique_ptr<cpp_type>    return_type_;
         cpp_storage_class_specifiers storage_;
-        bool                         friend_;
         bool                         constexpr_;
     };
 } // namespace cppast

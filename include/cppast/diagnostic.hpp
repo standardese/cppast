@@ -56,7 +56,7 @@ namespace cppast
                 if (entity)
                     result += " (" + entity.value() + "):";
             }
-            else if (entity)
+            else if (entity && !entity.value().empty())
                 result += entity.value() + ":";
 
             return result;

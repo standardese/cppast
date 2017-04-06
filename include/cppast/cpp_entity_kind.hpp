@@ -44,6 +44,8 @@ namespace cppast
         constructor_t,
         destructor_t,
 
+        friend_t,
+
         template_type_parameter_t,
         non_type_template_parameter_t,
         template_template_parameter_t,

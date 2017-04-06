@@ -72,7 +72,7 @@ void detail::comment_context::match(cpp_entity& e, unsigned line) const
 
 std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& context,
                                                  const CXCursor&              cur,
-                                                 const CXCursor&              template_cur) try
+                                                 const CXCursor&              parent_cur) try
 {
     auto kind = clang_getCursorKind(cur);
     switch (kind)
@@ -94,7 +94,7 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
 
     case CXCursor_TypeAliasDecl:
     case CXCursor_TypedefDecl:
-        return parse_cpp_type_alias(context, cur, template_cur);
+        return parse_cpp_type_alias(context, cur, parent_cur);
     case CXCursor_EnumDecl:
         return parse_cpp_enum(context, cur);
     case CXCursor_ClassDecl:
@@ -102,7 +102,7 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
     case CXCursor_UnionDecl:
         if (auto spec = try_parse_full_cpp_class_template_specialization(context, cur))
             return spec;
-        return parse_cpp_class(context, cur);
+        return parse_cpp_class(context, cur, parent_cur);
 
     case CXCursor_VarDecl:
         return parse_cpp_variable(context, cur);
@@ -129,6 +129,11 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         return parse_cpp_constructor(context, cur);
     case CXCursor_Destructor:
         return parse_cpp_destructor(context, cur);
+
+#if CPPAST_CINDEX_HAS_FRIEND
+    case CXCursor_FriendDecl:
+        return parse_cpp_friend(context, cur);
+#endif
 
     case CXCursor_TypeAliasTemplateDecl:
         return parse_cpp_alias_template(context, cur);

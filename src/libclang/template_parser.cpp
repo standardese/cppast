@@ -333,7 +333,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class_template(const detail::parse
 {
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_ClassTemplate, detail::assert_handler{});
 
-    auto c = detail::parse_cpp_class(context, cur);
+    auto c = detail::parse_cpp_class(context, cur, clang_getNullCursor());
     if (!c)
         return nullptr;
 
@@ -373,7 +373,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class_template_specialization(
                  detail::assert_handler{});
 
     auto primary = clang_getSpecializedCursorTemplate(cur);
-    auto c       = detail::parse_cpp_class(context, cur);
+    auto c       = detail::parse_cpp_class(context, cur, clang_getNullCursor());
     if (!c)
         return nullptr;
 

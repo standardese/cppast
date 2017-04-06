@@ -13,6 +13,12 @@
 #include "parse_error.hpp" // for convenience
 #include "preprocessor.hpp"
 
+#if CINDEX_VERSION_MINOR >= 36
+#define CPPAST_CINDEX_HAS_FRIEND 1
+#else
+#define CPPAST_CINDEX_HAS_FRIEND 0
+#endif
+
 namespace cppast
 {
     class cpp_expression;
@@ -118,7 +124,8 @@ namespace cppast
         std::unique_ptr<cpp_entity> parse_cpp_enum(const parse_context& context,
                                                    const CXCursor&      cur);
         std::unique_ptr<cpp_entity> parse_cpp_class(const parse_context& context,
-                                                    const CXCursor&      cur);
+                                                    const CXCursor&      cur,
+                                                    const CXCursor&      parent_cur);
 
         std::unique_ptr<cpp_entity> parse_cpp_variable(const parse_context& context,
                                                        const CXCursor&      cur);
@@ -137,6 +144,9 @@ namespace cppast
         std::unique_ptr<cpp_entity> parse_cpp_destructor(const parse_context& context,
                                                          const CXCursor&      cur);
 
+        std::unique_ptr<cpp_entity> parse_cpp_friend(const parse_context& context,
+                                                     const CXCursor&      cur);
+
         std::unique_ptr<cpp_entity> parse_cpp_alias_template(const parse_context& context,
                                                              const CXCursor&      cur);
         std::unique_ptr<cpp_entity> parse_cpp_function_template(const parse_context& context,
@@ -146,10 +156,10 @@ namespace cppast
         std::unique_ptr<cpp_entity> parse_cpp_class_template_specialization(
             const parse_context& context, const CXCursor& cur);
 
-        // as_template: true, iff currently parsing a template
+        // parent_cur: used when parsing templates or friends
         std::unique_ptr<cpp_entity> parse_entity(
             const parse_context& context, const CXCursor& cur,
-            const CXCursor& template_cur = clang_getNullCursor());
+            const CXCursor& parent_cur = clang_getNullCursor());
     }
 } // namespace cppast::detail
 

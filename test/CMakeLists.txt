@@ -14,6 +14,7 @@ set(tests
         cpp_class.cpp
         cpp_class_template.cpp
         cpp_enum.cpp
+        cpp_friend.cpp
         cpp_function.cpp
         cpp_function_template.cpp
         cpp_language_linkage.cpp
