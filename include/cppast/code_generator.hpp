@@ -135,6 +135,14 @@ namespace cppast
         code_generator& operator=(const code_generator&) = delete;
         virtual ~code_generator() noexcept               = default;
 
+        /// Options that control the synopsis.
+        enum synopsis_options
+        {
+            exclude,     //< Exclude the entire entity.
+            declaration, //< Only write declaration.
+            definition,  //< Also write definition.
+        };
+
         /// Sentinel type used to output a given entity.
         class output
         {
@@ -148,7 +156,7 @@ namespace cppast
             /// respectively.
             explicit output(type_safe::object_ref<code_generator>   gen,
                             type_safe::object_ref<const cpp_entity> e, bool is_container)
-            : gen_(gen), print_(is_container ? gen_->on_container_begin(*e) : gen_->on_leaf(*e))
+            : gen_(gen), options_(is_container ? gen_->on_container_begin(*e) : gen_->on_leaf(*e))
             {
                 if (is_container)
                     e_ = e;
@@ -160,19 +168,25 @@ namespace cppast
             /// else does nothing.
             ~output() noexcept
             {
-                if (print_ && e_)
+                if (*this && e_)
                     gen_->on_container_end(e_.value());
             }
 
             output(const output&) = delete;
             output& operator=(const output&) = delete;
 
-            /// \returns Whether or not the `on_XXX` function returned `true`.
+            /// \returns Whether or not the `on_XXX` function returned something other than `exclude`.
             /// \notes If this returns `false`,
             /// the other functions have no effects.
             explicit operator bool() const noexcept
             {
-                return print_;
+                return options_ != exclude;
+            }
+
+            /// \returns Whether or not the definition should be generated as well.
+            bool generate_definition() const noexcept
+            {
+                return options_ == definition;
             }
 
             /// \returns A reference to the generator.
@@ -184,7 +198,7 @@ namespace cppast
             /// \effects Call `do_indent()` followed by `do_write_newline()` (if `print_newline` is `true`).
             void indent(bool print_newline = true) const noexcept
             {
-                if (print_)
+                if (*this)
                 {
                     gen_->do_indent();
                     if (print_newline)
@@ -195,14 +209,14 @@ namespace cppast
             /// \effects Calls `do_unindent()`.
             void unindent() const noexcept
             {
-                if (print_)
+                if (*this)
                     gen_->do_unindent();
             }
 
             /// \effects Calls `do_write_keyword()`.
             const output& operator<<(const keyword& k) const
             {
-                if (print_)
+                if (*this)
                     gen_->do_write_keyword(k.str());
                 return *this;
             }
@@ -210,7 +224,7 @@ namespace cppast
             /// \effects Calls `do_write_identifier()`.
             const output& operator<<(const identifier& ident) const
             {
-                if (print_)
+                if (*this)
                     gen_->do_write_identifier(ident.str());
                 return *this;
             }
@@ -219,7 +233,7 @@ namespace cppast
             template <typename T, class Predicate>
             const output& operator<<(const basic_cpp_entity_ref<T, Predicate>& ref) const
             {
-                if (print_)
+                if (*this)
                     gen_->do_write_reference(ref.id(), ref.name());
                 return *this;
             }
@@ -227,7 +241,7 @@ namespace cppast
             /// \effects Calls `do_write_punctuation()`.
             const output& operator<<(const punctuation& punct) const
             {
-                if (print_)
+                if (*this)
                     gen_->do_write_punctuation(punct.str());
                 return *this;
             }
@@ -235,7 +249,7 @@ namespace cppast
             /// \effects Calls `do_write_str_literal`.
             const output& operator<<(const string_literal& lit) const
             {
-                if (print_)
+                if (*this)
                     gen_->do_write_str_literal(lit.str());
                 return *this;
             }
@@ -243,7 +257,7 @@ namespace cppast
             /// \effects Calls `do_write_int_literal()`.
             const output& operator<<(const int_literal& lit) const
             {
-                if (print_)
+                if (*this)
                     gen_->do_write_int_literal(lit.str());
                 return *this;
             }
@@ -251,7 +265,7 @@ namespace cppast
             /// \effects Calls `do_write_float_literal()`.
             const output& operator<<(const float_literal& lit) const
             {
-                if (print_)
+                if (*this)
                     gen_->do_write_float_literal(lit.str());
                 return *this;
             }
@@ -259,7 +273,7 @@ namespace cppast
             /// \effects Calls `do_write_preprocessor()`.
             const output& operator<<(const preprocessor_token& tok) const
             {
-                if (print_)
+                if (*this)
                     gen_->do_write_preprocessor(tok.str());
                 return *this;
             }
@@ -267,7 +281,7 @@ namespace cppast
             /// \effects Calls `do_write_token_seq()`.
             const output& operator<<(const token_seq& seq) const
             {
-                if (print_)
+                if (*this)
                     gen_->do_write_token_seq(seq.str());
                 return *this;
             }
@@ -275,7 +289,7 @@ namespace cppast
             /// \effects Calls `do_write_newline()`.
             const output& operator<<(newl_t) const
             {
-                if (print_)
+                if (*this)
                     gen_->do_write_newline();
                 return *this;
             }
@@ -283,7 +297,7 @@ namespace cppast
             /// \effects Calls `do_write_whitespace()`.
             const output& operator<<(whitespace_t) const
             {
-                if (print_)
+                if (*this)
                     gen_->do_write_whitespace();
                 return *this;
             }
@@ -291,7 +305,7 @@ namespace cppast
         private:
             type_safe::object_ref<code_generator>     gen_;
             type_safe::optional_ref<const cpp_entity> e_;
-            bool                                      print_;
+            synopsis_options                          options_;
         };
 
     protected:
@@ -300,12 +314,12 @@ namespace cppast
     private:
         /// \effects Will be invoked before code of a container entity is generated.
         /// The base class version has no effect.
-        /// \returns Whether or not that entity should actually be generated.
-        /// The base class version returns `true`.
-        virtual bool on_container_begin(const cpp_entity& e)
+        /// \returns The synopsis options for that entity,
+        /// the base class version always returns `definition`.
+        virtual synopsis_options on_container_begin(const cpp_entity& e)
         {
             (void)e;
-            return true;
+            return definition;
         }
 
         /// \effects Will be invoked after all code of a container entity has been generated.
@@ -317,12 +331,12 @@ namespace cppast
 
         /// \effects Will be invoked before code of a non-container entity is generated.
         /// The base class version has no effect.
-        /// \returns Whether or not that entity should actually be generated.
-        /// The base class version returns `true`.
-        virtual bool on_leaf(const cpp_entity& e)
+        /// \returns The synopsis options for that entity,
+        /// the base class version always returns `definition`.
+        virtual synopsis_options on_leaf(const cpp_entity& e)
         {
             (void)e;
-            return true;
+            return definition;
         }
 
         /// \effects Will be invoked when the indentation level should be increased by one.

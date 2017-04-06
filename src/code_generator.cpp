@@ -211,7 +211,7 @@ namespace
                 detail::write_type(output, e.underlying_type(), "");
             }
 
-            if (e.is_definition())
+            if (output.generate_definition() && e.is_definition())
             {
                 output << punctuation("{");
                 output.indent();
@@ -295,7 +295,7 @@ namespace
             if (c.is_final())
                 output << whitespace << keyword("final");
 
-            if (c.is_declaration())
+            if (!output.generate_definition() || c.is_declaration())
                 output << punctuation(";") << newl;
             else
             {
