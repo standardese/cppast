@@ -66,6 +66,7 @@ namespace cppast
     /// The severity of a [cppast::diagnostic]().
     enum class severity
     {
+        debug,    //< A debug diagnostic that is just for debugging purposes.
         warning,  //< A warning that doesn't impact AST generation.
         error,    //< A non-critical error that does impact AST generation but not critically.
         critical, //< A critical error where AST generation isn't possible.
@@ -77,6 +78,8 @@ namespace cppast
     {
         switch (s)
         {
+        case severity::debug:
+            return "debug";
         case severity::warning:
             return "warning";
         case severity::error:

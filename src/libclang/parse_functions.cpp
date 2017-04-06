@@ -74,6 +74,15 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
                                                  const CXCursor&              cur,
                                                  const CXCursor&              parent_cur) try
 {
+    if (context.logger->is_verbose())
+    {
+        auto message = detail::format("parsing cursor of type '",
+                                      detail::get_cursor_kind_spelling(cur).c_str(), "'");
+        context.logger->log("libclang parser",
+                            diagnostic{std::move(message), detail::make_location(cur),
+                                       severity::debug});
+    }
+
     auto kind = clang_getCursorKind(cur);
     switch (kind)
     {

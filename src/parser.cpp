@@ -15,6 +15,8 @@ bool diagnostic_logger::log(const char* source, const diagnostic& d) const
 {
     if (d.severity == severity::error)
         error_ = true;
+    else if (!verbose_ && d.severity == severity::debug)
+        return false;
     return do_log(source, d);
 }
 

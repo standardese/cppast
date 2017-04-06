@@ -43,10 +43,23 @@ namespace cppast
             return error_;
         }
 
+        /// \effects Sets whether or not the logger prints debugging diagnostics.
+        void set_verbose(bool value) noexcept
+        {
+            verbose_ = value;
+        }
+
+        /// \returns Whether or not the logger prints debugging diagnostics.
+        bool is_verbose() const noexcept
+        {
+            return verbose_;
+        }
+
     private:
         virtual bool do_log(const char* source, const diagnostic& d) const = 0;
 
         mutable std::atomic<bool> error_;
+        bool                      verbose_ = false;
     };
 
     /// A [cppast::diagnostic_logger]() that logs to `stderr`.
