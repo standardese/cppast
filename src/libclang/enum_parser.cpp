@@ -53,12 +53,11 @@ namespace
         detail::skip_attribute(stream);
         auto& name = stream.get().value();
 
-        std::unique_ptr<cpp_type> type;
-        if (detail::skip_if(stream, ":"))
-            // parse type, explictly given one
-            type = detail::parse_type(context, cur, clang_getEnumDeclIntegerType(cur));
+        // parse type
+        auto type       = detail::parse_type(context, cur, clang_getEnumDeclIntegerType(cur));
+        auto type_given = detail::skip_if(stream, ":");
 
-        return cpp_enum::builder(name.c_str(), scoped, std::move(type));
+        return cpp_enum::builder(name.c_str(), scoped, std::move(type), type_given);
     }
 }
 

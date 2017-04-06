@@ -54,7 +54,7 @@ enum c : int;
             REQUIRE(e.is_definition());
             REQUIRE(!e.is_declaration());
             REQUIRE(!e.is_scoped());
-            REQUIRE(!e.underlying_type());
+            REQUIRE(!e.has_explicit_type());
 
             auto no_vals = 0u;
             for (auto& val : e)
@@ -96,9 +96,8 @@ enum c : int;
 
             if (e.is_definition())
             {
-                REQUIRE(e.underlying_type());
-                REQUIRE(equal_types(idx, e.underlying_type().value(),
-                                    *cpp_builtin_type::build(cpp_int)));
+                REQUIRE(e.has_explicit_type());
+                REQUIRE(equal_types(idx, e.underlying_type(), *cpp_builtin_type::build(cpp_int)));
 
                 auto no_vals = 0u;
                 for (auto& val : e)
@@ -125,7 +124,7 @@ enum c : int;
             }
             else if (e.is_declaration())
             {
-                REQUIRE(!e.underlying_type()); // no underlying type, implicit int
+                REQUIRE(!e.has_explicit_type()); // no underlying type, implicit int
                 REQUIRE(count_children(e) == 0u);
 
                 auto definition = get_definition(idx, e);
@@ -141,9 +140,8 @@ enum c : int;
             REQUIRE(e.is_declaration());
             REQUIRE(!e.is_definition());
             REQUIRE(!e.is_scoped());
-            REQUIRE(e.underlying_type().has_value());
-            REQUIRE(
-                equal_types(idx, e.underlying_type().value(), *cpp_builtin_type::build(cpp_int)));
+            REQUIRE(e.has_explicit_type());
+            REQUIRE(equal_types(idx, e.underlying_type(), *cpp_builtin_type::build(cpp_int)));
             REQUIRE(count_children(e) == 0u);
 
             auto definition = get_definition(idx, e);

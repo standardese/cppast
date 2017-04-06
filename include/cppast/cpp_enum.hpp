@@ -64,9 +64,9 @@ namespace cppast
         {
         public:
             /// \effects Sets the name, underlying type and whether it is scoped.
-            /// \notes The underlying type may be `nullptr` if it is not explictly given.
-            builder(std::string name, bool scoped, std::unique_ptr<cpp_type> type = nullptr)
-            : enum_(new cpp_enum(std::move(name), std::move(type), scoped))
+            builder(std::string name, bool scoped, std::unique_ptr<cpp_type> type,
+                    bool explicit_type)
+            : enum_(new cpp_enum(std::move(name), std::move(type), explicit_type, scoped))
             {
             }
 
@@ -105,11 +105,16 @@ namespace cppast
             std::unique_ptr<cpp_enum> enum_;
         };
 
-        /// \returns A [ts::optional_ref]() to the underlying [cppast::cpp_type]() of the enum.
-        /// \notes It only has an associated underlying type if it is not explictly given.
-        type_safe::optional_ref<const cpp_type> underlying_type() const noexcept
+        /// \returns A reference to the underlying [cppast::cpp_type]() of the enum.
+        const cpp_type& underlying_type() const noexcept
         {
-            return type_safe::opt_cref(type_.get());
+            return *type_;
+        }
+
+        /// \returns Whether or not the underlying type is explictly given.
+        bool has_explicit_type() const noexcept
+        {
+            return type_given_;
         }
 
         /// \returns Whether or not it is a scoped enumeration (i.e. an `enum class`).
@@ -119,8 +124,11 @@ namespace cppast
         }
 
     private:
-        cpp_enum(std::string name, std::unique_ptr<cpp_type> type, bool scoped)
-        : cpp_entity(std::move(name)), type_(std::move(type)), scoped_(scoped)
+        cpp_enum(std::string name, std::unique_ptr<cpp_type> type, bool type_given, bool scoped)
+        : cpp_entity(std::move(name)),
+          type_(std::move(type)),
+          scoped_(scoped),
+          type_given_(type_given)
         {
         }
 
@@ -131,7 +139,7 @@ namespace cppast
         type_safe::optional<std::string> do_get_scope_name() const override;
 
         std::unique_ptr<cpp_type> type_;
-        bool                      scoped_;
+        bool                      scoped_, type_given_;
     };
 } // namespace cppast
 

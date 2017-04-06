@@ -205,10 +205,10 @@ namespace
             if (e.is_scoped())
                 output << whitespace << keyword("class");
             output << whitespace << identifier(e.name());
-            if (e.underlying_type())
+            if (e.has_explicit_type())
             {
                 output << newl << punctuation(":");
-                detail::write_type(output, e.underlying_type().value(), "");
+                detail::write_type(output, e.underlying_type(), "");
             }
 
             if (e.is_definition())
