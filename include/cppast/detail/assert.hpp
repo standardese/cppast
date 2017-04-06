@@ -7,15 +7,28 @@
 
 #include <debug_assert.hpp>
 
+#ifdef CPPAST_ENABLE_ASSERTIONS
+#define CPPAST_ASSERTION_LEVEL 1
+#else
+#define CPPAST_ASSERTION_LEVEL 0
+#endif
+
+#ifdef CPPAST_ENABLE_PRECONDITION_CHECKS
+#define CPPAST_PRECONDITION_LEVEL 1
+#else
+#define CPPAST_PRECONDITION_LEVEL 0
+#endif
+
 namespace cppast
 {
     namespace detail
     {
-        struct assert_handler : debug_assert::set_level<1>, debug_assert::default_handler
+        struct assert_handler : debug_assert::set_level<CPPAST_ASSERTION_LEVEL>,
+                                debug_assert::default_handler
         {
         };
 
-        struct precondition_error_handler : debug_assert::set_level<1>,
+        struct precondition_error_handler : debug_assert::set_level<CPPAST_PRECONDITION_LEVEL>,
                                             debug_assert::default_handler
         {
         };

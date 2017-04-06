@@ -101,4 +101,10 @@ target_compile_definitions(cppast PUBLIC
                                 CPPAST_LIBCLANG_SYSTEM_INCLUDE_DIR="${LIBCLANG_SYSTEM_INCLUDE_DIR}"
                                 CPPAST_CLANG_BINARY="${CLANG_BINARY}"
                                 CPPAST_CLANG_VERSION_STRING="${LLVM_VERSION}")
+if(CPPAST_ENABLE_ASSERTIONS)
+    target_compile_definitions(cppast PUBLIC CPPAST_ENABLE_ASSERTIONS)
+endif()
+if(CPPAST_ENABLE_PRECONDITION_CHECKS)
+    target_compile_definitions(cppast PUBLIC CPPAST_ENABLE_PRECONDITION_CHECKS)
+endif()
 set_target_properties(cppast PROPERTIES CXX_STANDARD 11)
