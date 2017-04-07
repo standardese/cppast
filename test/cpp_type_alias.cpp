@@ -178,9 +178,12 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         return iter_a == inst_parsed.arguments().end()
                && iter_b == inst_synthesized.arguments().end();
     }
-    // TODO: implement equality when those can be parsed
     case cpp_type_kind::dependent_t:
-        break;
+    {
+        auto& dep_a = static_cast<const cpp_dependent_type&>(parsed);
+        auto& dep_b = static_cast<const cpp_dependent_type&>(synthesized);
+        return dep_a.name() == dep_b.name() && equal_types(idx, dep_a.dependee(), dep_b.dependee());
+    }
 
     case cpp_type_kind::unexposed_t:
         return static_cast<const cpp_unexposed_type&>(parsed).name()
