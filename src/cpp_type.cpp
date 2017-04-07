@@ -76,7 +76,49 @@ const char* cppast::to_string(cpp_builtin_type_kind kind) noexcept
 
 bool detail::cpp_type_ref_predicate::operator()(const cpp_entity& e)
 {
-    return is_type(e.kind());
+    switch (e.kind())
+    {
+    case cpp_entity_kind::type_alias_t:
+    case cpp_entity_kind::enum_t:
+    case cpp_entity_kind::class_t:
+        return true;
+
+    case cpp_entity_kind::file_t:
+    case cpp_entity_kind::macro_definition_t:
+    case cpp_entity_kind::include_directive_t:
+    case cpp_entity_kind::language_linkage_t:
+    case cpp_entity_kind::namespace_t:
+    case cpp_entity_kind::namespace_alias_t:
+    case cpp_entity_kind::using_directive_t:
+    case cpp_entity_kind::using_declaration_t:
+    case cpp_entity_kind::enum_value_t:
+    case cpp_entity_kind::access_specifier_t:
+    case cpp_entity_kind::base_class_t:
+    case cpp_entity_kind::variable_t:
+    case cpp_entity_kind::member_variable_t:
+    case cpp_entity_kind::bitfield_t:
+    case cpp_entity_kind::function_parameter_t:
+    case cpp_entity_kind::function_t:
+    case cpp_entity_kind::member_function_t:
+    case cpp_entity_kind::conversion_op_t:
+    case cpp_entity_kind::constructor_t:
+    case cpp_entity_kind::destructor_t:
+    case cpp_entity_kind::friend_t:
+    case cpp_entity_kind::template_type_parameter_t:
+    case cpp_entity_kind::non_type_template_parameter_t:
+    case cpp_entity_kind::template_template_parameter_t:
+    case cpp_entity_kind::alias_template_t:
+    case cpp_entity_kind::variable_template_t:
+    case cpp_entity_kind::function_template_t:
+    case cpp_entity_kind::function_template_specialization_t:
+    case cpp_entity_kind::class_template_t:
+    case cpp_entity_kind::class_template_specialization_t:
+    case cpp_entity_kind::unexposed_t:
+    case cpp_entity_kind::count:
+        break;
+    }
+
+    return false;
 }
 
 std::unique_ptr<cpp_dependent_type> cpp_dependent_type::build(

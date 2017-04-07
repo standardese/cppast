@@ -65,21 +65,21 @@ namespace cppast
     /// \returns A human readable string describing the entity kind.
     const char* to_string(cpp_entity_kind kind) noexcept;
 
-    /// \returns Whether or not a given entity kind is a C++ type.
-    bool is_type(cpp_entity_kind kind) noexcept;
-
-    /// \returns Whether or not a given entity kind is a C++ function.
+    /// \returns Whether or not a given entity kind is a C++ function,
+    /// that is, it dervies from [cppast::cpp_function_base]().
     bool is_function(cpp_entity_kind kind) noexcept;
 
     /// \returns Whether or not a given entity kind is a C++ (template) parameter.
     bool is_parameter(cpp_entity_kind kind) noexcept;
 
-    /// \returns Whether or not a given entity kind is a C++ template.
+    /// \returns Whether or not a given entity kind is a C++ template,
+    /// that is, it dervies from [cppast::cpp_template]().
     /// \notes A template template parameter is not considered a template for this function.
     /// \notes Template specializations are also considered templates here.
     bool is_template(cpp_entity_kind kind) noexcept;
 
-    /// \returns Whether or not a given entity kind is a specialization of a C++ template.
+    /// \returns Whether or not a given entity kind is a specialization of a C++ template,
+    /// that is, it derives from [cppast::cpp_template_specialization]().
     bool is_template_specialization(cpp_entity_kind kind) noexcept;
 } // namespace cppast
 
