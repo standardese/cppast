@@ -151,7 +151,7 @@ endfunction()
 set(llvm_min_version 3.9.1)
 set(LLVM_PREFERRED_VERSION 4.0.0 CACHE STRING "the preferred LLVM version")
 
-if(NOT DEFINED LLVM_CONFIG_BINARY)
+if(NOT LLVM_CONFIG_BINARY)
     if(DEFINED LLVM_DOWNLOAD_OS_NAME)
         _cppast_download_llvm(${LLVM_PREFERRED_VERSION} ${LLVM_DOWNLOAD_OS_NAME})
     endif()
