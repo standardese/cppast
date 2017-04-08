@@ -8,14 +8,7 @@
 #include <cstddef>
 #include <cstring>
 
-// treat the tiny-process-library as header only
 #include <process.hpp>
-#include <process.cpp>
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32)
-#include <process_win.cpp>
-#else
-#include <process_unix.cpp>
-#endif
 
 #include <type_safe/flag.hpp>
 #include <type_safe/optional.hpp>

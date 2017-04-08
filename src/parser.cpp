@@ -13,7 +13,7 @@ using namespace cppast;
 
 bool diagnostic_logger::log(const char* source, const diagnostic& d) const
 {
-    if (d.severity == severity::error)
+    if (d.severity == severity::error || d.severity == severity::critical)
         error_ = true;
     else if (!verbose_ && d.severity == severity::debug)
         return false;
