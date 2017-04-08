@@ -39,6 +39,17 @@ target_link_libraries(_cppast_tiny_process PUBLIC Threads::Threads)
 set_target_properties(_cppast_tiny_process PROPERTIES CXX_STANDARD 11)
 
 #
+# install cxxopts, if needed
+#
+if(build_tool)
+    message(STATUS "Installing cxxopts via submodule")
+    execute_process(COMMAND git submodule update --init -- external/cxxopts
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/cxxopts EXCLUDE_FROM_ALL)
+endif()
+
+#
 # install libclang
 #
 
