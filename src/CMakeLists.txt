@@ -100,7 +100,8 @@ target_link_libraries(cppast PUBLIC type_safe _cppast_tiny_process _cppast_libcl
 target_compile_definitions(cppast PUBLIC
                                 CPPAST_LIBCLANG_SYSTEM_INCLUDE_DIR="${LIBCLANG_SYSTEM_INCLUDE_DIR}"
                                 CPPAST_CLANG_BINARY="${CLANG_BINARY}"
-                                CPPAST_CLANG_VERSION_STRING="${LLVM_VERSION}")
+                                CPPAST_CLANG_VERSION_STRING="${LLVM_VERSION}"
+                                CPPAST_VERSION_STRING="${cppast_VERSION}")
 if(CPPAST_ENABLE_ASSERTIONS)
     target_compile_definitions(cppast PUBLIC CPPAST_ENABLE_ASSERTIONS)
 endif()

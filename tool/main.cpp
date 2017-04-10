@@ -218,7 +218,7 @@ int main(int argc, char* argv[])
         print_help(options);
     else if (options.count("version"))
     {
-        std::cout << "cppast version 0.0\n";
+        std::cout << "cppast version " << CPPAST_VERSION_STRING << "\n";
         std::cout << "Copyright (C) Jonathan Müller 2017 <jonathanmueller.dev@gmail.com>\n";
         std::cout << '\n';
         std::cout << "Using libclang version " << CPPAST_CLANG_VERSION_STRING << '\n';
