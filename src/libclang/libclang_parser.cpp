@@ -58,8 +58,7 @@ libclang_compile_config::libclang_compile_config() : compile_config({})
     add_include_dir(CPPAST_LIBCLANG_SYSTEM_INCLUDE_DIR);
 }
 
-void libclang_compile_config::do_set_flags(cpp_standard                      standard,
-                                           type_safe::flag_set<compile_flag> flags)
+void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags flags)
 {
     switch (standard)
     {

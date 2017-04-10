@@ -24,58 +24,65 @@ using namespace cppast;
 namespace
 {
     template <typename T>
-    bool handle_container(const cpp_entity& e, detail::visitor_callback_t cb, void* functor)
+    bool handle_container(const cpp_entity& e, detail::visitor_callback_t cb, void* functor,
+                          bool last_child)
     {
         auto& container = static_cast<const T&>(e);
 
-        auto handle_children = cb(functor, container, visitor_info::container_entity_enter);
+        auto handle_children =
+            cb(functor, container, {visitor_info::container_entity_enter, last_child});
         if (handle_children)
         {
-            for (auto& child : container)
-                if (!detail::visit(child, cb, functor))
+            for (auto iter = container.begin(); iter != container.end();)
+            {
+                auto& cur = *iter;
+                ++iter;
+                if (!detail::visit(cur, cb, functor, iter == container.end()))
                     return false;
+            }
         }
 
-        return cb(functor, container, visitor_info::container_entity_exit);
+        return cb(functor, container, {visitor_info::container_entity_exit, last_child});
     }
 }
 
-bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* functor)
+bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* functor,
+                   bool last_child)
 {
     switch (e.kind())
     {
     case cpp_entity_kind::file_t:
-        return handle_container<cpp_file>(e, cb, functor);
+        return handle_container<cpp_file>(e, cb, functor, last_child);
     case cpp_entity_kind::language_linkage_t:
-        return handle_container<cpp_language_linkage>(e, cb, functor);
+        return handle_container<cpp_language_linkage>(e, cb, functor, last_child);
     case cpp_entity_kind::namespace_t:
-        return handle_container<cpp_namespace>(e, cb, functor);
+        return handle_container<cpp_namespace>(e, cb, functor, last_child);
     case cpp_entity_kind::enum_t:
-        return handle_container<cpp_enum>(e, cb, functor);
+        return handle_container<cpp_enum>(e, cb, functor, last_child);
     case cpp_entity_kind::class_t:
-        return handle_container<cpp_class>(e, cb, functor);
+        return handle_container<cpp_class>(e, cb, functor, last_child);
     case cpp_entity_kind::function_t:
-        return handle_container<cpp_function>(e, cb, functor);
+        return handle_container<cpp_function>(e, cb, functor, last_child);
     case cpp_entity_kind::member_function_t:
-        return handle_container<cpp_member_function>(e, cb, functor);
+        return handle_container<cpp_member_function>(e, cb, functor, last_child);
     case cpp_entity_kind::conversion_op_t:
-        return handle_container<cpp_conversion_op>(e, cb, functor);
+        return handle_container<cpp_conversion_op>(e, cb, functor, last_child);
     case cpp_entity_kind::constructor_t:
-        return handle_container<cpp_constructor>(e, cb, functor);
+        return handle_container<cpp_constructor>(e, cb, functor, last_child);
     case cpp_entity_kind::template_template_parameter_t:
-        return handle_container<cpp_template_template_parameter>(e, cb, functor);
+        return handle_container<cpp_template_template_parameter>(e, cb, functor, last_child);
     case cpp_entity_kind::alias_template_t:
-        return handle_container<cpp_alias_template>(e, cb, functor);
+        return handle_container<cpp_alias_template>(e, cb, functor, last_child);
     case cpp_entity_kind::variable_template_t:
-        return handle_container<cpp_variable_template>(e, cb, functor);
+        return handle_container<cpp_variable_template>(e, cb, functor, last_child);
     case cpp_entity_kind::function_template_t:
-        return handle_container<cpp_function_template>(e, cb, functor);
+        return handle_container<cpp_function_template>(e, cb, functor, last_child);
     case cpp_entity_kind::function_template_specialization_t:
-        return handle_container<cpp_function_template_specialization>(e, cb, functor);
+        return handle_container<cpp_function_template_specialization>(e, cb, functor, last_child);
     case cpp_entity_kind::class_template_t:
-        return handle_container<cpp_class_template>(e, cb, functor);
+        return handle_container<cpp_class_template>(e, cb, functor, last_child);
     case cpp_entity_kind::class_template_specialization_t:
-        return handle_container<cpp_class_template_specialization>(e, cb, functor);
+        return handle_container<cpp_class_template_specialization>(e, cb, functor, last_child);
 
     case cpp_entity_kind::macro_definition_t:
     case cpp_entity_kind::include_directive_t:
@@ -95,7 +102,7 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
     case cpp_entity_kind::template_type_parameter_t:
     case cpp_entity_kind::non_type_template_parameter_t:
     case cpp_entity_kind::unexposed_t:
-        return cb(functor, e, visitor_info::leaf_entity);
+        return cb(functor, e, {visitor_info::leaf_entity, last_child});
 
     case cpp_entity_kind::count:
         break;

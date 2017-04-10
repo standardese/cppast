@@ -110,7 +110,7 @@ unsigned test_visit(const cppast::cpp_file& file, Func f, bool check_code = true
 {
     auto count = 0u;
     cppast::visit(file, [&](const cppast::cpp_entity& e, cppast::visitor_info info) {
-        if (info == cppast::visitor_info::container_entity_exit)
+        if (info.event == cppast::visitor_info::container_entity_exit)
             return true; // already handled
 
         if (e.kind() == T::kind())

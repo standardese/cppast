@@ -40,7 +40,7 @@ namespace cppast
         }
 
     private:
-        void do_set_flags(cpp_standard standard, type_safe::flag_set<compile_flag> flags) override;
+        void do_set_flags(cpp_standard standard, compile_flags flags) override;
 
         void do_add_include_dir(std::string path) override;
 

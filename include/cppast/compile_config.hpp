@@ -11,6 +11,8 @@
 #include <type_safe/reference.hpp>
 #include <type_safe/flag_set.hpp>
 
+#include <cppast/detail/assert.hpp>
+
 namespace cppast
 {
     /// The C++ standard that should be used.
@@ -24,6 +26,26 @@ namespace cppast
         cpp_latest = cpp_standard::cpp_14,
     };
 
+    /// \returns A human readable string representing the option,
+    /// it is e.g. `c++14` for `cpp_14`.
+    inline const char* to_string(cpp_standard standard) noexcept
+    {
+        switch (standard)
+        {
+        case cpp_standard::cpp_98:
+            return "c++98";
+        case cpp_standard::cpp_03:
+            return "c++03";
+        case cpp_standard::cpp_11:
+            return "c++11";
+        case cpp_standard::cpp_14:
+            return "c++14";
+        }
+
+        DEBUG_UNREACHABLE(detail::assert_handler{});
+        return "ups";
+    }
+
     /// Other special compilation flags.
     enum class compile_flag
     {
@@ -32,31 +54,18 @@ namespace cppast
         ms_extensions,    //< Enable MSVC extensions.
         ms_compatibility, //< Enable MSVC compatibility.
 
-        _count, //< \exclude
+        _flag_set_size, //< \exclude
     };
-} // namespace cppast
 
-namespace type_safe
-{
-    /// Specialization of [ts::flag_set_traits]() to use [cppast::compile_flag]() with [ts::flag_set]().
-    template <>
-    struct flag_set_traits<cppast::compile_flag> : std::true_type
-    {
-        static constexpr std::size_t size() noexcept
-        {
-            return static_cast<std::size_t>(cppast::compile_flag::_count);
-        }
-    };
-} // namespace type_safe
+    /// A [ts::flag_set]() of [cppast::compile_flag]().
+    using compile_flags = type_safe::flag_set<compile_flag>;
 
-namespace cppast
-{
     /// Base class for the configuration of a [cppast::parser]().
     class compile_config
     {
     public:
         /// \effects Sets the given C++ standard and compilation flags.
-        void set_flags(cpp_standard standard, type_safe::flag_set<compile_flag> flags = {})
+        void set_flags(cpp_standard standard, compile_flags flags = {})
         {
             do_set_flags(standard, flags);
         }
@@ -105,8 +114,7 @@ namespace cppast
 
     private:
         /// \effects Sets the given C++ standard and compilation flags.
-        virtual void do_set_flags(cpp_standard                      standard,
-                                  type_safe::flag_set<compile_flag> flags) = 0;
+        virtual void do_set_flags(cpp_standard standard, compile_flags flags) = 0;
 
         /// \effects Adds the given path to the set of include directories.
         virtual void do_add_include_dir(std::string path) = 0;
