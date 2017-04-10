@@ -293,15 +293,18 @@ namespace
         // check for trailing return type
         if (detail::skip_if(stream, "->"))
         {
+            //detail::print_tokens(context.tu, context.file, stream.cursor());
             // this is rather tricky to skip
             // so loop over all tokens and see if matching keytokens occur
             // note that this isn't quite correct
             // use a heuristic to skip brackets, which should be good enough
             while (!stream.done())
             {
-                if (stream.peek() == "(" || stream.peek() == "[" || stream.peek() == "<"
-                    || stream.peek() == "{")
+                if (stream.peek() == "(" || stream.peek() == "[" || stream.peek() == "<")
                     detail::skip_brackets(stream);
+                else if (stream.peek() == "{")
+                    // begin of definition
+                    break;
                 else if (detail::skip_if(stream, "override"))
                 {
                     DEBUG_ASSERT(allow_virtual, detail::parse_error_handler{}, stream.cursor(),
@@ -313,8 +316,8 @@ namespace
                 }
                 else if (detail::skip_if(stream, "final"))
                 {
-                    DEBUG_ASSERT(allow_virtual, detail::parse_error_handler{}, stream.cursor(),
                                  "unexpected token");
+                    DEBUG_ASSERT(allow_virtual, detail::parse_error_handler{}, stream.cursor(),
                     if (result.virtual_keywords)
                         result.virtual_keywords.value() |= cpp_virtual_flags::final;
                     else
