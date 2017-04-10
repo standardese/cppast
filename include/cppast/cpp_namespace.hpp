@@ -60,6 +60,12 @@ namespace cppast
             return inline_;
         }
 
+        /// \returns Whether or not the namespace is anonymous.
+        bool is_anonymous() const noexcept
+        {
+            return name().empty();
+        }
+
     private:
         cpp_namespace(std::string name, bool is_inline)
         : cpp_entity(std::move(name)), inline_(is_inline)

@@ -27,9 +27,12 @@ namespace
         skip_attribute(stream);
 
         // <identifier> {
+        // or when anonymous: {
+        if (detail::skip_if(stream, "{"))
+            return cpp_namespace::builder("", is_inline);
+
         auto& name = stream.get().value();
         skip(stream, "{");
-
         return cpp_namespace::builder(name.c_str(), is_inline);
     }
 }

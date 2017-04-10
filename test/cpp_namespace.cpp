@@ -29,6 +29,10 @@ namespace c
     /// }
     namespace d {}
 }
+
+/// namespace {
+/// }
+namespace {}
 )";
 
     auto file  = parse({}, "cpp_namespace.cpp", code);
@@ -36,29 +40,39 @@ namespace c
         auto no_children = count_children(ns);
         if (ns.name() == "a")
         {
+            REQUIRE(!ns.is_anonymous());
             REQUIRE(!ns.is_inline());
             REQUIRE(no_children == 0u);
         }
         else if (ns.name() == "b")
         {
+            REQUIRE(!ns.is_anonymous());
             REQUIRE(ns.is_inline());
             REQUIRE(no_children == 0u);
         }
         else if (ns.name() == "c")
         {
+            REQUIRE(!ns.is_anonymous());
             REQUIRE(!ns.is_inline());
             REQUIRE(no_children == 1u);
         }
         else if (ns.name() == "d")
         {
+            REQUIRE(!ns.is_anonymous());
             check_parent(ns, "c", "c::d");
+            REQUIRE(!ns.is_inline());
+            REQUIRE(no_children == 0u);
+        }
+        else if (ns.name() == "")
+        {
+            REQUIRE(ns.is_anonymous());
             REQUIRE(!ns.is_inline());
             REQUIRE(no_children == 0u);
         }
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 4u);
+    REQUIRE(count == 5u);
 }
 
 TEST_CASE("cpp_namespace_alias")
