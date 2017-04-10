@@ -86,7 +86,7 @@ const char* cppast::to_string(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::class_template_t:
         return "class template";
     case cpp_entity_kind::class_template_specialization_t:
-        return "class tempalte specialization";
+        return "class template specialization";
 
     case cpp_entity_kind::unexposed_t:
         return "unexposed entity";
