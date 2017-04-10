@@ -203,8 +203,11 @@ struct foo
 
 TEST_CASE("cpp_constructor")
 {
-    auto code = R"(
-// only test constructor specific stuff
+    // only test constructor specific stuff
+    const char* code;
+    SECTION("non-template")
+    {
+        code = R"(
 struct foo
 {
     /// foo()noexcept=default;
@@ -215,6 +218,22 @@ struct foo
     constexpr foo(int, char) = delete;
 };
 )";
+    }
+    SECTION("template")
+    {
+        code = R"(
+template <typename T>
+struct foo
+{
+    /// foo()noexcept=default;
+    foo() noexcept = default;
+    /// explicit foo(int);
+    explicit foo(int);
+    /// constexpr foo(int,char)=delete;
+    constexpr foo(int, char) = delete;
+};
+)";
+    }
 
     cpp_entity_index idx;
     auto             file = parse(idx, "cpp_constructor.cpp", code);

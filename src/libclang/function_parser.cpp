@@ -113,7 +113,7 @@ namespace
         prefix_info result;
 
         std::string scope;
-        while (!prefix_end(stream, name))
+        while (!stream.done() && !prefix_end(stream, name))
         {
             if (detail::skip_if(stream, "constexpr"))
             {
@@ -157,6 +157,8 @@ namespace
                 scope.clear();
             }
         }
+        DEBUG_ASSERT(!stream.done(), detail::parse_error_handler{}, stream.cursor(),
+                     "unable to find end of function prefix");
         if (!scope.empty() && scope.back() == ':')
             result.scope_name = std::move(scope);
 
@@ -592,7 +594,10 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_Constructor
                      || clang_getTemplateCursorKind(cur) == CXCursor_Constructor,
                  detail::assert_handler{});
-    auto name = detail::get_cursor_name(cur);
+    std::string name = detail::get_cursor_name(cur).c_str();
+    auto        pos  = name.find('<');
+    if (pos != std::string::npos)
+        name.erase(pos);
 
     detail::tokenizer    tokenizer(context.tu, context.file, cur);
     detail::token_stream stream(tokenizer, cur);
