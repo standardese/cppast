@@ -470,7 +470,6 @@ namespace
         case CXType_Vector:
         case CXType_ObjCInterface:
         case CXType_ObjCObjectPointer:
-        case CXType_Dependent:
         {
             auto msg = detail::format("unexpected type of kind '",
                                       detail::get_type_kind_spelling(type).c_str(), "'");
@@ -478,6 +477,7 @@ namespace
             context.logger->log("libclang parser", diagnostic{msg, location, severity::warning});
         }
         // fallthrough
+        case CXType_Dependent: // seems to have something to do with expressions, just ignore that (for now?)
         case CXType_Unexposed:
             if (auto ftype = try_parse_function_type(context, cur, type))
                 // guess what: after you've called clang_getPointeeType() on a function pointer
