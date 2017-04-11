@@ -435,7 +435,7 @@ namespace
         });
     }
 
-    std::unique_ptr<cpp_type> try_parse_decltype_type(const detail::parse_context& context,
+    std::unique_ptr<cpp_type> try_parse_decltype_type(const detail::parse_context&,
                                                       const CXCursor& cur, const CXType& type)
     {
         if (clang_isExpression(clang_getCursorKind(cur)))
@@ -447,10 +447,9 @@ namespace
             DEBUG_ASSERT(!spelling.empty() && spelling.back() == ')', detail::parse_error_handler{},
                          type, "unexpected spelling");
             spelling.pop_back();
+
             return cpp_decltype_type::build(
-                cpp_unexposed_expression::build(detail::parse_type(context, cur,
-                                                                   clang_getCanonicalType(type)),
-                                                spelling));
+                cpp_unexposed_expression::build(cpp_unexposed_type::build("<decltype>"), spelling));
         });
     }
 
