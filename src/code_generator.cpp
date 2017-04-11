@@ -18,6 +18,7 @@
 #include <cppast/cpp_member_variable.hpp>
 #include <cppast/cpp_namespace.hpp>
 #include <cppast/cpp_preprocessor.hpp>
+#include <cppast/cpp_static_assert.hpp>
 #include <cppast/cpp_template_parameter.hpp>
 #include <cppast/cpp_type_alias.hpp>
 #include <cppast/cpp_variable.hpp>
@@ -843,6 +844,18 @@ namespace
         }
     }
 
+    void generate_static_assert(code_generator& generator, const cpp_static_assert& assert)
+    {
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(assert), false);
+        if (output)
+        {
+            output << keyword("static_assert") << punctuation("(");
+            detail::write_expression(output, assert.expression());
+            output << punctuation(",") << string_literal('"' + assert.message() + '"');
+            output << punctuation(");") << newl;
+        }
+    }
+
     void generate_unexposed(code_generator& generator, const cpp_unexposed_entity& entity)
     {
         code_generator::output output(type_safe::ref(generator), type_safe::ref(entity), false);
@@ -903,6 +916,8 @@ void cppast::generate_code(code_generator& generator, const cpp_entity& e)
         CPPAST_DETAIL_HANDLE(function_template_specialization)
         CPPAST_DETAIL_HANDLE(class_template)
         CPPAST_DETAIL_HANDLE(class_template_specialization)
+
+        CPPAST_DETAIL_HANDLE(static_assert)
 
     case cpp_entity_kind::unexposed_t:
         generate_unexposed(generator, static_cast<const cpp_unexposed_entity&>(e));

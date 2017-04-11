@@ -5,6 +5,9 @@
 #include "parse_functions.hpp"
 
 #include <cppast/cpp_storage_class_specifiers.hpp>
+#include <cppast/cpp_static_assert.hpp>
+
+#include "libclang_visitor.hpp"
 
 using namespace cppast;
 
@@ -153,6 +156,9 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
     case CXCursor_ClassTemplatePartialSpecialization:
         return parse_cpp_class_template_specialization(context, cur);
 
+    case CXCursor_StaticAssert:
+        return parse_cpp_static_assert(context, cur);
+
     default:
         break;
     }
@@ -177,4 +183,40 @@ catch (parse_error& ex)
 {
     context.logger->log("libclang parser", ex.get_diagnostic());
     return nullptr;
+}
+
+std::unique_ptr<cpp_entity> detail::parse_cpp_static_assert(const detail::parse_context& context,
+                                                            const CXCursor&              cur)
+{
+    DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_StaticAssert, detail::assert_handler{});
+
+    std::unique_ptr<cpp_expression> expr;
+    std::string                     msg;
+    detail::visit_children(cur, [&](const CXCursor& child) {
+        if (!expr)
+        {
+            DEBUG_ASSERT(clang_isExpression(clang_getCursorKind(child)),
+                         detail::parse_error_handler{}, cur,
+                         "unexpected child cursor of static assert");
+            expr = detail::parse_expression(context, child);
+        }
+        else if (msg.empty())
+        {
+            DEBUG_ASSERT(clang_getCursorKind(child) == CXCursor_StringLiteral,
+                         detail::parse_error_handler{}, cur,
+                         "unexpected child cursor of static assert");
+            msg = detail::get_cursor_name(child).c_str();
+            DEBUG_ASSERT(msg.front() == '"' && msg.back() == '"', detail::parse_error_handler{},
+                         cur, "unexpected name format");
+            msg.pop_back();
+            msg.erase(msg.begin());
+        }
+        else
+            DEBUG_UNREACHABLE(detail::parse_error_handler{}, cur,
+                              "unexpected child cursor of static assert");
+    });
+
+    auto result = cpp_static_assert::build(std::move(expr), std::move(msg));
+    context.comments.match(*result, cur);
+    return result;
 }

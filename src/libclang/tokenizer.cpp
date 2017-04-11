@@ -183,13 +183,14 @@ namespace
             while (!token_after_is(tu, file, cur, end, ";"))
                 end = get_next_location(tu, file, end);
         }
-        else if (clang_isExpression(kind)
-#if CINDEX_VERSION_MINOR < 37
-                 || kind == CXCursor_CXXBaseSpecifier || kind == CXCursor_TemplateTypeParameter
-#endif
-                 || kind == CXCursor_FieldDecl || kind == CXCursor_ParmDecl
+        else if (kind == CXCursor_FieldDecl || kind == CXCursor_ParmDecl
                  || kind == CXCursor_NonTypeTemplateParameter
-                 || kind == CXCursor_TemplateTemplateParameter)
+                 || kind == CXCursor_TemplateTemplateParameter
+#if CINDEX_VERSION_MINOR < 37
+                 || clang_isExpression(kind) || kind == CXCursor_CXXBaseSpecifier
+                 || kind == CXCursor_TemplateTypeParameter
+#endif
+                 )
             // need to shrink range by one
             end = get_next_location(tu, file, end, -1);
 

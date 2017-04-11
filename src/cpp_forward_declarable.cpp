@@ -56,6 +56,7 @@ namespace
         case cpp_entity_kind::function_template_specialization_t:
         case cpp_entity_kind::class_template_t:
         case cpp_entity_kind::class_template_specialization_t:
+        case cpp_entity_kind::static_assert_t:
         case cpp_entity_kind::unexposed_t:
             return nullptr;
 

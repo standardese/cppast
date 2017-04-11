@@ -57,6 +57,8 @@ namespace cppast
         class_template_t,
         class_template_specialization_t,
 
+        static_assert_t,
+
         unexposed_t,
 
         count,

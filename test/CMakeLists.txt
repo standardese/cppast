@@ -22,6 +22,7 @@ set(tests
         cpp_member_variable.cpp
         cpp_namespace.cpp
         cpp_preprocessor.cpp
+        cpp_static_assert.cpp
         cpp_template_parameter.cpp
         cpp_type_alias.cpp
         cpp_variable.cpp)

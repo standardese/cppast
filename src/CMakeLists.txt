@@ -32,6 +32,7 @@ set(header
     ../include/cppast/cpp_member_variable.hpp
     ../include/cppast/cpp_namespace.hpp
     ../include/cppast/cpp_preprocessor.hpp
+    ../include/cppast/cpp_static_assert.hpp
     ../include/cppast/cpp_storage_class_specifiers.hpp
     ../include/cppast/cpp_template.hpp
     ../include/cppast/cpp_template_parameter.hpp
@@ -64,6 +65,7 @@ set(source
         cpp_member_variable.cpp
         cpp_namespace.cpp
         cpp_preprocessor.cpp
+        cpp_static_assert.cpp
         cpp_template_parameter.cpp
         cpp_type.cpp
         cpp_type_alias.cpp

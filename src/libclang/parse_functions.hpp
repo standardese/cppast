@@ -156,6 +156,9 @@ namespace cppast
         std::unique_ptr<cpp_entity> parse_cpp_class_template_specialization(
             const parse_context& context, const CXCursor& cur);
 
+        std::unique_ptr<cpp_entity> parse_cpp_static_assert(const parse_context& context,
+                                                            const CXCursor&      cur);
+
         // parent_cur: used when parsing templates or friends
         std::unique_ptr<cpp_entity> parse_entity(
             const parse_context& context, const CXCursor& cur,
