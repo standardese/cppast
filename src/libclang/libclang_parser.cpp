@@ -134,7 +134,8 @@ namespace
 {
     std::vector<const char*> get_arguments(const libclang_compile_config& config)
     {
-        std::vector<const char*> args = {"-x", "c++"}; // force C++
+        std::vector<const char*> args =
+            {"-x", "c++", "-I."}; // force C++ and enable current directory for include search
         for (auto& flag : detail::libclang_compile_config_access::flags(config))
             args.push_back(flag.c_str());
         return args;
