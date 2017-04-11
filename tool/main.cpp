@@ -9,8 +9,9 @@
 #include <cppast/libclang_parser.hpp> // for libclang_parser, libclang_compile_config, cpp_entity,...
 #include <cppast/visitor.hpp>         // for visit()
 #include <cppast/code_generator.hpp>  // for generate_code()
-#include <cppast/cpp_entity_kind.hpp> // for the cpp_entity_kind definition
-#include <cppast/cpp_namespace.hpp>   // for cpp_namespace
+#include <cppast/cpp_entity_kind.hpp>        // for the cpp_entity_kind definition
+#include <cppast/cpp_forward_declarable.hpp> // for is_definition()
+#include <cppast/cpp_namespace.hpp>          // for cpp_namespace
 
 // print help options
 void print_help(const cxxopts::Options& options)
@@ -30,6 +31,10 @@ void print_entity(std::ostream& out, const cppast::cpp_entity& e)
 {
     // print name and the kind of the entity
     out << e.name() << " (" << cppast::to_string(e.kind()) << ")";
+
+    // print whether or not it is a definition
+    if (cppast::is_definition(e))
+        out << " [definition]";
 
     if (e.kind() == cppast::cpp_entity_kind::language_linkage_t)
         // no need to print additional information for language linkages

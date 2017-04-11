@@ -55,6 +55,7 @@ set(source
         cpp_enum.cpp
         cpp_expression.cpp
         cpp_file.cpp
+        cpp_forward_declarable.cpp
         cpp_friend.cpp
         cpp_function.cpp
         cpp_function_template.cpp

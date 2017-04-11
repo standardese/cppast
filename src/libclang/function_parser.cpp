@@ -316,8 +316,8 @@ namespace
                 }
                 else if (detail::skip_if(stream, "final"))
                 {
-                                 "unexpected token");
                     DEBUG_ASSERT(allow_virtual, detail::parse_error_handler{}, stream.cursor(),
+                                 "unexpected token");
                     if (result.virtual_keywords)
                         result.virtual_keywords.value() |= cpp_virtual_flags::final;
                     else

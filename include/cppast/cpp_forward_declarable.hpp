@@ -60,52 +60,36 @@ namespace cppast
         type_safe::optional<cpp_entity_id> definition_;
     };
 
-    /// \exclude
-    namespace detail
-    {
-        template <typename T>
-        auto get_definition_impl(const cpp_entity_index& idx, const T& entity) ->
-            typename std::enable_if<std::is_base_of<cpp_forward_declarable, T>::value,
-                                    type_safe::optional_ref<const T>>::type
-        {
-            if (!entity.definition())
-                // entity is definition itself
-                return type_safe::opt_cref(&entity);
-            else
-                // entity is not a definition
-                // lookup the definition
-                return idx
-                    .lookup_definition(entity.definition().value())
-                    // downcast
-                    .map([](const cpp_entity& e) {
-                        DEBUG_ASSERT(e.kind() == T::kind(), detail::assert_handler{});
-                        return type_safe::ref(static_cast<const T&>(e));
-                    });
-        }
+    /// \returns Whether or not the given entity is a definition.
+    bool is_definition(const cpp_entity& e) noexcept;
 
-        template <typename T>
-        auto get_definition_impl(const cpp_entity_index&, const T& entity) ->
-            typename std::enable_if<!std::is_base_of<cpp_forward_declarable, T>::value,
-                                    type_safe::optional_ref<const T>>::type
-        {
-            return type_safe::opt_cref(&entity);
-        }
-    } // namespace detail
+    class cpp_enum;
+    class cpp_class;
+    class cpp_variable;
+    class cpp_function_base;
 
     /// Gets the definition of an entity.
     /// \returns A [ts::optional_ref]() to the entity that is the definition.
-    /// If the entity is a definition or not derived from [cppast::cpp_forward_declarable](),
+    /// If the entity is a definition or not derived from [cppast::cpp_forward_declarable]() (only valid for the generic entity overload),
     /// returns a reference to the entity itself.
     /// Otherwise lookups the definition id and returns it.
-    /// \requires `entity` must be derived from [cppast::cpp_entity]().
-    /// \param 1
-    /// \exclude
-    template <typename T,
-              typename = typename std::enable_if<std::is_base_of<cpp_entity, T>::value>::type>
-    type_safe::optional_ref<const T> get_definition(const cpp_entity_index& idx, const T& entity)
-    {
-        return detail::get_definition_impl(idx, entity);
-    }
+    /// \notes The return value will only be `nullptr`, if the definition is not registered.
+    /// \group get_definition
+    type_safe::optional_ref<const cpp_entity> get_definition(const cpp_entity_index& idx,
+                                                             const cpp_entity&       e);
+    /// \group get_definition
+    type_safe::optional_ref<const cpp_enum> get_definition(const cpp_entity_index& idx,
+                                                           const cpp_enum&         e);
+    /// \group get_definition
+    type_safe::optional_ref<const cpp_class> get_definition(const cpp_entity_index& idx,
+                                                            const cpp_class&        e);
+    /// \group get_definition
+    type_safe::optional_ref<const cpp_variable> get_definition(const cpp_entity_index& idx,
+                                                               const cpp_variable&     e);
+    /// \group get_definition
+    type_safe::optional_ref<const cpp_function_base> get_definition(const cpp_entity_index&  idx,
+                                                                    const cpp_function_base& e);
+
 } // namespace cppast
 
 #endif // CPPAST_CPP_FORWARD_DECLARABLE_HPP_INCLUDED
