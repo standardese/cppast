@@ -422,7 +422,7 @@ namespace
     void write_function_parameters(code_generator::output& output, const cpp_function_base& base)
     {
         output << punctuation("(");
-        auto need_sep = write_container(output, base, punctuation(","));
+        auto need_sep = write_container(output, base.parameters(), punctuation(","));
         if (base.is_variadic())
         {
             if (need_sep)
@@ -753,7 +753,7 @@ namespace
         if (output)
         {
             output << keyword("template") << punctuation("<");
-            write_container(output, param, punctuation(","));
+            write_container(output, param.parameters(), punctuation(","));
             output << punctuation(">") << keyword(to_string(param.keyword())) << whitespace;
             if (param.is_variadic())
                 output << punctuation("...");

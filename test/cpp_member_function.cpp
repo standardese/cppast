@@ -51,7 +51,7 @@ struct bar : foo
     cpp_entity_index idx;
     auto             file = parse(idx, "cpp_member_function.cpp", code);
     auto count = test_visit<cpp_member_function>(*file, [&](const cpp_member_function& func) {
-        REQUIRE(count_children(func) == 0u);
+        REQUIRE(count_children(func.parameters()) == 0u);
         REQUIRE(!func.is_variadic());
         REQUIRE(!func.is_constexpr());
         REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
@@ -166,7 +166,7 @@ struct foo
     cpp_entity_index idx;
     auto             file = parse(idx, "cpp_conversion_op.cpp", code);
     auto count            = test_visit<cpp_conversion_op>(*file, [&](const cpp_conversion_op& op) {
-        REQUIRE(count_children(op) == 0u);
+        REQUIRE(count_children(op.parameters()) == 0u);
         REQUIRE(!op.is_variadic());
         REQUIRE(op.body_kind() == cpp_function_declaration);
         REQUIRE(op.ref_qualifier() == cpp_ref_none);
@@ -241,7 +241,7 @@ struct foo
         REQUIRE(!cont.is_variadic());
         REQUIRE(cont.name() == "foo");
 
-        if (count_children(cont) == 0u)
+        if (count_children(cont.parameters()) == 0u)
         {
             REQUIRE(cont.noexcept_condition());
             REQUIRE(
@@ -252,14 +252,14 @@ struct foo
             REQUIRE(!cont.is_constexpr());
             REQUIRE(cont.body_kind() == cpp_function_defaulted);
         }
-        else if (count_children(cont) == 1u)
+        else if (count_children(cont.parameters()) == 1u)
         {
             REQUIRE(!cont.noexcept_condition());
             REQUIRE(cont.is_explicit());
             REQUIRE(!cont.is_constexpr());
             REQUIRE(cont.body_kind() == cpp_function_declaration);
         }
-        else if (count_children(cont) == 2u)
+        else if (count_children(cont.parameters()) == 2u)
         {
             REQUIRE(!cont.noexcept_condition());
             REQUIRE(!cont.is_explicit());
@@ -302,7 +302,7 @@ struct d : c
 
     auto file  = parse({}, "cpp_destructor.cpp", code);
     auto count = test_visit<cpp_destructor>(*file, [&](const cpp_destructor& dtor) {
-        REQUIRE(count_children(dtor) == 0u);
+        REQUIRE(count_children(dtor.parameters()) == 0u);
         REQUIRE(!dtor.is_variadic());
 
         if (dtor.name() == "~a")

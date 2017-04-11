@@ -236,7 +236,7 @@ using d = void;
                     REQUIRE(!param.default_template());
 
                     auto no = 0u;
-                    for (auto& p_param : param)
+                    for (auto& p_param : param.parameters())
                     {
                         ++no;
                         REQUIRE(p_param.name() == "T");
@@ -250,18 +250,18 @@ using d = void;
                     REQUIRE(param.is_variadic());
                     REQUIRE(!param.default_template());
 
-                    auto cur = param.begin();
-                    REQUIRE(cur != param.end());
+                    auto cur = param.parameters().begin();
+                    REQUIRE(cur != param.parameters().end());
                     REQUIRE(cur->name().empty());
                     REQUIRE(cur->kind() == cpp_entity_kind::non_type_template_parameter_t);
 
                     ++cur;
-                    REQUIRE(cur != param.end());
+                    REQUIRE(cur != param.parameters().end());
                     REQUIRE(cur->name().empty());
                     REQUIRE(cur->kind() == cpp_entity_kind::template_type_parameter_t);
 
                     ++cur;
-                    REQUIRE(cur == param.end());
+                    REQUIRE(cur == param.parameters().end());
                 }
                 else if (param.name() == "C")
                 {
@@ -276,7 +276,7 @@ using d = void;
                     REQUIRE(entities[0]->name() == "def");
 
                     auto no = 0u;
-                    for (auto& p_param : param)
+                    for (auto& p_param : param.parameters())
                     {
                         ++no;
                         REQUIRE(p_param.name() == "");
@@ -297,13 +297,14 @@ using d = void;
                     REQUIRE(entities[0]->name() == "a");
 
                     auto no = 0u;
-                    for (auto& p_param : param)
+                    for (auto& p_param : param.parameters())
                     {
                         ++no;
                         REQUIRE(p_param.name() == "");
                         REQUIRE(p_param.kind() == cpp_entity_kind::template_template_parameter_t);
                         for (auto& p_p_param :
-                             static_cast<const cpp_template_template_parameter&>(p_param))
+                             static_cast<const cpp_template_template_parameter&>(p_param)
+                                 .parameters())
                         {
                             ++no;
                             REQUIRE(p_p_param.name() == "");

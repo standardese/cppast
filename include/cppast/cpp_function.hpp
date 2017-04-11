@@ -5,8 +5,8 @@
 #ifndef CPPAST_CPP_FUNCTION_HPP_INCLUDED
 #define CPPAST_CPP_FUNCTION_HPP_INCLUDED
 
+#include <cppast/detail/intrusive_list.hpp>
 #include <cppast/cpp_entity.hpp>
-#include <cppast/cpp_entity_container.hpp>
 #include <cppast/cpp_forward_declarable.hpp>
 #include <cppast/cpp_storage_class_specifiers.hpp>
 #include <cppast/cpp_variable_base.hpp>
@@ -64,12 +64,15 @@ namespace cppast
     /// Base class for all entities that are functions.
     ///
     /// It contains arguments and common flags.
-    class cpp_function_base
-        : public cpp_entity,
-          public cpp_entity_container<cpp_function_base, cpp_function_parameter>,
-          public cpp_forward_declarable
+    class cpp_function_base : public cpp_entity, public cpp_forward_declarable
     {
     public:
+        /// \returns An iteratable object iterating over the [cppast::cpp_function__parameter]() entities.
+        detail::iteratable_intrusive_list<cpp_function_parameter> parameters() const noexcept
+        {
+            return type_safe::ref(parameters_);
+        }
+
         /// \returns The [cppast::cpp_function_body_kind]().
         /// \notes This matches the [cppast::cpp_forward_declarable]() queries.
         cpp_function_body_kind body_kind() const noexcept
@@ -107,7 +110,9 @@ namespace cppast
             /// \effects Adds a parameter.
             void add_parameter(std::unique_ptr<cpp_function_parameter> parameter)
             {
-                static_cast<cpp_function_base&>(*function).add_child(std::move(parameter));
+                static_cast<cpp_function_base&>(*function).parameters_.push_back(*function,
+                                                                                 std::move(
+                                                                                     parameter));
             }
 
             /// \effects Marks the function as variadic.
@@ -168,9 +173,10 @@ namespace cppast
         }
 
     private:
-        std::unique_ptr<cpp_expression> noexcept_expr_;
-        cpp_function_body_kind          body_;
-        bool                            variadic_;
+        detail::intrusive_list<cpp_function_parameter> parameters_;
+        std::unique_ptr<cpp_expression>                noexcept_expr_;
+        cpp_function_body_kind                         body_;
+        bool                                           variadic_;
     };
 
     /// A [cppast::cpp_entity]() modelling a C++ function.

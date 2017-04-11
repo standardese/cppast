@@ -8,8 +8,8 @@
 #include <type_safe/optional.hpp>
 #include <type_safe/variant.hpp>
 
+#include <cppast/detail/intrusive_list.hpp>
 #include <cppast/cpp_entity.hpp>
-#include <cppast/cpp_entity_container.hpp>
 #include <cppast/cpp_variable_base.hpp>
 
 namespace cppast
@@ -170,9 +170,7 @@ namespace cppast
     using cpp_template_ref = basic_cpp_entity_ref<cpp_entity, detail::cpp_template_ref_predicate>;
 
     /// A [cppast::cpp_entity]() modelling a C++ template template parameter.
-    class cpp_template_template_parameter final
-        : public cpp_template_parameter,
-          public cpp_entity_container<cpp_template_template_parameter, cpp_template_parameter>
+    class cpp_template_template_parameter final : public cpp_template_parameter
     {
     public:
         static cpp_entity_kind kind() noexcept;
@@ -197,7 +195,7 @@ namespace cppast
             /// \effects Adds a parameter to the template.
             void add_parameter(std::unique_ptr<cpp_template_parameter> param)
             {
-                parameter_->add_child(std::move(param));
+                parameter_->parameters_.push_back(*parameter_, std::move(param));
             }
 
             /// \effects Sets the default template.
@@ -220,6 +218,12 @@ namespace cppast
             std::unique_ptr<cpp_template_template_parameter> parameter_;
         };
 
+        /// \returns An iteratable object containing the template parameters of the template template parameter.
+        detail::iteratable_intrusive_list<cpp_template_parameter> parameters() const noexcept
+        {
+            return type_safe::ref(parameters_);
+        }
+
         /// \returns The keyword used in the template parameter.
         cpp_template_keyword keyword() const noexcept
         {
@@ -241,8 +245,9 @@ namespace cppast
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
-        type_safe::optional<cpp_template_ref> default_;
-        cpp_template_keyword                  keyword_;
+        detail::intrusive_list<cpp_template_parameter> parameters_;
+        type_safe::optional<cpp_template_ref>          default_;
+        cpp_template_keyword                           keyword_;
     };
 
     /// An argument for a [cppast::cpp_template_parameter]().

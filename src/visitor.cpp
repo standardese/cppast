@@ -11,12 +11,9 @@
 #include <cppast/cpp_class_template.hpp>
 #include <cppast/cpp_enum.hpp>
 #include <cppast/cpp_file.hpp>
-#include <cppast/cpp_function.hpp>
 #include <cppast/cpp_function_template.hpp>
 #include <cppast/cpp_language_linkage.hpp>
-#include <cppast/cpp_member_function.hpp>
 #include <cppast/cpp_namespace.hpp>
-#include <cppast/cpp_template_parameter.hpp>
 #include <cppast/cpp_variable_template.hpp>
 
 using namespace cppast;
@@ -61,16 +58,6 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
         return handle_container<cpp_enum>(e, cb, functor, last_child);
     case cpp_entity_kind::class_t:
         return handle_container<cpp_class>(e, cb, functor, last_child);
-    case cpp_entity_kind::function_t:
-        return handle_container<cpp_function>(e, cb, functor, last_child);
-    case cpp_entity_kind::member_function_t:
-        return handle_container<cpp_member_function>(e, cb, functor, last_child);
-    case cpp_entity_kind::conversion_op_t:
-        return handle_container<cpp_conversion_op>(e, cb, functor, last_child);
-    case cpp_entity_kind::constructor_t:
-        return handle_container<cpp_constructor>(e, cb, functor, last_child);
-    case cpp_entity_kind::template_template_parameter_t:
-        return handle_container<cpp_template_template_parameter>(e, cb, functor, last_child);
     case cpp_entity_kind::alias_template_t:
         return handle_container<cpp_alias_template>(e, cb, functor, last_child);
     case cpp_entity_kind::variable_template_t:
@@ -97,10 +84,15 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
     case cpp_entity_kind::member_variable_t:
     case cpp_entity_kind::bitfield_t:
     case cpp_entity_kind::function_parameter_t:
+    case cpp_entity_kind::function_t:
+    case cpp_entity_kind::member_function_t:
+    case cpp_entity_kind::conversion_op_t:
+    case cpp_entity_kind::constructor_t:
     case cpp_entity_kind::destructor_t:
     case cpp_entity_kind::friend_t:
     case cpp_entity_kind::template_type_parameter_t:
     case cpp_entity_kind::non_type_template_parameter_t:
+    case cpp_entity_kind::template_template_parameter_t:
     case cpp_entity_kind::unexposed_t:
         return cb(functor, e, {visitor_info::leaf_entity, last_child});
 

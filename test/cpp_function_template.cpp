@@ -88,7 +88,7 @@ d::d(const int&);
                                 *cpp_template_parameter_type::build(parameter)));
 
             auto count = 0u;
-            for (auto& param : func)
+            for (auto& param : func.parameters())
             {
                 ++count;
                 REQUIRE(
@@ -117,7 +117,7 @@ d::d(const int&);
 
             auto type_parameter = cpp_template_type_parameter_ref(cpp_entity_id(""), "T");
             auto count          = 0u;
-            for (auto& param : func)
+            for (auto& param : func.parameters())
             {
                 ++count;
                 REQUIRE(equal_types(idx, param.type(),
@@ -161,7 +161,7 @@ d::d(const int&);
 
             auto parameter = cpp_template_type_parameter_ref(cpp_entity_id(""), "T");
             auto count     = 0u;
-            for (auto& param : func)
+            for (auto& param : func.parameters())
             {
                 ++count;
                 REQUIRE(
@@ -201,7 +201,7 @@ d::d(const int&);
                 REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_int)));
 
                 auto count = 0u;
-                for (auto& param : func)
+                for (auto& param : func.parameters())
                 {
                     ++count;
                     REQUIRE(
@@ -227,7 +227,7 @@ d::d(const int&);
                 REQUIRE(equal_types(idx, func.return_type(), *builder.finish()));
 
                 auto count = 0u;
-                for (auto& param : func)
+                for (auto& param : func.parameters())
                 {
                     ++count;
                     REQUIRE(equal_types(idx, param.type(), *cpp_builtin_type::build(cpp_int)));
@@ -262,7 +262,7 @@ d::d(const int&);
                 auto& func = static_cast<const cpp_constructor&>(tfunc.function());
 
                 auto count = 0u;
-                for (auto& param : func)
+                for (auto& param : func.parameters())
                 {
                     ++count;
                     REQUIRE(

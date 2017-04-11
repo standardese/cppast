@@ -205,7 +205,7 @@ struct b<0, T> {};
                                             *cpp_template_parameter_type::build(
                                                 cpp_template_type_parameter_ref(cpp_entity_id(""),
                                                                                 "T"))));
-                        for (auto& param : mfunc)
+                        for (auto& param : mfunc.parameters())
                             REQUIRE(
                                 equal_types(idx, param.type(),
                                             *cpp_template_parameter_type::build(
