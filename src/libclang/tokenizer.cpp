@@ -292,8 +292,10 @@ detail::token_iterator detail::find_closing_bracket(detail::token_stream stream)
             --paren_count;
     }
     stream.bump_back();
-    DEBUG_ASSERT(paren_count == 0 && stream.peek().value() == close_bracket, parse_error_handler{},
-                 stream.cursor(), "find_closing_bracket() internal parse error");
+    // only check first parameter, token might be ">>"
+    DEBUG_ASSERT(paren_count == 0 && stream.peek().value()[0] == close_bracket[0],
+                 parse_error_handler{}, stream.cursor(),
+                 "find_closing_bracket() internal parse error");
     return stream.cur();
 }
 

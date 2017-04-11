@@ -148,7 +148,8 @@ namespace
             {
                 auto iter = detail::find_closing_bracket(stream);
                 scope += detail::to_string(stream, iter);
-                detail::skip(stream, ">");
+                if (!detail::skip_if(stream, ">>"))
+                    detail::skip(stream, ">");
                 scope += ">";
             }
             else
