@@ -113,8 +113,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class(const detail::parse_context&
                 builder.is_final();
             else if (kind == CXCursor_TemplateTypeParameter
                      || kind == CXCursor_NonTypeTemplateParameter
-                     || kind == CXCursor_TemplateTemplateParameter || clang_isExpression(kind)
-                     || clang_isReference(kind))
+                     || kind == CXCursor_TemplateTemplateParameter || kind == CXCursor_ParmDecl
+                     || clang_isExpression(kind) || clang_isReference(kind))
                 // other children due to templates and stuff
                 return;
             else if (auto entity = parse_entity(context, child))
