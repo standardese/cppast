@@ -15,7 +15,16 @@ cpp_entity_id detail::get_entity_id(const CXCursor& cur)
 {
     cxstring usr(clang_getCursorUSR(cur));
     DEBUG_ASSERT(!usr.empty(), detail::parse_error_handler{}, cur, "cannot create id for entity");
-    return cpp_entity_id(usr.c_str());
+    if (clang_getCursorKind(cur) == CXCursor_FunctionTemplate)
+    {
+        // we have a function template
+        // combine return type with USR to ensure no ambiguity when SFINAE is applied there
+        // (and hope this prevents all collisions...)
+        cxstring type_spelling(clang_getTypeSpelling(clang_getCursorResultType(cur)));
+        return cpp_entity_id(std::string(usr.c_str()) + type_spelling.c_str());
+    }
+    else
+        return cpp_entity_id(usr.c_str());
 }
 
 detail::cxstring detail::get_cursor_name(const CXCursor& cur)
