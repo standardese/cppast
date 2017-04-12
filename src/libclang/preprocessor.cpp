@@ -475,7 +475,11 @@ namespace
     ts::optional<std::string> parse_undef(position& p)
     {
         // format (at new line): #undef <name>
-        if (!p.was_newl() || !starts_with(p, "#undef"))
+        // due to a clang bug (http://bugs.llvm.org/show_bug.cgi?id=32631) I'll also an undef in the middle of the line
+        // the only issue is with string literals containing `#undef`.
+        // those will be stripped and evaluated
+        // however, this kind of usage should be rare™
+        if (/*!p.was_newl() ||*/ !starts_with(p, "#undef"))
             return ts::nullopt;
         p.skip(std::strlen("#undef"));
 
