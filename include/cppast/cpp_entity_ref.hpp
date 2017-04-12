@@ -9,6 +9,7 @@
 
 #include <type_safe/variant.hpp>
 
+#include <cppast/detail/assert.hpp>
 #include <cppast/cpp_entity_index.hpp>
 
 namespace cppast
