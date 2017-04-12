@@ -67,10 +67,6 @@ namespace cppast
 
         friend cpp_entity_container<cpp_friend, cpp_entity>;
     };
-
-    /// \returns Whether or not the given entity is "friended",
-    /// that is, its declaration exists as part of a [cppast::cpp_friend]() declaration.
-    bool is_friended(const cpp_entity& e) noexcept;
 } // namespace cppast
 
 #endif // CPPAST_CPP_FRIEND_HPP_INCLUDED

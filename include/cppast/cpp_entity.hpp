@@ -159,6 +159,10 @@ namespace cppast
     /// \notes Do not use this entity other to read information from the template entity.
     bool is_templated(const cpp_entity& e) noexcept;
 
+    /// \returns Whether or not the given entity is "friended",
+    /// that is, its declaration exists as part of a [cppast::cpp_friend]() declaration.
+    bool is_friended(const cpp_entity& e) noexcept;
+
     /// \returns The full name of the [cppast::cpp_entity](), with all scopes.
     /// \notes Enitites without a name ([cppast::cpp_using_declaration]() etc.) do not have a full name either.
     /// \notes For (template) parameters the full name is the name itself.

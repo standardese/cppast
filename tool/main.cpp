@@ -133,9 +133,11 @@ void print_ast(std::ostream& out, const cppast::cpp_file& file)
     std::string prefix; // the current prefix string
     // recursively visit file and all children
     cppast::visit(file, [&](const cppast::cpp_entity& e, cppast::visitor_info info) {
-        if (e.kind() == cppast::cpp_entity_kind::file_t)
-            // no need to do anything for a file
-            // return value of true continues visit
+        if (e.kind() == cppast::cpp_entity_kind::file_t || cppast::is_templated(e)
+            || cppast::is_friended(e))
+            // no need to do anything for a file,
+            // templated and friended entities are just proxies, so skip those as well
+            // return true to continue visit for children
             return true;
         else if (info.event == cppast::visitor_info::container_entity_exit)
         {
