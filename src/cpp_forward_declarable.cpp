@@ -8,6 +8,7 @@
 #include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_enum.hpp>
 #include <cppast/cpp_function.hpp>
+#include <cppast/cpp_template.hpp>
 #include <cppast/cpp_variable.hpp>
 
 using namespace cppast;
@@ -30,6 +31,11 @@ namespace
         case cpp_entity_kind::constructor_t:
         case cpp_entity_kind::destructor_t:
             return type_safe::ref(static_cast<const cpp_function_base&>(e));
+        case cpp_entity_kind::function_template_t:
+        case cpp_entity_kind::function_template_specialization_t:
+        case cpp_entity_kind::class_template_t:
+        case cpp_entity_kind::class_template_specialization_t:
+            return get_declarable(*static_cast<const cpp_template&>(e).begin());
 
         case cpp_entity_kind::file_t:
         case cpp_entity_kind::macro_definition_t:
@@ -52,10 +58,6 @@ namespace
         case cpp_entity_kind::template_template_parameter_t:
         case cpp_entity_kind::alias_template_t:
         case cpp_entity_kind::variable_template_t:
-        case cpp_entity_kind::function_template_t:
-        case cpp_entity_kind::function_template_specialization_t:
-        case cpp_entity_kind::class_template_t:
-        case cpp_entity_kind::class_template_specialization_t:
         case cpp_entity_kind::static_assert_t:
         case cpp_entity_kind::unexposed_t:
             return nullptr;
