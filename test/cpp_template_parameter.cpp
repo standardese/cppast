@@ -209,7 +209,7 @@ using b = void;
 template <template <int> class C = ns::def>
 using c = void;
 
-template <template <template <typename> class> class D = a>
+template <template <template <typename...> class> class D = a>
 using d = void;
 )";
 
@@ -309,6 +309,7 @@ using d = void;
                             ++no;
                             REQUIRE(p_p_param.name() == "");
                             REQUIRE(p_p_param.kind() == cpp_entity_kind::template_type_parameter_t);
+                            REQUIRE(p_p_param.is_variadic());
                         }
                     }
                     REQUIRE(no == 2u);

@@ -169,11 +169,24 @@ namespace
         else if ((kind == CXCursor_TemplateTypeParameter
                   || kind == CXCursor_NonTypeTemplateParameter
                   || kind == CXCursor_TemplateTemplateParameter)
+                 && token_after_is(tu, file, cur, end, "..."))
+        {
+            // variadic tokens in unnamed parameter not included
+            end = get_next_location(tu, file, end, 3);
+            DEBUG_ASSERT(token_after_is(tu, file, cur, end, ">")
+                             || token_after_is(tu, file, cur, end, ","),
+                         detail::parse_error_handler{}, cur,
+                         "unexpected token in variadic parameter workaround");
+        }
+        else if ((kind == CXCursor_TemplateTypeParameter
+                  || kind == CXCursor_NonTypeTemplateParameter
+                  || kind == CXCursor_TemplateTemplateParameter)
                  && !token_after_is(tu, file, cur, end, ">")
                  && !token_after_is(tu, file, cur, end, ","))
         {
             DEBUG_ASSERT(token_after_is(tu, file, cur, get_next_location(tu, file, end, -2), ">>"),
-                         detail::assert_handler{});
+                         detail::parse_error_handler{}, cur,
+                         "unexpected token in maximal munch workaround");
             unmunch = true;
             // need to shrink range anyway
             end = get_next_location(tu, file, end, -1);
