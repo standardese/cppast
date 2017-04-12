@@ -268,7 +268,7 @@ namespace
 
         if (starts_with(p, " "))
             // skip one whitespace at most
-            p.bump();
+            p.skip();
 
         while (!starts_with(p, "*/"))
         {
@@ -278,27 +278,27 @@ namespace
                 while (!result.comment.empty() && result.comment.back() == ' ')
                     result.comment.pop_back();
                 // skip newline
-                p.bump();
+                p.skip();
                 result.comment += '\n';
                 // skip indentation
                 while (starts_with(p, " "))
-                    p.bump();
+                    p.skip();
                 // skip continuation star, if any
                 if (starts_with(p, "*") && !starts_with(p, "*/"))
                 {
-                    p.bump();
+                    p.skip();
                     if (starts_with(p, " "))
                         // skip one whitespace at most
-                        p.bump();
+                        p.skip();
                 }
             }
             else
             {
                 result.comment += *p.ptr();
-                p.bump();
+                p.skip();
             }
         }
-        p.bump(2u);
+        p.skip(2u);
 
         // remove trailing star
         if (!result.comment.empty() && result.comment.back() == '*')
@@ -311,23 +311,23 @@ namespace
         return result;
     }
 
-    bool bump_c_comment(position& p, detail::preprocessor_output& output, bool in_main_file)
+    bool skip_c_comment(position& p, detail::preprocessor_output& output, bool in_main_file)
     {
         if (!starts_with(p, "/*"))
             return false;
-        p.bump(2u);
+        p.skip(2u);
 
         if (in_main_file && starts_with(p, "*"))
         {
             // doc comment
-            p.bump();
+            p.skip();
             output.comments.push_back(parse_c_doc_comment(p));
         }
         else
         {
             while (!starts_with(p, "*/"))
-                p.bump();
-            p.bump(2u);
+                p.skip();
+            p.skip(2u);
         }
 
         if (!starts_with(p, "\n"))
@@ -347,12 +347,12 @@ namespace
             end_of_line ? detail::pp_doc_comment::end_of_line : detail::pp_doc_comment::cpp;
         if (starts_with(p, " "))
             // skip one whitespace at most
-            p.bump();
+            p.skip();
 
         while (!starts_with(p, "\n"))
         {
             result.comment += *p.ptr();
-            p.bump();
+            p.skip();
         }
         // don't skip newline
 
@@ -383,30 +383,30 @@ namespace
         }
     }
 
-    bool bump_cpp_comment(position& p, detail::preprocessor_output& output, bool in_main_file)
+    bool skip_cpp_comment(position& p, detail::preprocessor_output& output, bool in_main_file)
     {
         if (!starts_with(p, "//"))
             return false;
-        p.bump(2u);
+        p.skip(2u);
 
         if (in_main_file && (starts_with(p, "/") || starts_with(p, "!")))
         {
             // C++ style doc comment
-            p.bump();
+            p.skip();
             auto comment = parse_cpp_doc_comment(p, false);
             merge_or_add(output, std::move(comment));
         }
         else if (in_main_file && starts_with(p, "<"))
         {
             // end of line doc comment
-            p.bump();
+            p.skip();
             auto comment = parse_cpp_doc_comment(p, true);
             output.comments.push_back(std::move(comment));
         }
         else
         {
             while (!starts_with(p, "\n"))
-                p.bump();
+                p.skip();
             // don't skip newline
         }
 
@@ -695,9 +695,9 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                 break;
             }
         }
-        else if (bump_c_comment(p, result, file_depth == 0u))
+        else if (skip_c_comment(p, result, file_depth == 0u))
             continue;
-        else if (bump_cpp_comment(p, result, file_depth == 0u))
+        else if (skip_cpp_comment(p, result, file_depth == 0u))
             continue;
         else
             p.bump();
