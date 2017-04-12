@@ -25,10 +25,12 @@ namespace
     // build the command that runs the preprocessor
     std::string get_command(const libclang_compile_config& c, const char* full_path)
     {
+        // -x c++: force C++ as input language
+        // -I.: add current working directory to include search path
         // -E: print preprocessor output
         // -CC: keep comments, even in macro
         // -dD: print macro definitions as well
-        auto flags = std::string("-E -CC -dD");
+        auto flags = std::string("-x c++ -I. -E -CC -dD");
         if (detail::libclang_compile_config_access::clang_version(c) >= 40000)
             // -Xclang -dI: print include directives as well (clang >= 4.0.0)
             flags += " -Xclang -dI";
