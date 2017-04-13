@@ -6,8 +6,37 @@
 
 #include <cppast/cpp_entity_index.hpp>
 #include <cppast/cpp_entity_kind.hpp>
+#include <cppast/cpp_template.hpp>
 
 using namespace cppast;
+
+cpp_scope_name::cpp_scope_name(type_safe::object_ref<const cpp_entity> entity) : entity_(entity)
+{
+    if (cppast::is_templated(*entity))
+    {
+        auto& templ = static_cast<const cpp_template&>(entity->parent().value());
+        if (!templ.parameters().empty())
+            templ_ = type_safe::ref(templ);
+    }
+    else if (is_template(entity->kind()))
+    {
+        auto& templ = static_cast<const cpp_template&>(*entity);
+        if (!templ.parameters().empty())
+            templ_ = type_safe::ref(templ);
+    }
+}
+
+const std::string& cpp_scope_name::name() const noexcept
+{
+    return entity_->name();
+}
+
+detail::iteratable_intrusive_list<cpp_template_parameter> cpp_scope_name::template_parameters()
+    const noexcept
+{
+    DEBUG_ASSERT(is_templated(), detail::precondition_error_handler{});
+    return templ_.value().parameters();
+}
 
 cpp_entity_kind cpp_unexposed_entity::kind() noexcept
 {

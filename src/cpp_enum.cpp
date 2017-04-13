@@ -38,7 +38,9 @@ cpp_entity_kind cpp_enum::do_get_entity_kind() const noexcept
     return kind();
 }
 
-type_safe::optional<std::string> cpp_enum::do_get_scope_name() const
+type_safe::optional<cpp_scope_name> cpp_enum::do_get_scope_name() const
 {
-    return scoped_ ? type_safe::make_optional(name()) : type_safe::nullopt;
+    if (scoped_)
+        return type_safe::ref(*this);
+    return type_safe::nullopt;
 }

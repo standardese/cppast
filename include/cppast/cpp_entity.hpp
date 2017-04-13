@@ -11,9 +11,40 @@
 
 namespace cppast
 {
+    class cpp_entity;
     enum class cpp_entity_kind;
     class cpp_entity_index;
     struct cpp_entity_id;
+    class cpp_template_parameter;
+    class cpp_template;
+
+    /// The name of a scope.
+    ///
+    /// It is a combination of a name and optional template parameters.
+    class cpp_scope_name
+    {
+    public:
+        /// \effects Creates a scope out of a given entity.
+        cpp_scope_name(type_safe::object_ref<const cpp_entity> entity);
+
+        /// \returns The name of the scope.
+        const std::string& name() const noexcept;
+
+        /// \returns Whether or not the scope is templated.
+        bool is_templated() const noexcept
+        {
+            return templ_.has_value();
+        }
+
+        /// \returns An iteratable object iterating over the [cppast::cpp_template_parameter]() entities of the scope.
+        /// \requires The scope is templated.
+        detail::iteratable_intrusive_list<cpp_template_parameter> template_parameters() const
+            noexcept;
+
+    private:
+        type_safe::object_ref<const cpp_entity>     entity_;
+        type_safe::optional_ref<const cpp_template> templ_;
+    };
 
     /// The base class for all entities in the C++ AST.
     class cpp_entity : detail::intrusive_list_node<cpp_entity>
@@ -39,7 +70,7 @@ namespace cppast
 
         /// \returns The name of the new scope created by the entity,
         /// if there is any.
-        type_safe::optional<std::string> scope_name() const
+        type_safe::optional<cpp_scope_name> scope_name() const
         {
             return do_get_scope_name();
         }
@@ -100,7 +131,7 @@ namespace cppast
 
         /// \returns The name of the new scope created by the entity, if any.
         /// By default, there is no scope created.
-        virtual type_safe::optional<std::string> do_get_scope_name() const
+        virtual type_safe::optional<cpp_scope_name> do_get_scope_name() const
         {
             return type_safe::nullopt;
         }

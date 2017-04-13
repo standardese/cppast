@@ -140,6 +140,7 @@ unsigned count_children(const Entity& cont)
     return std::distance(cont.begin(), cont.end());
 }
 
+// ignores templated scopes
 inline std::string full_name(const cppast::cpp_entity& e)
 {
     if (e.name().empty())
@@ -152,8 +153,9 @@ inline std::string full_name(const cppast::cpp_entity& e)
 
     for (auto cur = e.parent(); cur; cur = cur.value().parent())
         // prepend each scope, if there is any
-        type_safe::with(cur.value().scope_name(),
-                        [&](const std::string& cur_scope) { scopes = cur_scope + "::" + scopes; });
+        type_safe::with(cur.value().scope_name(), [&](const cppast::cpp_scope_name& cur_scope) {
+            scopes = cur_scope.name() + "::" + scopes;
+        });
 
     return scopes + e.name();
 }

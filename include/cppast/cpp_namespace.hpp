@@ -74,10 +74,9 @@ namespace cppast
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
-        /// \returns The name of the namespace.
-        type_safe::optional<std::string> do_get_scope_name() const override
+        type_safe::optional<cpp_scope_name> do_get_scope_name() const override
         {
-            return name();
+            return type_safe::ref(*this);
         }
 
         bool inline_;
