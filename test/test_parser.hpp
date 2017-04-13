@@ -140,13 +140,31 @@ unsigned count_children(const Entity& cont)
     return std::distance(cont.begin(), cont.end());
 }
 
+inline std::string full_name(const cppast::cpp_entity& e)
+{
+    if (e.name().empty())
+        return "";
+    else if (cppast::is_parameter(e.kind()))
+        // parameters don't have a full name
+        return e.name();
+
+    std::string scopes;
+
+    for (auto cur = e.parent(); cur; cur = cur.value().parent())
+        // prepend each scope, if there is any
+        type_safe::with(cur.value().scope_name(),
+                        [&](const std::string& cur_scope) { scopes = cur_scope + "::" + scopes; });
+
+    return scopes + e.name();
+}
+
 // checks the full name/parent
 inline void check_parent(const cppast::cpp_entity& e, const char* parent_name,
                          const char* full_name)
 {
     REQUIRE(e.parent());
     REQUIRE(e.parent().value().name() == parent_name);
-    REQUIRE(cppast::full_name(e) == full_name);
+    REQUIRE(::full_name(e) == full_name);
 }
 
 bool equal_types(const cppast::cpp_entity_index& idx, const cppast::cpp_type& parsed,
