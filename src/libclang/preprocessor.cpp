@@ -17,6 +17,8 @@
 #include <cppast/cpp_entity_kind.hpp>
 #include <cppast/diagnostic.hpp>
 
+#include "parse_error.hpp"
+
 using namespace cppast;
 namespace ts = type_safe;
 
@@ -415,10 +417,13 @@ namespace
         return true;
     }
 
-    void skip_spaces(position& p)
+    void skip_spaces(position& p, bool bump = false)
     {
         while (starts_with(p, " "))
-            p.skip();
+            if (bump)
+                p.bump();
+            else
+                p.skip();
     }
 
     std::unique_ptr<cpp_macro_definition> parse_macro(position&                    p,
@@ -427,31 +432,34 @@ namespace
     {
         // format (at new line): #define <name> [replacement]
         // or: #define <name>(<args>) [replacement]
+        // note: keep macro definition in file
         if (!p.was_newl() || !starts_with(p, "#define"))
             return nullptr;
-        p.skip(std::strlen("#define"));
-        skip_spaces(p);
+        // read line here for comment matching
+        auto cur_line = p.cur_line();
+        p.bump(std::strlen("#define"));
+        skip_spaces(p, true);
 
         std::string name;
         while (!starts_with(p, "(") && !starts_with(p, " ") && !starts_with(p, "\n"))
         {
             name += *p.ptr();
-            p.skip();
+            p.bump();
         }
 
         ts::optional<std::string> args;
         if (starts_with(p, "("))
         {
             std::string str;
-            for (p.skip(); !starts_with(p, ")"); p.skip())
+            for (p.bump(); !starts_with(p, ")"); p.bump())
                 str += *p.ptr();
-            p.skip();
+            p.bump();
             args = std::move(str);
         }
 
         std::string rep;
         auto        in_c_comment = false;
-        for (skip_spaces(p); in_c_comment || !starts_with(p, "\n"); p.skip())
+        for (skip_spaces(p, true); in_c_comment || !starts_with(p, "\n"); p.bump())
         {
             if (starts_with(p, "/*"))
                 in_c_comment = true;
@@ -466,7 +474,7 @@ namespace
 
         auto result = cpp_macro_definition::build(std::move(name), std::move(args), std::move(rep));
         // match comment directly
-        if (!output.comments.empty() && output.comments.back().matches(*result, p.cur_line()))
+        if (!output.comments.empty() && output.comments.back().matches(*result, cur_line))
         {
             result->set_comment(std::move(output.comments.back().comment));
             output.comments.pop_back();
@@ -483,10 +491,10 @@ namespace
         // however, this kind of usage should be rare™
         if (/*!p.was_newl() ||*/ !starts_with(p, "#undef"))
             return ts::nullopt;
-        p.skip(std::strlen("#undef"));
+        p.bump(std::strlen("#undef"));
 
         std::string result;
-        for (skip_spaces(p); !starts_with(p, "\n"); p.skip())
+        for (skip_spaces(p, true); !starts_with(p, "\n"); p.bump())
             result += *p.ptr();
         // don't skip newline
 
@@ -499,6 +507,7 @@ namespace
     {
         // format (at new line, literal <>): #include <filename>
         // or: #include "filename"
+        // note: don't write include back
         if (!p.was_newl() || !starts_with(p, "#include"))
             return nullptr;
         p.skip(std::strlen("#include"));
@@ -544,14 +553,14 @@ namespace
         return result;
     }
 
-    bool skip_pragma(position& p)
+    bool bump_pragma(position& p)
     {
         // format (at new line): #pragma <stuff..>\n
         if (!p.was_newl() || !starts_with(p, "#pragma"))
             return false;
 
         while (!starts_with(p, "\n"))
-            p.skip();
+            p.bump();
         // don't skip newline
 
         return true;
@@ -645,11 +654,27 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
     {
         if (auto macro = parse_macro(p, result, file_depth == 0u))
         {
+            if (logger.is_verbose())
+            {
+                auto message = detail::format("parsing macro '", macro->name(), "'");
+                logger.log("preprocessor",
+                           diagnostic{std::move(message), source_location::make_file(path),
+                                      severity::debug});
+            }
+
             result.entities.push_back({std::move(macro), p.cur_line()});
         }
         else if (auto undef = parse_undef(p))
         {
             if (file_depth == 0u)
+            {
+                if (logger.is_verbose())
+                {
+                    auto message = detail::format("undefining macro '", undef.value(), "'");
+                    logger.log("preprocessor",
+                               diagnostic{std::move(message), source_location::make_file(path),
+                                          severity::debug});
+                }
                 result.entities
                     .erase(std::remove_if(result.entities.begin(), result.entities.end(),
                                           [&](const pp_entity& e) {
@@ -658,13 +683,20 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                                                      && e.entity->name() == undef.value();
                                           }),
                            result.entities.end());
+            }
         }
         else if (auto include = parse_include(p, result, file_depth == 0u))
         {
-            if (file_depth == 0u)
-                result.entities.push_back({std::move(include), p.cur_line()});
+            if (logger.is_verbose())
+            {
+                auto message = detail::format("parsing include '", include->name(), "'");
+                logger.log("preprocessor",
+                           diagnostic{std::move(message), source_location::make_file(path),
+                                      severity::debug});
+            }
+            result.entities.push_back({std::move(include), p.cur_line()});
         }
-        else if (skip_pragma(p))
+        else if (bump_pragma(p))
             continue;
         else if (auto lm = parse_linemarker(p))
         {
