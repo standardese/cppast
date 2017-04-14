@@ -205,6 +205,7 @@ TEST_CASE("cpp_constructor")
 {
     // only test constructor specific stuff
     const char* code;
+    auto        is_template = false;
     SECTION("non-template")
     {
         code = R"(
@@ -217,11 +218,15 @@ struct foo
     /// constexpr foo(int,char)=delete;
     constexpr foo(int, char) = delete;
 };
+
+/// foo::foo(int);
+foo::foo(int) {}
 )";
     }
     SECTION("template")
     {
-        code = R"(
+        is_template = true;
+        code        = R"(
 template <typename T>
 struct foo
 {
@@ -232,6 +237,10 @@ struct foo
     /// constexpr foo(int,char)=delete;
     constexpr foo(int, char) = delete;
 };
+
+/// foo<T>::foo(int);
+template <typename T>
+foo<T>::foo(int) {}
 )";
     }
 
@@ -239,37 +248,50 @@ struct foo
     auto             file = parse(idx, "cpp_constructor.cpp", code);
     auto count            = test_visit<cpp_constructor>(*file, [&](const cpp_constructor& cont) {
         REQUIRE(!cont.is_variadic());
-        REQUIRE(cont.name() == "foo");
 
-        if (count_children(cont.parameters()) == 0u)
+        if (cont.is_definition() && count_children(cont.parameters()) == 1u)
         {
-            REQUIRE(cont.noexcept_condition());
-            REQUIRE(
-                equal_expressions(cont.noexcept_condition().value(),
-                                  *cpp_literal_expression::build(cpp_builtin_type::build(cpp_bool),
-                                                                 "true")));
-            REQUIRE(!cont.is_explicit());
-            REQUIRE(!cont.is_constexpr());
-            REQUIRE(cont.body_kind() == cpp_function_defaulted);
-        }
-        else if (count_children(cont.parameters()) == 1u)
-        {
+            if (is_template)
+                REQUIRE(cont.name() == "foo<T>::foo");
+            else
+                REQUIRE(cont.name() == "foo::foo");
             REQUIRE(!cont.noexcept_condition());
-            REQUIRE(cont.is_explicit());
             REQUIRE(!cont.is_constexpr());
-            REQUIRE(cont.body_kind() == cpp_function_declaration);
-        }
-        else if (count_children(cont.parameters()) == 2u)
-        {
-            REQUIRE(!cont.noexcept_condition());
-            REQUIRE(!cont.is_explicit());
-            REQUIRE(cont.is_constexpr());
-            REQUIRE(cont.body_kind() == cpp_function_deleted);
         }
         else
-            REQUIRE(false);
+        {
+            REQUIRE(cont.name() == "foo");
+
+            if (count_children(cont.parameters()) == 0u)
+            {
+                REQUIRE(cont.noexcept_condition());
+                REQUIRE(equal_expressions(cont.noexcept_condition().value(),
+                                          *cpp_literal_expression::build(cpp_builtin_type::build(
+                                                                             cpp_bool),
+                                                                         "true")));
+                REQUIRE(!cont.is_explicit());
+                REQUIRE(!cont.is_constexpr());
+                REQUIRE(cont.body_kind() == cpp_function_defaulted);
+            }
+            else if (count_children(cont.parameters()) == 1u)
+            {
+                REQUIRE(!cont.noexcept_condition());
+                REQUIRE(cont.is_explicit());
+                REQUIRE(!cont.is_constexpr());
+                REQUIRE(cont.body_kind() == cpp_function_declaration);
+            }
+            else if (count_children(cont.parameters()) == 2u)
+            {
+                REQUIRE(!cont.noexcept_condition());
+                REQUIRE(!cont.is_explicit());
+                REQUIRE(cont.is_constexpr());
+                REQUIRE(cont.body_kind() == cpp_function_deleted);
+            }
+            else
+                REQUIRE(false);
+        }
     });
-    REQUIRE(count == 3u);
+    REQUIRE(count == 4u);
 }
 
 TEST_CASE("cpp_destructor")

@@ -92,28 +92,51 @@ namespace
         bool        is_explicit  = false;
     };
 
-    bool prefix_end(detail::token_stream& stream, const char* name)
+    bool prefix_end(detail::token_stream& stream, const char* name, bool is_ctor)
     {
         auto cur = stream.cur();
         // name can have multiple tokens if it is an operator
         if (!detail::skip_if(stream, name, true))
             return false;
+        else if (!is_ctor)
+            return true;
+        // if we reach this point, we've encountered the name of a constructor
+        // need to make sure it is not actually a class name
         else if (stream.peek() == "::")
         {
-            // was a class name of constructor
+            //  after name came "::", it is a class name
             stream.set_cur(cur);
             return false;
+        }
+        else if (stream.peek() == "<")
+        {
+            // after name came "<", it might be arguments for a class template,
+            // or just a specialization
+            // check if ( comes after the arguments
+            detail::skip_brackets(stream);
+            if (stream.peek() == "(")
+            {
+                // it was just a specialization, we're at the end
+                stream.set_cur(cur);
+                return true;
+            }
+            else
+            {
+                // class arguments
+                stream.set_cur(cur);
+                return false;
+            }
         }
         else
             return true;
     }
 
-    prefix_info parse_prefix_info(detail::token_stream& stream, const char* name)
+    prefix_info parse_prefix_info(detail::token_stream& stream, const char* name, bool is_ctor)
     {
         prefix_info result;
 
         std::string scope;
-        while (!stream.done() && !prefix_end(stream, name))
+        while (!stream.done() && !prefix_end(stream, name, is_ctor))
         {
             if (detail::skip_if(stream, "constexpr"))
             {
@@ -365,7 +388,7 @@ namespace
         detail::tokenizer    tokenizer(context.tu, context.file, cur);
         detail::token_stream stream(tokenizer, cur);
 
-        auto prefix = parse_prefix_info(stream, name.c_str());
+        auto prefix = parse_prefix_info(stream, name.c_str(), false);
         DEBUG_ASSERT(!prefix.is_virtual && !prefix.is_explicit, detail::parse_error_handler{}, cur,
                      "free function cannot be virtual or explicit");
 
@@ -516,7 +539,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
     detail::tokenizer    tokenizer(context.tu, context.file, cur);
     detail::token_stream stream(tokenizer, cur);
 
-    auto prefix = parse_prefix_info(stream, name.c_str());
+    auto prefix = parse_prefix_info(stream, name.c_str(), false);
     DEBUG_ASSERT(!prefix.is_explicit, detail::parse_error_handler{}, cur,
                  "member function cannot be explicit");
 
@@ -545,7 +568,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
     detail::tokenizer    tokenizer(context.tu, context.file, cur);
     detail::token_stream stream(tokenizer, cur);
 
-    auto prefix = parse_prefix_info(stream, "operator");
+    auto prefix = parse_prefix_info(stream, "operator", false);
     // heuristic to find arguments tokens
     // skip forward, skipping inside brackets
     auto type_start = stream.cur();
@@ -606,7 +629,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
     detail::tokenizer    tokenizer(context.tu, context.file, cur);
     detail::token_stream stream(tokenizer, cur);
 
-    auto prefix = parse_prefix_info(stream, name.c_str());
+    auto prefix = parse_prefix_info(stream, name.c_str(), true);
     DEBUG_ASSERT(!prefix.is_virtual, detail::parse_error_handler{}, cur,
                  "constructor cannot be virtual");
 
