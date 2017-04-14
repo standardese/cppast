@@ -70,10 +70,13 @@ class e
 
 namespace ns
 {
-    /// struct base{
-    /// };
-    struct base {};
+    /// struct base;
+    struct base;
 }
+
+/// struct ns::base{
+/// };
+struct ns::base {};
 
 /// struct f
 /// :ns::base,virtual protected e{
@@ -296,5 +299,5 @@ struct g
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 11u);
+    REQUIRE(count == 12u);
 }

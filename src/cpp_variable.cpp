@@ -33,7 +33,7 @@ std::unique_ptr<cpp_variable> cpp_variable::build_declaration(cpp_entity_id defi
 {
     auto result = std::unique_ptr<cpp_variable>(
         new cpp_variable(std::move(name), std::move(type), nullptr, spec, is_constexpr));
-    result->set_definition(definition_id);
+    result->mark_declaration(definition_id);
     return result;
 }
 

@@ -12,6 +12,7 @@ TEST_CASE("cpp_member_function")
 {
     auto code = R"(
 // no need to test parameters/return types
+template <typename T>
 struct foo
 {
     /// void a();
@@ -39,7 +40,11 @@ struct foo
     void j() = delete;
 };
 
-struct bar : foo
+/// void foo<T>::a();
+template <typename T>
+void foo<T>::a() {}
+
+struct bar : foo<int>
 {
     /// virtual void g() override;
     void g();
@@ -59,11 +64,13 @@ struct bar : foo
             REQUIRE(!func.noexcept_condition());
         if (func.name() != "g" && func.name() != "h")
             REQUIRE(!func.virtual_info());
-        if (func.name() != "i" && func.name() != "j")
+        if (func.semantic_scope().empty() && func.name() != "i" && func.name() != "j")
             REQUIRE(func.body_kind() == cpp_function_declaration);
 
         if (func.name() == "a")
         {
+            if (func.semantic_scope() == "foo::")
+                REQUIRE(func.is_definition());
             REQUIRE(func.cv_qualifier() == cpp_cv_none);
             REQUIRE(func.ref_qualifier() == cpp_ref_none);
         }
@@ -140,7 +147,7 @@ struct bar : foo
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 12u);
+    REQUIRE(count == 13u);
 }
 
 TEST_CASE("cpp_conversion_op")
@@ -248,13 +255,14 @@ foo<T>::foo(int) {}
     auto             file = parse(idx, "cpp_constructor.cpp", code);
     auto count            = test_visit<cpp_constructor>(*file, [&](const cpp_constructor& cont) {
         REQUIRE(!cont.is_variadic());
+        REQUIRE(cont.name() == "foo");
 
-        if (cont.is_definition() && count_children(cont.parameters()) == 1u)
+        if (cont.semantic_parent())
         {
             if (is_template)
-                REQUIRE(cont.name() == "foo<T>::foo");
+                REQUIRE(cont.semantic_parent().value().name() == "foo<T>::");
             else
-                REQUIRE(cont.name() == "foo::foo");
+                REQUIRE(cont.semantic_parent().value().name() == "foo::");
             REQUIRE(!cont.noexcept_condition());
             REQUIRE(!cont.is_constexpr());
         }

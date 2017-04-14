@@ -41,6 +41,22 @@ namespace cppast
             return definition_;
         }
 
+        /// \returns A reference to the semantic parent of the entity.
+        /// This applies only to out-of-line definitions
+        /// and is the entity which owns the declaration.
+        const type_safe::optional<cpp_entity_ref>& semantic_parent() const noexcept
+        {
+            return semantic_parent_;
+        }
+
+        /// \returns The name of the semantic parent, if it has own,
+        /// else the empty string.
+        /// \notes This may include template parameters.
+        std::string semantic_scope() const noexcept
+        {
+            return semantic_parent_.map(&cpp_entity_ref::name).value_or("");
+        }
+
     protected:
         /// \effects Marks the entity as definition.
         /// \notes If it is not a definition,
@@ -49,15 +65,22 @@ namespace cppast
 
         ~cpp_forward_declarable() noexcept = default;
 
-        /// \effects Sets the definition of the entity,
+        /// \effects Sets the definition entity,
         /// marking it as a forward declaration.
-        void set_definition(cpp_entity_id def) noexcept
+        void mark_declaration(cpp_entity_id def) noexcept
         {
             definition_ = std::move(def);
         }
 
+        /// \effects Sets the semantic parent of the entity.
+        void set_semantic_parent(type_safe::optional<cpp_entity_ref> semantic_parent) noexcept
+        {
+            semantic_parent_ = std::move(semantic_parent);
+        }
+
     private:
-        type_safe::optional<cpp_entity_id> definition_;
+        type_safe::optional<cpp_entity_ref> semantic_parent_;
+        type_safe::optional<cpp_entity_id>  definition_;
     };
 
     /// \returns Whether or not the given entity is a definition.

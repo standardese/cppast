@@ -99,9 +99,34 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class(const detail::parse_context&
     auto is_friend = false;
 #endif
 
-    auto builder = make_class_builder(cur);
+    auto                                builder = make_class_builder(cur);
+    type_safe::optional<cpp_entity_ref> semantic_parent;
     if (!is_friend)
     {
+        if (!clang_equalCursors(clang_getCursorSemanticParent(cur),
+                                clang_getCursorLexicalParent(cur)))
+        {
+            // out-of-line definition
+            detail::tokenizer    tokenizer(context.tu, context.file, cur);
+            detail::token_stream stream(tokenizer, cur);
+
+            std::string name = detail::get_cursor_name(cur).c_str();
+            auto        pos  = name.find('<');
+            if (pos != std::string::npos)
+                name.erase(pos, std::string::npos);
+
+            std::string scope;
+            while (!detail::skip_if(stream, name.c_str()))
+            {
+                if (!detail::append_scope(stream, scope))
+                    stream.bump();
+            }
+            if (!scope.empty())
+                semantic_parent =
+                    cpp_entity_ref(detail::get_entity_id(clang_getCursorSemanticParent(cur)),
+                                   std::move(scope));
+        }
+
         context.comments.match(builder.get(), cur);
         detail::visit_children(cur, [&](const CXCursor& child) {
             auto kind = clang_getCursorKind(child);
@@ -123,7 +148,9 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class(const detail::parse_context&
     }
 
     if (!is_friend && clang_isCursorDefinition(cur))
-        return is_templated ? builder.finish() : builder.finish(*context.idx, get_entity_id(cur));
+        return is_templated ?
+                   builder.finish(std::move(semantic_parent)) :
+                   builder.finish(*context.idx, get_entity_id(cur), std::move(semantic_parent));
     else
         return is_templated ? builder.finish_declaration(detail::get_entity_id(cur)) :
                               builder.finish_declaration(*context.idx, get_entity_id(cur));

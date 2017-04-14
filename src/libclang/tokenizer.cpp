@@ -389,3 +389,35 @@ std::string detail::to_string(token_stream& stream, token_iterator end)
     }
     return result;
 }
+
+bool detail::append_scope(detail::token_stream& stream, std::string& scope)
+{
+    // add identifiers and "::" to current scope name,
+    // clear if there is any other token in between, or mismatched combination
+    if (stream.peek().kind() == CXToken_Identifier)
+    {
+        if (!scope.empty() && scope.back() != ':')
+            scope.clear();
+        scope += stream.get().c_str();
+    }
+    else if (stream.peek() == "::")
+    {
+        if (!scope.empty() && scope.back() == ':')
+            scope.clear();
+        scope += stream.get().c_str();
+    }
+    else if (stream.peek() == "<")
+    {
+        auto iter = detail::find_closing_bracket(stream);
+        scope += detail::to_string(stream, iter);
+        if (!detail::skip_if(stream, ">>"))
+            detail::skip(stream, ">");
+        scope += ">";
+    }
+    else
+    {
+        scope.clear();
+        return false;
+    }
+    return true;
+}

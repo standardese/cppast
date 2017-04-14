@@ -10,6 +10,7 @@
 #include <catch.hpp>
 
 #include <cppast/code_generator.hpp>
+#include <cppast/cpp_class.hpp>
 #include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_expression.hpp>
 #include <cppast/cpp_type.hpp>
@@ -157,7 +158,13 @@ inline std::string full_name(const cppast::cpp_entity& e)
             scopes = cur_scope.name() + "::" + scopes;
         });
 
-    return scopes + e.name();
+    if (e.kind() == cppast::cpp_entity_kind::class_t)
+    {
+        auto& c = static_cast<const cppast::cpp_class&>(e);
+        return scopes + c.semantic_scope() + c.name();
+    }
+    else
+        return scopes + e.name();
 }
 
 // checks the full name/parent

@@ -85,8 +85,11 @@ namespace cppast
             /// \effects Registers the enum in the [cppast::cpp_entity_index](),
             /// using the given [cppast::cpp_entity_id]().
             /// \returns The finished enum.
-            std::unique_ptr<cpp_enum> finish(const cpp_entity_index& idx, cpp_entity_id id) noexcept
+            std::unique_ptr<cpp_enum> finish(
+                const cpp_entity_index& idx, cpp_entity_id id,
+                type_safe::optional<cpp_entity_ref> semantic_parent) noexcept
             {
+                enum_->set_semantic_parent(std::move(semantic_parent));
                 idx.register_definition(std::move(id), type_safe::ref(*enum_));
                 return std::move(enum_);
             }
@@ -96,7 +99,7 @@ namespace cppast
             std::unique_ptr<cpp_enum> finish_declaration(const cpp_entity_index& idx,
                                                          cpp_entity_id definition_id) noexcept
             {
-                enum_->set_definition(definition_id);
+                enum_->mark_declaration(definition_id);
                 idx.register_forward_declaration(std::move(definition_id), type_safe::ref(*enum_));
                 return std::move(enum_);
             }

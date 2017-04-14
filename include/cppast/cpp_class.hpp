@@ -178,7 +178,8 @@ namespace cppast
             /// \effects Registers the class in the [cppast::cpp_entity_index](),
             /// using the given [cppast::cpp_entity_id]().
             /// \returns The finished class.
-            std::unique_ptr<cpp_class> finish(const cpp_entity_index& idx, cpp_entity_id id);
+            std::unique_ptr<cpp_class> finish(const cpp_entity_index& idx, cpp_entity_id id,
+                                              type_safe::optional<cpp_entity_ref> semantic_parent);
 
             /// \effects Marks the class as forward declaration.
             /// \returns The finished class.
@@ -187,7 +188,7 @@ namespace cppast
 
             /// \effects Returns the finished class without registering it.
             /// \notes This is intended for templated classes only.
-            std::unique_ptr<cpp_class> finish();
+            std::unique_ptr<cpp_class> finish(type_safe::optional<cpp_entity_ref> semantic_parent);
 
             /// \effects Returns the finish class without registering it and marks it as forward declaration.
             /// \notes This is intended for templated classes only.

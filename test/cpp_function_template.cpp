@@ -185,11 +185,12 @@ d::d(const int&);
             REQUIRE(!tfunc.arguments_exposed());
 
             auto templ = tfunc.primary_template();
-            if (tfunc.name() == "d::operator int")
+            if (tfunc.name() == "operator int")
                 REQUIRE(equal_ref(idx, templ, cpp_template_ref(cpp_entity_id(""), tfunc.name()),
                                   "d::operator T"));
             else
-                REQUIRE(equal_ref(idx, templ, cpp_template_ref(cpp_entity_id(""), tfunc.name())));
+                REQUIRE(equal_ref(idx, templ, cpp_template_ref(cpp_entity_id(""), tfunc.name()),
+                                  (tfunc.function().semantic_scope() + tfunc.name()).c_str()));
 
             if (tfunc.name() == "a")
             {
@@ -197,6 +198,7 @@ d::d(const int&);
 
                 REQUIRE(tfunc.function().kind() == cpp_entity_kind::function_t);
                 auto& func = static_cast<const cpp_function&>(tfunc.function());
+                REQUIRE(func.semantic_scope() == "");
 
                 REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_int)));
 
@@ -214,12 +216,13 @@ d::d(const int&);
                 }
                 REQUIRE(count == 1u);
             }
-            else if (tfunc.name() == "d::b")
+            else if (tfunc.name() == "b")
             {
                 REQUIRE(tfunc.unexposed_arguments() == "0,int");
 
                 REQUIRE(tfunc.function().kind() == cpp_entity_kind::function_t);
                 auto& func = static_cast<const cpp_function&>(tfunc.function());
+                REQUIRE(func.semantic_scope() == "d::");
 
                 cpp_template_instantiation_type::builder builder(
                     cpp_template_ref(cpp_entity_id(""), "type"));
@@ -234,17 +237,18 @@ d::d(const int&);
                 }
                 REQUIRE(count == 1u);
             }
-            else if (tfunc.name() == "d::c")
+            else if (tfunc.name() == "c")
             {
                 REQUIRE(tfunc.unexposed_arguments() == "");
 
                 REQUIRE(tfunc.function().kind() == cpp_entity_kind::member_function_t);
                 auto& func = static_cast<const cpp_member_function&>(tfunc.function());
+                REQUIRE(func.semantic_scope() == "d::");
                 REQUIRE(func.cv_qualifier() == cpp_cv_none);
 
                 REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_int)));
             }
-            else if (tfunc.name() == "d::operator int")
+            else if (tfunc.name() == "operator int")
             {
                 REQUIRE(tfunc.unexposed_arguments() == "");
 
@@ -254,12 +258,13 @@ d::d(const int&);
 
                 REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_int)));
             }
-            else if (tfunc.name() == "d::d")
+            else if (tfunc.name() == "d")
             {
                 REQUIRE(tfunc.unexposed_arguments() == "");
 
                 REQUIRE(tfunc.function().kind() == cpp_entity_kind::constructor_t);
                 auto& func = static_cast<const cpp_constructor&>(tfunc.function());
+                REQUIRE(func.semantic_scope() == "d::");
 
                 auto count = 0u;
                 for (auto& param : func.parameters())

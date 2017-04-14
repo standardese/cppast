@@ -205,7 +205,7 @@ namespace
             output << keyword("enum");
             if (e.is_scoped())
                 output << whitespace << keyword("class");
-            output << whitespace << identifier(e.name());
+            output << whitespace << identifier(e.semantic_scope()) << identifier(e.name());
             if (e.has_explicit_type())
             {
                 output << newl << punctuation(":");
@@ -285,6 +285,7 @@ namespace
                 output << keyword("friend") << whitespace;
             output << keyword(to_string(c.class_kind())) << whitespace;
 
+            output << identifier(c.semantic_scope());
             if (spec)
             {
                 output << spec.value().primary_template();
@@ -492,6 +493,7 @@ namespace
                 output << whitespace;
             }
 
+            output << identifier(func.semantic_scope());
             if (spec)
             {
                 output << spec.value().primary_template();
@@ -585,6 +587,7 @@ namespace
                 output << whitespace;
             }
 
+            output << identifier(func.semantic_scope());
             if (spec)
             {
                 output << spec.value().primary_template();
@@ -621,6 +624,8 @@ namespace
             else
                 write_prefix_virtual(output, op.virtual_info());
 
+            output << identifier(op.semantic_scope());
+
             auto pos = op.name().find("operator");
             output << identifier(op.name().substr(0u, pos)) << keyword("operator") << whitespace;
             detail::write_type(output, op.return_type(), "");
@@ -645,7 +650,7 @@ namespace
             if (ctor.is_constexpr())
                 output << keyword("constexpr") << whitespace;
 
-            output << identifier(ctor.name());
+            output << identifier(ctor.semantic_scope()) << identifier(ctor.name());
             write_function_parameters(output, ctor);
             write_noexcept(output, ctor, false);
 
@@ -661,7 +666,8 @@ namespace
             if (is_friended(dtor))
                 output << keyword("friend") << whitespace;
             write_prefix_virtual(output, dtor.virtual_info());
-            output << identifier(dtor.name()) << punctuation("(") << punctuation(")");
+            output << identifier(dtor.semantic_scope()) << identifier(dtor.name())
+                   << punctuation("(") << punctuation(")");
             write_noexcept(output, dtor, false);
 
             write_suffix_virtual(output, dtor.virtual_info());

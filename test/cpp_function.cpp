@@ -198,7 +198,7 @@ void ns::l()
                 REQUIRE(func.storage_class() == cpp_storage_class_static);
             }
         }
-        else if (func.name() == "k" || func.name() == "l" || func.name() == "ns::l")
+        else if (func.name() == "k" || func.name() == "l")
         {
             REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
             REQUIRE(count_children(func.parameters()) == 0u);
@@ -210,9 +210,12 @@ void ns::l()
             if (func.name() == "k")
                 check_body(func, cpp_function_deleted);
             else if (func.name() == "l")
-                check_body(func, cpp_function_declaration);
-            else if (func.name() == "ns::l")
-                check_body(func, cpp_function_definition);
+            {
+                if (func.semantic_scope() == "ns::")
+                    check_body(func, cpp_function_definition);
+                else
+                    check_body(func, cpp_function_declaration);
+            }
         }
         else
             REQUIRE(false);
@@ -247,16 +250,16 @@ void foo::a() {}
         REQUIRE(count_children(func.parameters()) == 0u);
         REQUIRE(func.storage_class() == cpp_storage_class_static);
 
-        if (func.name() == "a" || func.name() == "foo::a")
+        if (func.name() == "a")
         {
             REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
             REQUIRE(!func.noexcept_condition());
             REQUIRE(!func.is_constexpr());
 
-            if (func.name() == "a")
-                REQUIRE(func.body_kind() == cpp_function_declaration);
-            else
+            if (func.semantic_scope() == "foo::")
                 REQUIRE(func.body_kind() == cpp_function_definition);
+            else
+                REQUIRE(func.body_kind() == cpp_function_declaration);
         }
         else if (func.name() == "b")
         {

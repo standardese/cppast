@@ -9,8 +9,11 @@
 
 using namespace cppast;
 
-std::unique_ptr<cpp_class> cpp_class::builder::finish(const cpp_entity_index& idx, cpp_entity_id id)
+std::unique_ptr<cpp_class> cpp_class::builder::finish(
+    const cpp_entity_index& idx, cpp_entity_id id,
+    type_safe::optional<cpp_entity_ref> semantic_parent)
 {
+    class_->set_semantic_parent(std::move(semantic_parent));
     idx.register_definition(std::move(id), type_safe::ref(*class_));
     return std::move(class_);
 }
@@ -18,19 +21,21 @@ std::unique_ptr<cpp_class> cpp_class::builder::finish(const cpp_entity_index& id
 std::unique_ptr<cpp_class> cpp_class::builder::finish_declaration(const cpp_entity_index& idx,
                                                                   cpp_entity_id definition_id)
 {
-    class_->set_definition(definition_id);
+    class_->mark_declaration(definition_id);
     idx.register_forward_declaration(std::move(definition_id), type_safe::ref(*class_));
     return std::move(class_);
 }
 
-std::unique_ptr<cpp_class> cpp_class::builder::finish()
+std::unique_ptr<cpp_class> cpp_class::builder::finish(
+    type_safe::optional<cpp_entity_ref> semantic_parent)
 {
+    class_->set_semantic_parent(std::move(semantic_parent));
     return std::move(class_);
 }
 
 std::unique_ptr<cpp_class> cpp_class::builder::finish_declaration(cpp_entity_id definition_id)
 {
-    class_->set_definition(definition_id);
+    class_->mark_declaration(definition_id);
     return std::move(class_);
 }
 

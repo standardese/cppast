@@ -86,10 +86,10 @@ namespace
     // just the tokens occurring in the prefix
     struct prefix_info
     {
-        std::string scope_name;
-        bool        is_constexpr = false;
-        bool        is_virtual   = false;
-        bool        is_explicit  = false;
+        type_safe::optional<cpp_entity_ref> semantic_parent;
+        bool                                is_constexpr = false;
+        bool                                is_virtual   = false;
+        bool                                is_explicit  = false;
     };
 
     bool prefix_end(detail::token_stream& stream, const char* name, bool is_ctor)
@@ -153,38 +153,18 @@ namespace
                 result.is_explicit = true;
                 scope.clear();
             }
-            // add identifiers and "::" to current scope name,
-            // clear if there is any other token in between, or mismatched combination
-            else if (stream.peek().kind() == CXToken_Identifier)
-            {
-                if (!scope.empty() && scope.back() != ':')
-                    scope.clear();
-                scope += stream.get().c_str();
-            }
-            else if (stream.peek() == "::")
-            {
-                if (!scope.empty() && scope.back() == ':')
-                    scope.clear();
-                scope += stream.get().c_str();
-            }
-            else if (stream.peek() == "<")
-            {
-                auto iter = detail::find_closing_bracket(stream);
-                scope += detail::to_string(stream, iter);
-                if (!detail::skip_if(stream, ">>"))
-                    detail::skip(stream, ">");
-                scope += ">";
-            }
-            else
-            {
+            else if (!detail::append_scope(stream, scope))
                 stream.bump();
-                scope.clear();
-            }
         }
         DEBUG_ASSERT(!stream.done(), detail::parse_error_handler{}, stream.cursor(),
                      "unable to find end of function prefix");
         if (!scope.empty() && scope.back() == ':')
-            result.scope_name = std::move(scope);
+        {
+            result.semantic_parent =
+                cpp_entity_ref(detail::get_entity_id(
+                                   clang_getCursorSemanticParent(stream.cursor())),
+                               std::move(scope));
+        }
 
         return result;
     }
@@ -392,7 +372,7 @@ namespace
         DEBUG_ASSERT(!prefix.is_virtual && !prefix.is_explicit, detail::parse_error_handler{}, cur,
                      "free function cannot be virtual or explicit");
 
-        cpp_function::builder builder(prefix.scope_name + name.c_str(),
+        cpp_function::builder builder(name.c_str(),
                                       detail::parse_type(context, cur,
                                                          clang_getCursorResultType(cur)));
         context.comments.match(builder.get(), cur);
@@ -413,9 +393,11 @@ namespace
             builder.noexcept_condition(std::move(suffix.noexcept_condition));
 
         if (is_templated_cursor(cur))
-            return builder.finish(detail::get_entity_id(cur), suffix.body_kind);
+            return builder.finish(detail::get_entity_id(cur), suffix.body_kind,
+                                  std::move(prefix.semantic_parent));
         else
-            return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
+            return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind,
+                                  std::move(prefix.semantic_parent));
     }
 }
 
@@ -425,6 +407,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_function(const detail::parse_conte
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_FunctionDecl
                      || clang_getTemplateCursorKind(cur) == CXCursor_FunctionDecl,
                  detail::assert_handler{});
+    type_safe::optional<cpp_entity_ref> semantic_parent;
     return parse_cpp_function_impl(context, cur, false);
 }
 
@@ -510,7 +493,8 @@ namespace
     template <class Builder>
     std::unique_ptr<cpp_entity> handle_suffix(const detail::parse_context& context,
                                               const CXCursor& cur, Builder& builder,
-                                              detail::token_stream& stream, bool is_virtual)
+                                              detail::token_stream& stream, bool is_virtual,
+                                              type_safe::optional<cpp_entity_ref> semantic_parent)
     {
         auto allow_qualifiers = set_qualifier(0, builder, cpp_cv_none, cpp_ref_none);
 
@@ -522,9 +506,11 @@ namespace
             builder.virtual_info(virt.value());
 
         if (is_templated_cursor(cur))
-            return builder.finish(detail::get_entity_id(cur), suffix.body_kind);
+            return builder.finish(detail::get_entity_id(cur), suffix.body_kind,
+                                  std::move(semantic_parent));
         else
-            return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
+            return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind,
+                                  std::move(semantic_parent));
     }
 }
 
@@ -543,7 +529,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
     DEBUG_ASSERT(!prefix.is_explicit, detail::parse_error_handler{}, cur,
                  "member function cannot be explicit");
 
-    cpp_member_function::builder builder(prefix.scope_name + name.c_str(),
+    cpp_member_function::builder builder(name.c_str(),
                                          detail::parse_type(context, cur,
                                                             clang_getCursorResultType(cur)));
     context.comments.match(builder.get(), cur);
@@ -555,7 +541,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
         builder.is_constexpr();
 
     skip_parameters(stream);
-    return handle_suffix(context, cur, builder, stream, prefix.is_virtual);
+    return handle_suffix(context, cur, builder, stream, prefix.is_virtual,
+                         std::move(prefix.semantic_parent));
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_context& context,
@@ -604,7 +591,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
     detail::skip(stream, ")");
 
     auto                       type = clang_getCursorResultType(cur);
-    cpp_conversion_op::builder builder(prefix.scope_name + "operator " + type_spelling,
+    cpp_conversion_op::builder builder("operator " + type_spelling,
                                        detail::parse_type(context, cur, type));
     context.comments.match(builder.get(), cur);
     if (prefix.is_explicit)
@@ -612,7 +599,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
     else if (prefix.is_constexpr)
         builder.is_constexpr();
 
-    return handle_suffix(context, cur, builder, stream, prefix.is_virtual);
+    return handle_suffix(context, cur, builder, stream, prefix.is_virtual,
+                         std::move(prefix.semantic_parent));
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_context& context,
@@ -633,7 +621,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
     DEBUG_ASSERT(!prefix.is_virtual, detail::parse_error_handler{}, cur,
                  "constructor cannot be virtual");
 
-    cpp_constructor::builder builder(prefix.scope_name + name.c_str());
+    cpp_constructor::builder builder(name.c_str());
     context.comments.match(builder.get(), cur);
     add_parameters(context, builder, cur);
     if (clang_Cursor_isVariadic(cur))
@@ -650,9 +638,11 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
         builder.noexcept_condition(std::move(suffix.noexcept_condition));
 
     if (is_templated_cursor(cur))
-        return builder.finish(detail::get_entity_id(cur), suffix.body_kind);
+        return builder.finish(detail::get_entity_id(cur), suffix.body_kind,
+                              std::move(prefix.semantic_parent));
     else
-        return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind);
+        return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind,
+                              std::move(prefix.semantic_parent));
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_destructor(const detail::parse_context& context,
@@ -671,5 +661,5 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_destructor(const detail::parse_con
 
     detail::skip(stream, "(");
     detail::skip(stream, ")");
-    return handle_suffix(context, cur, builder, stream, is_virtual);
+    return handle_suffix(context, cur, builder, stream, is_virtual, type_safe::nullopt);
 }

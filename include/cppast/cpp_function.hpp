@@ -137,14 +137,16 @@ namespace cppast
             /// Else marks it as a declaration.
             /// \returns The finished function.
             std::unique_ptr<T> finish(const cpp_entity_index& idx, cpp_entity_id id,
-                                      cpp_function_body_kind body_kind)
+                                      cpp_function_body_kind              body_kind,
+                                      type_safe::optional<cpp_entity_ref> semantic_parent)
             {
                 function->body_ = body_kind;
+                function->set_semantic_parent(std::move(semantic_parent));
                 if (cppast::is_definition(body_kind))
                     idx.register_definition(std::move(id), type_safe::ref(*function));
                 else
                 {
-                    function->set_definition(id);
+                    function->mark_declaration(id);
                     idx.register_forward_declaration(std::move(id), type_safe::ref(*function));
                 }
                 return std::move(function);
@@ -152,11 +154,13 @@ namespace cppast
 
             /// \returns The finished function without registering it.
             /// \notes This is intended for templated functions only.
-            std::unique_ptr<T> finish(cpp_entity_id id, cpp_function_body_kind body_kind)
+            std::unique_ptr<T> finish(cpp_entity_id id, cpp_function_body_kind body_kind,
+                                      type_safe::optional<cpp_entity_ref> semantic_parent)
             {
-                if (!cppast::is_definition(body_kind))
-                    function->set_definition(id);
                 function->body_ = body_kind;
+                function->set_semantic_parent(std::move(semantic_parent));
+                if (!cppast::is_definition(body_kind))
+                    function->mark_declaration(id);
                 return std::move(function);
             }
 

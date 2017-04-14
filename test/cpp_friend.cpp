@@ -170,20 +170,23 @@ int d() {}
                 }
                 else if (func.name() == "e")
                     REQUIRE(func.is_definition());
-                else if (func.name() == "b::b")
+                else if (func.name() == "b")
                 {
+                    REQUIRE(func.semantic_scope() == "b::");
                     REQUIRE(func.is_declaration());
                     REQUIRE(func.definition());
                     check_definition(func.definition().value(), "b::b");
                 }
-                else if (func.name() == "b::f")
+                else if (func.name() == "f")
                 {
+                    REQUIRE(func.semantic_scope() == "b::");
                     REQUIRE(func.is_declaration());
                     REQUIRE(func.definition());
                     check_definition(func.definition().value(), "b::f");
                 }
-                else if (func.name() == "b::operator int")
+                else if (func.name() == "operator int")
                 {
+                    REQUIRE(func.semantic_scope() == "b::");
                     REQUIRE(func.is_declaration());
                     REQUIRE(func.definition());
                     check_definition(func.definition().value(), "operator int");

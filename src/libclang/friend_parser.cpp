@@ -75,9 +75,12 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_friend(const detail::parse_context
         else if (clang_isDeclaration(kind))
         {
             entity = parse_entity(context, child);
-            // steal comment
-            comment = type_safe::copy(entity->comment()).value_or("");
-            entity->set_comment(type_safe::nullopt);
+            if (entity)
+            {
+                // steal comment
+                comment = type_safe::copy(entity->comment()).value_or("");
+                entity->set_comment(type_safe::nullopt);
+            }
         }
         else if (inst_builder && clang_isExpression(kind))
         {

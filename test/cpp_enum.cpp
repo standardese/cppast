@@ -41,9 +41,17 @@ enum class b : int
     b_c
 };
 
-/// enum c
-/// :int;
-enum c : int;
+namespace ns
+{
+    /// enum c
+    /// :int;
+    enum c : int;
+}
+
+/// enum ns::c
+/// :int{
+/// };
+enum ns::c : int {};
 )";
 
     cpp_entity_index idx;
@@ -137,18 +145,21 @@ enum c : int;
         }
         else if (e.name() == "c")
         {
-            REQUIRE(e.is_declaration());
-            REQUIRE(!e.is_definition());
+            if (e.semantic_scope() == "ns::")
+                REQUIRE(e.is_definition());
+            else
+                REQUIRE(e.is_declaration());
+
             REQUIRE(!e.is_scoped());
             REQUIRE(e.has_explicit_type());
             REQUIRE(equal_types(idx, e.underlying_type(), *cpp_builtin_type::build(cpp_int)));
             REQUIRE(count_children(e) == 0u);
 
             auto definition = get_definition(idx, e);
-            REQUIRE(!definition);
+            REQUIRE(definition);
         }
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 4u);
+    REQUIRE(count == 5u);
 }

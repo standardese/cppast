@@ -191,6 +191,12 @@ namespace cppast
 
         // converts a token range to a string, adding whitespace where necessary
         std::string to_string(token_stream& stream, token_iterator end);
+
+        // appends token to scope, if it is still valid
+        // else clears it
+        // note: does not consume the token if it is not valid,
+        // returns false in that case
+        bool append_scope(token_stream& stream, std::string& scope);
     }
 } // namespace cppast::detail
 
