@@ -30,7 +30,11 @@ void print_error(const std::string& msg)
 void print_entity(std::ostream& out, const cppast::cpp_entity& e)
 {
     // print name and the kind of the entity
-    out << e.name() << " (" << cppast::to_string(e.kind()) << ")";
+    if (!e.name().empty())
+        out << e.name();
+    else
+        out << "<anonymous>";
+    out << " (" << cppast::to_string(e.kind()) << ")";
 
     // print whether or not it is a definition
     if (cppast::is_definition(e))
