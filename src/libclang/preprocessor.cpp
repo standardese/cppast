@@ -489,9 +489,6 @@ namespace
     {
         // format (at new line): #undef <name>
         // due to a clang bug (http://bugs.llvm.org/show_bug.cgi?id=32631) I'll also an undef in the middle of the line
-        // the only issue is with string literals containing `#undef`.
-        // those will be stripped and evaluated
-        // however, this kind of usage should be rare™
         if (/*!p.was_newl() ||*/ !starts_with(p, "#undef"))
             return ts::nullopt;
         p.bump(std::strlen("#undef"));
@@ -653,9 +650,19 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
 
     position    p(ts::ref(result.source), output.c_str());
     std::size_t file_depth = 0u;
+    ts::flag    in_string(false);
     while (p)
     {
-        if (auto macro = parse_macro(p, result, file_depth == 0u))
+        if (starts_with(p, "\\\"")) // starts with \"
+            p.bump(2u);
+        else if (starts_with(p, "\"")) // starts with "
+        {
+            p.bump();
+            in_string.toggle();
+        }
+        else if (in_string == true)
+            p.bump();
+        else if (auto macro = parse_macro(p, result, file_depth == 0u))
         {
             if (logger.is_verbose())
             {
