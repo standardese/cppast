@@ -321,7 +321,10 @@ namespace
             return false;
         p.skip(2u);
 
-        if (in_main_file && starts_with(p, "*"))
+        if (starts_with(p, "*/"))
+            // empty comment
+            p.skip(2u);
+        else if (in_main_file && starts_with(p, "*"))
         {
             // doc comment
             p.skip();

@@ -182,7 +182,7 @@ using j = int;
 
 /// k
 /// k
-template <typename T>
+template <typename T/**/>
 void k();
 )";
 
