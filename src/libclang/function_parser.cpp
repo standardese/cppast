@@ -436,13 +436,8 @@ namespace
     cpp_virtual calculate_virtual(const CXCursor& cur, bool virtual_keyword,
                                   const cpp_virtual& virtual_suffix)
     {
-        if (!clang_CXXMethod_isVirtual(cur))
-        {
-            // not a virtual function, ensure it wasn't parsed that way
-            DEBUG_ASSERT(!virtual_keyword && !virtual_suffix.has_value(),
-                         detail::parse_error_handler{}, cur, "virtualness not parsed properly");
+        if (!clang_CXXMethod_isVirtual(cur) && !virtual_keyword && !virtual_suffix)
             return {};
-        }
         else if (clang_CXXMethod_isPureVirtual(cur))
         {
             // pure virtual function - all information in the suffix
@@ -544,8 +539,6 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
     return handle_suffix(context, cur, builder, stream, prefix.is_virtual,
                          std::move(prefix.semantic_parent));
 }
-
-#include <iostream>
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_context& context,
                                                             const CXCursor&              cur)

@@ -211,7 +211,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_alias_template(const detail::parse
         return nullptr;
     context.comments.match(builder.value().get(), cur);
     parse_parameters(builder.value(), context, cur);
-    return builder.value().finish(*context.idx, detail::get_entity_id(cur), true);
+    return builder.value().finish(*context.idx, detail::get_entity_id(cur),
+                                  false); // not a definition
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_function_template(
