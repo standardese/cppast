@@ -3,6 +3,7 @@
 // found in the top-level directory of this distribution.
 
 #include <cppast/cpp_member_function.hpp>
+#include <cppast/cpp_template.hpp>
 
 #include "test_parser.hpp"
 
@@ -155,6 +156,7 @@ TEST_CASE("cpp_conversion_op")
     auto code = R"(
 namespace ns
 {
+    template <typename T>
     using type = char;
 }
 
@@ -165,8 +167,8 @@ struct foo
     operator int&();
     /// explicit operator bool()const;
     explicit operator bool() const;
-    /// constexpr operator ns::type();
-    constexpr operator ns::type();
+    /// constexpr operator ns::type<int>();
+    constexpr operator ns::type<int>();
 };
 )";
 
@@ -196,10 +198,11 @@ struct foo
         }
         else if (!op.is_explicit() && op.is_constexpr())
         {
-            REQUIRE(op.name() == "operator ns::type");
-            REQUIRE(equal_types(idx, op.return_type(),
-                                *cpp_user_defined_type::build(
-                                    cpp_type_ref(cpp_entity_id(""), "ns::type"))));
+            REQUIRE(op.name() == "operator ns::type<int>");
+            cpp_template_instantiation_type::builder builder(
+                cpp_template_ref(cpp_entity_id(""), "ns::type"));
+            builder.add_unexposed_arguments("int");
+            REQUIRE(equal_types(idx, op.return_type(), *builder.finish()));
             REQUIRE(op.cv_qualifier() == cpp_cv_none);
         }
         else

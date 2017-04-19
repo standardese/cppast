@@ -290,7 +290,7 @@ detail::token_iterator detail::find_closing_bracket(detail::token_stream stream)
 
     auto bracket_count = 1;
     auto paren_count   = 0; // internal nested parenthesis
-    while (bracket_count != 0)
+    while (!stream.done() && bracket_count != 0)
     {
         auto& cur = stream.get().value();
         if (paren_count == 0 && cur == open_bracket)
@@ -307,7 +307,8 @@ detail::token_iterator detail::find_closing_bracket(detail::token_stream stream)
     }
     stream.bump_back();
     // only check first parameter, token might be ">>"
-    DEBUG_ASSERT(paren_count == 0 && stream.peek().value()[0] == close_bracket[0],
+    DEBUG_ASSERT(bracket_count == 0 && paren_count == 0
+                     && stream.peek().value()[0] == close_bracket[0],
                  parse_error_handler{}, stream.cursor(),
                  "find_closing_bracket() internal parse error");
     return stream.cur();

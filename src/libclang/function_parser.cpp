@@ -545,6 +545,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
                          std::move(prefix.semantic_parent));
 }
 
+#include <iostream>
+
 std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_context& context,
                                                             const CXCursor&              cur)
 {
@@ -559,24 +561,27 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
     // heuristic to find arguments tokens
     // skip forward, skipping inside brackets
     auto type_start = stream.cur();
-    while (true)
+    auto finished   = false;
+    while (!stream.done() && !finished)
     {
-        if (detail::skip_if(stream, "("))
+        if (stream.peek() == "(")
         {
-            if (detail::skip_if(stream, ")"))
-                break;
+            if (detail::skip_if(stream, "(") && detail::skip_if(stream, ")"))
+                finished = true;
             else
                 detail::skip_brackets(stream);
         }
-        else if (detail::skip_if(stream, "["))
+        else if (stream.peek() == "[")
             detail::skip_brackets(stream);
-        else if (detail::skip_if(stream, "{"))
+        else if (stream.peek() == "{")
             detail::skip_brackets(stream);
-        else if (detail::skip_if(stream, "<"))
+        else if (stream.peek() == "<")
             detail::skip_brackets(stream);
         else
             stream.bump();
     }
+    DEBUG_ASSERT(finished, detail::parse_error_handler{}, cur,
+                 "unable to find end of conversion op type");
     // bump arguments back
     stream.bump_back();
     stream.bump_back();

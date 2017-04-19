@@ -585,10 +585,14 @@ namespace
                 return cpp_builtin_type::build(cpp_nullptr);
             });
 
+        case CXType_Elaborated:
+            if (auto itype = try_parse_instantiation_type(context, cur, type))
+                // elaborated types can be instantiation types
+                return itype;
+        // fallthrough
         case CXType_Record:
         case CXType_Enum:
         case CXType_Typedef:
-        case CXType_Elaborated:
             return make_leave_type(type, [&](std::string&& spelling) {
                 auto decl = clang_getTypeDeclaration(type);
                 if (remove_prefix(spelling, "(anonymous"))
