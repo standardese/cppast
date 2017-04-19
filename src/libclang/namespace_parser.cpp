@@ -131,12 +131,15 @@ namespace
         std::vector<cpp_entity_id> result;
         detail::visit_children(cur,
                                [&](const CXCursor& child) {
+                                   if (!result.empty())
+                                       return;
                                    switch (clang_getCursorKind(child))
                                    {
                                    case CXCursor_TypeRef:
                                    case CXCursor_TemplateRef:
                                    case CXCursor_MemberRef:
                                    case CXCursor_VariableRef:
+                                   case CXCursor_DeclRefExpr:
                                    {
                                        auto referenced = clang_getCursorReferenced(child);
                                        result.push_back(detail::get_entity_id(referenced));

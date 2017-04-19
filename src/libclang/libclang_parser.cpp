@@ -174,7 +174,7 @@ namespace
                 auto loc  = source_location::make_file(path); // line number won't help
                 auto text = detail::cxstring(clang_getDiagnosticSpelling(diag));
 
-                logger.log("libclang parser", diagnostic{text.c_str(), loc, sev.value()});
+                logger.log("libclang", diagnostic{text.c_str(), loc, sev.value()});
             }
         }
     }
