@@ -444,6 +444,7 @@ namespace
         return make_leave_type(type, [&](std::string&& spelling) -> std::unique_ptr<cpp_type> {
             if (!remove_prefix(spelling, "decltype("))
                 return nullptr;
+            remove_suffix(spelling, "..."); // variadic decltype. fun
             DEBUG_ASSERT(!spelling.empty() && spelling.back() == ')', detail::parse_error_handler{},
                          type, "unexpected spelling");
             spelling.pop_back();
