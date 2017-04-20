@@ -4,6 +4,8 @@
 
 #include "tokenizer.hpp"
 
+#include <cctype>
+
 #include "libclang_visitor.hpp"
 #include "parse_error.hpp"
 

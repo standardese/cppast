@@ -54,7 +54,7 @@ namespace cppast
         /// \notes This may include template parameters.
         std::string semantic_scope() const noexcept
         {
-            return semantic_parent_.map(&cpp_entity_ref::name).value_or("");
+            return type_safe::copy(semantic_parent_.map(&cpp_entity_ref::name)).value_or("");
         }
 
     protected:

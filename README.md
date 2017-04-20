@@ -56,6 +56,9 @@ If you don't have a proper clang version installed, it can also be downloaded.
 For that you need to set `LLVM_DOWNLOAD_OS_NAME`.
 This is the name of the operating system used on the [LLVM pre-built binary archive](http://releases.llvm.org/download.html#4.0.0), e.g. `x86_64-linux-gnu-ubuntu-16.10` for Ubuntu 16.10.
 
+If you don't have `llvm-config`, you need to pass the locations explictly.
+For that set the option `LLVM_VERSION_EXPLICIT` to the version you're using, `LIBCLANG_LIBRARY` to the location of the libclang library file, `LIBCLANG_INCLUDE_DIR` to the directory where the header files are located (so they can be included with `clang-c/Index.h`), `LIBCLANG_SYSTEM_INCLUDE_DIR` where the system header files are located (i.e. `stddef.h` etc, usually under `prefix/lib/clang/<version>/include`) and `CLANG_BINARY` to the full path of the `clang++` exectuable.
+
 The other dependencies like [type_safe](http://type_safe.foonathan.net) are installed automatically with git submodules, if they're not installed already.
 
 If you run into any issues with the installation, please report them.
