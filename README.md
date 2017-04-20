@@ -54,7 +54,7 @@ Else you need to set the CMake variable `LLVM_CONFIG_BINARY` to the proper path.
 
 If you don't have a proper clang version installed, it can also be downloaded.
 For that you need to set `LLVM_DOWNLOAD_OS_NAME`.
-This is the name of the operating system used on the [LLVM pre-built binary archive](http://releases.llvm.org/download.html#4.0.0), e.g. `linux-gnu-ubuntu-16.10` for Ubuntu 16.10.
+This is the name of the operating system used on the [LLVM pre-built binary archive](http://releases.llvm.org/download.html#4.0.0), e.g. `x86_64-linux-gnu-ubuntu-16.10` for Ubuntu 16.10.
 
 The other dependencies like [type_safe](http://type_safe.foonathan.net) are installed automatically with git submodules, if they're not installed already.
 

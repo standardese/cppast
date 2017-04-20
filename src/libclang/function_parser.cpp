@@ -58,7 +58,8 @@ namespace
             for (auto i = 0; i != no; ++i)
                 try
                 {
-                    auto parameter = parse_parameter(context, clang_Cursor_getArgument(cur, i));
+                    auto parameter =
+                        parse_parameter(context, clang_Cursor_getArgument(cur, unsigned(i)));
                     builder.add_parameter(std::move(parameter));
                 }
                 catch (detail::parse_error& ex)

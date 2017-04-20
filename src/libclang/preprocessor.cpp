@@ -84,7 +84,7 @@ namespace
                 str.push_back(*ptr++);
             ++ptr;
 
-            line = std::stoi(str);
+            line = unsigned(std::stoi(str));
         }
 
         DEBUG_ASSERT(*ptr == ':', detail::assert_handler{});

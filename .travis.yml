@@ -1,0 +1,62 @@
+language: cpp
+
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-5']
+      env: TOOLSET=g++-5 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=3.9.1
+
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-5']
+      env: TOOLSET=g++-5 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=4.0.0
+
+    - os: linux
+      compiler: clang
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.9']
+          packages: ['g++-4.9', 'g++-5', 'clang-3.9']
+      env: TOOLSET=clang++-3.9 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=3.9.1
+
+    - os: linux
+      compiler: clang
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.9']
+          packages: ['g++-4.9', 'g++-5', 'clang-3.9']
+      env: TOOLSET=clang++-3.9 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=4.0.0
+
+    - os: osx
+      compiler: clang
+      env: TOOLSET=clang++ LLVM_DOWNLOAD_OS_NAME=x86_64-apple-darwin LLVM_VERSION=4.0.0
+
+install:
+  - cd ../
+
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget --no-check-certificate https://www.cmake.org/files/v3.3/cmake-3.3.1-Linux-x86_64.tar.gz; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then tar -xzf cmake-3.3.1-Linux-x86_64.tar.gz; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CMAKE=$TRAVIS_BUILD_DIR/../cmake-3.3.1-Linux-x86_64/bin/cmake; fi
+
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then wget --no-check-certificate https://cmake.org/files/v3.3/cmake-3.3.0-Darwin-x86_64.tar.gz; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then tar -xzf cmake-3.3.0-Darwin-x86_64.tar.gz && ls && ls cmake-3.3.0-Darwin-x86_64; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export CMAKE=$TRAVIS_BUILD_DIR/../cmake-3.3.0-Darwin-x86_64/CMake.app/Contents/bin/cmake; fi
+
+  - export CXX=$TOOLSET
+  - $CXX --version
+  - $CMAKE --version
+
+  - cd cppast/
+
+script:
+  - mkdir build/ && cd build/
+  - $CMAKE -DCMAKE_CXX_FLAGS="-pedantic -Wall -Wextra -Wconversion -Wsign-conversion -Wno-parentheses" -DLLVM_DOWNLOAD_OS_NAME=$LLVM_DOWNLOAD_OS_NAME -DLLVM_PREFERRED_VERSION=$LLVM_VERSION ../
+  - $CMAKE --build .
+  - ./test/cppast_test

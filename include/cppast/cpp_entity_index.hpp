@@ -28,7 +28,7 @@ namespace cppast
         // FNV-1a 64 bit hash
         constexpr std::size_t id_hash(const char* str, std::size_t hash = fnv_basis)
         {
-            return *str ? id_hash(str + 1, (hash ^ *str) * fnv_prime) : hash;
+            return *str ? id_hash(str + 1, (hash ^ std::size_t(*str)) * fnv_prime) : hash;
         }
     } // namespace detail
 
@@ -50,7 +50,7 @@ namespace cppast
     inline namespace literals
     {
         /// \returns A new [cppast::cpp_entity_id]() created from the given string.
-        inline cpp_entity_id operator""_id(const char* str, std::size_t)
+        inline cpp_entity_id operator"" _id(const char* str, std::size_t)
         {
             return cpp_entity_id(str);
         }

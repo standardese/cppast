@@ -138,7 +138,7 @@ unsigned test_visit(const cppast::cpp_file& file, Func f, bool check_code = true
 template <class Entity>
 unsigned count_children(const Entity& cont)
 {
-    return std::distance(cont.begin(), cont.end());
+    return unsigned(std::distance(cont.begin(), cont.end()));
 }
 
 // ignores templated scopes

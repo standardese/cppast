@@ -674,6 +674,6 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_type_alias(const detail::parse_con
         auto result =
             cpp_type_alias::build(*context.idx, get_entity_id(cur), name.c_str(), std::move(type));
         context.comments.match(*result, cur);
-        return result;
+        return std::move(result);
     }
 }

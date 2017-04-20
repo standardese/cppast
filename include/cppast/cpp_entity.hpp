@@ -5,6 +5,8 @@
 #ifndef CPPAST_CPP_ENTITY_HPP_INCLUDED
 #define CPPAST_CPP_ENTITY_HPP_INCLUDED
 
+#include <string>
+
 #include <type_safe/optional_ref.hpp>
 
 #include <cppast/detail/intrusive_list.hpp>

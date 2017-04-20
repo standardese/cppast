@@ -5,6 +5,8 @@
 #ifndef CPPAST_DEBUG_HELPER_HPP_INCLUDED
 #define CPPAST_DEBUG_HELPER_HPP_INCLUDED
 
+#include <string>
+
 #include "raii_wrapper.hpp"
 
 namespace cppast

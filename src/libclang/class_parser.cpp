@@ -96,6 +96,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class(const detail::parse_context&
 #if CPPAST_CINDEX_HAS_FRIEND
     auto is_friend = clang_getCursorKind(parent_cur) == CXCursor_FriendDecl;
 #else
+    (void)parent_cur;
     auto is_friend = false;
 #endif
 

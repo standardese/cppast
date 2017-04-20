@@ -5,6 +5,7 @@
 #ifndef CPPAST_TOKENIZER_HPP_INCLUDED
 #define CPPAST_TOKENIZER_HPP_INCLUDED
 
+#include <string>
 #include <vector>
 
 #include "raii_wrapper.hpp"
