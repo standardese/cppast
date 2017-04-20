@@ -1,6 +1,6 @@
 # cppast
 
-Library interface to the C++ AST --- parse source files, synthesize entities, get documentation comments and generate code.
+Library interface to the C++ AST &mdash; parse source files, synthesize entities, get documentation comments and generate code.
 
 *Note: This is currently just a first prototype and everything is unstable for now. If you're code can't be parsed, please file an issue.*
 
@@ -10,7 +10,7 @@ If you're writing a tool that needs access to the C++ AST (i.e. documentation ge
 It offers [three interfaces for tools](https://clang.llvm.org/docs/Tooling.html), but the only one that really works for standalone applications is [libclang](http://clang.llvm.org/doxygen/group__CINDEX.html).
 However, libclang has various limitations and does not expose the entire AST.
 
-So there is no feasible option --- except for this library.
+So there is no feasible option &mdash; except for this library.
 It was originally a part of the [standardese documentation generator](http://standardese.foonathan.net), but has been extracted into an independent library.
 
 See [this blog post](http://foonathan.net/blog/2017/04/20/cppast.html) for more information about the motiviation and design.
@@ -76,6 +76,6 @@ Parsing is as simple as calling the `parse()` member function passing it three t
 * The path to the file;
 * An object of a type derived from `compile_config`: It stores the compilation flags used for compiling the file, it needs to match the parser, i.e. use `libclang_compile_config` with `libclang_parser`;
 
-It returns `nullptr` on failure and prints diagnostics using a given `diagnostic_logger` --- note that it will only return `nullptr` on fatal parse errors, else it will just skip the one where the error occured.
+It returns `nullptr` on failure and prints diagnostics using a given `diagnostic_logger` &mdash; note that it will only return `nullptr` on fatal parse errors, else it will just skip the one where the error occured.
 If everything went succesful, it returns a `std::unique_ptr<cpp_file>` which is the top-level AST entity of the current file.
 You can then work with it.
