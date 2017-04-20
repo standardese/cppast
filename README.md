@@ -1,36 +1,36 @@
 # cppast
 
-Library interface to the C++ AST - parse source files, synthesize entities, get documentation comments and generate code.
+Library interface to the C++ AST --- parse source files, synthesize entities, get documentation comments and generate code.
 
 *Note: This is currently just a first prototype and everything is unstable for now. If you're code can't be parsed, please file an issue.*
 
 ## Motivation
 
-If you're writing a tool that needs access to C++ AST (i.e. documentation generator, reflection library, …), you're only option apart from writing your own parser is to use [clang](https://clang.llvm.org).
+If you're writing a tool that needs access to the C++ AST (i.e. documentation generator, reflection library, …), your only option apart from writing your own parser is to use [clang](https://clang.llvm.org).
 It offers [three interfaces for tools](https://clang.llvm.org/docs/Tooling.html), but the only one that really works for standalone applications is [libclang](http://clang.llvm.org/doxygen/group__CINDEX.html).
 However, libclang has various limitations and does not expose the entire AST.
 
-So there is no feasible option - except for this library.
+So there is no feasible option --- except for this library.
 It was originally a part of the [standardese documentation generator](http://standardese.foonathan.net), but has been extracted into an independent library.
 
 See [this blog post](http://foonathan.net/blog/2017/04/20/cppast.html) for more information about the motiviation and design.
 
 ## Features
 
-* Exposes (almost) all C++ entities: Supports everything from functions to classes, templates to friend declarations, macros to enums.
-* Exposes full information about C++ types
-* Supports and exposes documentation comments in various formats with smart entity matching
-* AST hierarchy completely decoupled from parser: This allows synthesizing AST entities and multiple parsing backends.
-* Parser based on libclang: While libclang does have its limitations and/or bugs, the implemented parser uses various workarounds/hacks to provide a parser that breaks only in rare edge cases you won't notice. See [issues tagged with `libclang-parser` for a list](https://github.com/foonathan/cppast/issues?q=is%3Aissue+is%3Aopen+label%3Alibclang-parser).
-* Simple yet customizable code generation interface
+* Exposes (almost) all C++ entities: Supports everything from functions to classes, templates to friend declarations, macros to enums;
+* Exposes full information about C++ types;
+* Supports and exposes documentation comments in various formats with smart entity matching;
+* AST hierarchy completely decoupled from parser: This allows synthesizing AST entities and multiple parsing backends;
+* Parser based on libclang: While libclang does have its limitations and/or bugs, the implemented parser uses various workarounds/hacks to provide a parser that breaks only in rare edge cases you won't notice. See [issues tagged with `libclang-parser` for a list](https://github.com/foonathan/cppast/issues?q=is%3Aissue+is%3Aopen+label%3Alibclang-parser);
+* Simple yet customizable code generation interface.
 
 ## Missing features
 
 * Support modification of parsed entities: they're currently all immutable, need to find a decent way of implementing that
-* Full support for expressions: currently only literal expressions are exposed.
-* Support for statements: currently function bodies aren't parsed at all.
-* Support for attributes: currently they're ignored
-* Support for member specialization: members of a template can be specialized separately, this is not supported
+* Full support for expressions: currently only literal expressions are exposed;
+* Support for statements: currently function bodies aren't parsed at all;
+* Support for attributes: currently they're ignore;
+* Support for member specialization: members of a template can be specialized separately, this is not supported.
 
 ## Example
 
@@ -38,7 +38,7 @@ See [tool/main.cpp](tool/main.cpp) for a simple application of the library that 
 
 ## Documentation
 
-TODO, refer to documentation comments in header file
+TODO, refer to documentation comments in header file.
 
 ### Installation
 
@@ -64,18 +64,18 @@ If you run into any issues with the installation, please report them.
 
 There are three class hierarchies that represent the AST:
 
-* `cpp_entity`: This is the base class for all C++ *entities*, i.e. declarations/definitions or things like `static_assert()` and function parameters.
-* `cpp_type`: This is the base class for the C++ type hierachy. It is used in the `cpp_entity` hierachy, i.e. `cpp_type_alias` contains an `underlying_type()`. Derived classes are, for example, `cpp_builtin_type` or `cpp_pointer_type`.
-* `cpp_expression`: This is the base class for all C++ expressions. It is used in the `cpp_entity` hierarchy, i.e. `cpp_function_parameter` contains a `default_value()` as expression. Derived classes are currently only `cpp_literal_expression` and `cpp_unexposed_expression`.
+* `cpp_entity`: This is the base class for all C++ *entities*, i.e. declarations/definitions or things like `static_assert()` and function parameters;
+* `cpp_type`: This is the base class for the C++ type hierachy. It is used in the `cpp_entity` hierachy, i.e. `cpp_type_alias` contains an `underlying_type()`. Derived classes are, for example, `cpp_builtin_type` or `cpp_pointer_type`;
+* `cpp_expression`: This is the base class for all C++ expressions. It is used in the `cpp_entity` hierarchy, i.e. `cpp_function_parameter` contains a `default_value()` as expression. Derived classes are currently only `cpp_literal_expression` and `cpp_unexposed_expression`;
 
 In order to parse a C++ source file, you need an implementation of `parser`.
 The library provides one, `libclang_parser`, but you could also write one yourself.
 Parsing is as simple as calling the `parse()` member function passing it three things:
 
-* An object of type `cpp_entity_index`: This is only required to resolve cross-references in the AST (i.e. if you want to get the `cpp_class` referenced in the return type of a `cpp_function`); it does not own the entities.
-* The path to the file.
-* An object of a type derived from `compile_config`: It stores the compilation flags used for compiling the file, it needs to match the parser, i.e. use `libclang_compile_config` with `libclang_parser`.
+* An object of type `cpp_entity_index`: This is only required to resolve cross-references in the AST (i.e. if you want to get the `cpp_class` referenced in the return type of a `cpp_function`); it does not own the entities;
+* The path to the file;
+* An object of a type derived from `compile_config`: It stores the compilation flags used for compiling the file, it needs to match the parser, i.e. use `libclang_compile_config` with `libclang_parser`;
 
-It returns `nullptr` on failure and prints diagnostics using a given `diagnostic_logger` - note that it will only return `nullptr` on fatal parse errors, else it will just skip the one where the error occured.
+It returns `nullptr` on failure and prints diagnostics using a given `diagnostic_logger` --- note that it will only return `nullptr` on fatal parse errors, else it will just skip the one where the error occured.
 If everything went succesful, it returns a `std::unique_ptr<cpp_file>` which is the top-level AST entity of the current file.
 You can then work with it.
