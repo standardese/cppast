@@ -29,7 +29,7 @@ See [this blog post](http://foonathan.net/blog/2017/04/20/cppast.html) for more 
 * Support modification of parsed entities: they're currently all immutable, need to find a decent way of implementing that
 * Full support for expressions: currently only literal expressions are exposed;
 * Support for statements: currently function bodies aren't parsed at all;
-* Support for attributes: currently they're ignore;
+* Support for attributes: currently they're ignored;
 * Support for member specialization: members of a template can be specialized separately, this is not supported.
 
 ## Example
