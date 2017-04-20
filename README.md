@@ -7,11 +7,13 @@ Library interface to the C++ AST - parse source files, synthesize entities, get 
 ## Motivation
 
 If you're writing a tool that needs access to C++ AST (i.e. documentation generator, reflection library, …), you're only option apart from writing your own parser is to use [clang](https://clang.llvm.org).
-It offers [three interfaces for tools](https://clang.llvm.org/docs/Tooling.html), but the only one that is designed for standalone applications is [libclang](http://clang.llvm.org/doxygen/group__CINDEX.html).
+It offers [three interfaces for tools](https://clang.llvm.org/docs/Tooling.html), but the only one that really works for standalone applications is [libclang](http://clang.llvm.org/doxygen/group__CINDEX.html).
 However, libclang has various limitations and does not expose the entire AST.
 
 So there is no feasible option - except for this library.
 It was originally a part of the [standardese documentation generator](http://standardese.foonathan.net), but has been extracted into an independent library.
+
+See [this blog post](http://foonathan.net/blog/2017/04/20/cppast.html) for more information about the motiviation and design.
 
 ## Features
 
