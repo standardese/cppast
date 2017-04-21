@@ -333,6 +333,8 @@ namespace
                 else
                     stream.bump();
             }
+            if (stream.peek() == "{" || stream.peek() == ":" || stream.peek() == "try")
+                result.body_kind = cpp_function_definition;
         }
         else
         {
@@ -356,6 +358,9 @@ namespace
 
             if (detail::skip_if(stream, "="))
                 parse_body(stream, result, allow_virtual);
+            else if (detail::skip_if(stream, "{") || detail::skip_if(stream, ":")
+                     || detail::skip_if(stream, "try"))
+                result.body_kind = cpp_function_definition;
         }
 
         return result;
