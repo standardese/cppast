@@ -137,10 +137,12 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class(const detail::parse_context&
                 add_base_class(builder, context, child, cur);
             else if (kind == CXCursor_CXXFinalAttr)
                 builder.is_final();
-            else if (kind == CXCursor_TemplateTypeParameter
-                     || kind == CXCursor_NonTypeTemplateParameter
-                     || kind == CXCursor_TemplateTemplateParameter || kind == CXCursor_ParmDecl
-                     || clang_isExpression(kind) || clang_isReference(kind))
+            else if (
+                kind == CXCursor_TemplateTypeParameter || kind == CXCursor_NonTypeTemplateParameter
+                || kind == CXCursor_TemplateTemplateParameter || kind == CXCursor_ParmDecl
+                || clang_isExpression(kind) || clang_isReference(kind)
+                || kind
+                       == CXCursor_UnexposedAttr) // I have no idea what this is, but happens on Windows
                 // other children due to templates and stuff
                 return;
             else if (auto entity = parse_entity(context, child))
