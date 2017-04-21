@@ -2,7 +2,7 @@
 
 Library interface to the C++ AST &mdash; parse source files, synthesize entities, get documentation comments and generate code.
 
-*Note: This is currently just a first prototype and everything is unstable for now. If you're code can't be parsed, please file an issue.*
+*Note: This is currently just a first prototype and everything is unstable for now. If your code can't be parsed, please file an issue.*
 
 ## Motivation
 
