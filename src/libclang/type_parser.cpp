@@ -4,6 +4,8 @@
 
 #include "parse_functions.hpp"
 
+#include <cctype>
+
 #include <cppast/cpp_array_type.hpp>
 #include <cppast/cpp_decltype_type.hpp>
 #include <cppast/cpp_expression.hpp>

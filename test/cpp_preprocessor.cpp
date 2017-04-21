@@ -145,7 +145,10 @@ struct a {};
 /// u
 /** b
   * b */
-void b(int, float);
+void b(int, float)
+{
+    auto c = '#';
+}
 
 /** u */
 //! c

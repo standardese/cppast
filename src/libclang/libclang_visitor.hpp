@@ -28,7 +28,10 @@ namespace cppast
                 return CXChildVisit_Recurse;
             };
 
-            clang_visitChildren(parent, recurse ? recurse_lambda : continue_lambda, &f);
+            if (recurse)
+                clang_visitChildren(parent, recurse_lambda, &f);
+            else
+                clang_visitChildren(parent, continue_lambda, &f);
         }
 
         // visits a translation unit

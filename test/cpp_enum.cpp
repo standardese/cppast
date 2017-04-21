@@ -77,21 +77,29 @@ enum ns::c : int {};
                     ++no_vals;
                     REQUIRE(val.value());
                     auto& expr = val.value().value();
-                    REQUIRE(expr.kind() == cpp_expression_kind::unexposed_t);
-                    REQUIRE(static_cast<const cpp_unexposed_expression&>(expr).expression()
-                            == "42");
-                    REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_uint)));
+                    if (equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_uint)))
+                    {
+                        REQUIRE(expr.kind() == cpp_expression_kind::unexposed_t);
+                        REQUIRE(static_cast<const cpp_unexposed_expression&>(expr).expression()
+                                == "42");
+                    }
+                    else
+                    {
+                        REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_int)));
+                        REQUIRE(expr.kind() == cpp_expression_kind::literal_t);
+                        REQUIRE(static_cast<const cpp_literal_expression&>(expr).value() == "42");
+                    }
                 }
                 else if (val.name() == "a_d")
                 {
                     ++no_vals;
                     REQUIRE(val.value());
                     auto& expr = val.value().value();
-                    // this is unexposed for some reason
                     REQUIRE(expr.kind() == cpp_expression_kind::unexposed_t);
                     REQUIRE(static_cast<const cpp_unexposed_expression&>(expr).expression()
                             == "a_a+2");
-                    REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_uint)));
+                    if (!equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_int)))
+                        REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_uint)));
                 }
                 else
                     REQUIRE(false);

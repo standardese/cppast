@@ -4,6 +4,8 @@
 
 #include "tokenizer.hpp"
 
+#include <cctype>
+
 #include "libclang_visitor.hpp"
 #include "parse_error.hpp"
 
@@ -92,7 +94,7 @@ namespace
         auto kind = clang_getCursorKind(cur);
         if (cursor_is_function(kind) || cursor_is_function(clang_getTemplateCursorKind(cur)))
         {
-            auto range_shrunk = false;
+            auto is_definition = false;
 
             // if a function we need to remove the body
             // it does not need to be parsed
@@ -103,11 +105,22 @@ namespace
                 {
                     auto child_extent = clang_getCursorExtent(child);
                     end               = clang_getRangeStart(child_extent);
-                    range_shrunk      = true;
+                    is_definition     = true;
                 }
             });
 
-            if (!range_shrunk && !token_after_is(tu, file, cur, end, ";"))
+            if (!is_definition)
+            {
+                // i have no idea why this is necessary
+                is_definition = token_after_is(tu, file, cur, end, "{")
+                                || token_after_is(tu, file, cur, end, "try")
+                                || token_after_is(tu, file, cur, end, ":");
+                if (is_definition)
+                    // need to extend range here to include the token
+                    end = get_next_location(tu, file, end);
+            }
+
+            if (!is_definition && !token_after_is(tu, file, cur, end, ";"))
             {
                 // we do not have a body, but it is not a declaration either
                 do
