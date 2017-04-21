@@ -651,17 +651,24 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
 
     position    p(ts::ref(result.source), output.c_str());
     std::size_t file_depth = 0u;
-    ts::flag    in_string(false);
+    ts::flag    in_string(false), in_char(false);
     while (p)
     {
         if (starts_with(p, "\\\"")) // starts with \"
             p.bump(2u);
-        else if (starts_with(p, "\"")) // starts with "
+        else if (starts_with(p, "\\'")) // starts with \'
+            p.bump(2u);
+        else if (in_char == false && starts_with(p, "\"")) // starts with "
         {
             p.bump();
             in_string.toggle();
         }
-        else if (in_string == true)
+        else if (in_string == false && starts_with(p, "'"))
+        {
+            p.bump();
+            in_char.toggle();
+        }
+        else if (in_string == true || in_char == true)
             p.bump();
         else if (auto macro = parse_macro(p, result, file_depth == 0u))
         {
