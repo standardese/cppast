@@ -111,12 +111,12 @@ namespace cppast
     /// Tag type to represent an end-of-line character.
     const struct newl_t
     {
-    } newl;
+    } newl{};
 
     /// Tag type to represent a single space character.
     const struct whitespace_t
     {
-    } whitespace;
+    } whitespace{};
 
     /// Base class to control the code generation.
     ///
