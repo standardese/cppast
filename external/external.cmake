@@ -150,19 +150,16 @@ function(_cppast_find_libclang config_tool min_version force)
     endif()
 endfunction()
 
-# create libclang target
-# target: _cppast_libclang
-function(_cppast_create_libclang_target library_path include_path)
-    add_library(_cppast_libclang SHARED IMPORTED)
-    set_target_properties(_cppast_libclang PROPERTIES
-                          IMPORTED_LOCATION ${library_path}
-                          INTERFACE_INCLUDE_DIRECTORIES ${include_path})
-endfunction()
-
 set(llvm_min_version 3.9.1)
 set(LLVM_PREFERRED_VERSION 4.0.0 CACHE STRING "the preferred LLVM version")
 
-if(NOT LLVM_CONFIG_BINARY)
+if(DEFINED LLVM_VERSION_EXPLICIT)
+    if(LLVM_VERSION_EXPLICIT VERSION_LESS llvm_min_version)
+        message(FATAL_ERROR "Outdated LLVM version ${LLVM_VERSION_EXPLICIT}, minimal supported is ${llvm_min_version}")
+    endif()
+    set(LLVM_VERSION ${LLVM_VERSION_EXPLICIT} CACHE INTERNAL "")
+    message(STATUS "Using manually specified LLVM version ${LLVM_VERSION}")
+elseif(NOT LLVM_CONFIG_BINARY)
     if(DEFINED LLVM_DOWNLOAD_OS_NAME)
         _cppast_download_llvm(${LLVM_PREFERRED_VERSION} ${LLVM_DOWNLOAD_OS_NAME})
     endif()
@@ -172,4 +169,10 @@ else()
     _cppast_find_libclang(${LLVM_CONFIG_BINARY} ${llvm_min_version} 0)
 endif()
 
-_cppast_create_libclang_target(${LIBCLANG_LIBRARY} ${LIBCLANG_INCLUDE_DIR})
+add_library(_cppast_libclang INTERFACE)
+target_link_libraries(_cppast_libclang INTERFACE ${LIBCLANG_LIBRARY})
+target_include_directories(_cppast_libclang INTERFACE ${LIBCLANG_INCLUDE_DIR})
+target_compile_definitions(_cppast_libclang INTERFACE
+                           CPPAST_LIBCLANG_SYSTEM_INCLUDE_DIR="${LIBCLANG_SYSTEM_INCLUDE_DIR}"
+                           CPPAST_CLANG_BINARY="${CLANG_BINARY}"
+                           CPPAST_CLANG_VERSION_STRING="${LLVM_VERSION}")

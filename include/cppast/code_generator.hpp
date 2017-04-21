@@ -109,20 +109,14 @@ namespace cppast
     using token_seq = detail::semantic_string_view<struct token_seq_tag>;
 
     /// Tag type to represent an end-of-line character.
-    constexpr struct newl_t
+    const struct newl_t
     {
-        constexpr newl_t() noexcept
-        {
-        }
-    } newl;
+    } newl{};
 
     /// Tag type to represent a single space character.
-    constexpr struct whitespace_t
+    const struct whitespace_t
     {
-        constexpr whitespace_t() noexcept
-        {
-        }
-    } whitespace;
+    } whitespace{};
 
     /// Base class to control the code generation.
     ///
