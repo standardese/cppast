@@ -30,7 +30,11 @@ namespace
     {
         unsigned offset;
         clang_getSpellingLocation(loc, nullptr, nullptr, nullptr, &offset);
-        return clang_getLocationForOffset(tu, file, offset + inc);
+        if (inc >= 0)
+            offset += unsigned(inc);
+        else
+            offset -= unsigned(-inc);
+        return clang_getLocationForOffset(tu, file, offset);
     }
 
     class simple_tokenizer
@@ -312,7 +316,7 @@ detail::token_iterator detail::find_closing_bracket(detail::token_stream stream)
             --bracket_count;
         else if (paren_count == 0 && template_bracket && cur == ">>")
             // maximal munch
-            bracket_count -= 2u;
+            bracket_count -= 2;
         else if (cur == "(" || cur == "{" || cur == "[")
             ++paren_count;
         else if (cur == ")" || cur == "}" || cur == "]")
