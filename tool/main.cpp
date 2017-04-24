@@ -288,7 +288,7 @@ int main(int argc, char* argv[])
             logger.set_verbose(true);
 
         auto file = parse_file(config, logger, options["file"].as<std::string>(),
-                               options.count("fatal_errors") == 1u);
+                               options.count("fatal_errors") == 1);
         if (!file)
             return 2;
         print_ast(std::cout, *file);
