@@ -86,6 +86,12 @@ void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags 
         else
             add_flag("-std=c++14");
         break;
+    case cpp_standard::cpp_1z:
+        if (flags & compile_flag::gnu_extensions)
+            add_flag("-std=gnu++1z");
+        else
+            add_flag("-std=c++1z");
+        break;
     }
 
     if (flags & compile_flag::ms_compatibility)

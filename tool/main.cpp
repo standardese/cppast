@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
         ("file", "the file that is being parsed (last positional argument)",
          cxxopts::value<std::string>());
     options.add_options("compilation")
-        ("std", "set the C++ standard (c++98, c++03, c++11, c++14)",
+        ("std", "set the C++ standard (c++98, c++03, c++11, c++14, c++1z (experimental))",
          cxxopts::value<std::string>()->default_value(cppast::to_string(cppast::cpp_standard::cpp_latest)))
         ("I,include_directory", "add directory to include search path",
          cxxopts::value<std::vector<std::string>>())
@@ -276,6 +276,8 @@ int main(int argc, char* argv[])
             config.set_flags(cppast::cpp_standard::cpp_11, flags);
         else if (options["std"].as<std::string>() == "c++14")
             config.set_flags(cppast::cpp_standard::cpp_14, flags);
+        else if (options["std"].as<std::string>() == "c++1z")
+            config.set_flags(cppast::cpp_standard::cpp_1z, flags);
         else
         {
             print_error("invalid value '" + options["std"].as<std::string>() + "' for std flag");
