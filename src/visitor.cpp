@@ -53,11 +53,10 @@ namespace
         {
             auto& cur = *iter;
             ++iter;
-            if (fcb(filter, cur))
-                detail::visit(cur, cb, functor, iter == container.end());
+            detail::visit(cur, fcb, filter, cb, functor, iter == container.end());
         }
 
-        return fcb(filter, container) && cb(functor, container, {visitor_info::container_entity_exit, last_child});
+        return fcb(filter, e) && cb(functor, container, {visitor_info::container_entity_exit, last_child});
     }
 }
 
