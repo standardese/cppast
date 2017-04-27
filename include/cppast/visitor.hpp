@@ -85,6 +85,9 @@ namespace cppast
                       &detail::visitor_callback<Func>, &f, false);
     }
 
+    /// Generates, at compile-time, a predicate that returns true iff the
+    /// given entity holds one of the [cppast::cpp_entity_kind]()s specified
+    /// in paramaters of the blacklist template.
     template<cpp_entity_kind... K>
     detail::visitor_predicate_t whitelist()
     {
@@ -99,6 +102,9 @@ namespace cppast
         };
     }
 
+    /// Generates, at compile-time, a predicate that returns true iff the
+    /// given entity holds a [cppast::cpp_entity_kind]() that different
+    /// from all of those specified in the paramaters of the blacklist template.
     template<cpp_entity_kind... K>
     detail::visitor_predicate_t blacklist()
     {
@@ -106,8 +112,6 @@ namespace cppast
         return [](const cpp_entity& e)
         {
             bool result = true;
-            // this ugliness avoids recursive expansion which would be required in C++11,
-            // otherwise known as poor man's fold expression.
             (void)std::initializer_list<int>{ (result = result && (K != e.kind()), 0)... };
             return result;
         };
