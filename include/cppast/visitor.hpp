@@ -6,14 +6,12 @@
 #define CPPAST_VISITOR_HPP_INCLUDED
 
 #include <type_traits>
-#include <array>
-#include <functional>
-#include "cpp_entity_kind.hpp"
+
+#include <cppast/cpp_entity.hpp>
+#include <cppast/cpp_entity_kind.hpp>
 
 namespace cppast
 {
-    class cpp_entity;
-
     /// Information about the state of a visit operation.
     struct visitor_info
     {
@@ -53,6 +51,10 @@ namespace cppast
             return func(e);
         }
 
+        // the filtered visitor overload accepts any functor of a similar signature,
+        // not just this one. This type is for the whitelist and blacklist utility functions.
+        using visitor_predicate_t = bool (*)(const cpp_entity&);
+
         bool visit(const cpp_entity& e, visitor_callback_t cb, void* functor, bool last_child);
         bool visit(const cpp_entity& e, visitor_filter_t fcb, void* filt_functor,
                    visitor_callback_t cb, void* vis_functor, bool last_child);
@@ -81,6 +83,20 @@ namespace cppast
     {
         detail::visit(e, &detail::visitor_filter_callback<Predicate>, &pred,
                       &detail::visitor_callback<Func>, &f, false);
+    }
+
+
+    template<cpp_entity_kind... Kinds>
+    detail::visitor_predicate_t whitelist()
+    {
+        return [](const cpp_entity& e)
+        {
+            static constexpr std::array<cpp_entity_kind, sizeof...(Kinds)> kinds_arr { Kinds... };
+            for (auto& k : kinds_arr)
+                if (k == e.kind())
+                    return true;
+            return false;
+        };
     }
 
 } // namespace cppast

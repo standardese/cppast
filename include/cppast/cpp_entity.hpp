@@ -198,21 +198,6 @@ namespace cppast
     /// \returns Whether or not the given entity is "friended",
     /// that is, its declaration exists as part of a [cppast::cpp_friend]() declaration.
     bool is_friended(const cpp_entity& e) noexcept;
-
-    using whitelist_func_t = bool (*)(const cpp_entity&);
-
-    template<cpp_entity_kind... Kinds>
-    whitelist_func_t whitelist()
-    {
-        return [](const cpp_entity& e)
-        {
-            static constexpr std::array<cpp_entity_kind, sizeof...(Kinds)> kinds_arr { Kinds... };
-            for (auto& k : kinds_arr)
-                if (k == e.kind())
-                    return true;
-            return false;
-        };
-    }
 } // namespace cppast
 
 #endif // CPPAST_CPP_ENTITY_HPP_INCLUDED
