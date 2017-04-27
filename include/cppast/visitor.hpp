@@ -85,17 +85,31 @@ namespace cppast
                       &detail::visitor_callback<Func>, &f, false);
     }
 
-
-    template<cpp_entity_kind... Kinds>
+    template<cpp_entity_kind... K>
     detail::visitor_predicate_t whitelist()
     {
+        static_assert(sizeof...(K) > 0, "At least one entity kind should be specified");
         return [](const cpp_entity& e)
         {
-            static constexpr std::array<cpp_entity_kind, sizeof...(Kinds)> kinds_arr { Kinds... };
-            for (auto& k : kinds_arr)
-                if (k == e.kind())
-                    return true;
-            return false;
+            bool result = false;
+            // this ugliness avoids recursive expansion which would be required in C++11,
+            // otherwise known as poor man's fold expression.
+            (void)std::initializer_list<int>{ (result = result || (K == e.kind()), 0)... };
+            return result;
+        };
+    }
+
+    template<cpp_entity_kind... K>
+    detail::visitor_predicate_t blacklist()
+    {
+        static_assert(sizeof...(K) > 0, "At least one entity kind should be specified");
+        return [](const cpp_entity& e)
+        {
+            bool result = true;
+            // this ugliness avoids recursive expansion which would be required in C++11,
+            // otherwise known as poor man's fold expression.
+            (void)std::initializer_list<int>{ (result = result && (K != e.kind()), 0)... };
+            return result;
         };
     }
 
