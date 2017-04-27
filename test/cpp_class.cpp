@@ -5,7 +5,6 @@
 #include <cppast/cpp_class.hpp>
 
 #include "test_parser.hpp"
-#include <iostream>
 
 using namespace cppast;
 
@@ -303,23 +302,3 @@ struct g
     REQUIRE(count == 12u);
 }
 
-TEST_CASE("cpp_class_filtered")
-{
-    auto code = R"(
-    class foo {};
-    enum quaz {};
-)";
-
-    cpp_entity_index idx;
-    auto             file = parse(idx, "cpp_class.cpp", code);
-    unsigned filtered_count = 0;
-    cppast::visit(*file,
-                  whitelist<cpp_entity_kind::enum_t, cpp_entity_kind::class_t>(),
-                  [&](const cpp_entity& e, cppast::visitor_info info) {
-                      std::cout << e.name() << "\n";
-                      ++filtered_count;
-                      return true;
-                  }
-    );
-    std::cout << filtered_count << "\n";
-}
