@@ -103,7 +103,7 @@ namespace cppast
     }
 
     /// Generates, at compile-time, a predicate that returns true iff the
-    /// given entity holds a [cppast::cpp_entity_kind]() that different
+    /// given entity holds a [cppast::cpp_entity_kind]() that's different
     /// from all of those specified in the paramaters of the blacklist template.
     template<cpp_entity_kind... K>
     detail::visitor_predicate_t blacklist()
