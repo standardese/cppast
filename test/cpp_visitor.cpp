@@ -20,7 +20,7 @@ TEST_CASE("visitor_filtered")
     cpp_entity_index idx;
     auto             file           = parse(idx, "cpp_class.cpp", code);
     unsigned         filtered_count = 0;
-    auto visitor_callback           = [&](const cpp_entity& e, cppast::visitor_info info) {
+    auto visitor_callback           = [&](const cpp_entity&, cppast::visitor_info info) {
         if (info.event == cppast::visitor_info::container_entity_enter)
             return true;
         ++filtered_count;
@@ -32,7 +32,7 @@ TEST_CASE("visitor_filtered")
     SECTION("all nodes are visited")
     {
         filtered_count = 0;
-        cppast::visit(*file, [](const cpp_entity& e) { return true; }, visitor_callback);
+        cppast::visit(*file, [](const cpp_entity&) { return true; }, visitor_callback);
         REQUIRE(filtered_count == all_node_count);
     }
 
