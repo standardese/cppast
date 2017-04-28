@@ -23,7 +23,9 @@ namespace cppast
         cpp_11,
         cpp_14,
 
-        cpp_latest = cpp_standard::cpp_14,
+        cpp_1z, //< Upcoming C++17 (experimental).
+
+        cpp_latest = cpp_standard::cpp_14, //< The latest supported C++ standard.
     };
 
     /// \returns A human readable string representing the option,
@@ -40,6 +42,8 @@ namespace cppast
             return "c++11";
         case cpp_standard::cpp_14:
             return "c++14";
+        case cpp_standard::cpp_1z:
+            return "c++1z";
         }
 
         DEBUG_UNREACHABLE(detail::assert_handler{});
