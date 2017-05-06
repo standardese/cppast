@@ -49,6 +49,8 @@ namespace
     {
         auto& container = static_cast<const T&>(e);
 
+        fcb(filter, e) && cb(functor, container, {visitor_info::container_entity_enter, last_child});
+
         for (auto iter = container.begin(); iter != container.end();)
         {
             auto& cur = *iter;

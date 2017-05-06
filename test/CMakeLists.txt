@@ -26,7 +26,7 @@ set(tests
         cpp_template_parameter.cpp
         cpp_type_alias.cpp
         cpp_variable.cpp
-        cpp_visitor.cpp)
+        visitor.cpp)
 
 add_executable(cppast_test test.cpp test_parser.hpp ${tests})
 target_include_directories(cppast_test PUBLIC ${CMAKE_CURRENT_BINARY_DIR})

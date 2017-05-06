@@ -21,9 +21,8 @@ TEST_CASE("visitor_filtered")
     auto             file           = parse(idx, "cpp_class.cpp", code);
     unsigned         filtered_count = 0;
     auto visitor_callback           = [&](const cpp_entity&, cppast::visitor_info info) {
-        if (info.event == cppast::visitor_info::container_entity_enter)
-            return true;
-        ++filtered_count;
+        if (info.event != cppast::visitor_info::container_entity_exit)
+            ++filtered_count;
         return true;
     };
 
@@ -34,6 +33,30 @@ TEST_CASE("visitor_filtered")
         filtered_count = 0;
         cppast::visit(*file, [](const cpp_entity&) { return true; }, visitor_callback);
         REQUIRE(filtered_count == all_node_count);
+    }
+
+    SECTION("filtered callback on both enter and exit")
+    {
+        filtered_count = 0;
+        cppast::visit(*file, [](const cpp_entity&) { return true; },
+                      [&](const cpp_entity&, cppast::visitor_info info) {
+                          filtered_count++;
+                          return true;
+                      });
+        REQUIRE(filtered_count == all_node_count * 2);
+    }
+
+    SECTION("visitation stops when returning false")
+    {
+        auto visited_count = 0;
+        constexpr auto max_visited = 4;
+        cppast::visit(*file, [](const cpp_entity&) { return true; },
+                      [&](const cpp_entity&, cppast::visitor_info info) {
+                          if (++visited_count == max_visited)
+                              return false;
+                          return true;
+                      });
+        REQUIRE(visited_count == max_visited);
     }
 
     SECTION("whitelist")
