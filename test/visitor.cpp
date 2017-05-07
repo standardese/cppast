@@ -41,6 +41,7 @@ TEST_CASE("visitor_filtered")
         filtered_count = 0;
         cppast::visit(*file, [](const cpp_entity&) { return true; },
                       [&](const cpp_entity&, cppast::visitor_info info) {
+                          (void)info;
                           filtered_count++;
                           return true;
                       });
