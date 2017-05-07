@@ -2,6 +2,7 @@
 using namespace cppast;
 
 #include "test_parser.hpp"
+#include <iostream>
 
 TEST_CASE("visitor_filtered")
 {
@@ -52,9 +53,13 @@ TEST_CASE("visitor_filtered")
         constexpr auto max_visited = 4;
         cppast::visit(*file, [](const cpp_entity&) { return true; },
                       [&](const cpp_entity&, cppast::visitor_info info) {
-                          if (++visited_count == max_visited)
+                          if (info.event == cppast::visitor_info::container_entity_exit)
+                              return true;
+                          ++visited_count;
+                          if (visited_count < max_visited)
+                              return true;
+                          else
                               return false;
-                          return true;
                       });
         REQUIRE(visited_count == max_visited);
     }

@@ -34,8 +34,8 @@ namespace cppast
     /// \exclude
     namespace detail
     {
-        using visitor_callback_t = bool (*)(void* mem, const cpp_entity&, visitor_info info);
-        using visitor_filter_t   = bool (*)(void* mem, const cpp_entity&);
+        using visitor_callback_t  = bool (*)(void* mem, const cpp_entity&, visitor_info info);
+        using visitor_predicate_t = bool (*)(const cpp_entity&);
 
         template <typename Func>
         bool visitor_callback(void* mem, const cpp_entity& e, visitor_info info)
@@ -44,20 +44,7 @@ namespace cppast
             return func(e, info);
         }
 
-        template <typename Predicate>
-        bool visitor_filter_callback(void *mem, const cpp_entity &e)
-        {
-            auto& func = *static_cast<Predicate*>(mem);
-            return func(e);
-        }
-
-        // the filtered visitor overload accepts any functor of a similar signature,
-        // not just this one. This type is for the whitelist and blacklist utility functions.
-        using visitor_predicate_t = bool (*)(const cpp_entity&);
-
         bool visit(const cpp_entity& e, visitor_callback_t cb, void* functor, bool last_child);
-        bool visit(const cpp_entity& e, visitor_filter_t fcb, void* filt_functor,
-                   visitor_callback_t cb, void* vis_functor, bool last_child);
     } // namespace detail
 
     /// Visits a [cppast::cpp_entity]().
@@ -81,8 +68,11 @@ namespace cppast
     template <typename Func, typename Predicate>
     void visit(const cpp_entity& e, Predicate pred, Func f)
     {
-        detail::visit(e, &detail::visitor_filter_callback<Predicate>, &pred,
-                      &detail::visitor_callback<Func>, &f, false);
+        visit(e, [&](const cpp_entity& e, visitor_info& info) {
+            if (pred(e))
+                return f(e, info);
+            return true;
+        });
     }
 
     /// Generates, at compile-time, a predicate that returns true iff the
