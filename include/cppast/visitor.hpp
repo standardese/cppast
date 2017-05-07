@@ -5,8 +5,6 @@
 #ifndef CPPAST_VISITOR_HPP_INCLUDED
 #define CPPAST_VISITOR_HPP_INCLUDED
 
-#include <type_traits>
-
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_kind.hpp>
 
@@ -78,16 +76,15 @@ namespace cppast
     /// Generates, at compile-time, a predicate that returns true iff the
     /// given entity holds one of the [cppast::cpp_entity_kind]()s specified
     /// in paramaters of the blacklist template.
-    template<cpp_entity_kind... K>
+    template <cpp_entity_kind... K>
     detail::visitor_predicate_t whitelist()
     {
         static_assert(sizeof...(K) > 0, "At least one entity kind should be specified");
-        return [](const cpp_entity& e)
-        {
+        return [](const cpp_entity& e) {
             bool result = false;
             // this ugliness avoids recursive expansion which would be required in C++11,
             // otherwise known as poor man's fold expression.
-            (void)std::initializer_list<int>{ (result = result || (K == e.kind()), 0)... };
+            (void)std::initializer_list<int>{(result = result || (K == e.kind()), 0)...};
             return result;
         };
     }
@@ -95,18 +92,16 @@ namespace cppast
     /// Generates, at compile-time, a predicate that returns true iff the
     /// given entity holds a [cppast::cpp_entity_kind]() that's different
     /// from all of those specified in the paramaters of the blacklist template.
-    template<cpp_entity_kind... K>
+    template <cpp_entity_kind... K>
     detail::visitor_predicate_t blacklist()
     {
         static_assert(sizeof...(K) > 0, "At least one entity kind should be specified");
-        return [](const cpp_entity& e)
-        {
+        return [](const cpp_entity& e) {
             bool result = true;
-            (void)std::initializer_list<int>{ (result = result && (K != e.kind()), 0)... };
+            (void)std::initializer_list<int>{(result = result && (K != e.kind()), 0)...};
             return result;
         };
     }
-
 } // namespace cppast
 
 #endif // CPPAST_VISITOR_HPP_INCLUDED

@@ -41,7 +41,6 @@ namespace
 
         return cb(functor, container, {visitor_info::container_entity_exit, last_child});
     }
-
 }
 
 bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* functor,
@@ -105,5 +104,3 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
     DEBUG_UNREACHABLE(detail::assert_handler{});
     return true;
 }
-
-
