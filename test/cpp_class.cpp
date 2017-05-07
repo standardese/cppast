@@ -301,3 +301,4 @@ struct g
     });
     REQUIRE(count == 12u);
 }
+
