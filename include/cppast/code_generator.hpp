@@ -156,10 +156,15 @@ namespace cppast
             /// respectively.
             explicit output(type_safe::object_ref<code_generator>   gen,
                             type_safe::object_ref<const cpp_entity> e, bool is_container)
-            : gen_(gen), options_(is_container ? gen_->on_container_begin(*e) : gen_->on_leaf(*e))
+            : gen_(gen), options_(gen->do_get_options(*e))
             {
                 if (is_container)
+                {
+                    gen_->on_container_begin(*e);
                     e_ = e;
+                }
+                else
+                    gen_->on_leaf(*e);
             }
 
             /// \effects If the entity is a container
@@ -183,10 +188,16 @@ namespace cppast
                 return options_ != exclude;
             }
 
-            /// \returns The synopsis options.
+            /// \returns The generation options.
             generation_options options() const noexcept
             {
                 return options_;
+            }
+
+            /// \returns The generation options for the given entity.
+            generation_options options(const cpp_entity& e) const noexcept
+            {
+                return gen_->do_get_options(e);
             }
 
             /// \returns Whether or not the definition should be generated as well.
@@ -326,14 +337,19 @@ namespace cppast
         code_generator() noexcept = default;
 
     private:
-        /// \effects Will be invoked before code of a container entity is generated.
-        /// The base class version has no effect.
-        /// \returns The synopsis options for that entity,
-        /// the base class version always returns no special options.
-        virtual generation_options on_container_begin(const cpp_entity& e)
+        /// \returns The generation options for that entity.
+        /// The base class version always returns no special options.
+        virtual generation_options do_get_options(const cpp_entity& e)
         {
             (void)e;
             return {};
+        }
+
+        /// \effects Will be invoked before code of a container entity is generated.
+        /// The base class version has no effect.
+        virtual void on_container_begin(const cpp_entity& e)
+        {
+            (void)e;
         }
 
         /// \effects Will be invoked after all code of a container entity has been generated.
@@ -345,12 +361,9 @@ namespace cppast
 
         /// \effects Will be invoked before code of a non-container entity is generated.
         /// The base class version has no effect.
-        /// \returns The synopsis options for that entity,
-        /// the base class version always returns no special options.
-        virtual generation_options on_leaf(const cpp_entity& e)
+        virtual void on_leaf(const cpp_entity& e)
         {
             (void)e;
-            return {};
         }
 
         /// \effects Will be invoked when the indentation level should be increased by one.
@@ -441,7 +454,9 @@ namespace cppast
     /// The implementation will write whitespace only where necessary,
     /// but a newline after each entity.
     /// This allows customization of formatting.
-    void generate_code(code_generator& generator, const cpp_entity& e);
+    ///
+    /// \returns Whether or not any code was actually written.
+    bool generate_code(code_generator& generator, const cpp_entity& e);
 
     /// \exclude
     class cpp_template_argument;

@@ -55,12 +55,7 @@ public:
     }
 
 private:
-    generation_options on_container_begin(const cppast::cpp_entity&) override
-    {
-        return options_;
-    }
-
-    generation_options on_leaf(const cppast::cpp_entity&) override
+    generation_options do_get_options(const cppast::cpp_entity&) override
     {
         return options_;
     }

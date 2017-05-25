@@ -85,10 +85,85 @@ struct foo{
   excluded c()const&;
 
   operator excluded();
-};
-)";
+};)";
 
         auto file = parse({}, "code_generator_exclude_return.cpp", code);
         REQUIRE(get_code(*file, code_generator::exclude_return) == synopsis);
+    }
+    SECTION("exclude")
+    {
+        // exclude all entities starting with `e`
+        class exclude_generator : public test_generator
+        {
+        public:
+            using test_generator::test_generator;
+
+        private:
+            generation_options do_get_options(const cpp_entity& e) override
+            {
+                if (e.name().front() == 'e')
+                    return code_generator::exclude;
+                return {};
+            }
+        };
+
+        auto code = R"(
+void e();
+
+void func(int a, int e, int c);
+
+template <typename e1, typename e2>
+void tfunc(int a);
+
+struct base {};
+struct e_t {};
+
+struct bar : e_t, base {};
+
+class foo : e_t
+{
+    int a;
+
+public:
+    int e1;
+
+private:
+    int b;
+
+public:
+    int c;
+    int e2;
+
+private:
+    int e3;
+};
+)";
+
+        auto synopsis = R"(void func(int a,int c);
+
+void tfunc(int a);
+
+struct base{
+};
+
+struct bar
+:base{
+};
+
+class foo{
+  int a;
+
+  int b;
+
+public:
+  int c;
+};
+)";
+
+        auto file = parse({}, "code_generator_exclude.cpp", code);
+
+        exclude_generator generator(code_generator::generation_options{});
+        generate_code(generator, *file);
+        REQUIRE(generator.str() == synopsis);
     }
 }
