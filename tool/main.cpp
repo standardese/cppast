@@ -82,14 +82,14 @@ void print_entity(std::ostream& out, const cppast::cpp_entity& e)
             synopsis_options on_container_begin(const cppast::cpp_entity&) override
             {
                 // generate declaration only
-                return synopsis_options::declaration;
+                return code_generator::declaration;
             }
 
             // called before code generation of a leaf entity
             synopsis_options on_leaf(const cppast::cpp_entity&) override
             {
                 // generate declaration only
-                return synopsis_options::declaration;
+                return code_generator::declaration;
             }
 
             // no need to handle indentation, as only a single line is used

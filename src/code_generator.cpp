@@ -146,8 +146,15 @@ namespace
     {
         code_generator::output output(type_safe::ref(generator), type_safe::ref(alias), false);
         if (output)
+        {
             output << keyword("namespace") << whitespace << identifier(alias.name())
-                   << punctuation("=") << alias.target() << punctuation(";") << newl;
+                   << punctuation("=");
+            if (output.options() & code_generator::exclude_target)
+                output.excluded(alias);
+            else
+                output << alias.target();
+            output << punctuation(";") << newl;
+        }
     }
 
     void generate_using_directive(code_generator& generator, const cpp_using_directive& directive)
@@ -175,7 +182,10 @@ namespace
         {
             output << keyword("using") << whitespace << identifier(alias.name())
                    << punctuation("=");
-            detail::write_type(output, alias.underlying_type(), "");
+            if (output.options() & code_generator::exclude_target)
+                output.excluded(alias);
+            else
+                detail::write_type(output, alias.underlying_type(), "");
             output << punctuation(";") << newl;
         }
     }
@@ -485,7 +495,9 @@ namespace
                 output << keyword("friend") << whitespace;
             write_storage_class(output, func.storage_class(), func.is_constexpr());
 
-            if (detail::is_complex_type(func.return_type()))
+            if (output.options() & code_generator::exclude_return)
+                output.excluded(func) << whitespace;
+            else if (detail::is_complex_type(func.return_type()))
                 output << keyword("auto") << whitespace;
             else
             {
@@ -504,7 +516,8 @@ namespace
             write_function_parameters(output, func);
             write_noexcept(output, func, false);
 
-            if (detail::is_complex_type(func.return_type()))
+            if (!(output.options() & code_generator::exclude_return)
+                && detail::is_complex_type(func.return_type()))
             {
                 output << punctuation("->");
                 detail::write_type(output, func.return_type(), "");
@@ -579,7 +592,9 @@ namespace
             else
                 write_prefix_virtual(output, func.virtual_info());
 
-            if (detail::is_complex_type(func.return_type()))
+            if (output.options() & code_generator::exclude_return)
+                output.excluded(func) << whitespace;
+            else if (detail::is_complex_type(func.return_type()))
                 output << keyword("auto") << whitespace;
             else
             {
@@ -599,7 +614,8 @@ namespace
             auto need_ws = write_cv_ref(output, func);
             write_noexcept(output, func, need_ws);
 
-            if (detail::is_complex_type(func.return_type()))
+            if (!(output.options() & code_generator::exclude_return)
+                && detail::is_complex_type(func.return_type()))
             {
                 output << punctuation("->");
                 detail::write_type(output, func.return_type(), "");
@@ -628,7 +644,11 @@ namespace
 
             auto pos = op.name().find("operator");
             output << identifier(op.name().substr(0u, pos)) << keyword("operator") << whitespace;
-            detail::write_type(output, op.return_type(), "");
+            if (output.options() & code_generator::exclude_return)
+                output.excluded(op);
+            else
+                detail::write_type(output, op.return_type(), "");
+
             output << punctuation("(") << punctuation(")");
             auto need_ws = write_cv_ref(output, op);
             write_noexcept(output, op, need_ws);

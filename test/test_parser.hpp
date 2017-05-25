@@ -45,12 +45,26 @@ inline std::unique_ptr<cppast::cpp_file> parse(const cppast::cpp_entity_index& i
 class test_generator : public cppast::code_generator
 {
 public:
+    test_generator(synopsis_options options) : options_(std::move(options))
+    {
+    }
+
     const std::string& str() const noexcept
     {
         return str_;
     }
 
 private:
+    synopsis_options on_container_begin(const cppast::cpp_entity&) override
+    {
+        return options_;
+    }
+
+    synopsis_options on_leaf(const cppast::cpp_entity&) override
+    {
+        return options_;
+    }
+
     void do_indent() override
     {
         ++indent_;
@@ -78,14 +92,16 @@ private:
         was_newline_ = true;
     }
 
-    std::string str_;
-    unsigned    indent_      = 0;
-    bool        was_newline_ = false;
+    std::string      str_;
+    synopsis_options options_;
+    unsigned         indent_      = 0;
+    bool             was_newline_ = false;
 };
 
-inline std::string get_code(const cppast::cpp_entity& e)
+inline std::string get_code(const cppast::cpp_entity&                e,
+                            cppast::code_generator::synopsis_options options = {})
 {
-    test_generator generator;
+    test_generator generator(options);
     cppast::generate_code(generator, e);
     auto str = generator.str();
     if (!str.empty() && str.back() == '\n')
