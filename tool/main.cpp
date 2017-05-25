@@ -78,18 +78,11 @@ void print_entity(std::ostream& out, const cppast::cpp_entity& e)
             }
 
         private:
-            // called at the beginning of the code generation of a container entity (i.e. one with child)
-            synopsis_options on_container_begin(const cppast::cpp_entity&) override
+            // called to retrieve the generation options of an entity
+            generation_options do_get_options(const cppast::cpp_entity&) override
             {
                 // generate declaration only
-                return synopsis_options::declaration;
-            }
-
-            // called before code generation of a leaf entity
-            synopsis_options on_leaf(const cppast::cpp_entity&) override
-            {
-                // generate declaration only
-                return synopsis_options::declaration;
+                return code_generator::declaration;
             }
 
             // no need to handle indentation, as only a single line is used

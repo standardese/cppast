@@ -8,6 +8,7 @@
 #include <cstring>
 
 #include <type_safe/index.hpp>
+#include <type_safe/flag_set.hpp>
 
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_ref.hpp>
@@ -129,13 +130,18 @@ namespace cppast
         code_generator& operator=(const code_generator&) = delete;
         virtual ~code_generator() noexcept               = default;
 
-        /// Options that control the synopsis.
-        enum synopsis_options
+        /// Flags that control the generation.
+        enum generation_flags
         {
-            exclude,     //< Exclude the entire entity.
-            declaration, //< Only write declaration.
-            definition,  //< Also write definition.
+            exclude,        //< Exclude the entire entity.
+            exclude_return, //< Exclude the return type of a function entity.
+            exclude_target, //< Exclude the underlying entity of an alias (e.g. typedef).
+            declaration,    //< Only write declaration.
+            _flag_set_size, //< \exclude
         };
+
+        /// Options that control the generation.
+        using generation_options = type_safe::flag_set<generation_flags>;
 
         /// Sentinel type used to output a given entity.
         class output
@@ -150,10 +156,15 @@ namespace cppast
             /// respectively.
             explicit output(type_safe::object_ref<code_generator>   gen,
                             type_safe::object_ref<const cpp_entity> e, bool is_container)
-            : gen_(gen), options_(is_container ? gen_->on_container_begin(*e) : gen_->on_leaf(*e))
+            : gen_(gen), options_(gen->do_get_options(*e))
             {
                 if (is_container)
+                {
+                    gen_->on_container_begin(*e);
                     e_ = e;
+                }
+                else
+                    gen_->on_leaf(*e);
             }
 
             /// \effects If the entity is a container
@@ -177,10 +188,22 @@ namespace cppast
                 return options_ != exclude;
             }
 
+            /// \returns The generation options.
+            generation_options options() const noexcept
+            {
+                return options_;
+            }
+
+            /// \returns The generation options for the given entity.
+            generation_options options(const cpp_entity& e) const noexcept
+            {
+                return gen_->do_get_options(e);
+            }
+
             /// \returns Whether or not the definition should be generated as well.
             bool generate_definition() const noexcept
             {
-                return options_ == definition;
+                return !(options_ & declaration);
             }
 
             /// \returns A reference to the generator.
@@ -280,6 +303,14 @@ namespace cppast
                 return *this;
             }
 
+            /// \effects Calls `do_write_excluded()`.
+            const output& excluded(const cpp_entity& e) const
+            {
+                if (*this)
+                    gen_->do_write_excluded(e);
+                return *this;
+            }
+
             /// \effects Calls `do_write_newline()`.
             const output& operator<<(newl_t) const
             {
@@ -299,21 +330,26 @@ namespace cppast
         private:
             type_safe::object_ref<code_generator>     gen_;
             type_safe::optional_ref<const cpp_entity> e_;
-            synopsis_options                          options_;
+            generation_options                        options_;
         };
 
     protected:
         code_generator() noexcept = default;
 
     private:
-        /// \effects Will be invoked before code of a container entity is generated.
-        /// The base class version has no effect.
-        /// \returns The synopsis options for that entity,
-        /// the base class version always returns `definition`.
-        virtual synopsis_options on_container_begin(const cpp_entity& e)
+        /// \returns The generation options for that entity.
+        /// The base class version always returns no special options.
+        virtual generation_options do_get_options(const cpp_entity& e)
         {
             (void)e;
-            return definition;
+            return {};
+        }
+
+        /// \effects Will be invoked before code of a container entity is generated.
+        /// The base class version has no effect.
+        virtual void on_container_begin(const cpp_entity& e)
+        {
+            (void)e;
         }
 
         /// \effects Will be invoked after all code of a container entity has been generated.
@@ -325,12 +361,9 @@ namespace cppast
 
         /// \effects Will be invoked before code of a non-container entity is generated.
         /// The base class version has no effect.
-        /// \returns The synopsis options for that entity,
-        /// the base class version always returns `definition`.
-        virtual synopsis_options on_leaf(const cpp_entity& e)
+        virtual void on_leaf(const cpp_entity& e)
         {
             (void)e;
-            return definition;
         }
 
         /// \effects Will be invoked when the indentation level should be increased by one.
@@ -390,6 +423,14 @@ namespace cppast
             do_write_token_seq(punct);
         }
 
+        /// \effects Writes a string for an excluded target or return type for the given entity.
+        /// The base class version writes the identifier `excluded`.
+        virtual void do_write_excluded(const cpp_entity& e)
+        {
+            (void)e;
+            do_write_identifier("excluded");
+        }
+
         /// \effects Writes a newline.
         /// It is guaranteed that this is the only way a newline will be printed.
         /// The base class forwards to `do_write_token_seq()`.
@@ -413,7 +454,9 @@ namespace cppast
     /// The implementation will write whitespace only where necessary,
     /// but a newline after each entity.
     /// This allows customization of formatting.
-    void generate_code(code_generator& generator, const cpp_entity& e);
+    ///
+    /// \returns Whether or not any code was actually written.
+    bool generate_code(code_generator& generator, const cpp_entity& e);
 
     /// \exclude
     class cpp_template_argument;
