@@ -35,8 +35,7 @@ enum class bar
 
 void func(int(*)(int));
 
-extern void(* ptr)(int(*)(int))=&func;
-)";
+extern void(* ptr)(int(*)(int))=&func;)";
 
         auto file = parse({}, "code_generator.cpp", code);
         REQUIRE(get_code(*file) == code);
@@ -49,8 +48,7 @@ namespace a {}
 namespace b = a;
 
 using c = int*;
-typedef int d;
-)";
+typedef int d;)";
 
         auto synopsis = R"(namespace a{
 }
@@ -59,8 +57,7 @@ namespace b=excluded;
 
 using c=excluded;
 
-using d=excluded;
-)";
+using d=excluded;)";
 
         auto file = parse({}, "code_generator_exclude_target.cpp", code);
         REQUIRE(get_code(*file, code_generator::exclude_target) == synopsis);

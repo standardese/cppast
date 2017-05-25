@@ -60,8 +60,10 @@ namespace
         code_generator::output output(type_safe::ref(generator), type_safe::ref(f), true);
         if (output)
         {
-            write_container(output, f, newl);
-            output << newl;
+            auto need_sep = write_container(output, f, newl);
+            if (!need_sep)
+                // file empty, write newl
+                output << newl;
         }
     }
 
