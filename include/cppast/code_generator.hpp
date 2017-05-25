@@ -130,8 +130,8 @@ namespace cppast
         code_generator& operator=(const code_generator&) = delete;
         virtual ~code_generator() noexcept               = default;
 
-        /// Flags that control the synopsis.
-        enum synopsis_flags
+        /// Flags that control the generation.
+        enum generation_flags
         {
             exclude,        //< Exclude the entire entity.
             exclude_return, //< Exclude the return type of a function entity.
@@ -140,8 +140,8 @@ namespace cppast
             _flag_set_size, //< \exclude
         };
 
-        /// Options that control the synopsis.
-        using synopsis_options = type_safe::flag_set<synopsis_flags>;
+        /// Options that control the generation.
+        using generation_options = type_safe::flag_set<generation_flags>;
 
         /// Sentinel type used to output a given entity.
         class output
@@ -184,7 +184,7 @@ namespace cppast
             }
 
             /// \returns The synopsis options.
-            synopsis_options options() const noexcept
+            generation_options options() const noexcept
             {
                 return options_;
             }
@@ -319,7 +319,7 @@ namespace cppast
         private:
             type_safe::object_ref<code_generator>     gen_;
             type_safe::optional_ref<const cpp_entity> e_;
-            synopsis_options                          options_;
+            generation_options                        options_;
         };
 
     protected:
@@ -330,7 +330,7 @@ namespace cppast
         /// The base class version has no effect.
         /// \returns The synopsis options for that entity,
         /// the base class version always returns no special options.
-        virtual synopsis_options on_container_begin(const cpp_entity& e)
+        virtual generation_options on_container_begin(const cpp_entity& e)
         {
             (void)e;
             return {};
@@ -347,7 +347,7 @@ namespace cppast
         /// The base class version has no effect.
         /// \returns The synopsis options for that entity,
         /// the base class version always returns no special options.
-        virtual synopsis_options on_leaf(const cpp_entity& e)
+        virtual generation_options on_leaf(const cpp_entity& e)
         {
             (void)e;
             return {};

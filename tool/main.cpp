@@ -79,14 +79,14 @@ void print_entity(std::ostream& out, const cppast::cpp_entity& e)
 
         private:
             // called at the beginning of the code generation of a container entity (i.e. one with child)
-            synopsis_options on_container_begin(const cppast::cpp_entity&) override
+            generation_options on_container_begin(const cppast::cpp_entity&) override
             {
                 // generate declaration only
                 return code_generator::declaration;
             }
 
             // called before code generation of a leaf entity
-            synopsis_options on_leaf(const cppast::cpp_entity&) override
+            generation_options on_leaf(const cppast::cpp_entity&) override
             {
                 // generate declaration only
                 return code_generator::declaration;

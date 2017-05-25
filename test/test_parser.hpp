@@ -45,7 +45,7 @@ inline std::unique_ptr<cppast::cpp_file> parse(const cppast::cpp_entity_index& i
 class test_generator : public cppast::code_generator
 {
 public:
-    test_generator(synopsis_options options) : options_(std::move(options))
+    test_generator(generation_options options) : options_(std::move(options))
     {
     }
 
@@ -55,12 +55,12 @@ public:
     }
 
 private:
-    synopsis_options on_container_begin(const cppast::cpp_entity&) override
+    generation_options on_container_begin(const cppast::cpp_entity&) override
     {
         return options_;
     }
 
-    synopsis_options on_leaf(const cppast::cpp_entity&) override
+    generation_options on_leaf(const cppast::cpp_entity&) override
     {
         return options_;
     }
@@ -92,14 +92,14 @@ private:
         was_newline_ = true;
     }
 
-    std::string      str_;
-    synopsis_options options_;
-    unsigned         indent_      = 0;
-    bool             was_newline_ = false;
+    std::string        str_;
+    generation_options options_;
+    unsigned           indent_      = 0;
+    bool               was_newline_ = false;
 };
 
-inline std::string get_code(const cppast::cpp_entity&                e,
-                            cppast::code_generator::synopsis_options options = {})
+inline std::string get_code(const cppast::cpp_entity&                  e,
+                            cppast::code_generator::generation_options options = {})
 {
     test_generator generator(options);
     cppast::generate_code(generator, e);
