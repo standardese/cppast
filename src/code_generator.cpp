@@ -28,16 +28,32 @@ using namespace cppast;
 
 namespace
 {
-    template <typename Sep>
-    auto write_sep(code_generator::output& output, Sep s) -> decltype(output << s)
+    void opening_brace(const code_generator::output& output)
     {
-        return output << s;
+        if (output.formatting().is_set(formatting_flags::brace_nl))
+            output << newl;
+        else if (output.formatting().is_set(formatting_flags::brace_ws))
+            output << whitespace;
+        output << punctuation("{");
     }
 
-    template <typename Sep>
-    auto write_sep(code_generator::output& output, Sep s) -> decltype(s(output))
+    void comma(const code_generator::output& output)
     {
-        return s(output);
+        output << punctuation(",");
+        if (output.formatting().is_set(formatting_flags::comma_ws))
+            output << whitespace;
+    }
+
+    void bracket_ws(const code_generator::output& output)
+    {
+        if (output.formatting().is_set(formatting_flags::bracket_ws))
+            output << whitespace;
+    }
+
+    void operator_ws(const code_generator::output& output)
+    {
+        if (output.formatting().is_set(formatting_flags::operator_ws))
+            output << whitespace;
     }
 
     template <class Container, typename Sep>
@@ -47,7 +63,7 @@ namespace
         for (auto& child : cont)
         {
             if (need_sep)
-                write_sep(output, s);
+                output << s;
             need_sep = generate_code(*output.generator(), child);
         }
         return need_sep;
@@ -73,7 +89,8 @@ namespace
         {
             output << preprocessor_token("#define") << whitespace << identifier(def.name());
             if (def.is_function_like())
-                output << preprocessor_token("(") << preprocessor_token(def.parameters().value())
+                output << preprocessor_token("(") << bracket_ws
+                       << preprocessor_token(def.parameters().value()) << bracket_ws
                        << preprocessor_token(")");
             if (!def.replacement().empty())
                 output << whitespace << preprocessor_token(def.replacement()) << newl;
@@ -111,7 +128,7 @@ namespace
             output << keyword("extern") << whitespace << string_literal(linkage.name());
             if (linkage.is_block())
             {
-                output << punctuation("{");
+                output << opening_brace;
                 output.indent();
 
                 write_container(output, linkage, newl);
@@ -136,7 +153,7 @@ namespace
             if (ns.is_inline())
                 output << keyword("inline") << whitespace;
             output << keyword("namespace") << whitespace << identifier(ns.name());
-            output << punctuation("{");
+            output << opening_brace;
             output.indent();
 
             write_container(output, ns, newl);
@@ -152,8 +169,8 @@ namespace
         code_generator::output output(type_safe::ref(generator), type_safe::ref(alias), false);
         if (output)
         {
-            output << keyword("namespace") << whitespace << identifier(alias.name())
-                   << punctuation("=");
+            output << keyword("namespace") << whitespace << identifier(alias.name()) << operator_ws
+                   << punctuation("=") << operator_ws;
             if (output.options() & code_generator::exclude_target)
                 output.excluded(alias);
             else
@@ -188,8 +205,8 @@ namespace
         code_generator::output output(type_safe::ref(generator), type_safe::ref(alias), false);
         if (output)
         {
-            output << keyword("using") << whitespace << identifier(alias.name())
-                   << punctuation("=");
+            output << keyword("using") << whitespace << identifier(alias.name()) << operator_ws
+                   << punctuation("=") << operator_ws;
             if (output.options() & code_generator::exclude_target)
                 output.excluded(alias);
             else
@@ -207,7 +224,7 @@ namespace
             output << identifier(value.name());
             if (value.value())
             {
-                output << punctuation("=");
+                output << operator_ws << punctuation("=") << operator_ws;
                 detail::
                     write_expression(output,
                                      value.value()
@@ -228,16 +245,16 @@ namespace
             output << whitespace << identifier(e.semantic_scope()) << identifier(e.name());
             if (e.has_explicit_type())
             {
-                output << newl << punctuation(":");
+                output << newl << punctuation(":") << operator_ws;
                 detail::write_type(output, e.underlying_type(), "");
             }
 
             if (output.generate_definition() && e.is_definition())
             {
-                output << punctuation("{");
+                output << opening_brace;
                 output.indent();
 
-                auto need_sep = write_container(output, e, [](code_generator::output& out) {
+                auto need_sep = write_container(output, e, [](const code_generator::output& out) {
                     out << punctuation(",") << newl;
                 });
                 if (need_sep)
@@ -298,7 +315,8 @@ namespace
         if (spec.arguments_exposed())
             detail::write_template_arguments(output, spec.arguments());
         else if (!spec.unexposed_arguments().empty())
-            output << punctuation("<") << token_seq(spec.unexposed_arguments()) << punctuation(">");
+            output << punctuation("<") << bracket_ws << token_seq(spec.unexposed_arguments())
+                   << bracket_ws << punctuation(">");
     }
 
     void write_bases(code_generator& generator, code_generator::output& output, const cpp_class& c)
@@ -310,10 +328,10 @@ namespace
             if (first && !output.options(base).is_set(code_generator::exclude))
             {
                 first = false;
-                output << newl << punctuation(":");
+                output << newl << punctuation(":") << operator_ws;
             }
             else if (need_sep)
-                output << punctuation(",");
+                output << comma;
             need_sep = generate_base_class(generator, base);
         }
     }
@@ -345,7 +363,7 @@ namespace
             else
             {
                 write_bases(generator, output, c);
-                output << punctuation("{");
+                output << opening_brace;
                 output.indent();
 
                 auto need_sep = false;
@@ -388,7 +406,7 @@ namespace
 
         if (var.default_value())
         {
-            output << punctuation("=");
+            output << operator_ws << punctuation("=") << operator_ws;
             detail::write_expression(output, var.default_value().value());
         }
         return static_cast<bool>(output);
@@ -441,7 +459,8 @@ namespace
             if (var.is_mutable())
                 output << keyword("mutable") << whitespace;
             write_variable_base(output, var, var.name());
-            output << punctuation(":") << int_literal(std::to_string(var.no_bits()));
+            output << operator_ws << punctuation(":") << operator_ws
+                   << int_literal(std::to_string(var.no_bits()));
             output << punctuation(";") << newl;
         }
         return static_cast<bool>(output);
@@ -457,15 +476,15 @@ namespace
 
     void write_function_parameters(code_generator::output& output, const cpp_function_base& base)
     {
-        output << punctuation("(");
-        auto need_sep = write_container(output, base.parameters(), punctuation(","));
+        output << punctuation("(") << bracket_ws;
+        auto need_sep = write_container(output, base.parameters(), comma);
         if (base.is_variadic())
         {
             if (need_sep)
-                output << punctuation(",");
+                output << comma;
             output << punctuation("...");
         }
-        output << punctuation(")");
+        output << bracket_ws << punctuation(")");
     }
 
     void write_noexcept(code_generator::output& output, const cpp_function_base& base, bool need_ws)
@@ -481,9 +500,9 @@ namespace
             output << keyword("noexcept");
         else
         {
-            output << keyword("noexcept") << punctuation("(");
+            output << keyword("noexcept") << punctuation("(") << bracket_ws;
             detail::write_expression(output, cond);
-            output << punctuation(")");
+            output << bracket_ws << punctuation(")");
         }
     }
 
@@ -495,15 +514,17 @@ namespace
         case cpp_function_declaration:
         case cpp_function_definition:
             if (is_pure_virtual)
-                output << punctuation("=") << int_literal("0");
+                output << operator_ws << punctuation("=") << operator_ws << int_literal("0");
             output << punctuation(";") << newl;
             break;
 
         case cpp_function_defaulted:
-            output << punctuation("=") << keyword("default") << punctuation(";") << newl;
+            output << operator_ws << punctuation("=") << operator_ws << keyword("default")
+                   << punctuation(";") << newl;
             break;
         case cpp_function_deleted:
-            output << punctuation("=") << keyword("delete") << punctuation(";") << newl;
+            output << operator_ws << punctuation("=") << operator_ws << keyword("delete")
+                   << punctuation(";") << newl;
             break;
         }
     }
@@ -543,7 +564,7 @@ namespace
             if (!(output.options() & code_generator::exclude_return)
                 && detail::is_complex_type(func.return_type()))
             {
-                output << punctuation("->");
+                output << operator_ws << punctuation("->") << operator_ws;
                 detail::write_type(output, func.return_type(), "");
             }
             write_function_body(output, func, false);
@@ -591,11 +612,11 @@ namespace
         case cpp_ref_none:
             break;
         case cpp_ref_lvalue:
-            output << punctuation("&");
+            output << operator_ws << punctuation("&") << operator_ws;
             need_ws = false;
             break;
         case cpp_ref_rvalue:
-            output << punctuation("&&");
+            output << operator_ws << punctuation("&&") << operator_ws;
             need_ws = false;
             break;
         }
@@ -642,7 +663,7 @@ namespace
             if (!(output.options() & code_generator::exclude_return)
                 && detail::is_complex_type(func.return_type()))
             {
-                output << punctuation("->");
+                output << operator_ws << punctuation("->") << operator_ws;
                 detail::write_type(output, func.return_type(), "");
             }
 
@@ -775,12 +796,12 @@ namespace
         {
             output << keyword(to_string(param.keyword()));
             if (param.is_variadic())
-                output << punctuation("...");
+                output << operator_ws << punctuation("...");
             if (!param.name().empty())
                 output << whitespace << identifier(param.name());
             if (param.default_type())
             {
-                output << punctuation("=");
+                output << operator_ws << punctuation("=") << operator_ws;
                 detail::write_type(output, param.default_type().value(), "");
             }
         }
@@ -796,7 +817,7 @@ namespace
             detail::write_type(output, param.type(), param.name(), param.is_variadic());
             if (param.default_value())
             {
-                output << punctuation("=");
+                output << operator_ws << punctuation("=") << operator_ws;
                 detail::write_expression(output, param.default_value().value());
             }
         }
@@ -809,14 +830,16 @@ namespace
         code_generator::output output(type_safe::ref(generator), type_safe::ref(param), true);
         if (output)
         {
-            output << keyword("template") << punctuation("<");
+            output << keyword("template") << operator_ws << punctuation("<") << bracket_ws;
             write_container(output, param.parameters(), punctuation(","));
-            output << punctuation(">") << keyword(to_string(param.keyword())) << whitespace;
+            output << bracket_ws << punctuation(">") << operator_ws
+                   << keyword(to_string(param.keyword()));
             if (param.is_variadic())
-                output << punctuation("...");
-            output << identifier(param.name());
+                output << operator_ws << punctuation("...");
+            output << whitespace << identifier(param.name());
             if (param.default_template())
-                output << punctuation("=") << param.default_template().value();
+                output << operator_ws << punctuation("=") << operator_ws
+                       << param.default_template().value();
         }
         return static_cast<bool>(output);
     }
@@ -825,7 +848,7 @@ namespace
                                    bool hide_if_empty)
     {
         if (!hide_if_empty)
-            output << keyword("template") << punctuation("<");
+            output << keyword("template") << operator_ws << punctuation("<") << bracket_ws;
 
         auto need_sep = false;
         auto first    = hide_if_empty;
@@ -835,15 +858,15 @@ namespace
                 && !output.options(*templ.parameters().begin()).is_set(code_generator::exclude))
             {
                 first = false;
-                output << keyword("template") << punctuation("<");
+                output << keyword("template") << operator_ws << punctuation("<") << bracket_ws;
             }
             else if (need_sep)
-                output << punctuation(",");
+                output << comma;
             need_sep = generate_code(*output.generator(), param);
         }
 
         if (!hide_if_empty || need_sep)
-            output << punctuation(">") << newl;
+            output << bracket_ws << punctuation(">") << newl;
     }
 
     bool generate_alias_template(code_generator& generator, const cpp_alias_template& alias)
@@ -922,10 +945,10 @@ namespace
         code_generator::output output(type_safe::ref(generator), type_safe::ref(assert), false);
         if (output)
         {
-            output << keyword("static_assert") << punctuation("(");
+            output << keyword("static_assert") << punctuation("(") << bracket_ws;
             detail::write_expression(output, assert.expression());
-            output << punctuation(",") << string_literal('"' + assert.message() + '"');
-            output << punctuation(");") << newl;
+            output << comma << string_literal('"' + assert.message() + '"');
+            output << bracket_ws << punctuation(");") << newl;
         }
         return static_cast<bool>(output);
     }
@@ -1012,12 +1035,12 @@ void detail::write_template_arguments(code_generator::output&                   
     if (arguments.size() == 0u)
         return;
 
-    output << punctuation("<");
+    output << punctuation("<") << bracket_ws;
     auto need_sep = false;
     for (auto& arg : arguments)
     {
         if (need_sep)
-            output << punctuation(",");
+            output << comma;
         else
             need_sep = true;
 
@@ -1030,5 +1053,5 @@ void detail::write_template_arguments(code_generator::output&                   
         else
             DEBUG_UNREACHABLE(detail::assert_handler{});
     }
-    output << punctuation(">");
+    output << bracket_ws << punctuation(">");
 }

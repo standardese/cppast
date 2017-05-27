@@ -119,6 +119,27 @@ namespace cppast
     {
     } whitespace{};
 
+    /// Flags that control the code formatting.
+    ///
+    /// If a flag is set, it adds additional whitespace.
+    /// If no flags are set, it will only add the whitespace necessary to separate tokens.
+    enum class formatting_flags
+    {
+        brace_nl, //< Set to put the opening braces on a new line.
+        brace_ws, //< Set to put the opening brace at the end of the line after whitespace.
+
+        ptr_ref_var, //< Set to put pointers and references at the variable name (default is type).
+
+        comma_ws,    //< Set to put whitespace after a comma.
+        bracket_ws,  //< Set to put whitespace inside brackets.
+        operator_ws, //< Set to put whitespace around operators.
+
+        _flag_set_size, //< \exclude
+    };
+
+    /// A set of formatting flags.
+    using formatting = type_safe::flag_set<formatting_flags>;
+
     /// Base class to control the code generation.
     ///
     /// Inherit from it to customize how a [cppast::cpp_entity]() is printed
@@ -127,8 +148,10 @@ namespace cppast
     {
     public:
         code_generator(const code_generator&) = delete;
+
         code_generator& operator=(const code_generator&) = delete;
-        virtual ~code_generator() noexcept               = default;
+
+        virtual ~code_generator() noexcept = default;
 
         /// Flags that control the generation.
         enum generation_flags
@@ -178,6 +201,7 @@ namespace cppast
             }
 
             output(const output&) = delete;
+
             output& operator=(const output&) = delete;
 
             /// \returns Whether or not the `on_XXX` function returned something other than `exclude`.
@@ -189,15 +213,21 @@ namespace cppast
             }
 
             /// \returns The generation options.
-            generation_options options() const noexcept
+            generation_options options() const
             {
                 return options_;
             }
 
             /// \returns The generation options for the given entity.
-            generation_options options(const cpp_entity& e) const noexcept
+            generation_options options(const cpp_entity& e) const
             {
                 return gen_->do_get_options(e);
+            }
+
+            /// \returns The formatting.
+            cppast::formatting formatting() const
+            {
+                return gen_->do_get_formatting();
             }
 
             /// \returns Whether or not the definition should be generated as well.
@@ -228,6 +258,13 @@ namespace cppast
             {
                 if (*this)
                     gen_->do_unindent();
+            }
+
+            /// \effects Calls `func(*this)`.
+            const output& operator<<(void (*func)(const output&)) const
+            {
+                func(*this);
+                return *this;
             }
 
             /// \effects Calls `do_write_keyword()`.
@@ -337,6 +374,13 @@ namespace cppast
         code_generator() noexcept = default;
 
     private:
+        /// \returns The formatting options that should be used.
+        /// The base class version has no flags set.
+        virtual formatting do_get_formatting() const
+        {
+            return {};
+        }
+
         /// \returns The generation options for that entity.
         /// The base class version always returns no special options.
         virtual generation_options do_get_options(const cpp_entity& e)
@@ -451,9 +495,6 @@ namespace cppast
     /// Generates code for the given entity.
     ///
     /// How the code is generated is customized by the generator.
-    /// The implementation will write whitespace only where necessary,
-    /// but a newline after each entity.
-    /// This allows customization of formatting.
     ///
     /// \returns Whether or not any code was actually written.
     bool generate_code(code_generator& generator, const cpp_entity& e);
