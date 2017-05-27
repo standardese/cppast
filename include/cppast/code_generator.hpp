@@ -170,34 +170,18 @@ namespace cppast
         class output
         {
         public:
-            /// \effects Creates it giving the generator, the entity
-            /// and whether or not the entity is a container.
-            /// It is a container if while this object lives
-            /// any other `output` objects are created.
-            ///
-            /// It will call `on_container_begin()` or `on_leaf()`,
-            /// respectively.
+            /// \effects Creates it giving the generator and the entity.
             explicit output(type_safe::object_ref<code_generator>   gen,
-                            type_safe::object_ref<const cpp_entity> e, bool is_container)
-            : gen_(gen), options_(gen->do_get_options(*e))
+                            type_safe::object_ref<const cpp_entity> e)
+            : gen_(gen), e_(e), options_(gen->do_get_options(*e))
             {
-                if (is_container)
-                {
-                    gen_->on_container_begin(*e);
-                    e_ = e;
-                }
-                else
-                    gen_->on_leaf(*e);
+                gen_->on_begin(*e_);
             }
 
-            /// \effects If the entity is a container
-            /// and `on_container_begin()` returned `true`,
-            /// calls `on_container_end()`,
-            /// else does nothing.
             ~output() noexcept
             {
-                if (*this && e_)
-                    gen_->on_container_end(e_.value());
+                if (*this)
+                    gen_->on_end(*e_);
             }
 
             output(const output&) = delete;
@@ -365,9 +349,9 @@ namespace cppast
             }
 
         private:
-            type_safe::object_ref<code_generator>     gen_;
-            type_safe::optional_ref<const cpp_entity> e_;
-            generation_options                        options_;
+            type_safe::object_ref<code_generator>   gen_;
+            type_safe::object_ref<const cpp_entity> e_;
+            generation_options                      options_;
         };
 
     protected:
@@ -389,23 +373,16 @@ namespace cppast
             return {};
         }
 
-        /// \effects Will be invoked before code of a container entity is generated.
+        /// \effects Will be invoked before code of an entity is generated.
         /// The base class version has no effect.
-        virtual void on_container_begin(const cpp_entity& e)
+        virtual void on_begin(const cpp_entity& e)
         {
             (void)e;
         }
 
-        /// \effects Will be invoked after all code of a container entity has been generated.
+        /// \effects Will be invoked after all code of an entity has been generated.
         /// The base class version has no effect.
-        virtual void on_container_end(const cpp_entity& e)
-        {
-            (void)e;
-        }
-
-        /// \effects Will be invoked before code of a non-container entity is generated.
-        /// The base class version has no effect.
-        virtual void on_leaf(const cpp_entity& e)
+        virtual void on_end(const cpp_entity& e)
         {
             (void)e;
         }
