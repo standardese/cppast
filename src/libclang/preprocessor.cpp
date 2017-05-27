@@ -138,32 +138,34 @@ namespace
     std::string get_full_preprocess_output(const libclang_compile_config& c, const char* full_path,
                                            const diagnostic_logger& logger)
     {
+        namespace tpl = TinyProcessLib;
+
         std::string preprocessed, diagnostic;
 
-        auto    cmd = get_command(c, full_path);
-        Process process(cmd, "",
-                        [&](const char* str, std::size_t n) {
-                            preprocessed.reserve(preprocessed.size() + n);
-                            for (auto end = str + n; str != end; ++str)
-                                if (*str == '\t')
-                                    preprocessed += "  "; // just two spaces because why not
-                                else if (*str != '\r')
-                                    preprocessed.push_back(*str);
-                        },
-                        [&](const char* str, std::size_t n) {
-                            diagnostic.reserve(diagnostic.size() + n);
-                            for (auto end = str + n; str != end; ++str)
-                                if (*str == '\r')
-                                    continue;
-                                else if (*str == '\n')
-                                {
-                                    // consume current diagnostic
-                                    log_diagnostic(logger, diagnostic);
-                                    diagnostic.clear();
-                                }
-                                else
-                                    diagnostic.push_back(*str);
-                        });
+        auto         cmd = get_command(c, full_path);
+        tpl::Process process(cmd, "",
+                             [&](const char* str, std::size_t n) {
+                                 preprocessed.reserve(preprocessed.size() + n);
+                                 for (auto end = str + n; str != end; ++str)
+                                     if (*str == '\t')
+                                         preprocessed += "  "; // just two spaces because why not
+                                     else if (*str != '\r')
+                                         preprocessed.push_back(*str);
+                             },
+                             [&](const char* str, std::size_t n) {
+                                 diagnostic.reserve(diagnostic.size() + n);
+                                 for (auto end = str + n; str != end; ++str)
+                                     if (*str == '\r')
+                                         continue;
+                                     else if (*str == '\n')
+                                     {
+                                         // consume current diagnostic
+                                         log_diagnostic(logger, diagnostic);
+                                         diagnostic.clear();
+                                     }
+                                     else
+                                         diagnostic.push_back(*str);
+                             });
 
         auto exit_code = process.get_exit_status();
         DEBUG_ASSERT(diagnostic.empty(), detail::assert_handler{});
