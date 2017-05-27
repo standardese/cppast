@@ -190,6 +190,25 @@ bool detail::is_complex_type(const cpp_type& type) noexcept
 
 namespace
 {
+    void comma(const code_generator::output& output)
+    {
+        output << punctuation(",");
+        if (output.formatting().is_set(formatting_flags::comma_ws))
+            output << whitespace;
+    }
+
+    void bracket_ws(const code_generator::output& output)
+    {
+        if (output.formatting().is_set(formatting_flags::bracket_ws))
+            output << whitespace;
+    }
+
+    void operator_ws(const code_generator::output& output)
+    {
+        if (output.formatting().is_set(formatting_flags::operator_ws))
+            output << whitespace;
+    }
+
     void write_builtin(code_generator::output& output, const cpp_builtin_type& type)
     {
         output << keyword(to_string(type.builtin_type_kind()));
@@ -207,14 +226,15 @@ namespace
 
     void write_decltype(code_generator::output& output, const cpp_decltype_type& type)
     {
-        output << keyword("decltype") << punctuation("(");
+        output << keyword("decltype") << punctuation("(") << bracket_ws;
         detail::write_expression(output, type.expression());
-        output << punctuation(")");
+        output << bracket_ws << punctuation(")");
     }
 
     void write_decltype_auto(code_generator::output& output, const cpp_decltype_auto_type&)
     {
-        output << keyword("decltype") << punctuation("(") << keyword("auto") << punctuation(")");
+        output << keyword("decltype") << punctuation("(") << bracket_ws << keyword("auto")
+               << bracket_ws << punctuation(")");
     }
 
     void write_cv_qualified_prefix(code_generator::output&      output,
@@ -223,7 +243,7 @@ namespace
         detail::write_type_prefix(output, type.type());
 
         if (is_direct_complex(type.type()))
-            output << punctuation("(");
+            output << punctuation("(") << bracket_ws;
 
         if (is_const(type.cv_qualifier()))
             output << whitespace << keyword("const");
@@ -235,7 +255,7 @@ namespace
                                    const cpp_cv_qualified_type& type)
     {
         if (is_direct_complex(type.type()))
-            output << punctuation(")");
+            output << bracket_ws << punctuation(")");
         detail::write_type_suffix(output, type.type());
     }
 
@@ -248,8 +268,11 @@ namespace
     void write_pointer_prefix(code_generator::output& output, const cpp_pointer_type& type)
     {
         detail::write_type_prefix(output, type.pointee());
+
         if (pointer_requires_paren(type))
-            output << punctuation("(");
+            output << punctuation("(") << bracket_ws;
+        else if (output.formatting().is_set(formatting_flags::ptr_ref_var))
+            output << whitespace;
 
         output << punctuation("*");
     }
@@ -257,15 +280,18 @@ namespace
     void write_pointer_suffix(code_generator::output& output, const cpp_pointer_type& type)
     {
         if (pointer_requires_paren(type))
-            output << punctuation(")");
+            output << bracket_ws << punctuation(")");
         detail::write_type_suffix(output, type.pointee());
     }
 
     void write_reference_prefix(code_generator::output& output, const cpp_reference_type& type)
     {
         detail::write_type_prefix(output, type.referee());
+
         if (is_direct_complex(type.referee()))
-            output << punctuation("(");
+            output << punctuation("(") << bracket_ws;
+        else if (output.formatting().is_set(formatting_flags::ptr_ref_var))
+            output << whitespace;
 
         if (type.reference_kind() == cpp_ref_lvalue)
             output << punctuation("&");
@@ -278,7 +304,7 @@ namespace
     void write_reference_suffix(code_generator::output& output, const cpp_reference_type& type)
     {
         if (is_direct_complex(type.referee()))
-            output << punctuation(")");
+            output << bracket_ws << punctuation(")");
         detail::write_type_suffix(output, type.referee());
     }
 
@@ -291,7 +317,11 @@ namespace
     {
         output << punctuation("[");
         if (type.size())
+        {
+            output << bracket_ws;
             detail::write_expression(output, type.size().value());
+            output << bracket_ws;
+        }
         output << punctuation("]");
         detail::write_type_suffix(output, type.value_type());
     }
@@ -304,13 +334,13 @@ namespace
     template <typename T>
     void write_parameters(code_generator::output& output, const T& type)
     {
-        output << punctuation("(");
+        output << punctuation("(") << bracket_ws;
 
         auto need_sep = false;
         for (auto& param : type.parameter_types())
         {
             if (need_sep)
-                output << punctuation(",");
+                output << comma;
             else
                 need_sep = true;
             detail::write_type_prefix(output, param);
@@ -319,11 +349,11 @@ namespace
         if (type.is_variadic())
         {
             if (need_sep)
-                output << punctuation(",");
+                output << comma;
             output << punctuation("...");
         }
 
-        output << punctuation(")");
+        output << bracket_ws << punctuation(")");
     }
 
     void write_function_suffix(code_generator::output& output, const cpp_function_type& type)
@@ -361,7 +391,7 @@ namespace
     {
         detail::write_type_prefix(output, type.return_type());
 
-        output << punctuation("(");
+        output << punctuation("(") << bracket_ws;
         detail::write_type_prefix(output, strip_class_type(type.class_type(), nullptr, nullptr));
         output << punctuation("::");
     }
@@ -369,7 +399,7 @@ namespace
     void write_member_function_suffix(code_generator::output&         output,
                                       const cpp_member_function_type& type)
     {
-        output << punctuation(")");
+        output << bracket_ws << punctuation(")");
         write_parameters(output, type);
 
         auto cv  = cpp_cv_none;
@@ -384,9 +414,9 @@ namespace
             output << keyword("volatile");
 
         if (ref == cpp_ref_lvalue)
-            output << punctuation("&");
+            output << operator_ws << punctuation("&") << operator_ws;
         else if (ref == cpp_ref_rvalue)
-            output << punctuation("&&");
+            output << operator_ws << punctuation("&&") << operator_ws;
 
         detail::write_type_suffix(output, type.return_type());
     }
@@ -395,7 +425,7 @@ namespace
                                     const cpp_member_object_type& type)
     {
         detail::write_type_prefix(output, type.object_type());
-        output << punctuation("(");
+        output << punctuation("(") << bracket_ws;
         DEBUG_ASSERT(!detail::is_complex_type(type.class_type()), detail::assert_handler{});
         detail::write_type_prefix(output, type.class_type());
         output << punctuation("::");
@@ -403,7 +433,7 @@ namespace
 
     void write_member_object_suffix(code_generator::output& output, const cpp_member_object_type&)
     {
-        output << punctuation(")");
+        output << bracket_ws << punctuation(")");
     }
 
     void write_template_parameter(code_generator::output&            output,
@@ -419,7 +449,8 @@ namespace
         if (type.arguments_exposed())
             detail::write_template_arguments(output, type.arguments());
         else
-            output << punctuation("<") << token_seq(type.unexposed_arguments()) << punctuation(">");
+            output << punctuation("<") << bracket_ws << token_seq(type.unexposed_arguments())
+                   << bracket_ws << punctuation(">");
     }
 
     void write_dependent(code_generator::output& output, const cpp_dependent_type& type)
@@ -511,6 +542,6 @@ void detail::write_type(code_generator::output& output, const cpp_type& type, st
     if (!name.empty())
         output << whitespace << identifier(name);
     if (is_variadic)
-        output << punctuation("...");
+        output << operator_ws << punctuation("...") << operator_ws;
     write_type_suffix(output, type);
 }

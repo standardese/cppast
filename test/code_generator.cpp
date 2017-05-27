@@ -10,11 +10,14 @@ using namespace cppast;
 
 TEST_CASE("code_generator")
 {
-    SECTION("basic")
-    {
-        // no need to check much here, as each entity check separately
-        // only write some file with equivalent code and synopsis
-        auto code = R"(using type=int;
+    // no need to check much here, as each entity check separately
+    auto code = R"(using type=int;
+
+type* var;
+
+template<template<typename>class... T>
+struct templated{
+};
 
 struct foo{
   int a;
@@ -36,9 +39,61 @@ enum class bar
 void func(int(*)(int));
 
 extern void(* ptr)(int(*)(int))=&func;)";
+    auto file = parse({}, "code_generator.cpp", code);
 
-        auto file = parse({}, "code_generator.cpp", code);
+    SECTION("basic")
+    {
         REQUIRE(get_code(*file) == code);
+    }
+    SECTION("formatting")
+    {
+        auto synopsis = R"(using type = int;
+
+type* var;
+
+template <template <typename> class ... T>
+struct templated
+{
+};
+
+struct foo
+{
+  int a;
+
+  auto func(int) -> int(*(*)(int))[42];
+
+private:
+  int const b = 42;
+};
+
+int(*(*(foo::* mptr)(int))(int))[42];
+
+enum class bar
+: int
+{
+  a,
+  b = 42
+};
+
+void func(int(*)(int));
+
+extern void(* ptr)(int(*)(int)) = &func;
+)";
+
+        class formatted_generator : public test_generator
+        {
+        public:
+            using test_generator::test_generator;
+
+        private:
+            formatting do_get_formatting() const override
+            {
+                return formatting_flags::brace_nl | formatting_flags::operator_ws
+                       | formatting_flags::comma_ws;
+            }
+        } generator(code_generator::generation_options{});
+        generate_code(generator, *file);
+        REQUIRE(generator.str() == synopsis);
     }
     SECTION("exclude target")
     {
