@@ -41,8 +41,9 @@ namespace
         // -fno-show-column: don't show the column number
         // -fdiagnostics-format msvc: use easier to parse MSVC format
         flags += " -fno-caret-diagnostics -fno-show-column -fdiagnostics-format=msvc";
-        // -Wno-pragma-once-outside-header: hide wrong warning
-        flags += " -Wno-pragma-once-outside-header";
+        // -Wno-*: hide wrong warnings if header file is directly parsed
+        flags += " -Wno-pragma-once-outside-header -Wno-pragma-system-header-outside-header "
+                 "-Wno-include-next-outside-header";
 
         std::string cmd(detail::libclang_compile_config_access::clang_binary(c) + " "
                         + std::move(flags) + " ");
