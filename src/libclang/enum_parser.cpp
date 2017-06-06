@@ -14,6 +14,9 @@ namespace
     std::unique_ptr<cpp_enum_value> parse_enum_value(const detail::parse_context& context,
                                                      const CXCursor&              cur)
     {
+        if (clang_isAttribute(clang_getCursorKind(cur)))
+            return nullptr;
+
         DEBUG_ASSERT(cur.kind == CXCursor_EnumConstantDecl, detail::parse_error_handler{}, cur,
                      "unexpected child cursor of enum");
 
@@ -84,8 +87,10 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_enum(const detail::parse_context& 
         {
             auto entity = parse_enum_value(context, child);
             if (entity)
+            {
                 context.comments.match(*entity, child);
-            builder.add_value(std::move(entity));
+                builder.add_value(std::move(entity));
+            }
         }
         catch (parse_error& ex)
         {
