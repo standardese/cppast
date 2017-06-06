@@ -49,13 +49,20 @@ namespace
 
 libclang_compile_config::libclang_compile_config() : compile_config({})
 {
+    // set given clang binary
     auto ptr   = CPPAST_CLANG_VERSION_STRING;
     auto major = parse_number(ptr);
     auto minor = parse_number(ptr);
     auto patch = parse_number(ptr);
     set_clang_binary(CPPAST_CLANG_BINARY, major, minor, patch);
 
+    // set system include dir
     add_include_dir(CPPAST_LIBCLANG_SYSTEM_INCLUDE_DIR);
+
+    // set macros to detect cppast
+    define_macro("__cppast__", "libclang");
+    define_macro("__cppast_version_major__", CPPAST_VERSION_MAJOR);
+    define_macro("__cppast_version_minor__", CPPAST_VERSION_MINOR);
 }
 
 void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags flags)
