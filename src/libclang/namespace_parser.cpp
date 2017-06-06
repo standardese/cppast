@@ -32,6 +32,7 @@ namespace
             return cpp_namespace::builder("", is_inline);
 
         auto& name = stream.get().value();
+        skip_attribute(stream);
         skip(stream, "{");
         return cpp_namespace::builder(name.c_str(), is_inline);
     }
