@@ -101,6 +101,8 @@ add_library(cppast ${detail_header} ${header} ${source} ${libclang_source})
 target_include_directories(cppast PUBLIC ../include)
 target_link_libraries(cppast PUBLIC type_safe _cppast_tiny_process _cppast_libclang)
 target_compile_definitions(cppast PUBLIC
+                                CPPAST_VERSION_MINOR="${cppast_VERSION_MINOR}"
+                                CPPAST_VERSION_MAJOR="${cppast_VERSION_MAJOR}"
                                 CPPAST_VERSION_STRING="${cppast_VERSION}")
 if(CPPAST_ENABLE_ASSERTIONS)
     target_compile_definitions(cppast PUBLIC CPPAST_ENABLE_ASSERTIONS)

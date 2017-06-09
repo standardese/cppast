@@ -29,6 +29,11 @@ namespace cppast
     class libclang_compile_config final : public compile_config
     {
     public:
+        /// Creates the default configuration.
+        ///
+        /// \effects It will set the clang binary determined by the build system,
+        /// as well as the libclang system include directory determined by the build system.
+        /// It will also define `__cppast__` with the value `"libclang"` as well as `__cppast_major__` and `__cppast_minor__`.
         libclang_compile_config();
 
         /// \effects Sets the path to the location of the `clang++` binary and the version of that binary.
