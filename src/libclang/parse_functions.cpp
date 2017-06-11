@@ -104,6 +104,11 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
             return entity;
         break;
 
+    case CXCursor_MacroDefinition:
+    case CXCursor_InclusionDirective:
+        DEBUG_UNREACHABLE(detail::assert_handler{}, "handle preprocessor in parser callback");
+        break;
+
     case CXCursor_Namespace:
         return parse_cpp_namespace(context, cur);
     case CXCursor_NamespaceAlias:
