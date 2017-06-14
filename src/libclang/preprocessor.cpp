@@ -210,8 +210,13 @@ namespace
 
         void bump(std::size_t offset) noexcept
         {
-            for (std::size_t i = 0u; i != offset; ++i)
-                bump();
+            if (write_ == true)
+            {
+                for (std::size_t i = 0u; i != offset; ++i)
+                    bump();
+            }
+            else
+                skip(offset);
         }
 
         // no write, no newline detection
@@ -257,14 +262,20 @@ namespace
         ts::flag                    write_;
     };
 
-    bool starts_with(const position& p, const char* str)
+    bool starts_with(const position& p, const char* str, std::size_t len)
     {
-        return std::strncmp(p.ptr(), str, std::strlen(str)) == 0;
+        return std::strncmp(p.ptr(), str, len) == 0;
+    }
+
+    template <std::size_t N>
+    bool starts_with(const position& p, const char (&str)[N])
+    {
+        return std::strncmp(p.ptr(), str, N - 1) == 0;
     }
 
     void skip(position& p, const char* str)
     {
-        DEBUG_ASSERT(starts_with(p, str), detail::assert_handler{});
+        DEBUG_ASSERT(starts_with(p, str, std::strlen(str)), detail::assert_handler{});
         p.skip(std::strlen(str));
     }
 
@@ -498,9 +509,8 @@ namespace
         }
         else
         {
-            while (!starts_with(p, "\n"))
-                p.skip();
-            // don't skip newline
+            auto newline = std::strchr(p.ptr(), '\n');
+            p.skip(std::size_t(newline - p.ptr())); // don't skip newline
         }
 
         return true;
@@ -609,7 +619,8 @@ namespace
         std::string filename;
         for (; !starts_with(p, "\"") && !starts_with(p, ">"); p.skip())
             filename += *p.ptr();
-        DEBUG_ASSERT(starts_with(p, end_str), detail::assert_handler{}, "bad termination");
+        DEBUG_ASSERT(starts_with(p, end_str, std::strlen(end_str)), detail::assert_handler{},
+                     "bad termination");
         p.skip();
         skip(p, " /* clang -E -dI */");
         DEBUG_ASSERT(starts_with(p, "\n"), detail::assert_handler{});
@@ -648,6 +659,10 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
     ts::flag    in_string(false), in_char(false);
     while (p)
     {
+        auto next = std::strpbrk(p.ptr(), "\"'#/"); // look for ", ', # or /
+        if (next && next > p.ptr())
+            p.bump(std::size_t(next - p.ptr() - 1)); // subtract one to get before that character
+
         if (starts_with(p, "\\\"")) // starts with \"
             p.bump(2u);
         else if (starts_with(p, "\\'")) // starts with \'
