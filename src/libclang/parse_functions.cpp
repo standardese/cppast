@@ -23,6 +23,15 @@ cpp_entity_id detail::get_entity_id(const CXCursor& cur)
         cxstring type_spelling(clang_getTypeSpelling(clang_getCursorResultType(cur)));
         return cpp_entity_id(std::string(usr.c_str()) + type_spelling.c_str());
     }
+    else if (clang_getCursorKind(cur) == CXCursor_ClassTemplatePartialSpecialization)
+    {
+        // libclang issue: templ<T()> vs templ<T() &>
+        // but identical USR
+        // same workaround: combine display name with usr
+        // (and hope this prevents all collisions...)
+        cxstring display_name(clang_getCursorDisplayName(cur));
+        return cpp_entity_id(std::string(usr.c_str()) + display_name.c_str());
+    }
     else
         return cpp_entity_id(usr.c_str());
 }
