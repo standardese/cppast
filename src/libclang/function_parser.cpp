@@ -4,6 +4,7 @@
 
 #include <cppast/cpp_function.hpp>
 #include <cppast/cpp_member_function.hpp>
+#include <clang-c/Index.h>
 
 #include "libclang_visitor.hpp"
 #include "parse_functions.hpp"
@@ -657,13 +658,15 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_destructor(const detail::parse_con
     detail::tokenizer    tokenizer(context.tu, context.file, cur);
     detail::token_stream stream(tokenizer, cur);
 
-    auto is_virtual = detail::skip_if(stream, "virtual");
-    detail::skip(stream, "~");
+    auto prefix_info = parse_prefix_info(stream, "~", false);
+    DEBUG_ASSERT(!prefix_info.is_constexpr && !prefix_info.is_explicit, detail::assert_handler{});
+
     auto                    name = std::string("~") + stream.get().c_str();
     cpp_destructor::builder builder(std::move(name));
     context.comments.match(builder.get(), cur);
 
     detail::skip(stream, "(");
     detail::skip(stream, ")");
-    return handle_suffix(context, cur, builder, stream, is_virtual, type_safe::nullopt);
+    return handle_suffix(context, cur, builder, stream, prefix_info.is_virtual,
+                         std::move(prefix_info.semantic_parent));
 }
