@@ -577,8 +577,13 @@ namespace
             output << keyword("virtual") << whitespace;
     }
 
-    void write_suffix_virtual(code_generator::output& output, const cpp_virtual& virt)
+    void write_suffix_virtual(code_generator::output& output, const cpp_virtual& virt,
+                              bool is_definition)
     {
+        if (is_definition)
+            // don't include it in definition
+            return;
+
         if (is_overriding(virt))
             output << whitespace << keyword("override");
         if (is_final(virt))
@@ -667,7 +672,7 @@ namespace
                 detail::write_type(output, func.return_type(), "");
             }
 
-            write_suffix_virtual(output, func.virtual_info());
+            write_suffix_virtual(output, func.virtual_info(), func.is_definition());
             write_function_body(output, func, is_pure(func.virtual_info()));
         }
         return static_cast<bool>(output);
@@ -701,7 +706,7 @@ namespace
             write_noexcept(output, op,
                            need_ws || output.formatting().is_set(formatting_flags::operator_ws));
 
-            write_suffix_virtual(output, op.virtual_info());
+            write_suffix_virtual(output, op.virtual_info(), op.is_definition());
             write_function_body(output, op, is_pure(op.virtual_info()));
         }
         return static_cast<bool>(output);
@@ -740,7 +745,7 @@ namespace
                    << punctuation("(") << punctuation(")");
             write_noexcept(output, dtor, output.formatting().is_set(formatting_flags::operator_ws));
 
-            write_suffix_virtual(output, dtor.virtual_info());
+            write_suffix_virtual(output, dtor.virtual_info(), dtor.is_definition());
             write_function_body(output, dtor, is_pure(dtor.virtual_info()));
         }
         return static_cast<bool>(output);

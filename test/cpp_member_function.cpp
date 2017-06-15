@@ -332,7 +332,7 @@ struct d : c
     ~d() final;
 };
 
-/// virtual d::~d() override;
+/// virtual d::~d();
 d::~d() {}
 
 )";
