@@ -23,12 +23,10 @@ inline void write_file(const char* name, const char* code)
     file << code;
 }
 
-inline std::unique_ptr<cppast::cpp_file> parse(const cppast::cpp_entity_index& idx,
-                                               const char* name, const char* code)
+inline std::unique_ptr<cppast::cpp_file> parse_file(const cppast::cpp_entity_index& idx,
+                                                    const char*                     name)
 {
     using namespace cppast;
-
-    write_file(name, code);
 
     libclang_compile_config config;
     config.set_flags(cpp_standard::cpp_latest);
@@ -40,6 +38,13 @@ inline std::unique_ptr<cppast::cpp_file> parse(const cppast::cpp_entity_index& i
     REQUIRE_NOTHROW(result = p.parse(idx, name, config));
     REQUIRE(!logger.error_logged());
     return result;
+}
+
+inline std::unique_ptr<cppast::cpp_file> parse(const cppast::cpp_entity_index& idx,
+                                               const char* name, const char* code)
+{
+    write_file(name, code);
+    return parse_file(idx, name);
 }
 
 class test_generator : public cppast::code_generator
