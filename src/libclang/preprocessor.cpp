@@ -25,6 +25,11 @@ namespace ts = type_safe;
 
 namespace
 {
+    std::string quote(std::string str)
+    {
+        return '"' + std::move(str) + '"';
+    }
+
     // build the command that runs the preprocessor
     std::string get_command(const libclang_compile_config& c, const char* full_path)
     {
@@ -56,7 +61,7 @@ namespace
         }
 
         // add path to file being processed
-        cmd += full_path;
+        cmd += quote(full_path);
 
         return cmd;
     }
