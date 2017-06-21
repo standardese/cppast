@@ -104,7 +104,7 @@ TEST_CASE("stdlib", "[!hide][integration]")
 
 #include <regex>
 
-#include <atomic>
+//#include <atomic> -- issue on MSVC
 
 #include <thread>
 #include <mutex>
