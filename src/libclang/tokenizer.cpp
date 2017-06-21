@@ -135,6 +135,9 @@ namespace
             else if (kind == CXCursor_CXXMethod)
                 // necessary for some reason
                 begin = get_next_location(tu, file, begin, -1);
+            else if (kind == CXCursor_Destructor && token_after_is(tu, file, cur, end, ")"))
+                // necessary for some other reason
+                end = get_next_location(tu, file, end);
         }
         else if (kind == CXCursor_TemplateTypeParameter && token_after_is(tu, file, cur, end, "("))
         {
