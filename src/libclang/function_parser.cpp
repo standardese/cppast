@@ -160,6 +160,10 @@ namespace
         }
         DEBUG_ASSERT(!stream.done(), detail::parse_error_handler{}, stream.cursor(),
                      "unable to find end of function prefix");
+        while (detail::skip_if(stream, ")"))
+        { // function name can be enclosed in parentheses
+        }
+
         if (!scope.empty() && scope.back() == ':')
         {
             result.semantic_parent =
