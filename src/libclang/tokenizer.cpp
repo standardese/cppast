@@ -288,6 +288,20 @@ bool detail::skip_if(detail::token_stream& stream, const char* str, bool multi_t
     return true;
 }
 
+namespace
+{
+    // whether or not the current angle bracket can be a comparison
+    // note: this is a heuristic I hope works often enough
+    bool is_comparison(CXTokenKind last_kind, const detail::token& cur, CXTokenKind next_kind)
+    {
+        if (cur == "<")
+            return last_kind == CXToken_Literal;
+        else if (cur == ">")
+            return next_kind == CXToken_Literal;
+        return false;
+    }
+}
+
 detail::token_iterator detail::find_closing_bracket(detail::token_stream stream)
 {
     auto        template_bracket = false;
@@ -310,12 +324,15 @@ detail::token_iterator detail::find_closing_bracket(detail::token_stream stream)
 
     auto bracket_count = 1;
     auto paren_count   = 0; // internal nested parenthesis
+    auto last_token    = CXToken_Comment;
     while (!stream.done() && bracket_count != 0)
     {
-        auto& cur = stream.get().value();
-        if (paren_count == 0 && cur == open_bracket)
+        auto& cur = stream.get();
+        if (paren_count == 0 && cur == open_bracket
+            && !is_comparison(last_token, cur, stream.peek().kind()))
             ++bracket_count;
-        else if (paren_count == 0 && cur == close_bracket)
+        else if (paren_count == 0 && cur == close_bracket
+                 && !is_comparison(last_token, cur, stream.peek().kind()))
             --bracket_count;
         else if (paren_count == 0 && template_bracket && cur == ">>")
             // maximal munch
@@ -324,6 +341,8 @@ detail::token_iterator detail::find_closing_bracket(detail::token_stream stream)
             ++paren_count;
         else if (cur == ")" || cur == "}" || cur == "]")
             --paren_count;
+
+        last_token = cur.kind();
     }
     stream.bump_back();
     // only check first parameter, token might be ">>"
