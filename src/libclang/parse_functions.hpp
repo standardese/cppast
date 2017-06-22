@@ -103,7 +103,7 @@ namespace cppast
 
         // on all function cursors except on destructor
         std::unique_ptr<cpp_entity> try_parse_cpp_function_template_specialization(
-            const parse_context& context, const CXCursor& cur);
+            const parse_context& context, const CXCursor& cur, bool is_friend);
 
         // on class cursors
         std::unique_ptr<cpp_entity> try_parse_full_cpp_class_template_specialization(
@@ -134,15 +134,15 @@ namespace cppast
                                                               const CXCursor&      cur);
 
         std::unique_ptr<cpp_entity> parse_cpp_function(const parse_context& context,
-                                                       const CXCursor&      cur);
+                                                       const CXCursor& cur, bool is_friend);
         std::unique_ptr<cpp_entity> parse_cpp_member_function(const parse_context& context,
-                                                              const CXCursor&      cur);
+                                                              const CXCursor& cur, bool is_friend);
         std::unique_ptr<cpp_entity> parse_cpp_conversion_op(const parse_context& context,
-                                                            const CXCursor&      cur);
+                                                            const CXCursor& cur, bool is_friend);
         std::unique_ptr<cpp_entity> parse_cpp_constructor(const parse_context& context,
-                                                          const CXCursor&      cur);
+                                                          const CXCursor& cur, bool is_friend);
         std::unique_ptr<cpp_entity> parse_cpp_destructor(const parse_context& context,
-                                                         const CXCursor&      cur);
+                                                         const CXCursor& cur, bool is_friend);
 
         std::unique_ptr<cpp_entity> parse_cpp_friend(const parse_context& context,
                                                      const CXCursor&      cur);
@@ -150,7 +150,8 @@ namespace cppast
         std::unique_ptr<cpp_entity> parse_cpp_alias_template(const parse_context& context,
                                                              const CXCursor&      cur);
         std::unique_ptr<cpp_entity> parse_cpp_function_template(const parse_context& context,
-                                                                const CXCursor&      cur);
+                                                                const CXCursor&      cur,
+                                                                bool                 is_friend);
         std::unique_ptr<cpp_entity> parse_cpp_class_template(const parse_context& context,
                                                              const CXCursor&      cur);
         std::unique_ptr<cpp_entity> parse_cpp_class_template_specialization(

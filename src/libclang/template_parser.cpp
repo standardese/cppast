@@ -216,7 +216,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_alias_template(const detail::parse
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_function_template(
-    const detail::parse_context& context, const CXCursor& cur)
+    const detail::parse_context& context, const CXCursor& cur, bool is_friend)
 {
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_FunctionTemplate, detail::assert_handler{});
 
@@ -224,19 +224,19 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_function_template(
     switch (clang_getTemplateCursorKind(cur))
     {
     case CXCursor_FunctionDecl:
-        func = detail::parse_cpp_function(context, cur);
+        func = detail::parse_cpp_function(context, cur, is_friend);
         break;
     case CXCursor_CXXMethod:
         if (auto sfunc = detail::try_parse_static_cpp_function(context, cur))
             func = std::move(sfunc);
         else
-            func = detail::parse_cpp_member_function(context, cur);
+            func = detail::parse_cpp_member_function(context, cur, is_friend);
         break;
     case CXCursor_ConversionFunction:
-        func = detail::parse_cpp_conversion_op(context, cur);
+        func = detail::parse_cpp_conversion_op(context, cur, is_friend);
         break;
     case CXCursor_Constructor:
-        func = detail::parse_cpp_constructor(context, cur);
+        func = detail::parse_cpp_constructor(context, cur, is_friend);
         break;
 
     default:
@@ -284,7 +284,7 @@ namespace
 }
 
 std::unique_ptr<cpp_entity> detail::try_parse_cpp_function_template_specialization(
-    const detail::parse_context& context, const CXCursor& cur)
+    const detail::parse_context& context, const CXCursor& cur, bool is_friend)
 {
     auto templ = clang_getSpecializedCursorTemplate(cur);
     if (clang_Cursor_isNull(templ))
@@ -294,19 +294,19 @@ std::unique_ptr<cpp_entity> detail::try_parse_cpp_function_template_specializati
     switch (clang_getCursorKind(cur))
     {
     case CXCursor_FunctionDecl:
-        func = detail::parse_cpp_function(context, cur);
+        func = detail::parse_cpp_function(context, cur, is_friend);
         break;
     case CXCursor_CXXMethod:
         if (auto sfunc = detail::try_parse_static_cpp_function(context, cur))
             func = std::move(sfunc);
         else
-            func = detail::parse_cpp_member_function(context, cur);
+            func = detail::parse_cpp_member_function(context, cur, is_friend);
         break;
     case CXCursor_ConversionFunction:
-        func = detail::parse_cpp_conversion_op(context, cur);
+        func = detail::parse_cpp_conversion_op(context, cur, is_friend);
         break;
     case CXCursor_Constructor:
-        func = detail::parse_cpp_constructor(context, cur);
+        func = detail::parse_cpp_constructor(context, cur, is_friend);
         break;
 
     default:
