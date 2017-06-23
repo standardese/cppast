@@ -62,6 +62,16 @@ namespace cppast
             return *this;
         }
 
+        /// \returns Whether or not the database contains information about the given file.
+        /// \group has_config
+        bool has_config(const char* file_name) const;
+
+        /// \group has_config
+        bool has_config(const std::string& file_name) const
+        {
+            return has_config(file_name.c_str());
+        }
+
     private:
         using database = void*;
         database database_;
@@ -94,6 +104,9 @@ namespace cppast
         libclang_compile_config(const libclang_compilation_database& database,
                                 const std::string&                   file);
 
+        libclang_compile_config(const libclang_compile_config& other) = default;
+        libclang_compile_config& operator=(const libclang_compile_config& other) = default;
+
         /// \effects Sets the path to the location of the `clang++` binary and the version of that binary.
         /// \notes It will be used for preprocessing.
         void set_clang_binary(std::string binary, int major, int minor, int patch)
@@ -122,10 +135,21 @@ namespace cppast
         friend detail::libclang_compile_config_access;
     };
 
+    /// Finds a configuration for a given file.
+    ///
+    /// \returns If the database contains a configuration for the given file, returns that configuration.
+    /// Otherwise removes the file extension of the file and tries the same procedure
+    /// for common C++ header and source file extensions.
+    /// \notes This function is intended to be used as the basis for a `get_config` function of [cppast::parse_files](standardese://cppast::parse_files_basic/).
+    type_safe::optional<libclang_compile_config> find_config_for(
+        const libclang_compilation_database& database, std::string file_name);
+
     /// A parser that uses libclang.
     class libclang_parser final : public parser
     {
     public:
+        using config = libclang_compile_config;
+
         explicit libclang_parser(type_safe::object_ref<const diagnostic_logger> logger);
         ~libclang_parser() noexcept override;
 
@@ -136,6 +160,29 @@ namespace cppast
         struct impl;
         std::unique_ptr<impl> pimpl_;
     };
+
+    /// Parses multiple files using a [cppast::libclang_parser]() and a compilation database.
+    ///
+    /// \effects Invokes [cppast::parse_files](standardese://parse_files_basic/) passing it the parser and file names,
+    /// and a `get_config` function using [cppast::find_config_for]().
+    ///
+    /// \throws [cppast::libclang_error]() if no configuration for a given file could be found in the database.
+    ///
+    /// \requires `FileParser` must use [cppast::libclang_parser](),
+    /// i.e. `FileParser::parser` must be an alias of [cppast::libclang_parser]().
+    template <class FileParser, class Range>
+    void parse_files(FileParser& parser, Range&& file_names,
+                     const libclang_compilation_database& database)
+    {
+        static_assert(std::is_same<typename FileParser::parser, libclang_parser>::value,
+                      "must use the libclang parser");
+        parse_files(parser, std::forward<Range>(file_names), [&](const std::string& file) {
+            auto config = find_config_for(database, file);
+            if (!config)
+                throw libclang_error("unable to find configuration for file '" + file + "'");
+            return config.value();
+        });
+    }
 } // namespace cppast
 
 #endif // CPPAST_LIBCLANG_PARSER_HPP_INCLUDED

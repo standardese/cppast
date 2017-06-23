@@ -74,6 +74,9 @@ namespace cppast
     /// Base class for a parser.
     ///
     /// It reads a C++ source file and creates the matching [cppast::cpp_file]().
+    /// Derived classes can implement how the file is parsed.
+    ///
+    /// \requires A derived class must provide an alias `config` which is the corresponding derived class of the [cppast::compile_config]().
     class parser
     {
     public:
@@ -136,6 +139,104 @@ namespace cppast
         type_safe::object_ref<const diagnostic_logger> logger_;
         mutable std::atomic<bool>                      error_;
     };
+
+    /// A simple `FileParser` that parses all files synchronously.
+    ///
+    /// More advanced parsers could use a thread pool, for example.
+    template <class Parser>
+    class simple_file_parser
+    {
+        static_assert(std::is_base_of<cppast::parser, Parser>::value,
+                      "Parser must be derived from cppast::parser");
+
+    public:
+        using parser = Parser;
+        using config = typename Parser::config;
+
+        /// \effects Creates a file parser populating the given index
+        /// and using the parser created by forwarding the given arguments.
+        template <typename... Args>
+        explicit simple_file_parser(type_safe::object_ref<const cpp_entity_index> idx,
+                                    Args&&... args)
+        : parser_(std::forward<Args>(args)...), idx_(idx)
+        {
+        }
+
+        void parse(std::string path, const config& c)
+        {
+            auto file = parser_.parse(*idx_, std::move(path), c);
+            if (file)
+                files_.push_back(std::move(file));
+        }
+
+        /// \returns The result of [cppast::parser::error]().
+        bool error() const noexcept
+        {
+            return parser_.error();
+        }
+
+        /// \effects Calls [cppast::parser::reset_error]().
+        void reset_error() noexcept
+        {
+            parser_.reset_error();
+        }
+
+        /// \returns The index that is being populated.
+        const cpp_entity_index& index() const noexcept
+        {
+            return *idx_;
+        }
+
+        /// \returns An iteratable object iterating over all the files that have been parsed so far.
+        /// \exclude return
+        detail::iteratable_intrusive_list<cpp_file> files() const noexcept
+        {
+            return type_safe::ref(files_);
+        }
+
+    private:
+        Parser                                        parser_;
+        detail::intrusive_list<cpp_file>              files_;
+        type_safe::object_ref<const cpp_entity_index> idx_;
+    };
+
+    /// Parses multiple files using a given `FileParser`.
+    ///
+    /// \effects Will call the `parse()` function for each path specified in the `file_names`,
+    /// using `get_confg` to determine the configuration.
+    ///
+    /// \requires `FileParser` must be a class with the following members:
+    /// * `parser` - A typedef for the parser being used to do the parsing.
+    /// * `config` - The same as `parser::config`.
+    /// * `parse(path, config)` - Parses the given file with the configuration using its parser.
+    /// The parsing can be executed in a separated thread, but then a copy of the configuration and path must be created.
+    /// \requires `Range` must be some type that can be iterated in a range-based for loop.
+    /// \requires `Configuration` must be a function that returns a configuration of type `FileParser::config` when given a path.
+    /// \unique_name parse_files_basic
+    /// \synopsis_return void
+    template <class FileParser, class Range, class Configuration>
+    auto parse_files(FileParser& parser, Range&& file_names, const Configuration& get_config) ->
+        typename std::enable_if<std::is_same<typename std::decay<decltype(get_config(
+                                                 *std::forward<Range>(file_names).begin()))>::type,
+                                             typename FileParser::config>::value>::type
+    {
+        for (auto&& file : std::forward<Range>(file_names))
+        {
+            auto&& config = get_config(file);
+            parser.parse(std::forward<decltype(file)>(file),
+                         std::forward<decltype(config)>(config));
+        }
+    }
+
+    /// Parses multiple files using a given `FileParser` and configuration.
+    /// \effects Invokes [cppast::parse_files](standardese://parse_files_basic/) passing it the parser and file names,
+    /// and a function that returns the same configuration for each file.
+    template <class FileParser, class Range>
+    void parse_files(FileParser& parser, Range&& file_names, typename FileParser::config config)
+    {
+        parse_files(parser, std::forward<Range>(file_names),
+                    [&](const std::string&) { return config; });
+    }
 } // namespace cppast
 
 #endif // CPPAST_PARSER_HPP_INCLUDED

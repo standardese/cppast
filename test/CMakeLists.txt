@@ -28,6 +28,7 @@ set(tests
         cpp_variable.cpp
         integration.cpp
         libclang_parser.cpp
+        parser.cpp
         visitor.cpp)
 
 add_executable(cppast_test test.cpp test_parser.hpp ${tests})

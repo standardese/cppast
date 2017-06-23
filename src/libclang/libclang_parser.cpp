@@ -51,6 +51,15 @@ libclang_compilation_database::~libclang_compilation_database()
         clang_CompilationDatabase_dispose(database_);
 }
 
+bool libclang_compilation_database::has_config(const char* file_name) const
+{
+    auto cxcommands = clang_CompilationDatabase_getCompileCommands(database_, file_name);
+    if (!cxcommands)
+        return false;
+    clang_CompileCommands_dispose(cxcommands);
+    return true;
+}
+
 namespace
 {
     int parse_number(const char*& str)
@@ -258,6 +267,30 @@ void libclang_compile_config::do_add_macro_definition(std::string name, std::str
 void libclang_compile_config::do_remove_macro_definition(std::string name)
 {
     add_flag("-U" + std::move(name));
+}
+
+type_safe::optional<libclang_compile_config> cppast::find_config_for(
+    const libclang_compilation_database& database, std::string file_name)
+{
+    if (database.has_config(file_name))
+        return libclang_compile_config(database, std::move(file_name));
+
+    auto dot = file_name.rfind('.');
+    if (dot != std::string::npos)
+        file_name.erase(dot);
+
+    if (database.has_config(file_name))
+        return libclang_compile_config(database, std::move(file_name));
+    static const char* extensions[] = {".h",   ".hpp", ".cpp", ".h++", ".c++", ".hxx",
+                                       ".cxx", ".hh",  ".cc",  ".H",   ".C"};
+    for (auto ext : extensions)
+    {
+        auto name = file_name + ext;
+        if (database.has_config(name))
+            return libclang_compile_config(database, std::move(name));
+    }
+
+    return type_safe::nullopt;
 }
 
 struct libclang_parser::impl
