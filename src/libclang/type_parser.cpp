@@ -392,32 +392,38 @@ namespace
                                         const std::string& templ_name)
     {
         // look if the type has a declaration that is a template
-        auto decl = clang_getTypeDeclaration(type);
-        if (is_direct_templated(decl))
+        auto decl  = clang_getTypeDeclaration(type);
+        auto count = clang_Type_getNumTemplateArguments(clang_getCursorType(decl));
+        if (count > 0 || is_direct_templated(decl))
             return decl;
-
-        // look if the templ_name matches a template template parameter
-        auto param = clang_getNullCursor();
-        detail::visit_children(cur, [&](const CXCursor& child) {
-            if (clang_getCursorKind(child) == CXCursor_TemplateTemplateParameter
-                && detail::get_cursor_name(child) == templ_name.c_str())
-            {
-                DEBUG_ASSERT(clang_Cursor_isNull(param), detail::parse_error_handler{}, cur,
-                             "multiple template template parameters with the same name?!");
-                param = child;
-            }
-        });
-        return param;
+        else
+        {
+            // look if the templ_name matches a template template parameter
+            auto param = clang_getNullCursor();
+            detail::visit_children(cur, [&](const CXCursor& child) {
+                if (clang_getCursorKind(child) == CXCursor_TemplateTemplateParameter
+                    && detail::get_cursor_name(child) == templ_name.c_str())
+                {
+                    DEBUG_ASSERT(clang_Cursor_isNull(param), detail::parse_error_handler{}, cur,
+                                 "multiple template template parameters with the same name?!");
+                    param = child;
+                }
+            });
+            return param;
+        }
     }
 
     std::unique_ptr<cpp_type> try_parse_instantiation_type(const detail::parse_context&,
                                                            const CXCursor& cur, const CXType& type)
     {
         return make_leave_type(type, [&](std::string&& spelling) -> std::unique_ptr<cpp_type> {
-            auto        ptr = spelling.c_str();
+            auto ptr = spelling.c_str();
+
             std::string templ_name;
             for (; *ptr && *ptr != '<'; ++ptr)
                 templ_name += *ptr;
+            if (*ptr != '<')
+                return nullptr;
             ++ptr;
 
             auto templ = get_instantiation_template(cur, type, templ_name);
@@ -429,7 +435,8 @@ namespace
 
             // parse arguments
             // i.e. not parse really, just add the string
-            DEBUG_ASSERT(!spelling.empty() && spelling.back() == '>', detail::assert_handler{});
+            if (spelling.empty() || spelling.back() != '>')
+                return nullptr;
             spelling.pop_back();
             builder.add_unexposed_arguments(ptr);
 
