@@ -4,7 +4,6 @@
 
 #include <cppast/cpp_function.hpp>
 #include <cppast/cpp_member_function.hpp>
-#include <clang-c/Index.h>
 
 #include "libclang_visitor.hpp"
 #include "parse_functions.hpp"
@@ -159,34 +158,39 @@ namespace
         // name can have multiple tokens if it is an operator
         if (!detail::skip_if(stream, name, true))
             return false;
-        else if (!is_ctor)
-            return true;
-        // if we reach this point, we've encountered the name of a constructor
-        // need to make sure it is not actually a class name
-        else if (stream.peek() == "::")
-        {
-            //  after name came "::", it is a class name
-            stream.set_cur(cur);
+        else if (stream.peek() == "," || stream.peek() == ">" || stream.peek() == ">>")
+            // argument to template parameters
             return false;
-        }
-        else if (stream.peek() == "<")
+        else if (is_ctor)
         {
-            // after name came "<", it might be arguments for a class template,
-            // or just a specialization
-            // check if ( comes after the arguments
-            detail::skip_brackets(stream);
-            if (stream.peek() == "(")
+            // need to make sure it is not actually a class name
+            if (stream.peek() == "::")
             {
-                // it was just a specialization, we're at the end
-                stream.set_cur(cur);
-                return true;
-            }
-            else
-            {
-                // class arguments
+                //  after name came "::", it is a class name
                 stream.set_cur(cur);
                 return false;
             }
+            else if (stream.peek() == "<")
+            {
+                // after name came "<", it might be arguments for a class template,
+                // or just a specialization
+                // check if ( comes after the arguments
+                detail::skip_brackets(stream);
+                if (stream.peek() == "(")
+                {
+                    // it was just a specialization, we're at the end
+                    stream.set_cur(cur);
+                    return true;
+                }
+                else
+                {
+                    // class arguments
+                    stream.set_cur(cur);
+                    return false;
+                }
+            }
+            else
+                return true;
         }
         else
             return true;
