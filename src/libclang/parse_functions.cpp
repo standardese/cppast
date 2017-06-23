@@ -23,6 +23,15 @@ cpp_entity_id detail::get_entity_id(const CXCursor& cur)
         cxstring type_spelling(clang_getTypeSpelling(clang_getCursorResultType(cur)));
         return cpp_entity_id(std::string(usr.c_str()) + type_spelling.c_str());
     }
+    else if (clang_getCursorKind(cur) == CXCursor_ClassTemplatePartialSpecialization)
+    {
+        // libclang issue: templ<T()> vs templ<T() &>
+        // but identical USR
+        // same workaround: combine display name with usr
+        // (and hope this prevents all collisions...)
+        cxstring display_name(clang_getCursorDisplayName(cur));
+        return cpp_entity_id(std::string(usr.c_str()) + display_name.c_str());
+    }
     else
         return cpp_entity_id(usr.c_str());
 }
@@ -82,6 +91,19 @@ void detail::comment_context::match(cpp_entity& e, unsigned line) const
         e.set_comment(std::move(cur_++->comment));
 }
 
+namespace
+{
+    bool is_friend(const CXCursor& parent_cur)
+    {
+#if CPPAST_CINDEX_HAS_FRIEND
+        return clang_getCursorKind(parent_cur) == CXCursor_FriendDecl;
+#else
+        (void)parent_cur;
+        return false;
+#endif
+    }
+}
+
 std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& context,
                                                  const CXCursor&              cur,
                                                  const CXCursor&              parent_cur) try
@@ -102,6 +124,11 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         // go through all the try_parse_XXX functions
         if (auto entity = try_parse_cpp_language_linkage(context, cur))
             return entity;
+        break;
+
+    case CXCursor_MacroDefinition:
+    case CXCursor_InclusionDirective:
+        DEBUG_UNREACHABLE(detail::assert_handler{}, "handle preprocessor in parser callback");
         break;
 
     case CXCursor_Namespace:
@@ -131,25 +158,29 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         return parse_cpp_member_variable(context, cur);
 
     case CXCursor_FunctionDecl:
-        if (auto tfunc = try_parse_cpp_function_template_specialization(context, cur))
+        if (auto tfunc =
+                try_parse_cpp_function_template_specialization(context, cur, is_friend(parent_cur)))
             return tfunc;
-        return parse_cpp_function(context, cur);
+        return parse_cpp_function(context, cur, is_friend(parent_cur));
     case CXCursor_CXXMethod:
-        if (auto tfunc = try_parse_cpp_function_template_specialization(context, cur))
+        if (auto tfunc =
+                try_parse_cpp_function_template_specialization(context, cur, is_friend(parent_cur)))
             return tfunc;
         else if (auto func = try_parse_static_cpp_function(context, cur))
             return func;
-        return parse_cpp_member_function(context, cur);
+        return parse_cpp_member_function(context, cur, is_friend(parent_cur));
     case CXCursor_ConversionFunction:
-        if (auto tfunc = try_parse_cpp_function_template_specialization(context, cur))
+        if (auto tfunc =
+                try_parse_cpp_function_template_specialization(context, cur, is_friend(parent_cur)))
             return tfunc;
-        return parse_cpp_conversion_op(context, cur);
+        return parse_cpp_conversion_op(context, cur, is_friend(parent_cur));
     case CXCursor_Constructor:
-        if (auto tfunc = try_parse_cpp_function_template_specialization(context, cur))
+        if (auto tfunc =
+                try_parse_cpp_function_template_specialization(context, cur, is_friend(parent_cur)))
             return tfunc;
-        return parse_cpp_constructor(context, cur);
+        return parse_cpp_constructor(context, cur, is_friend(parent_cur));
     case CXCursor_Destructor:
-        return parse_cpp_destructor(context, cur);
+        return parse_cpp_destructor(context, cur, is_friend(parent_cur));
 
 #if CPPAST_CINDEX_HAS_FRIEND
     case CXCursor_FriendDecl:
@@ -159,7 +190,7 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
     case CXCursor_TypeAliasTemplateDecl:
         return parse_cpp_alias_template(context, cur);
     case CXCursor_FunctionTemplate:
-        return parse_cpp_function_template(context, cur);
+        return parse_cpp_function_template(context, cur, is_friend(parent_cur));
     case CXCursor_ClassTemplate:
         return parse_cpp_class_template(context, cur);
     case CXCursor_ClassTemplatePartialSpecialization:
@@ -172,21 +203,27 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         break;
     }
 
-    auto msg = detail::format("unhandled cursor of kind '",
-                              detail::get_cursor_kind_spelling(cur).c_str(), "'");
-    context.logger->log("libclang parser",
-                        diagnostic{std::move(msg), detail::make_location(cur), severity::warning});
+    if (!clang_isAttribute(clang_getCursorKind(cur)))
+    {
+        auto msg = detail::format("unhandled cursor of kind '",
+                                  detail::get_cursor_kind_spelling(cur).c_str(), "'");
+        context.logger->log("libclang parser",
+                            diagnostic{std::move(msg), detail::make_location(cur),
+                                       severity::warning});
 
-    // build unexposed entity
-    auto                 name = detail::get_cursor_name(cur);
-    detail::tokenizer    tokenizer(context.tu, context.file, cur);
-    detail::token_stream stream(tokenizer, cur);
-    auto                 spelling = detail::to_string(stream, stream.end());
-    if (name.empty())
-        return cpp_unexposed_entity::build(std::move(spelling));
+        // build unexposed entity
+        auto                 name = detail::get_cursor_name(cur);
+        detail::tokenizer    tokenizer(context.tu, context.file, cur);
+        detail::token_stream stream(tokenizer, cur);
+        auto                 spelling = detail::to_string(stream, stream.end());
+        if (name.empty())
+            return cpp_unexposed_entity::build(std::move(spelling));
+        else
+            return cpp_unexposed_entity::build(*context.idx, detail::get_entity_id(cur),
+                                               name.c_str(), std::move(spelling));
+    }
     else
-        return cpp_unexposed_entity::build(*context.idx, detail::get_entity_id(cur), name.c_str(),
-                                           std::move(spelling));
+        return nullptr;
 }
 catch (parse_error& ex)
 {

@@ -468,7 +468,6 @@ namespace
         case CXType_ObjCId:
         case CXType_ObjCClass:
         case CXType_ObjCSel:
-        case CXType_Complex:
         case CXType_BlockPointer:
         case CXType_Vector:
         case CXType_ObjCInterface:
@@ -498,6 +497,8 @@ namespace
             else if (auto ptype = try_parse_template_parameter_type(context, cur, type))
                 // template parameter type is unexposed
                 return ptype;
+        // fallthrough
+        case CXType_Complex:
             return cpp_unexposed_type::build(get_type_spelling(type).c_str());
 
         case CXType_Void:

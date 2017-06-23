@@ -482,8 +482,9 @@ namespace cppast
     /// \exclude
     namespace detail
     {
-        void write_template_arguments(code_generator::output&                           output,
-                                      type_safe::array_ref<const cpp_template_argument> arguments);
+        void write_template_arguments(
+            code_generator::output&                                                output,
+            type_safe::optional<type_safe::array_ref<const cpp_template_argument>> arguments);
     } // namespace detail
 } // namespace cppast
 

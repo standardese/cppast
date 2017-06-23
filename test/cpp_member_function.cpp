@@ -331,6 +331,10 @@ struct d : c
     /// virtual ~d() override final;
     ~d() final;
 };
+
+/// virtual d::~d();
+d::~d() {}
+
 )";
 
     auto file  = parse({}, "cpp_destructor.cpp", code);
@@ -364,12 +368,15 @@ struct d : c
         else if (dtor.name() == "~d")
         {
             REQUIRE(dtor.virtual_info());
-            REQUIRE(dtor.virtual_info().value()
-                    == (cpp_virtual_flags::override | cpp_virtual_flags::final));
+            if (dtor.is_declaration())
+                REQUIRE(dtor.virtual_info().value()
+                        == (cpp_virtual_flags::override | cpp_virtual_flags::final));
+            else
+                REQUIRE(dtor.virtual_info().value() == cpp_virtual_flags::override);
             REQUIRE(!dtor.noexcept_condition());
         }
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 4u);
+    REQUIRE(count == 5u);
 }

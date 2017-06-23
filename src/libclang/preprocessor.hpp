@@ -12,10 +12,17 @@ namespace cppast
 {
     namespace detail
     {
-        struct pp_entity
+        struct pp_macro
         {
-            std::unique_ptr<cpp_entity> entity;
-            unsigned                    line;
+            std::unique_ptr<cpp_macro_definition> macro;
+            unsigned                              line;
+        };
+
+        struct pp_include
+        {
+            cpp_file_ref     file;
+            cpp_include_kind kind;
+            unsigned         line;
         };
 
         struct pp_doc_comment
@@ -35,7 +42,8 @@ namespace cppast
         struct preprocessor_output
         {
             std::string                 source;
-            std::vector<pp_entity>      entities;
+            std::vector<pp_include>     includes;
+            std::vector<pp_macro>       macros;
             std::vector<pp_doc_comment> comments;
         };
 

@@ -107,12 +107,14 @@ TEST_CASE("cpp_include_directive", "[!hide][clang4]")
                 REQUIRE(include.target().name() == include.name());
                 REQUIRE(include.include_kind() == cppast::cpp_include_kind::system);
                 REQUIRE(include.target().get(idx).empty());
+                REQUIRE_THAT(include.full_path(), Catch::EndsWith("iostream"));
             }
             else if (include.name() == "cpp_include_directive-header.hpp")
             {
                 REQUIRE(include.target().name() == include.name());
                 REQUIRE(include.include_kind() == cppast::cpp_include_kind::local);
                 REQUIRE(include.target().get(idx).empty());
+                REQUIRE(include.full_path() == "./cpp_include_directive-header.hpp");
             }
             else
                 REQUIRE(false);
@@ -126,6 +128,7 @@ TEST_CASE("cpp_include_directive", "[!hide][clang4]")
             REQUIRE(include.include_kind() == cppast::cpp_include_kind::local);
             REQUIRE(
                 equal_ref(idx, include.target(), cpp_file_ref(cpp_entity_id(""), "header_a.hpp")));
+            REQUIRE(include.full_path() == "./header_a.hpp");
         }
         else
             REQUIRE(false);

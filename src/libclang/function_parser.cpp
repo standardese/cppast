@@ -84,13 +84,72 @@ namespace
         detail::skip_brackets(stream);
     }
 
+    bool is_class(const CXCursor& parent)
+    {
+        auto kind = clang_getCursorKind(parent);
+        return kind == CXCursor_ClassDecl || kind == CXCursor_StructDecl
+               || kind == CXCursor_UnionDecl || kind == CXCursor_ClassTemplate
+               || kind == CXCursor_ClassTemplatePartialSpecialization;
+    }
+
+    CXCursor get_definition_scope(const CXCursor& cur, bool is_friend)
+    {
+        auto parent = clang_getCursorLexicalParent(cur);
+        if (is_friend)
+        {
+            // find the lexical parent that isn't a class
+            // as the definition scope is a namespace
+            while (is_class(parent))
+                parent = clang_getCursorSemanticParent(parent);
+
+            DEBUG_ASSERT(clang_getCursorKind(parent) == CXCursor_Namespace
+                             || clang_getCursorKind(parent) == CXCursor_TranslationUnit,
+                         detail::parse_error_handler{}, cur,
+                         "unable to find definition scope of friend");
+        }
+        return parent;
+    }
+
+    bool equivalent_cursor(const CXCursor& a, const CXCursor& b)
+    {
+        if (clang_getCursorKind(a) == clang_getCursorKind(b)
+            && clang_getCursorKind(a) == CXCursor_Namespace)
+            return detail::cxstring(clang_getCursorUSR(a))
+                   == detail::cxstring(clang_getCursorUSR(b));
+        else
+            return clang_equalCursors(a, b) == 1;
+    }
+
+    type_safe::optional<cpp_entity_ref> parse_scope(const CXCursor& cur, bool is_friend)
+    {
+        std::string scope;
+        // find the semantic parents we need until we're at the same level of the parent where the definition is
+        // the semantic parents are all the scopes that need to be appended
+        for (auto definition = get_definition_scope(cur, is_friend),
+                  parent     = clang_getCursorSemanticParent(cur);
+             !equivalent_cursor(definition, parent); parent = clang_getCursorSemanticParent(parent))
+        {
+            DEBUG_ASSERT(!clang_isTranslationUnit(clang_getCursorKind(parent)),
+                         detail::parse_error_handler{}, cur,
+                         "infinite loop while calculating scope");
+            auto parent_name = detail::cxstring(clang_getCursorDisplayName(parent));
+            scope            = parent_name.std_str() + "::" + std::move(scope);
+        }
+
+        if (scope.empty())
+            return type_safe::nullopt;
+        else
+            return cpp_entity_ref(detail::get_entity_id(clang_getCursorSemanticParent(cur)),
+                                  std::move(scope));
+    }
+
     // just the tokens occurring in the prefix
     struct prefix_info
     {
-        type_safe::optional<cpp_entity_ref> semantic_parent;
-        bool                                is_constexpr = false;
-        bool                                is_virtual   = false;
-        bool                                is_explicit  = false;
+        bool is_constexpr = false;
+        bool is_virtual   = false;
+        bool is_explicit  = false;
+        bool is_friend    = false;
     };
 
     bool prefix_end(detail::token_stream& stream, const char* name, bool is_ctor)
@@ -99,34 +158,39 @@ namespace
         // name can have multiple tokens if it is an operator
         if (!detail::skip_if(stream, name, true))
             return false;
-        else if (!is_ctor)
-            return true;
-        // if we reach this point, we've encountered the name of a constructor
-        // need to make sure it is not actually a class name
-        else if (stream.peek() == "::")
-        {
-            //  after name came "::", it is a class name
-            stream.set_cur(cur);
+        else if (stream.peek() == "," || stream.peek() == ">" || stream.peek() == ">>")
+            // argument to template parameters
             return false;
-        }
-        else if (stream.peek() == "<")
+        else if (is_ctor)
         {
-            // after name came "<", it might be arguments for a class template,
-            // or just a specialization
-            // check if ( comes after the arguments
-            detail::skip_brackets(stream);
-            if (stream.peek() == "(")
+            // need to make sure it is not actually a class name
+            if (stream.peek() == "::")
             {
-                // it was just a specialization, we're at the end
-                stream.set_cur(cur);
-                return true;
-            }
-            else
-            {
-                // class arguments
+                //  after name came "::", it is a class name
                 stream.set_cur(cur);
                 return false;
             }
+            else if (stream.peek() == "<")
+            {
+                // after name came "<", it might be arguments for a class template,
+                // or just a specialization
+                // check if ( comes after the arguments
+                detail::skip_brackets(stream);
+                if (stream.peek() == "(")
+                {
+                    // it was just a specialization, we're at the end
+                    stream.set_cur(cur);
+                    return true;
+                }
+                else
+                {
+                    // class arguments
+                    stream.set_cur(cur);
+                    return false;
+                }
+            }
+            else
+                return true;
         }
         else
             return true;
@@ -136,35 +200,21 @@ namespace
     {
         prefix_info result;
 
-        std::string scope;
         while (!stream.done() && !prefix_end(stream, name, is_ctor))
         {
             if (detail::skip_if(stream, "constexpr"))
-            {
                 result.is_constexpr = true;
-                scope.clear();
-            }
             else if (detail::skip_if(stream, "virtual"))
-            {
                 result.is_virtual = true;
-                scope.clear();
-            }
             else if (detail::skip_if(stream, "explicit"))
-            {
                 result.is_explicit = true;
-                scope.clear();
-            }
-            else if (!detail::append_scope(stream, scope))
+            else
                 stream.bump();
         }
         DEBUG_ASSERT(!stream.done(), detail::parse_error_handler{}, stream.cursor(),
                      "unable to find end of function prefix");
-        if (!scope.empty() && scope.back() == ':')
-        {
-            result.semantic_parent =
-                cpp_entity_ref(detail::get_entity_id(
-                                   clang_getCursorSemanticParent(stream.cursor())),
-                               std::move(scope));
+        while (detail::skip_if(stream, ")"))
+        { // function name can be enclosed in parentheses
         }
 
         return result;
@@ -367,7 +417,8 @@ namespace
     }
 
     std::unique_ptr<cpp_entity> parse_cpp_function_impl(const detail::parse_context& context,
-                                                        const CXCursor& cur, bool is_static)
+                                                        const CXCursor& cur, bool is_static,
+                                                        bool is_friend)
     {
         auto name = detail::get_cursor_name(cur);
 
@@ -400,21 +451,21 @@ namespace
 
         if (is_templated_cursor(cur))
             return builder.finish(detail::get_entity_id(cur), suffix.body_kind,
-                                  std::move(prefix.semantic_parent));
+                                  parse_scope(cur, is_friend));
         else
             return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind,
-                                  std::move(prefix.semantic_parent));
+                                  parse_scope(cur, is_friend));
     }
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_function(const detail::parse_context& context,
-                                                       const CXCursor&              cur)
+                                                       const CXCursor& cur, bool is_friend)
 {
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_FunctionDecl
                      || clang_getTemplateCursorKind(cur) == CXCursor_FunctionDecl,
                  detail::assert_handler{});
     type_safe::optional<cpp_entity_ref> semantic_parent;
-    return parse_cpp_function_impl(context, cur, false);
+    return parse_cpp_function_impl(context, cur, false, is_friend);
 }
 
 std::unique_ptr<cpp_entity> detail::try_parse_static_cpp_function(
@@ -424,7 +475,7 @@ std::unique_ptr<cpp_entity> detail::try_parse_static_cpp_function(
                      || clang_getTemplateCursorKind(cur) == CXCursor_CXXMethod,
                  detail::assert_handler{});
     if (clang_CXXMethod_isStatic(cur))
-        return parse_cpp_function_impl(context, cur, true);
+        return parse_cpp_function_impl(context, cur, true, false);
     return nullptr;
 }
 
@@ -516,7 +567,7 @@ namespace
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::parse_context& context,
-                                                              const CXCursor&              cur)
+                                                              const CXCursor& cur, bool is_friend)
 {
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_CXXMethod
                      || clang_getTemplateCursorKind(cur) == CXCursor_CXXMethod,
@@ -543,11 +594,11 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
 
     skip_parameters(stream);
     return handle_suffix(context, cur, builder, stream, prefix.is_virtual,
-                         std::move(prefix.semantic_parent));
+                         parse_scope(cur, is_friend));
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_context& context,
-                                                            const CXCursor&              cur)
+                                                            const CXCursor& cur, bool is_friend)
 {
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_ConversionFunction
                      || clang_getTemplateCursorKind(cur) == CXCursor_ConversionFunction,
@@ -604,11 +655,11 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
         builder.is_constexpr();
 
     return handle_suffix(context, cur, builder, stream, prefix.is_virtual,
-                         std::move(prefix.semantic_parent));
+                         parse_scope(cur, is_friend));
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_context& context,
-                                                          const CXCursor&              cur)
+                                                          const CXCursor& cur, bool is_friend)
 {
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_Constructor
                      || clang_getTemplateCursorKind(cur) == CXCursor_Constructor,
@@ -643,27 +694,29 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
 
     if (is_templated_cursor(cur))
         return builder.finish(detail::get_entity_id(cur), suffix.body_kind,
-                              std::move(prefix.semantic_parent));
+                              parse_scope(cur, is_friend));
     else
         return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind,
-                              std::move(prefix.semantic_parent));
+                              parse_scope(cur, is_friend));
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_destructor(const detail::parse_context& context,
-                                                         const CXCursor&              cur)
+                                                         const CXCursor& cur, bool is_friend)
 {
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_Destructor, detail::assert_handler{});
 
     detail::tokenizer    tokenizer(context.tu, context.file, cur);
     detail::token_stream stream(tokenizer, cur);
 
-    auto is_virtual = detail::skip_if(stream, "virtual");
-    detail::skip(stream, "~");
+    auto prefix_info = parse_prefix_info(stream, "~", false);
+    DEBUG_ASSERT(!prefix_info.is_constexpr && !prefix_info.is_explicit, detail::assert_handler{});
+
     auto                    name = std::string("~") + stream.get().c_str();
     cpp_destructor::builder builder(std::move(name));
     context.comments.match(builder.get(), cur);
 
     detail::skip(stream, "(");
     detail::skip(stream, ")");
-    return handle_suffix(context, cur, builder, stream, is_virtual, type_safe::nullopt);
+    return handle_suffix(context, cur, builder, stream, prefix_info.is_virtual,
+                         parse_scope(cur, is_friend));
 }

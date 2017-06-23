@@ -74,7 +74,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_friend(const detail::parse_context
         }
         else if (clang_isDeclaration(kind))
         {
-            entity = parse_entity(context, child);
+            entity = parse_entity(context, child, cur);
             if (entity)
             {
                 // steal comment

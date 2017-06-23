@@ -80,9 +80,11 @@ namespace cppast
         /// \notes It is not meant to be registered in the [cppast::cpp_entity_index](),
         /// as no other [cppast::cpp_entity]() can refer to it.
         static std::unique_ptr<cpp_include_directive> build(const cpp_file_ref& target,
-                                                            cpp_include_kind    kind)
+                                                            cpp_include_kind    kind,
+                                                            std::string         full_path)
         {
-            return std::unique_ptr<cpp_include_directive>(new cpp_include_directive(target, kind));
+            return std::unique_ptr<cpp_include_directive>(
+                new cpp_include_directive(target, kind, std::move(full_path)));
         }
 
         /// \returns A reference to the [cppast::cpp_file]() it includes.
@@ -97,17 +99,28 @@ namespace cppast
             return kind_;
         }
 
+        /// \returns The full path of the included file.
+        const std::string& full_path() const noexcept
+        {
+            return full_path_;
+        }
+
     private:
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
-        cpp_include_directive(const cpp_file_ref& target, cpp_include_kind kind)
-        : cpp_entity(target.name()), target_(target.id()[0u]), kind_(kind)
+        cpp_include_directive(const cpp_file_ref& target, cpp_include_kind kind,
+                              std::string full_path)
+        : cpp_entity(target.name()),
+          target_(target.id()[0u]),
+          kind_(kind),
+          full_path_(std::move(full_path))
         {
             DEBUG_ASSERT(!target.is_overloaded(), detail::precondition_error_handler{});
         }
 
         cpp_entity_id    target_;
         cpp_include_kind kind_;
+        std::string      full_path_;
     };
 } // namespace cppast
 

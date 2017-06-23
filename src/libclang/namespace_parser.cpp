@@ -5,6 +5,7 @@
 #include "parse_functions.hpp"
 
 #include <cppast/cpp_namespace.hpp>
+#include <type_safe/deferred_construction.hpp>
 
 #include "libclang_visitor.hpp"
 
@@ -32,6 +33,7 @@ namespace
             return cpp_namespace::builder("", is_inline);
 
         auto& name = stream.get().value();
+        skip_attribute(stream);
         skip(stream, "{");
         return cpp_namespace::builder(name.c_str(), is_inline);
     }
@@ -126,13 +128,14 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_using_directive(const detail::pars
 
 namespace
 {
-    std::vector<cpp_entity_id> parse_entity_target_cursor(const CXCursor& cur)
+    cpp_entity_ref parse_entity_target_cursor(const CXCursor& cur, std::string name)
     {
-        std::vector<cpp_entity_id> result;
+        type_safe::deferred_construction<cpp_entity_ref> result;
         detail::visit_children(cur,
                                [&](const CXCursor& child) {
-                                   if (!result.empty())
+                                   if (result)
                                        return;
+
                                    switch (clang_getCursorKind(child))
                                    {
                                    case CXCursor_TypeRef:
@@ -142,17 +145,21 @@ namespace
                                    case CXCursor_DeclRefExpr:
                                    {
                                        auto referenced = clang_getCursorReferenced(child);
-                                       result.push_back(detail::get_entity_id(referenced));
+                                       result = cpp_entity_ref(detail::get_entity_id(referenced),
+                                                               std::move(name));
                                        break;
                                    }
 
                                    case CXCursor_OverloadedDeclRef:
                                    {
                                        auto size = clang_getNumOverloadedDecls(child);
-                                       DEBUG_ASSERT(size >= 1u, detail::assert_handler{});
+                                       DEBUG_ASSERT(size >= 1u, detail::parse_error_handler{}, cur,
+                                                    "no target for using declaration");
+                                       std::vector<cpp_entity_id> ids;
                                        for (auto i = 0u; i != size; ++i)
-                                           result.push_back(detail::get_entity_id(
+                                           ids.push_back(detail::get_entity_id(
                                                clang_getOverloadedDecl(child, i)));
+                                       result = cpp_entity_ref(std::move(ids), std::move(name));
                                        break;
                                    }
 
@@ -166,7 +173,7 @@ namespace
 
                                },
                                true);
-        return result;
+        return result.value();
     }
 }
 
@@ -186,7 +193,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_using_declaration(
     while (!stream.done() && !detail::skip_if(stream, ";"))
         target_name += stream.get().c_str();
 
-    auto target = cpp_entity_ref(parse_entity_target_cursor(cur), std::move(target_name));
+    auto target = parse_entity_target_cursor(cur, std::move(target_name));
     auto result = cpp_using_declaration::build(std::move(target));
     context.comments.match(*result, cur);
     return std::move(result);

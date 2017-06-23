@@ -205,14 +205,16 @@ namespace
         auto args = get_arguments(config);
 
         CXTranslationUnit tu;
-        auto              error =
+        auto              flags = CXTranslationUnit_Incomplete | CXTranslationUnit_KeepGoing;
+        if (detail::libclang_compile_config_access::clang_version(config) >= 40000)
+            flags |= CXTranslationUnit_DetailedPreprocessingRecord;
+
+        auto error =
             clang_parseTranslationUnit2(idx.get(), path, // index and path
                                         args.data(),
                                         static_cast<int>(args.size()), // arguments (ptr + size)
                                         &file, 1,                      // unsaved files (ptr + size)
-                                        CXTranslationUnit_Incomplete
-                                            | CXTranslationUnit_KeepGoing, // flags
-                                        &tu);
+                                        unsigned(flags), &tu);
         if (error != CXError_Success)
         {
             switch (error)
@@ -259,25 +261,42 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
     auto file = clang_getFile(tu.get(), path.c_str());
 
     cpp_file::builder builder(path);
-    auto              preprocessed_iter = preprocessed.entities.begin();
+    auto              macro_iter   = preprocessed.macros.begin();
+    auto              include_iter = preprocessed.includes.begin();
 
     // convert entity hierachies
     detail::parse_context context{tu.get(), file, type_safe::ref(logger()), type_safe::ref(idx),
                                   detail::comment_context(preprocessed.comments)};
     detail::visit_tu(tu, path.c_str(), [&](const CXCursor& cur) {
-        // add macro if needed
-        for (auto line = get_line_no(cur);
-             preprocessed_iter != preprocessed.entities.end() && preprocessed_iter->line <= line;
-             ++preprocessed_iter)
-            builder.add_child(std::move(preprocessed_iter->entity));
+        if (clang_getCursorKind(cur) == CXCursor_InclusionDirective)
+        {
+            DEBUG_ASSERT(include_iter != preprocessed.includes.end()
+                             && get_line_no(cur) >= include_iter->line,
+                         detail::assert_handler{});
 
-        auto entity = detail::parse_entity(context, cur);
-        if (entity)
-            builder.add_child(std::move(entity));
+            auto include =
+                cpp_include_directive::build(std::move(include_iter->file), include_iter->kind,
+                                             detail::get_cursor_name(cur).c_str());
+            context.comments.match(*include, include_iter->line);
+            builder.add_child(std::move(include));
+
+            ++include_iter;
+        }
+        else if (clang_getCursorKind(cur) != CXCursor_MacroDefinition)
+        {
+            // add macro if needed
+            for (auto line = get_line_no(cur);
+                 macro_iter != preprocessed.macros.end() && macro_iter->line <= line; ++macro_iter)
+                builder.add_child(std::move(macro_iter->macro));
+
+            auto entity = detail::parse_entity(context, cur);
+            if (entity)
+                builder.add_child(std::move(entity));
+        }
     });
 
-    for (; preprocessed_iter != preprocessed.entities.end(); ++preprocessed_iter)
-        builder.add_child(std::move(preprocessed_iter->entity));
+    for (; macro_iter != preprocessed.macros.end(); ++macro_iter)
+        builder.add_child(std::move(macro_iter->macro));
 
     for (auto& c : preprocessed.comments)
     {
