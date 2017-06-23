@@ -17,6 +17,7 @@
 namespace cppast
 {
     class cpp_entity;
+    class cpp_file;
     class cpp_namespace;
 
     /// \exclude
@@ -78,10 +79,17 @@ namespace cppast
         void register_definition(cpp_entity_id                           id,
                                  type_safe::object_ref<const cpp_entity> entity) const;
 
+        /// \effects Registers a new [cppast::cpp_file]().
+        /// \returns `true` if the file was not registered before.
+        /// If it returns `false`, the file was registered before and nothing was changed.
+        /// \requires The entity must live as long as the index lives.
+        /// \notes This operation is thread safe.
+        bool register_file(cpp_entity_id id, type_safe::object_ref<const cpp_file> file) const;
+
         /// \effects Registers a new [cppast::cpp_entity]() which is a declaration.
         /// Only the first declaration will be registered.
         /// \requires The entity must live as long as the index lives.
-        /// \requires The entity must not be a namespace.
+        /// \requires The entity must be forward declarable.
         /// \notes This operation is thread safe.
         void register_forward_declaration(cpp_entity_id                           id,
                                           type_safe::object_ref<const cpp_entity> entity) const;

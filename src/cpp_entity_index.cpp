@@ -7,6 +7,7 @@
 #include <cppast/detail/assert.hpp>
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_kind.hpp>
+#include <cppast/cpp_file.hpp>
 
 using namespace cppast;
 
@@ -31,6 +32,13 @@ void cpp_entity_index::register_definition(cpp_entity_id                        
         value.is_definition = true;
         value.entity        = entity;
     }
+}
+
+bool cpp_entity_index::register_file(cpp_entity_id                         id,
+                                     type_safe::object_ref<const cpp_file> file) const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return map_.emplace(std::move(id), value(file, true)).second;
 }
 
 void cpp_entity_index::register_forward_declaration(

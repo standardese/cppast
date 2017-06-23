@@ -84,6 +84,7 @@ namespace cppast
 
         /// \effects Parses the given file.
         /// \returns The [cppast::cpp_file]() object describing it.
+        /// It can be `nullptr`, if there was an error or the specified file already registered in the index.
         /// \requires The dynamic type of `config` must match the required config type.
         std::unique_ptr<cpp_file> parse(const cpp_entity_index& idx, std::string path,
                                         const compile_config& config) const
