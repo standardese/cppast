@@ -149,11 +149,15 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
             return false;
         else if (!inst_parsed.arguments_exposed())
             return inst_parsed.unexposed_arguments() == inst_synthesized.unexposed_arguments();
+        else if (inst_parsed.arguments().has_value() != inst_synthesized.arguments().has_value())
+            return false;
+        else if (!inst_parsed.arguments().has_value())
+            return true;
 
-        auto iter_a = inst_parsed.arguments().begin();
-        auto iter_b = inst_synthesized.arguments().begin();
-        while (iter_a != inst_parsed.arguments().end()
-               && iter_b != inst_synthesized.arguments().end())
+        auto iter_a = inst_parsed.arguments().value().begin();
+        auto iter_b = inst_synthesized.arguments().value().begin();
+        while (iter_a != inst_parsed.arguments().value().end()
+               && iter_b != inst_synthesized.arguments().value().end())
         {
             if (iter_a->type().has_value() && iter_b->type().has_value())
             {
@@ -175,8 +179,8 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
             ++iter_a;
             ++iter_b;
         }
-        return iter_a == inst_parsed.arguments().end()
-               && iter_b == inst_synthesized.arguments().end();
+        return iter_a == inst_parsed.arguments().value().end()
+               && iter_b == inst_synthesized.arguments().value().end();
     }
     case cpp_type_kind::dependent_t:
     {

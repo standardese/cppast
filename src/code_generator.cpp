@@ -1035,29 +1035,34 @@ bool cppast::generate_code(code_generator& generator, const cpp_entity& e)
     return false;
 }
 
-void detail::write_template_arguments(code_generator::output&                           output,
-                                      type_safe::array_ref<const cpp_template_argument> arguments)
+void detail::write_template_arguments(
+    code_generator::output&                                                output,
+    type_safe::optional<type_safe::array_ref<const cpp_template_argument>> arguments)
 {
-    if (arguments.size() == 0u)
-        return;
-
-    output << punctuation("<") << bracket_ws;
-    auto need_sep = false;
-    for (auto& arg : arguments)
+    if (!arguments)
     {
-        if (need_sep)
-            output << comma;
-        else
-            need_sep = true;
-
-        if (auto type = arg.type())
-            detail::write_type(output, type.value(), "");
-        else if (auto expr = arg.expression())
-            detail::write_expression(output, expr.value());
-        else if (auto templ = arg.template_ref())
-            output << templ.value();
-        else
-            DEBUG_UNREACHABLE(detail::assert_handler{});
+        output << punctuation("<") << punctuation(">");
     }
-    output << bracket_ws << punctuation(">");
+    else
+    {
+        output << punctuation("<") << bracket_ws;
+        auto need_sep = false;
+        for (auto& arg : arguments.value())
+        {
+            if (need_sep)
+                output << comma;
+            else
+                need_sep = true;
+
+            if (auto type = arg.type())
+                detail::write_type(output, type.value(), "");
+            else if (auto expr = arg.expression())
+                detail::write_expression(output, expr.value());
+            else if (auto templ = arg.template_ref())
+                output << templ.value();
+            else
+                DEBUG_UNREACHABLE(detail::assert_handler{});
+        }
+        output << bracket_ws << punctuation(">");
+    }
 }

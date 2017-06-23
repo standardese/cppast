@@ -140,12 +140,15 @@ namespace cppast
                 type_safe::variant_type<std::vector<cpp_template_argument>>{});
         }
 
-        /// \returns An iteratable object iterating over the [cppast::cpp_template_argument]()s.
+        /// \returns An array ref to the [cppast::cpp_template_argument](), if there are any.
         /// \requires The arguments are exposed, i.e. `arguments_exposed()` returns `true`.
-        type_safe::array_ref<const cpp_template_argument> arguments() const noexcept
+        type_safe::optional<type_safe::array_ref<const cpp_template_argument>> arguments() const
+            noexcept
         {
             auto& vec =
                 arguments_.value(type_safe::variant_type<std::vector<cpp_template_argument>>{});
+            if (vec.empty())
+                return type_safe::nullopt;
             return type_safe::ref(vec.data(), vec.size());
         }
 
