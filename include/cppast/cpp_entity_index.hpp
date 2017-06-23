@@ -62,11 +62,18 @@ namespace cppast
     class cpp_entity_index
     {
     public:
+        /// Exception thrown on duplicate entity definition.
+        class duplicate_definition_error : public std::logic_error
+        {
+        public:
+            duplicate_definition_error();
+        };
+
         /// \effects Registers a new [cppast::cpp_entity]() which is a definition.
         /// It will override any previously registered declarations of the same entity.
-        /// \requires If the entity has been registered before, it must be as declaration,
-        /// and the entity must live as long as the index lives.
-        /// \requires The entity must not be a namespace.
+        /// \throws duplicate_defintion_error if the entity has been registered as definition before.
+        /// \requires The entity must live as long as the index lives,
+        /// and it must not be a namespace.
         /// \notes This operation is thread safe.
         void register_definition(cpp_entity_id                           id,
                                  type_safe::object_ref<const cpp_entity> entity) const;

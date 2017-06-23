@@ -157,18 +157,36 @@ TEST_CASE("cpp_conversion_op")
 namespace ns
 {
     template <typename T>
-    using type = char;
+    struct type {};
 }
 
 // most of it only need to be check in member function
 struct foo
 {
     /// operator int&();
-    operator int&();
+    operator int&()
+    {
+        static int i;
+        return i;
+    }
+
     /// explicit operator bool()const;
-    explicit operator bool() const;
+    explicit operator bool() const
+    {
+        return false;
+    }
+
     /// constexpr operator ns::type<int>();
-    constexpr operator ns::type<int>();
+    constexpr operator ns::type<int>()
+    {
+        return {};
+    }
+
+    /// constexpr operator ns::type<char>();
+    constexpr operator ns::type<char>()
+    {
+        return {};
+    }
 };
 )";
 
@@ -177,7 +195,7 @@ struct foo
     auto count            = test_visit<cpp_conversion_op>(*file, [&](const cpp_conversion_op& op) {
         REQUIRE(count_children(op.parameters()) == 0u);
         REQUIRE(!op.is_variadic());
-        REQUIRE(op.body_kind() == cpp_function_declaration);
+        REQUIRE(op.body_kind() == cpp_function_definition);
         REQUIRE(op.ref_qualifier() == cpp_ref_none);
         REQUIRE(!op.virtual_info());
         REQUIRE(!op.noexcept_condition());
@@ -198,17 +216,32 @@ struct foo
         }
         else if (!op.is_explicit() && op.is_constexpr())
         {
-            REQUIRE(op.name() == "operator ns::type<int>");
-            cpp_template_instantiation_type::builder builder(
-                cpp_template_ref(cpp_entity_id(""), "ns::type"));
-            builder.add_unexposed_arguments("int");
-            REQUIRE(equal_types(idx, op.return_type(), *builder.finish()));
             REQUIRE(op.cv_qualifier() == cpp_cv_none);
+            if (op.name() == "operator ns::type<int>")
+            {
+                REQUIRE(op.return_type().kind() == cpp_type_kind::template_instantiation_t);
+                auto& inst = static_cast<const cpp_template_instantiation_type&>(op.return_type());
+
+                REQUIRE(inst.primary_template().name() == "ns::type");
+                REQUIRE(!inst.arguments_exposed());
+                REQUIRE(inst.unexposed_arguments() == "int");
+            }
+            else if (op.name() == "operator ns::type<char>")
+            {
+                REQUIRE(op.return_type().kind() == cpp_type_kind::template_instantiation_t);
+                auto& inst = static_cast<const cpp_template_instantiation_type&>(op.return_type());
+
+                REQUIRE(inst.primary_template().name() == "ns::type");
+                REQUIRE(!inst.arguments_exposed());
+                REQUIRE(inst.unexposed_arguments() == "char");
+            }
+            else
+                REQUIRE(false);
         }
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 3u);
+    REQUIRE(count == 4u);
 }
 
 TEST_CASE("cpp_constructor")

@@ -15,11 +15,14 @@ cpp_entity_id detail::get_entity_id(const CXCursor& cur)
 {
     cxstring usr(clang_getCursorUSR(cur));
     DEBUG_ASSERT(!usr.empty(), detail::parse_error_handler{}, cur, "cannot create id for entity");
-    if (clang_getCursorKind(cur) == CXCursor_FunctionTemplate)
+    if (clang_getCursorKind(cur) == CXCursor_FunctionTemplate
+        || clang_getCursorKind(cur) == CXCursor_ConversionFunction)
     {
         // we have a function template
         // combine return type with USR to ensure no ambiguity when SFINAE is applied there
         // (and hope this prevents all collisions...)
+        // same workaround also applies to conversion functions,
+        // there template arguments in the result are ignored
         cxstring type_spelling(clang_getTypeSpelling(clang_getCursorResultType(cur)));
         return cpp_entity_id(std::string(usr.c_str()) + type_spelling.c_str());
     }
@@ -228,6 +231,12 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
 catch (parse_error& ex)
 {
     context.logger->log("libclang parser", ex.get_diagnostic());
+    return nullptr;
+}
+catch (std::logic_error& ex)
+{
+    context.logger->log("libclang parser",
+                        diagnostic{ex.what(), detail::make_location(cur), severity::error});
     return nullptr;
 }
 
