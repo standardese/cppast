@@ -10,6 +10,11 @@
 
 using namespace cppast;
 
+cpp_entity_index::duplicate_definition_error::duplicate_definition_error()
+: std::logic_error("duplicate registration of entity definition")
+{
+}
+
 void cpp_entity_index::register_definition(cpp_entity_id                           id,
                                            type_safe::object_ref<const cpp_entity> entity) const
 {
@@ -21,8 +26,8 @@ void cpp_entity_index::register_definition(cpp_entity_id                        
     {
         // already in map, override declaration
         auto& value = result.first->second;
-        DEBUG_ASSERT(!value.is_definition, detail::precondition_error_handler{},
-                     "duplicate entity registration");
+        if (value.is_definition)
+            throw duplicate_definition_error();
         value.is_definition = true;
         value.entity        = entity;
     }

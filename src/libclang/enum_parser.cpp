@@ -96,6 +96,11 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_enum(const detail::parse_context& 
         {
             context.logger->log("libclang parser", ex.get_diagnostic());
         }
+        catch (std::logic_error& ex)
+        {
+            context.logger->log("libclang parser",
+                                diagnostic{ex.what(), make_location(child), severity::error});
+        }
     });
     if (clang_isCursorDefinition(cur))
         return builder.finish(*context.idx, get_entity_id(cur), std::move(semantic_parent));

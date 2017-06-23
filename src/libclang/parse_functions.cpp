@@ -233,6 +233,12 @@ catch (parse_error& ex)
     context.logger->log("libclang parser", ex.get_diagnostic());
     return nullptr;
 }
+catch (std::logic_error& ex)
+{
+    context.logger->log("libclang parser",
+                        diagnostic{ex.what(), detail::make_location(cur), severity::error});
+    return nullptr;
+}
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_static_assert(const detail::parse_context& context,
                                                             const CXCursor&              cur)
