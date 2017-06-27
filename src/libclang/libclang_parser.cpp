@@ -103,6 +103,35 @@ namespace
     };
 
     using cxcompile_commands = detail::raii_wrapper<CXCompileCommands, cxcompile_commands_deleter>;
+
+    std::string get_full_path(const detail::cxstring& dir, const std::string& file)
+    {
+        if (file.front() == '/' || file.front() == '\\')
+            // absolute file
+            return file;
+        else if (dir[dir.length() - 1] != '/' && dir[dir.length() - 1] != '\\')
+            // relative needing separator
+            return dir.std_str() + '/' + file;
+        else
+            // relative w/o separator
+            return dir.std_str() + file;
+    }
+}
+
+void detail::for_each_file(const libclang_compilation_database& database, void* user_data,
+                           void (*callback)(void*, std::string))
+{
+    cxcompile_commands commands(
+        clang_CompilationDatabase_getAllCompileCommands(database.database_));
+    auto no = clang_CompileCommands_getSize(commands.get());
+    for (auto i = 0u; i != no; ++i)
+    {
+        auto cmd = clang_CompileCommands_getCommand(commands.get(), i);
+
+        auto dir = cxstring(clang_CompileCommand_getDirectory(cmd));
+        callback(user_data,
+                 get_full_path(dir, cxstring(clang_CompileCommand_getFilename(cmd)).std_str()));
+    }
 }
 
 namespace
@@ -182,29 +211,16 @@ libclang_compile_config::libclang_compile_config(const libclang_compilation_data
         auto dir = detail::cxstring(clang_CompileCommand_getDirectory(cmd));
         parse_flags(cmd, [&](std::string flag, std::string args) {
             if (flag == "-I")
-            {
-                if (args.front() == '/' || args.front() == '\\')
-                {
-                    add_flag(std::move(flag) + std::move(args));
-                }
-                else
-                {
-                    // path relative to the directory
-                    if (dir[dir.length() - 1] != '/' && dir[dir.length() - 1] != '\\')
-                        add_flag(std::move(flag) + dir.std_str() + '/' + std::move(args));
-                    else
-                        add_flag(std::move(flag) + dir.std_str() + std::move(args));
-                }
-            }
+                add_flag(std::move(flag) + get_full_path(dir, args));
             else if (flag == "-D" || flag == "-U")
                 // preprocessor options
-                this->add_flag(std::move(flag) + std::move(args));
+                add_flag(std::move(flag) + std::move(args));
             else if (flag == "-std")
                 // standard
-                this->add_flag(std::move(flag) + "=" + std::move(args));
+                add_flag(std::move(flag) + "=" + std::move(args));
             else if (flag == "-f" && (args == "ms-compatibility" || args == "ms-extensions"))
                 // other options
-                this->add_flag(std::move(flag) + std::move(args));
+                add_flag(std::move(flag) + std::move(args));
         });
     }
 }

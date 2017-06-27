@@ -12,6 +12,7 @@
 namespace cppast
 {
     class libclang_compile_config;
+    class libclang_compilation_database;
 
     namespace detail
     {
@@ -23,6 +24,9 @@ namespace cppast
 
             static const std::vector<std::string>& flags(const libclang_compile_config& config);
         };
+
+        void for_each_file(const libclang_compilation_database& database, void* user_data,
+                           void (*callback)(void*, std::string));
     } // namespace detail
 
     /// The exception thrown when a fatal parse error occurs.
@@ -77,6 +81,8 @@ namespace cppast
         database database_;
 
         friend libclang_compile_config;
+        friend void detail::for_each_file(const libclang_compilation_database& database,
+                                          void* user_data, void (*callback)(void*, std::string));
     };
 
     /// Compilation config for the [cppast::libclang_parser]().
@@ -168,7 +174,7 @@ namespace cppast
     ///
     /// \throws [cppast::libclang_error]() if no configuration for a given file could be found in the database.
     ///
-    /// \requires `FileParser` must use [cppast::libclang_parser](),
+    /// \requires `FileParser` must use the libclang parser.
     /// i.e. `FileParser::parser` must be an alias of [cppast::libclang_parser]().
     template <class FileParser, class Range>
     void parse_files(FileParser& parser, Range&& file_names,
@@ -181,6 +187,32 @@ namespace cppast
             if (!config)
                 throw libclang_error("unable to find configuration for file '" + file + "'");
             return config.value();
+        });
+    }
+
+    /// Parses the files specified in a compilation database using a [cppast::libclang_parser]().
+    ///
+    /// \effects For each file specified in a compilation database,
+    /// uses the `FileParser` to parse the file with the configuration specified in the database.
+    ///
+    /// \requires `FileParser` must have the same requirements as for [cppast::parse_files](standardese://parse_files_basic/).
+    /// It must also use the libclang parser,
+    /// i.e. `FileParser::parser` must be an alias of [cppast::libclang_parser]().
+    template <class FileParser>
+    void parse_database(FileParser& parser, const libclang_compilation_database& database)
+    {
+        static_assert(std::is_same<typename FileParser::parser, libclang_parser>::value,
+                      "must use the libclang parser");
+        struct data_t
+        {
+            FileParser&                          parser;
+            const libclang_compilation_database& database;
+        } data{parser, database};
+        detail::for_each_file(database, &data, [](void* ptr, std::string file) {
+            auto& data = *static_cast<data_t*>(ptr);
+
+            libclang_compile_config config(data.database, file);
+            data.parser.parse(std::move(file), std::move(config));
         });
     }
 } // namespace cppast
