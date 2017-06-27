@@ -180,7 +180,7 @@ std::unique_ptr<cppast::cpp_file> parse_file(const cppast::libclang_compile_conf
     cppast::libclang_parser parser(type_safe::ref(logger));
     // parse the file
     auto file = parser.parse(idx, filename, config);
-    if (fatal_error && logger.error_logged())
+    if (fatal_error && parser.error())
         return nullptr;
     return file;
 }

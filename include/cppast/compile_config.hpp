@@ -104,6 +104,9 @@ namespace cppast
         {
         }
 
+        compile_config(const compile_config&) = default;
+        compile_config& operator=(const compile_config&) = default;
+
         ~compile_config() noexcept = default;
 
         void add_flag(std::string flag)

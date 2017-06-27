@@ -7,6 +7,8 @@
 #include <cstring>
 #include <vector>
 
+#include <clang-c/CXCompilationDatabase.h>
+
 #include "libclang_visitor.hpp"
 #include "raii_wrapper.hpp"
 #include "parse_error.hpp"
@@ -31,6 +33,31 @@ const std::vector<std::string>& detail::libclang_compile_config_access::flags(
     const libclang_compile_config& config)
 {
     return config.get_flags();
+}
+
+libclang_compilation_database::libclang_compilation_database(const std::string& build_directory)
+{
+    static_assert(std::is_same<database, CXCompilationDatabase>::value, "forgot to update type");
+
+    auto error = CXCompilationDatabase_NoError;
+    database_  = clang_CompilationDatabase_fromDirectory(build_directory.c_str(), &error);
+    if (error != CXCompilationDatabase_NoError)
+        throw libclang_error("unable to load compilation database");
+}
+
+libclang_compilation_database::~libclang_compilation_database()
+{
+    if (database_)
+        clang_CompilationDatabase_dispose(database_);
+}
+
+bool libclang_compilation_database::has_config(const char* file_name) const
+{
+    auto cxcommands = clang_CompilationDatabase_getCompileCommands(database_, file_name);
+    if (!cxcommands)
+        return false;
+    clang_CompileCommands_dispose(cxcommands);
+    return true;
 }
 
 namespace
@@ -63,6 +90,144 @@ libclang_compile_config::libclang_compile_config() : compile_config({})
     define_macro("__cppast__", "libclang");
     define_macro("__cppast_version_major__", CPPAST_VERSION_MAJOR);
     define_macro("__cppast_version_minor__", CPPAST_VERSION_MINOR);
+}
+
+namespace
+{
+    struct cxcompile_commands_deleter
+    {
+        void operator()(CXCompileCommands cmds)
+        {
+            clang_CompileCommands_dispose(cmds);
+        }
+    };
+
+    using cxcompile_commands = detail::raii_wrapper<CXCompileCommands, cxcompile_commands_deleter>;
+
+    bool has_drive_prefix(const std::string& file)
+    {
+        return file.size() > 2 && file[1] == ':';
+    }
+
+    std::string get_full_path(const detail::cxstring& dir, const std::string& file)
+    {
+        if (has_drive_prefix(file) || file.front() == '/' || file.front() == '\\')
+            // absolute file
+            return file;
+        else if (dir[dir.length() - 1] != '/' && dir[dir.length() - 1] != '\\')
+            // relative needing separator
+            return dir.std_str() + '/' + file;
+        else
+            // relative w/o separator
+            return dir.std_str() + file;
+    }
+}
+
+void detail::for_each_file(const libclang_compilation_database& database, void* user_data,
+                           void (*callback)(void*, std::string))
+{
+    cxcompile_commands commands(
+        clang_CompilationDatabase_getAllCompileCommands(database.database_));
+    auto no = clang_CompileCommands_getSize(commands.get());
+    for (auto i = 0u; i != no; ++i)
+    {
+        auto cmd = clang_CompileCommands_getCommand(commands.get(), i);
+
+        auto dir = cxstring(clang_CompileCommand_getDirectory(cmd));
+        callback(user_data,
+                 get_full_path(dir, cxstring(clang_CompileCommand_getFilename(cmd)).std_str()));
+    }
+}
+
+namespace
+{
+    bool is_flag(const detail::cxstring& str)
+    {
+        return str.length() > 1u && str[0] == '-';
+    }
+
+    const char* find_flag_arg_sep(const std::string& last_flag)
+    {
+        if (last_flag[1] == 'D')
+            // no  separator, equal is part of the arg
+            return nullptr;
+        return std::strchr(last_flag.c_str(), '=');
+    }
+
+    template <typename Func>
+    void parse_flags(CXCompileCommand cmd, Func callback)
+    {
+        auto        no_args = clang_CompileCommand_getNumArgs(cmd);
+        std::string last_flag;
+        for (auto i = 1u /* 0 is compiler executable */; i != no_args; ++i)
+        {
+            detail::cxstring str(clang_CompileCommand_getArg(cmd, i));
+            if (is_flag(str))
+            {
+                if (!last_flag.empty())
+                {
+                    // process last flag
+                    std::string args;
+                    if (auto ptr = find_flag_arg_sep(last_flag))
+                    {
+                        auto pos = std::size_t(ptr - last_flag.c_str());
+                        ++ptr;
+                        while (*ptr)
+                            args += *ptr++;
+                        last_flag.erase(pos);
+                    }
+                    else if (last_flag.size() > 2u)
+                    {
+                        // assume two character flag
+                        args = last_flag.substr(2u);
+                        last_flag.erase(2u);
+                    }
+
+                    callback(std::move(last_flag), std::move(args));
+                }
+
+                last_flag = str.std_str();
+            }
+            else if (!last_flag.empty())
+            {
+                // we have flags + args
+                callback(std::move(last_flag), str.std_str());
+                last_flag.clear();
+            }
+            // else skip argument
+        }
+    }
+}
+
+libclang_compile_config::libclang_compile_config(const libclang_compilation_database& database,
+                                                 const std::string&                   file)
+: libclang_compile_config()
+{
+    auto cxcommands =
+        clang_CompilationDatabase_getCompileCommands(database.database_, file.c_str());
+    if (cxcommands == nullptr)
+        throw libclang_error(detail::format("no compile commands specified for file '", file, "'"));
+    cxcompile_commands commands(cxcommands);
+
+    auto size = clang_CompileCommands_getSize(commands.get());
+    for (auto i = 0u; i != size; ++i)
+    {
+        auto cmd = clang_CompileCommands_getCommand(commands.get(), i);
+        auto dir = detail::cxstring(clang_CompileCommand_getDirectory(cmd));
+        parse_flags(cmd, [&](std::string flag, std::string args) {
+            if (flag == "-I")
+                add_flag(std::move(flag) + get_full_path(dir, args));
+            else if (flag == "-D" || flag == "-U")
+                // preprocessor options
+                add_flag(std::move(flag) + std::move(args));
+            else if (flag == "-std")
+                // standard
+                add_flag(std::move(flag) + "=" + std::move(args));
+            else if (flag == "-f" && (args == "ms-compatibility" || args == "ms-extensions"))
+                // other options
+                add_flag(std::move(flag) + std::move(args));
+        });
+    }
 }
 
 void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags flags)
@@ -123,6 +288,30 @@ void libclang_compile_config::do_add_macro_definition(std::string name, std::str
 void libclang_compile_config::do_remove_macro_definition(std::string name)
 {
     add_flag("-U" + std::move(name));
+}
+
+type_safe::optional<libclang_compile_config> cppast::find_config_for(
+    const libclang_compilation_database& database, std::string file_name)
+{
+    if (database.has_config(file_name))
+        return libclang_compile_config(database, std::move(file_name));
+
+    auto dot = file_name.rfind('.');
+    if (dot != std::string::npos)
+        file_name.erase(dot);
+
+    if (database.has_config(file_name))
+        return libclang_compile_config(database, std::move(file_name));
+    static const char* extensions[] = {".h",   ".hpp", ".cpp", ".h++", ".c++", ".hxx",
+                                       ".cxx", ".hh",  ".cc",  ".H",   ".C"};
+    for (auto ext : extensions)
+    {
+        auto name = file_name + ext;
+        if (database.has_config(name))
+            return libclang_compile_config(database, std::move(name));
+    }
+
+    return type_safe::nullopt;
 }
 
 struct libclang_parser::impl
@@ -264,9 +453,13 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
     auto              macro_iter   = preprocessed.macros.begin();
     auto              include_iter = preprocessed.includes.begin();
 
-    // convert entity hierachies
-    detail::parse_context context{tu.get(), file, type_safe::ref(logger()), type_safe::ref(idx),
-                                  detail::comment_context(preprocessed.comments)};
+    // convert entity hierarchies
+    detail::parse_context context{tu.get(),
+                                  file,
+                                  type_safe::ref(logger()),
+                                  type_safe::ref(idx),
+                                  detail::comment_context(preprocessed.comments),
+                                  false};
     detail::visit_tu(tu, path.c_str(), [&](const CXCursor& cur) {
         if (clang_getCursorKind(cur) == CXCursor_InclusionDirective)
         {
@@ -304,10 +497,14 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
             builder.add_unmatched_comment(std::move(c.comment));
     }
 
+    if (context.error)
+        set_error();
+
     return builder.finish(idx);
 }
 catch (detail::parse_error& ex)
 {
     logger().log("libclang parser", ex.get_diagnostic());
-    return cpp_file::builder(path).finish(idx);
+    set_error();
+    return nullptr;
 }

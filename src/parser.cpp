@@ -13,11 +13,21 @@ using namespace cppast;
 
 bool diagnostic_logger::log(const char* source, const diagnostic& d) const
 {
-    if (d.severity == severity::error || d.severity == severity::critical)
-        error_ = true;
-    else if (!verbose_ && d.severity == severity::debug)
+    if (!verbose_ && d.severity == severity::debug)
         return false;
     return do_log(source, d);
+}
+
+type_safe::object_ref<const diagnostic_logger> cppast::default_logger() noexcept
+{
+    static const stderr_diagnostic_logger logger(false);
+    return type_safe::ref(logger);
+}
+
+type_safe::object_ref<const diagnostic_logger> cppast::default_verbose_logger() noexcept
+{
+    static const stderr_diagnostic_logger logger(true);
+    return type_safe::ref(logger);
 }
 
 bool stderr_diagnostic_logger::do_log(const char* source, const diagnostic& d) const

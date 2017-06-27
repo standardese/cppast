@@ -230,11 +230,13 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
 }
 catch (parse_error& ex)
 {
+    context.error = true;
     context.logger->log("libclang parser", ex.get_diagnostic());
     return nullptr;
 }
 catch (std::logic_error& ex)
 {
+    context.error = true;
     context.logger->log("libclang parser",
                         diagnostic{ex.what(), detail::make_location(cur), severity::error});
     return nullptr;

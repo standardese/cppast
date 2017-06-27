@@ -14,6 +14,8 @@
 
 namespace cppast
 {
+    class cpp_file;
+
     namespace detail
     {
         template <typename T>
@@ -122,22 +124,20 @@ namespace cppast
             intrusive_list() = default;
 
             //=== modifiers ===//
-            template <typename U>
+            template <
+                typename Dummy = T,
+                typename = typename std::enable_if<std::is_same<Dummy, cpp_file>::value>::type>
+            void push_back(std::unique_ptr<T> obj) noexcept
+            {
+                push_back_impl(std::move(obj));
+            }
+
+            template <
+                typename U,
+                typename = typename std::enable_if<!std::is_same<T, cpp_file>::value, U>::type>
             void push_back(const U& parent, std::unique_ptr<T> obj) noexcept
             {
-                DEBUG_ASSERT(obj != nullptr, detail::assert_handler{});
-
-                if (last_)
-                {
-                    auto ptr = intrusive_list_access<T>::set_next(last_.value(), std::move(obj));
-                    last_    = type_safe::ref(*ptr);
-                }
-                else
-                {
-                    first_ = std::move(obj);
-                    last_  = type_safe::opt_ref(first_.get());
-                }
-
+                push_back_impl(std::move(obj));
                 intrusive_list_access<T>::on_insert(last_.value(), parent);
             }
 
@@ -192,6 +192,22 @@ namespace cppast
             }
 
         private:
+            void push_back_impl(std::unique_ptr<T> obj)
+            {
+                DEBUG_ASSERT(obj != nullptr, detail::assert_handler{});
+
+                if (last_)
+                {
+                    auto ptr = intrusive_list_access<T>::set_next(last_.value(), std::move(obj));
+                    last_    = type_safe::ref(*ptr);
+                }
+                else
+                {
+                    first_ = std::move(obj);
+                    last_  = type_safe::opt_ref(first_.get());
+                }
+            }
+
             std::unique_ptr<T>         first_;
             type_safe::optional_ref<T> last_;
         };

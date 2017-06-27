@@ -9,25 +9,27 @@ if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/catch.hpp)
 endif()
 
 set(tests
-    code_generator.cpp
-    cpp_alias_template.cpp
-    cpp_class.cpp
-    cpp_class_template.cpp
-    cpp_enum.cpp
-    cpp_friend.cpp
-    cpp_function.cpp
-    cpp_function_template.cpp
-    cpp_language_linkage.cpp
-    cpp_member_function.cpp
-    cpp_member_variable.cpp
-    cpp_namespace.cpp
-    cpp_preprocessor.cpp
-    cpp_static_assert.cpp
-    cpp_template_parameter.cpp
-    cpp_type_alias.cpp
-    cpp_variable.cpp
-    visitor.cpp
-    integration.cpp)
+        code_generator.cpp
+        cpp_alias_template.cpp
+        cpp_class.cpp
+        cpp_class_template.cpp
+        cpp_enum.cpp
+        cpp_friend.cpp
+        cpp_function.cpp
+        cpp_function_template.cpp
+        cpp_language_linkage.cpp
+        cpp_member_function.cpp
+        cpp_member_variable.cpp
+        cpp_namespace.cpp
+        cpp_preprocessor.cpp
+        cpp_static_assert.cpp
+        cpp_template_parameter.cpp
+        cpp_type_alias.cpp
+        cpp_variable.cpp
+        integration.cpp
+        libclang_parser.cpp
+        parser.cpp
+        visitor.cpp)
 
 add_executable(cppast_test test.cpp test_parser.hpp ${tests})
 target_include_directories(cppast_test PUBLIC ${CMAKE_CURRENT_BINARY_DIR})

@@ -50,11 +50,11 @@ namespace cppast
 
             /// \effects Registers the file in the [cppast::cpp_entity_index]().
             /// It will use the file name as identifier.
-            /// \returns The finished file.
+            /// \returns The finished file, or `nullptr`, if that file was already registered.
             std::unique_ptr<cpp_file> finish(const cpp_entity_index& idx) noexcept
             {
-                idx.register_definition(cpp_entity_id(file_->name()), type_safe::ref(*file_));
-                return std::move(file_);
+                auto res = idx.register_file(cpp_entity_id(file_->name()), type_safe::ref(*file_));
+                return res ? std::move(file_) : nullptr;
             }
 
         private:
