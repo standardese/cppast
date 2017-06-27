@@ -21,7 +21,8 @@ namespace cppast
     class diagnostic_logger
     {
     public:
-        diagnostic_logger() noexcept : verbose_(false)
+        /// \effects Creates it either as verbose or not.
+        explicit diagnostic_logger(bool is_verbose = false) noexcept : verbose_(is_verbose)
         {
         }
 
@@ -52,11 +53,20 @@ namespace cppast
         bool verbose_;
     };
 
+    /// \returns The default logger object.
+    type_safe::object_ref<const diagnostic_logger> default_logger() noexcept;
+
+    /// \returns The default verbose logger object.
+    type_safe::object_ref<const diagnostic_logger> default_verbose_logger() noexcept;
+
     /// A [cppast::diagnostic_logger]() that logs to `stderr`.
     ///
     /// It prints all diagnostics in an implementation-defined format.
     class stderr_diagnostic_logger final : public diagnostic_logger
     {
+    public:
+        using diagnostic_logger::diagnostic_logger;
+
     private:
         bool do_log(const char* source, const diagnostic& d) const override;
     };

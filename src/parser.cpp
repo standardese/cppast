@@ -18,6 +18,18 @@ bool diagnostic_logger::log(const char* source, const diagnostic& d) const
     return do_log(source, d);
 }
 
+type_safe::object_ref<const diagnostic_logger> cppast::default_logger() noexcept
+{
+    static const stderr_diagnostic_logger logger(false);
+    return type_safe::ref(logger);
+}
+
+type_safe::object_ref<const diagnostic_logger> cppast::default_verbose_logger() noexcept
+{
+    static const stderr_diagnostic_logger logger(true);
+    return type_safe::ref(logger);
+}
+
 bool stderr_diagnostic_logger::do_log(const char* source, const diagnostic& d) const
 {
     auto loc = d.location.to_string();
