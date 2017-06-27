@@ -32,7 +32,34 @@ void require_flags(const libclang_compile_config& config, const char* flags)
 
 TEST_CASE("libclang_compile_config")
 {
-    // only test database parser
+// only test database parser
+#ifdef _WIN32
+    auto json = R"([
+{
+    "directory": "C:/foo",
+    "command": "/usr/bin/clang++ -Irelative -IC:/absolute -DA=FOO -DB(X)=X -c -o a.o a.cpp",
+    "file": "a.cpp"
+},
+{
+    "directory": "C:/bar/",
+    "command": "/usr/bin/clang++ -Irelative -DA=FOO -c -o b.o b.cpp",
+    "file": "C:/b.cpp",
+},
+{
+    "directory": "C:/bar/",
+    "command": "/usr/bin/clang++ -IC:/absolute -DB(X)=X -c -o b.o b.cpp",
+    "file": "C:/b.cpp",
+},
+{
+    "directory": "",
+    "command": "/usr/bin/clang++ -std=c++14 -fms-extensions -fms-compatibility -c -o c.o c.cpp",
+    "file": "C:/c.cpp",
+}
+])";
+
+#define CPPAST_DETAIL_DRIVE "C:"
+
+#else
     auto json = R"([
 {
     "directory": "/foo",
@@ -42,7 +69,6 @@ TEST_CASE("libclang_compile_config")
 {
     "directory": "/bar/",
     "command": "/usr/bin/clang++ -Irelative -DA=FOO -c -o b.o b.cpp",
-    "command": "/usr/bin/clang++ -I/absolute -DB(X)=X -c -o b.o b.cpp",
     "file": "/b.cpp",
 },
 {
@@ -57,14 +83,20 @@ TEST_CASE("libclang_compile_config")
 }
 ])";
 
+#define CPPAST_DETAIL_DRIVE
+
+#endif
+
     auto database = get_database(json);
 
-    libclang_compile_config a(database, "/foo/a.cpp");
-    require_flags(a, "-I/foo/relative -I/absolute -DA=FOO -DB(X)=X");
+    libclang_compile_config a(database, CPPAST_DETAIL_DRIVE "/foo/a.cpp");
+    require_flags(a, "-I" CPPAST_DETAIL_DRIVE "/foo/relative -I" CPPAST_DETAIL_DRIVE
+                     "/absolute -DA=FOO -DB(X)=X");
 
-    libclang_compile_config b(database, "/b.cpp");
-    require_flags(b, "-I/bar/relative -DA=FOO -I/absolute -DB(X)=X");
+    libclang_compile_config b(database, CPPAST_DETAIL_DRIVE "/b.cpp");
+    require_flags(b, "-I" CPPAST_DETAIL_DRIVE "/bar/relative -DA=FOO -I" CPPAST_DETAIL_DRIVE
+                     "/absolute -DB(X)=X");
 
-    libclang_compile_config c(database, "/c.cpp");
+    libclang_compile_config c(database, CPPAST_DETAIL_DRIVE "/c.cpp");
     require_flags(c, "-std=c++14 -fms-extensions -fms-compatibility");
 }

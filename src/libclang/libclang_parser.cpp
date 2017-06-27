@@ -104,9 +104,14 @@ namespace
 
     using cxcompile_commands = detail::raii_wrapper<CXCompileCommands, cxcompile_commands_deleter>;
 
+    bool has_drive_prefix(const std::string& file)
+    {
+        return file.size() > 2 && file[1] == ':';
+    }
+
     std::string get_full_path(const detail::cxstring& dir, const std::string& file)
     {
-        if (file.front() == '/' || file.front() == '\\')
+        if (has_drive_prefix(file) || file.front() == '/' || file.front() == '\\')
             // absolute file
             return file;
         else if (dir[dir.length() - 1] != '/' && dir[dir.length() - 1] != '\\')
