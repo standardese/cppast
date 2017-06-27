@@ -9,6 +9,7 @@
 
 #include <cppast/compile_config.hpp>
 #include <cppast/cpp_file.hpp>
+#include <cppast/cpp_preprocessor.hpp>
 
 namespace cppast
 {
@@ -162,11 +163,15 @@ namespace cppast
         {
         }
 
-        void parse(std::string path, const config& c)
+        /// \effects Parses the given file using the given configuration.
+        /// \returns The parsed file or an empty optional, if a fatal error occurred.
+        type_safe::optional_ref<const cpp_file> parse(std::string path, const config& c)
         {
             auto file = parser_.parse(*idx_, std::move(path), c);
+            auto ptr  = file.get();
             if (file)
                 files_.push_back(std::move(file));
+            return type_safe::opt_ref(ptr);
         }
 
         /// \returns The result of [cppast::parser::error]().
@@ -236,6 +241,20 @@ namespace cppast
     {
         parse_files(parser, std::forward<Range>(file_names),
                     [&](const std::string&) { return config; });
+    }
+
+    template <class FileParser>
+    void resolve_includes(FileParser& parser, const cpp_file& file,
+                          typename FileParser::config config)
+    {
+        for (auto& entity : file)
+        {
+            if (entity.kind() == cpp_include_directive::kind())
+            {
+                auto& include = static_cast<const cpp_include_directive&>(entity);
+                parser.parse(include.full_path(), config);
+            }
+        }
     }
 } // namespace cppast
 

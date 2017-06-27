@@ -8,18 +8,6 @@
 
 using namespace cppast;
 
-void parse_included_files(const cpp_entity_index& idx, const cpp_file& file)
-{
-    for (auto& e : file)
-    {
-        if (e.kind() == cpp_entity_kind::include_directive_t)
-        {
-            auto path = static_cast<const cpp_include_directive&>(e).full_path();
-            parse_file(idx, path.c_str());
-        }
-    }
-}
-
 TEST_CASE("stdlib", "[!hide][integration]")
 {
     auto code = R"(
@@ -111,8 +99,17 @@ TEST_CASE("stdlib", "[!hide][integration]")
 #include <future>
 #include <condition_variable>
 )";
+    write_file("stdlib.cpp", code);
 
-    cpp_entity_index idx;
-    auto             file = parse(idx, "stdlib.cpp", code);
-    parse_included_files(idx, *file);
+    cpp_entity_index                    idx;
+    simple_file_parser<libclang_parser> parser(type_safe::ref(idx), default_logger());
+
+    libclang_compile_config config;
+    config.set_flags(cpp_standard::cpp_latest);
+    auto file = parser.parse("stdlib.cpp", config);
+    REQUIRE(!parser.error());
+    REQUIRE(file);
+
+    resolve_includes(parser, file.value(), config);
+    REQUIRE(!parser.error());
 }
