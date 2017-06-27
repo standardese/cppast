@@ -46,10 +46,12 @@ namespace
                 }
                 catch (detail::parse_error& ex)
                 {
+                    context.error = true;
                     context.logger->log("libclang parser", ex.get_diagnostic());
                 }
                 catch (std::logic_error& ex)
                 {
+                    context.error = true;
                     context.logger->log("libclang parser",
                                         diagnostic{ex.what(), detail::make_location(child),
                                                    severity::error});

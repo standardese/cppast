@@ -21,7 +21,7 @@ namespace cppast
     class diagnostic_logger
     {
     public:
-        diagnostic_logger() noexcept : error_(false)
+        diagnostic_logger() noexcept : verbose_(false)
         {
         }
 
@@ -33,15 +33,6 @@ namespace cppast
         /// \returns Whether or not the diagnostic was logged.
         /// \notes `source` points to a string literal that gives additional context to what generates the message.
         bool log(const char* source, const diagnostic& d) const;
-
-        /// \returns Whether or not a diagnostic of [severity::error]() was logged.
-        /// \notes If an error happens, the parser will still continue to build the AST,
-        /// unless the error is critical
-        /// so the result will be incomplete if this function returns `true`.
-        bool error_logged() const noexcept
-        {
-            return error_;
-        }
 
         /// \effects Sets whether or not the logger prints debugging diagnostics.
         void set_verbose(bool value) noexcept
@@ -58,8 +49,7 @@ namespace cppast
     private:
         virtual bool do_log(const char* source, const diagnostic& d) const = 0;
 
-        mutable std::atomic<bool> error_;
-        bool                      verbose_ = false;
+        bool verbose_;
     };
 
     /// A [cppast::diagnostic_logger]() that logs to `stderr`.
@@ -86,15 +76,30 @@ namespace cppast
         /// \returns The [cppast::cpp_file]() object describing it.
         /// It can be `nullptr`, if there was an error or the specified file already registered in the index.
         /// \requires The dynamic type of `config` must match the required config type.
+        /// \notes This function is thread safe.
         std::unique_ptr<cpp_file> parse(const cpp_entity_index& idx, std::string path,
                                         const compile_config& config) const
         {
             return do_parse(idx, std::move(path), config);
         }
 
+        /// \returns Whether or not an error occurred during parsing.
+        /// If that happens, the AST might be incomplete.
+        bool error() const noexcept
+        {
+            return error_;
+        }
+
+        /// \effects Resets the error state.
+        void reset_error() noexcept
+        {
+            error_ = false;
+        }
+
     protected:
         /// \effects Creates it giving it a reference to the logger it uses.
-        explicit parser(type_safe::object_ref<const diagnostic_logger> logger) : logger_(logger)
+        explicit parser(type_safe::object_ref<const diagnostic_logger> logger)
+        : logger_(logger), error_(false)
         {
         }
 
@@ -104,13 +109,22 @@ namespace cppast
             return *logger_;
         }
 
+        /// \effects Sets the error state.
+        /// This must be called when an error or critical diagnostic is logged and the AST is incomplete.
+        void set_error() const noexcept
+        {
+            error_ = true;
+        }
+
     private:
         /// \effects Parses the given file.
         /// \returns The [cppast::cpp_file]() object describing it.
+        /// \requires The function must be thread safe.
         virtual std::unique_ptr<cpp_file> do_parse(const cpp_entity_index& idx, std::string path,
                                                    const compile_config& config) const = 0;
 
         type_safe::object_ref<const diagnostic_logger> logger_;
+        mutable std::atomic<bool>                      error_;
     };
 } // namespace cppast
 

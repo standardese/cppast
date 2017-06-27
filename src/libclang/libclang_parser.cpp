@@ -400,8 +400,12 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
     auto              include_iter = preprocessed.includes.begin();
 
     // convert entity hierarchies
-    detail::parse_context context{tu.get(), file, type_safe::ref(logger()), type_safe::ref(idx),
-                                  detail::comment_context(preprocessed.comments)};
+    detail::parse_context context{tu.get(),
+                                  file,
+                                  type_safe::ref(logger()),
+                                  type_safe::ref(idx),
+                                  detail::comment_context(preprocessed.comments),
+                                  false};
     detail::visit_tu(tu, path.c_str(), [&](const CXCursor& cur) {
         if (clang_getCursorKind(cur) == CXCursor_InclusionDirective)
         {
@@ -439,10 +443,14 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
             builder.add_unmatched_comment(std::move(c.comment));
     }
 
+    if (context.error)
+        set_error();
+
     return builder.finish(idx);
 }
 catch (detail::parse_error& ex)
 {
     logger().log("libclang parser", ex.get_diagnostic());
+    set_error();
     return nullptr;
 }

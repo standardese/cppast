@@ -36,7 +36,7 @@ inline std::unique_ptr<cppast::cpp_file> parse_file(const cppast::cpp_entity_ind
 
     std::unique_ptr<cppast::cpp_file> result;
     REQUIRE_NOTHROW(result = p.parse(idx, name, config));
-    REQUIRE(!logger.error_logged());
+    REQUIRE(!p.error());
     return result;
 }
 

@@ -94,10 +94,12 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_enum(const detail::parse_context& 
         }
         catch (parse_error& ex)
         {
+            context.error = true;
             context.logger->log("libclang parser", ex.get_diagnostic());
         }
         catch (std::logic_error& ex)
         {
+            context.error = true;
             context.logger->log("libclang parser",
                                 diagnostic{ex.what(), make_location(child), severity::error});
         }
