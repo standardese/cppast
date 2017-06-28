@@ -42,6 +42,7 @@ set(header
     ../include/cppast/cpp_variable_base.hpp
     ../include/cppast/cpp_variable_template.hpp
     ../include/cppast/diagnostic.hpp
+    ../include/cppast/diagnostic_logger.hpp
     ../include/cppast/libclang_parser.hpp
     ../include/cppast/parser.hpp
     ../include/cppast/visitor.hpp)
@@ -71,7 +72,7 @@ set(source
         cpp_type_alias.cpp
         cpp_variable.cpp
         cpp_variable_template.cpp
-        parser.cpp
+        diagnostic_logger.cpp
         visitor.cpp)
 set(libclang_source
         libclang/class_parser.cpp

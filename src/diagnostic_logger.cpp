@@ -2,12 +2,10 @@
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
-#include <cppast/parser.hpp>
+#include <cppast/diagnostic_logger.hpp>
 
 #include <cstdio>
 #include <mutex>
-
-#include <cppast/diagnostic.hpp>
 
 using namespace cppast;
 
