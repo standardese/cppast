@@ -73,7 +73,13 @@ set(source
         cpp_variable.cpp
         cpp_variable_template.cpp
         diagnostic_logger.cpp
-        visitor.cpp)
+        visitor.cpp
+        parser.cpp
+        detail/parser/lexer.cpp
+        detail/parser/buffered_lexer.cpp
+        detail/parser/ast.cpp
+        detail/parser/parser.cpp)
+
 set(libclang_source
         libclang/class_parser.cpp
         libclang/debug_helper.cpp
@@ -112,3 +118,11 @@ if(CPPAST_ENABLE_PRECONDITION_CHECKS)
     target_compile_definitions(cppast PUBLIC CPPAST_ENABLE_PRECONDITION_CHECKS)
 endif()
 set_target_properties(cppast PROPERTIES CXX_STANDARD 11)
+
+add_executable(lexer_example detail/parser/lexer_example.cpp)
+target_link_libraries(lexer_example PRIVATE cppast)
+set_target_properties(lexer_example PROPERTIES CXX_STANDARD 11)
+
+add_executable(parser_example detail/parser/parser_example.cpp)
+target_link_libraries(parser_example PRIVATE cppast)
+set_target_properties(parser_example PROPERTIES CXX_STANDARD 11)
