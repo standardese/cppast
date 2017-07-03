@@ -149,6 +149,33 @@ namespace cppast
         type_safe::object_ref<const cpp_entity_index> idx_;
     };
 
+    namespace detail
+    {
+        struct std_begin
+        {
+        };
+        struct adl_begin : std_begin
+        {
+        };
+        struct member_begin : adl_begin
+        {
+        };
+
+        template <class Range>
+        auto get_value_type_impl(member_begin, Range&& r)
+            -> decltype(std::forward<Range>(r).begin());
+
+        template <class Range>
+        auto get_value_type_impl(adl_begin, Range&& r) -> decltype(begin(std::forward<Range>(r)));
+
+        template <class Range>
+        auto get_value_type_impl(std_begin, Range&& r)
+            -> decltype(std::begin(std::forward<Range>(r)));
+
+        template <class Range>
+        using value_type = decltype(*get_value_type_impl(member_begin{}, std::declval<Range>()));
+    } // namespace detail
+
     /// Parses multiple files using a given `FileParser`.
     ///
     /// \effects Will call the `parse()` function for each path specified in the `file_names`,
@@ -166,7 +193,7 @@ namespace cppast
     template <class FileParser, class Range, class Configuration>
     auto parse_files(FileParser& parser, Range&& file_names, const Configuration& get_config) ->
         typename std::enable_if<std::is_same<typename std::decay<decltype(get_config(
-                                                 *std::forward<Range>(file_names).begin()))>::type,
+                                                 std::declval<detail::value_type<Range>>()))>::type,
                                              typename FileParser::config>::value>::type
     {
         for (auto&& file : std::forward<Range>(file_names))
