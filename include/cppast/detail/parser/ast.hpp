@@ -45,7 +45,8 @@ public:
         terminal_integer,
         terminal_string,
         identifier,
-        expression_invoke
+        expression_invoke,
+        expression_cpp_attribute
     };
 
     node_kind kind = node_kind::unespecified;
@@ -131,6 +132,18 @@ private:
     void do_visit(ast_visitor& visitor) const override final;
 };
 
+struct ast_expression_cpp_attribute : public ast_node
+{
+    ast_expression_cpp_attribute(const std::shared_ptr<ast_expression_invoke>& body);
+
+    std::shared_ptr<ast_expression_invoke> body;
+
+    static constexpr node_kind node_class_kind = node_kind::expression_cpp_attribute;
+
+private:
+    void do_visit(ast_visitor& visitor) const override final;
+};
+
 template<typename T>
 T* node_cast(ast_node* node)
 {
@@ -164,6 +177,8 @@ void visit_node(ast_node* node, Function function)
         function(node_cast<ast_identifier>(node)); break;
     case ast_node::node_kind::expression_invoke:
         function(node_cast<ast_expression_invoke>(node)); break;
+    case ast_node::node_kind::expression_cpp_attribute:
+        function(node_cast<ast_expression_cpp_attribute>(node)); break;
     default:
         throw std::logic_error{"unespecified kind nodes cannot be visited"};
     }
@@ -183,6 +198,7 @@ public:
     virtual void on_node(const ast_terminal_string& node) {}
     virtual void on_node(const ast_identifier& node) {}
     virtual void on_node(const ast_expression_invoke& node) {}
+    virtual void on_node(const ast_expression_cpp_attribute& node) {}
 
 private:
     void on_node(const ast_node& node) override final;

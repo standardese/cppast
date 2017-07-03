@@ -79,71 +79,31 @@ std::shared_ptr<ast_expression_invoke> parse_invoke(buffered_lexer& lexer)
         return nullptr;
     }
 
-    if(lexer.read_next_token())
+    if(lexer.buffer_size() > 0)
     {
-        if(lexer.current_token().kind == token::token_kind::paren_open)
+        if(lexer.next_token(0).kind == token::token_kind::paren_open)
         {
-            node_list args;
+            auto args_result = parse_arguments(lexer);
 
-            bool error = false, finished = false;
-            std::shared_ptr<ast_node> arg = nullptr;
-
-            if(lexer.buffer_size() > 0 &&
-               lexer.next_token(0).kind == token::token_kind::paren_close)
-            {
-                // eat paren
-                lexer.read_next_token();
-
-                finished = true;
-            }
-
-            while(!finished && !error)
-            {
-                arg = parse_expression(lexer);
-
-                if(arg != nullptr)
-                {
-                    args.push_back(arg);
-
-                    // try to read a comma or a cosing paren,
-                    // else error
-                    if(!lexer.read_next_token())
-                    {
-                        error = true;
-                    }
-                    else if(!error && lexer.current_token().kind == token::token_kind::paren_close)
-                    {
-                        finished = true;
-                    }
-                    else if(!error && lexer.current_token().kind != token::token_kind::comma)
-                    {
-                        // expected ','
-                        error = true;
-                    }
-                }
-                else
-                {
-                    // expected arg expression
-                    error = true;
-                }
-            }
-
-            if(error)
-            {
-                return nullptr;
-            }
-            else
+            if(args_result.first)
             {
                 return std::make_shared<ast_expression_invoke>(
                     std::move(callee),
-                    std::move(args)
+                    std::move(args_result.second)
                 );
+            }
+            else
+            {
+                return nullptr;
             }
         }
         else
         {
-            // expected '('
-            return nullptr;
+            // no parens is interpreted as call without args
+            return std::make_shared<ast_expression_invoke>(
+                std::move(callee),
+                node_list{}
+            );
         }
     }
     else
@@ -153,27 +113,91 @@ std::shared_ptr<ast_expression_invoke> parse_invoke(buffered_lexer& lexer)
     }
 }
 
-std::shared_ptr<ast_identifier> parse_identifier(buffered_lexer& lexer)
+std::pair<bool, node_list> parse_arguments(buffered_lexer& lexer, const token::token_kind open_delim, const token::token_kind close_delim)
 {
-    std::vector<std::string> scope_names;
+    node_list args;
+    bool finished = false, error = false;
 
-    while(lexer.buffer_size() > 0 &&
-          lexer.next_token(0).kind == token::token_kind::identifier)
+    if(!lexer.read_next_token() ||
+       lexer.current_token().kind != open_delim)
     {
-        // eat the identifier
-        lexer.read_next_token();
+        // expected open delimiter
+        return std::make_pair(false, std::move(args));
+    }
 
-        scope_names.push_back(lexer.current_token().string_value());
+    while(!error && !finished)
+    {
+        auto arg = parse_expression(lexer);
 
-        if(lexer.buffer_size() > 0 &&
-           lexer.next_token(0).kind == token::token_kind::double_colon)
+        if(arg != nullptr)
         {
-            // eat the double colon
-            lexer.read_next_token();
+            args.push_back(std::move(arg));
+        }
+
+        if(lexer.buffer_size() > 0)
+        {
+            if(lexer.next_token(0).kind == close_delim)
+            {
+                finished = true;
+
+                // eat closing token
+                lexer.read_next_token();
+            }
+            else if(lexer.next_token(0).kind == token::token_kind::comma)
+            {
+                // eat comma
+                lexer.read_next_token();
+            }
+            else
+            {
+                // expected comma or closing token
+                error = true;
+            }
+        }
+        else
+        {
+            // expected comma or closing token
+            error = true;
         }
     }
 
-    if(scope_names.empty())
+    return std::make_pair(!error, std::move(args));
+}
+
+std::shared_ptr<ast_identifier> parse_identifier(buffered_lexer& lexer)
+{
+    std::vector<std::string> scope_names;
+    bool finished = false, error = false;
+
+    while(!finished && !error)
+    {
+        if(lexer.buffer_size() > 0 &&
+           lexer.next_token(0).kind == token::token_kind::identifier)
+        {
+            // eat the identifier
+            lexer.read_next_token();
+
+            scope_names.push_back(lexer.current_token().string_value());
+
+            if(lexer.buffer_size() > 0 &&
+               lexer.next_token(0).kind == token::token_kind::double_colon)
+            {
+                // eat the double colon
+                lexer.read_next_token();
+            }
+            else
+            {
+                finished = true;
+            }
+        }
+        else
+        {
+            // expected identifier
+            error = true;
+        }
+    }
+
+    if(error || scope_names.empty())
     {
         return nullptr;
     }
@@ -181,6 +205,45 @@ std::shared_ptr<ast_identifier> parse_identifier(buffered_lexer& lexer)
     {
         return std::make_shared<ast_identifier>(std::move(scope_names));
     }
+}
+
+std::shared_ptr<ast_expression_cpp_attribute> parse_cpp_attribute(buffered_lexer& lexer)
+{
+    auto expectToken = [&lexer](token::token_kind kind, std::size_t times)
+    {
+        for(std::size_t i = 0; i < times; ++i)
+        {
+            if(!lexer.read_next_token() ||
+               lexer.current_token().kind != kind)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    };
+
+    if(!expectToken(token::token_kind::double_bracket_open, 1))
+    {
+        // expected [[
+        return nullptr;
+    }
+
+    auto body = parse_invoke(lexer);
+
+    if(body == nullptr)
+    {
+        // expected body expression
+        return nullptr;
+    }
+
+    if(!expectToken(token::token_kind::double_bracket_close, 1))
+    {
+        // expected ]]
+        return nullptr;
+    }
+
+    return std::make_shared<ast_expression_cpp_attribute>(std::move(body));
 }
 
 }

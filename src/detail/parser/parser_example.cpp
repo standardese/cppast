@@ -32,6 +32,12 @@ public:
             << node.args.size() << " args>)\")\n";
     }
 
+    void on_node(const ast_expression_cpp_attribute& node) override
+    {
+        print() << "C++ attribute expression (\"" << node.body->callee->full_qualified_name() << "(<"
+            << node.body->args.size() << " args>)\")\n";
+    }
+
 private:
     std::size_t _depth = 0;
 
@@ -61,7 +67,14 @@ int main(int argc, char** argv)
         std::istringstream input{argv[1]};
         buffered_lexer lexer{input, 10};
 
-        auto expr = parse_invoke(lexer);
+        std::shared_ptr<ast_node> expr = parse_invoke(lexer);
+
+        // Try again with an attribute
+        if(expr == nullptr)
+        {
+            input.str(argv[1]);
+            expr = parse_cpp_attribute(lexer);
+        }
 
         if(expr != nullptr)
         {

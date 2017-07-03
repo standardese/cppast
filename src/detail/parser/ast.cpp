@@ -28,6 +28,12 @@ ast_identifier::ast_identifier(const std::vector<std::string>& scope_names) :
     kind = node_kind::identifier;
 }
 
+ast_expression_cpp_attribute::ast_expression_cpp_attribute(const std::shared_ptr<ast_expression_invoke>& body) :
+    body{body}
+{
+    kind = node_kind::expression_cpp_attribute;
+}
+
 const std::string& ast_identifier::unqualified_name() const
 {
     return scope_names.back();
@@ -68,6 +74,15 @@ void ast_expression_invoke::do_visit(ast_visitor& visitor) const
         arg->visit(visitor);
     }
 
+    visitor.on_event(ast_visitor::event::children_exit);
+}
+
+void ast_expression_cpp_attribute::do_visit(ast_visitor& visitor) const
+{
+    visitor.on_node(*this);
+
+    visitor.on_event(ast_visitor::event::children_enter);
+    body->visit(visitor);
     visitor.on_event(ast_visitor::event::children_exit);
 }
 
