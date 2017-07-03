@@ -11,6 +11,7 @@
 #include <cppast/cpp_file.hpp>
 #include <cppast/cpp_preprocessor.hpp>
 #include <cppast/diagnostic_logger.hpp>
+#include <cppast/diagnostic.hpp>
 
 namespace cppast
 {
@@ -54,17 +55,17 @@ namespace cppast
             error_ = false;
         }
 
+        /// \returns A reference to the logger used.
+        const diagnostic_logger& logger() const noexcept
+        {
+            return *logger_;
+        }
+
     protected:
         /// \effects Creates it giving it a reference to the logger it uses.
         explicit parser(type_safe::object_ref<const diagnostic_logger> logger)
         : logger_(logger), error_(false)
         {
-        }
-
-        /// \returns A reference to the logger used.
-        const diagnostic_logger& logger() const noexcept
-        {
-            return *logger_;
         }
 
         /// \effects Sets the error state.
@@ -111,6 +112,9 @@ namespace cppast
         /// \returns The parsed file or an empty optional, if a fatal error occurred.
         type_safe::optional_ref<const cpp_file> parse(std::string path, const config& c)
         {
+            parser_.logger().log("simple file parser",
+                                 diagnostic{"parsing file '" + path + "'", source_location(),
+                                            severity::info});
             auto file = parser_.parse(*idx_, std::move(path), c);
             auto ptr  = file.get();
             if (file)
