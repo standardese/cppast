@@ -51,13 +51,14 @@ namespace
                 catch (detail::parse_error& ex)
                 {
                     context.error = true;
-                    context.logger->log("libclang parser", ex.get_diagnostic());
+                    context.logger->log("libclang parser", ex.get_diagnostic(context.file));
                 }
                 catch (std::logic_error& ex)
                 {
                     context.error = true;
                     context.logger->log("libclang parser",
-                                        diagnostic{ex.what(), detail::make_location(child),
+                                        diagnostic{ex.what(),
+                                                   detail::make_location(context.file, child),
                                                    severity::error});
                 }
             });
@@ -76,15 +77,20 @@ namespace
                 }
                 catch (detail::parse_error& ex)
                 {
-                    context.logger->log("libclang parser", ex.get_diagnostic());
+                    context.error = true;
+                    context.logger->log("libclang parser", ex.get_diagnostic(context.file));
                 }
                 catch (std::logic_error& ex)
                 {
-                    context.logger->log("libclang parser",
-                                        diagnostic{ex.what(),
-                                                   detail::make_location(
-                                                       clang_Cursor_getArgument(cur, unsigned(i))),
-                                                   severity::error});
+                    context.error = true;
+                    context.logger
+                        ->log("libclang parser",
+                              diagnostic{ex.what(),
+                                         detail::make_location(context.file,
+                                                               clang_Cursor_getArgument(cur,
+                                                                                        unsigned(
+                                                                                            i))),
+                                         severity::error});
                 }
         }
     }

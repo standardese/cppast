@@ -99,13 +99,14 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_enum(const detail::parse_context& 
         catch (parse_error& ex)
         {
             context.error = true;
-            context.logger->log("libclang parser", ex.get_diagnostic());
+            context.logger->log("libclang parser", ex.get_diagnostic(context.file));
         }
         catch (std::logic_error& ex)
         {
             context.error = true;
+            auto location = make_location(child);
             context.logger->log("libclang parser",
-                                diagnostic{ex.what(), make_location(child), severity::error});
+                                diagnostic{ex.what(), location, severity::error});
         }
     });
     if (clang_isCursorDefinition(cur))

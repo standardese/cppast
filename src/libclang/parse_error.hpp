@@ -27,6 +27,12 @@ namespace cppast
             return source_location::make_file(cxstring(file).c_str(), line);
         }
 
+        inline source_location make_location(const CXFile& file, const CXCursor& cur)
+        {
+            return source_location::make_entity(get_display_name(cur).c_str(),
+                                                cxstring(clang_getFileName(file)).c_str());
+        }
+
         inline source_location make_location(const CXType& type)
         {
             return source_location::make_entity(cxstring(clang_getTypeSpelling(type)).c_str());
@@ -52,8 +58,14 @@ namespace cppast
             {
             }
 
-            diagnostic get_diagnostic() const
+            diagnostic get_diagnostic(const CXFile& file)
             {
+                return get_diagnostic(cxstring(clang_getFileName(file)).c_str());
+            }
+
+            diagnostic get_diagnostic(std::string file)
+            {
+                location_.file = std::move(file);
                 return diagnostic{what(), location_, severity::error};
             }
 

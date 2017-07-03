@@ -545,7 +545,7 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
 }
 catch (detail::parse_error& ex)
 {
-    logger().log("libclang parser", ex.get_diagnostic());
+    logger().log("libclang parser", ex.get_diagnostic(path));
     set_error();
     return nullptr;
 }
