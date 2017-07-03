@@ -170,7 +170,7 @@ void print_ast(std::ostream& out, const cppast::cpp_file& file)
 // parse a file
 std::unique_ptr<cppast::cpp_file> parse_file(const cppast::libclang_compile_config& config,
                                              const cppast::diagnostic_logger&       logger,
-                                             const std::string& filename, bool fatal_error) try
+                                             const std::string& filename, bool fatal_error)
 {
     // the entity index is used to resolve cross references in the AST
     // we don't need that, so it will not be needed afterwards
@@ -184,13 +184,8 @@ std::unique_ptr<cppast::cpp_file> parse_file(const cppast::libclang_compile_conf
         return nullptr;
     return file;
 }
-catch (const cppast::libclang_error& ex)
-{
-    print_error(std::string("[fatal parsing error] ") + ex.what());
-    return nullptr;
-}
 
-int main(int argc, char* argv[])
+int main(int argc, char* argv[]) try
 {
     cxxopts::Options options("cppast",
                              "cppast - The commandline interface to the cppast library.\n");
@@ -203,6 +198,10 @@ int main(int argc, char* argv[])
         ("file", "the file that is being parsed (last positional argument)",
          cxxopts::value<std::string>());
     options.add_options("compilation")
+        ("database_dir", "set the directory where a 'compile_commands.json' file is located containing build information",
+        cxxopts::value<std::string>())
+        ("database_file", "set the file name whose configuration will be used regardless of the current file name",
+        cxxopts::value<std::string>())
         ("std", "set the C++ standard (c++98, c++03, c++11, c++14, c++1z (experimental))",
          cxxopts::value<std::string>()->default_value(cppast::to_string(cppast::cpp_standard::cpp_latest)))
         ("I,include_directory", "add directory to include search path",
@@ -236,6 +235,18 @@ int main(int argc, char* argv[])
     {
         // the compile config stores compilation flags
         cppast::libclang_compile_config config;
+        if (options.count("database_dir"))
+        {
+            cppast::libclang_compilation_database database(
+                options["database_dir"].as<std::string>());
+            if (options.count("database_file"))
+                config =
+                    cppast::libclang_compile_config(database,
+                                                    options["database_file"].as<std::string>());
+            else
+                config =
+                    cppast::libclang_compile_config(database, options["file"].as<std::string>());
+        }
 
         if (options.count("include_directory"))
             for (auto& include : options["include_directory"].as<std::vector<std::string>>())
@@ -288,4 +299,9 @@ int main(int argc, char* argv[])
             return 2;
         print_ast(std::cout, *file);
     }
+}
+catch (const cppast::libclang_error& ex)
+{
+    print_error(std::string("[fatal parsing error] ") + ex.what());
+    return 2;
 }
