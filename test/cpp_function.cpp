@@ -48,6 +48,8 @@ namespace ns
 
     /// void l();
     void l();
+
+    using m = int;
 }
 
 /// void ns::l();
@@ -56,6 +58,9 @@ void ns::l()
     // might confuse parser
     auto b = noexcept(g());
 }
+
+/// ns::m m();
+ns::m m();
 )";
 
     auto check_body = [](const cpp_function& func, cpp_function_body_kind kind) {
@@ -223,10 +228,22 @@ void ns::l()
                     check_body(func, cpp_function_declaration);
             }
         }
+        else if (func.name() == "m")
+        {
+            REQUIRE(equal_types(idx, func.return_type(),
+                                *cpp_user_defined_type::build(
+                                    cpp_type_ref(cpp_entity_id(""), "ns::m"))));
+            REQUIRE(count_children(func.parameters()) == 0u);
+            REQUIRE(!func.is_variadic());
+            REQUIRE(!func.noexcept_condition());
+            REQUIRE(!func.is_constexpr());
+            REQUIRE(func.storage_class() == cpp_storage_class_none);
+            check_body(func, cpp_function_declaration);
+        }
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 13u);
+    REQUIRE(count == 14u);
 }
 
 TEST_CASE("static cpp_function")

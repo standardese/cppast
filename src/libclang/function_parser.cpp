@@ -229,16 +229,19 @@ namespace
         bool               is_friend    = false;
     };
 
-    bool prefix_end(detail::cxtoken_stream& stream, const char* name, bool is_ctor)
+    bool prefix_end(detail::cxtoken_stream& stream, const char* name, bool is_ctor_dtor)
     {
         auto cur = stream.cur();
         // name can have multiple tokens if it is an operator
         if (!detail::skip_if(stream, name, true))
             return false;
         else if (stream.peek() == "," || stream.peek() == ">" || stream.peek() == ">>")
+        {
             // argument to template parameters
+            stream.set_cur(cur);
             return false;
-        else if (is_ctor)
+        }
+        else if (is_ctor_dtor)
         {
             // need to make sure it is not actually a class name
             if (stream.peek() == "::")
@@ -269,15 +272,22 @@ namespace
             else
                 return true;
         }
+        else if (std::strcmp(name, "operator") != 0 && stream.peek().kind() == CXToken_Identifier)
+        {
+            // can't be function name
+            stream.set_cur(cur);
+            return false;
+        }
         else
             return true;
     }
 
-    prefix_info parse_prefix_info(detail::cxtoken_stream& stream, const char* name, bool is_ctor)
+    prefix_info parse_prefix_info(detail::cxtoken_stream& stream, const char* name,
+                                  bool is_ctor_dtor)
     {
         prefix_info result;
 
-        while (!stream.done() && !prefix_end(stream, name, is_ctor))
+        while (!stream.done() && !prefix_end(stream, name, is_ctor_dtor))
         {
             if (detail::skip_if(stream, "constexpr"))
                 result.is_constexpr = true;
@@ -811,7 +821,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_destructor(const detail::parse_con
     detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
     detail::cxtoken_stream stream(tokenizer, cur);
 
-    auto prefix_info = parse_prefix_info(stream, "~", false);
+    auto prefix_info = parse_prefix_info(stream, "~", true);
     DEBUG_ASSERT(!prefix_info.is_constexpr && !prefix_info.is_explicit, detail::assert_handler{});
 
     auto                    name = std::string("~") + stream.get().c_str();
