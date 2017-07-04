@@ -516,7 +516,8 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
                 ++include_iter;
             }
         }
-        else if (clang_getCursorKind(cur) != CXCursor_MacroDefinition)
+        else if (clang_getCursorKind(cur) != CXCursor_MacroDefinition
+                 && clang_getCursorKind(cur) != CXCursor_MacroExpansion)
         {
             // add macro if needed
             for (auto line = get_line_no(cur);
