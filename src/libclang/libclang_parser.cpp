@@ -231,8 +231,15 @@ libclang_compile_config::libclang_compile_config(const libclang_compilation_data
             if (flag == "-I")
                 add_flag(std::move(flag) + get_full_path(dir, args));
             else if (flag == "-D" || flag == "-U")
+            {
                 // preprocessor options
-                add_flag(std::move(flag) + std::move(args));
+                for (auto c : args)
+                    if (c == '"')
+                        flag += "\\\"";
+                    else
+                        flag += c;
+                add_flag(std::move(flag));
+            }
             else if (flag == "-std")
                 // standard
                 add_flag(std::move(flag) + "=" + std::move(args));
@@ -294,7 +301,16 @@ void libclang_compile_config::do_add_macro_definition(std::string name, std::str
 {
     auto str = "-D" + std::move(name);
     if (!definition.empty())
-        str += "=" + std::move(definition);
+    {
+        str += "=";
+        for (auto c : definition)
+        {
+            if (c == '"')
+                str += "\\\"";
+            else
+                str += c;
+        }
+    }
     add_flag(std::move(str));
 }
 
