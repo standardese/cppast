@@ -77,12 +77,13 @@ void ns::l()
             if (func.name() == "a")
             {
                 REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
-                REQUIRE(count_children(func.parameters()) == 0u);
+                REQUIRE(func.signature() == "()");
                 REQUIRE(!func.is_variadic());
             }
             else if (func.name() == "b")
             {
                 REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_int)));
+                REQUIRE(func.signature() == "(int,float*)");
 
                 auto count = 0u;
                 for (auto& param : func.parameters())
@@ -122,6 +123,7 @@ void ns::l()
                                                                               cpp_ulonglong),
                                                                           "10")),
                                           cpp_ref_lvalue)));
+                REQUIRE(func.signature() == "(decltype(42),...)");
 
                 auto count = 0u;
                 for (auto& param : func.parameters())
@@ -147,7 +149,7 @@ void ns::l()
         else if (func.name() == "d" || func.name() == "e" || func.name() == "f")
         {
             REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
-            REQUIRE(count_children(func.parameters()) == 0u);
+            REQUIRE(func.signature() == "()");
             REQUIRE(!func.is_variadic());
             REQUIRE(func.storage_class() == cpp_storage_class_none);
             REQUIRE(!func.is_constexpr());
@@ -172,7 +174,7 @@ void ns::l()
                  || func.name() == "j")
         {
             REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
-            REQUIRE(count_children(func.parameters()) == 0u);
+            REQUIRE(func.signature() == "()");
             REQUIRE(!func.is_variadic());
             REQUIRE(!func.noexcept_condition());
             check_body(func, cpp_function_declaration);
@@ -201,7 +203,7 @@ void ns::l()
         else if (func.name() == "k" || func.name() == "l")
         {
             REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
-            REQUIRE(count_children(func.parameters()) == 0u);
+            REQUIRE(func.signature() == "()");
             REQUIRE(!func.is_variadic());
             REQUIRE(!func.noexcept_condition());
             REQUIRE(!func.is_constexpr());
@@ -247,7 +249,7 @@ void foo::a() {}
     auto             file = parse(idx, "static_cpp_function.cpp", code);
     auto count            = test_visit<cpp_function>(*file, [&](const cpp_function& func) {
         REQUIRE(!func.is_variadic());
-        REQUIRE(count_children(func.parameters()) == 0u);
+        REQUIRE(func.signature() == "()");
         REQUIRE(func.storage_class() == cpp_storage_class_static);
 
         if (func.name() == "a")

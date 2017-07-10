@@ -9,6 +9,7 @@
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_function_type.hpp>
+#include <cppast/cpp_type_alias.hpp>
 #include <cppast/cpp_template.hpp>
 
 using namespace cppast;
@@ -544,4 +545,38 @@ void detail::write_type(code_generator::output& output, const cpp_type& type, st
     if (is_variadic)
         output << operator_ws << punctuation("...") << operator_ws;
     write_type_suffix(output, type);
+}
+
+std::string detail::to_string(const cpp_type& type)
+{
+    class to_string_generator : public code_generator
+    {
+    public:
+        std::string get()
+        {
+            return std::move(result_);
+        }
+
+    private:
+        void do_indent() override
+        {
+        }
+
+        void do_unindent() override
+        {
+        }
+
+        void do_write_token_seq(string_view tokens) override
+        {
+            result_ += tokens.c_str();
+        }
+
+        std::string result_;
+    } generator;
+
+    // just a dummy type for the output
+    static auto dummy_entity = cpp_type_alias::build("foo", cpp_builtin_type::build(cpp_int));
+    to_string_generator::output output(type_safe::ref(generator), type_safe::ref(*dummy_entity));
+    write_type(output, type, "");
+    return generator.get();
 }

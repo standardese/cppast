@@ -23,24 +23,10 @@ namespace cppast
         pure,     //< Set if the function is pure.
         override, //< Set if the function overrides a base class function.
         final,    //< Set if the function is marked `final`.
-    };
-} // namespace cppast
 
-/// \exclude
-namespace type_safe
-{
-    template <>
-    struct flag_set_traits<cppast::cpp_virtual_flags> : std::true_type
-    {
-        static constexpr std::size_t size() noexcept
-        {
-            return 3u;
-        }
+        _flag_set_size, //< \exclude
     };
-} // namespace type_safe
 
-namespace cppast
-{
     /// The `virtual` information of a member function.
     ///
     /// This is an optional of the combination of the [cppast::cpp_virtual_flags]().
@@ -160,6 +146,9 @@ namespace cppast
           constexpr_(false)
         {
         }
+
+    protected:
+        std::string do_get_signature() const override;
 
     private:
         std::unique_ptr<cpp_type> return_type_;

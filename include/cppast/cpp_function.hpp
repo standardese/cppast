@@ -94,6 +94,14 @@ namespace cppast
             return variadic_;
         }
 
+        /// \returns The signature of the function,
+        /// i.e. parameters and cv/ref-qualifiers if a member function.
+        /// It has the form `(int,char,...) const`.
+        std::string signature() const
+        {
+            return do_get_signature();
+        }
+
     protected:
         /// Builder class for functions.
         ///
@@ -175,6 +183,10 @@ namespace cppast
         : cpp_entity(std::move(name)), body_(cpp_function_declaration), variadic_(false)
         {
         }
+
+    protected:
+        /// \returns The signature, it is called by [*signature()]().
+        virtual std::string do_get_signature() const;
 
     private:
         detail::intrusive_list<cpp_function_parameter> parameters_;

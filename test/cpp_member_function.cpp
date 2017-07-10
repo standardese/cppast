@@ -57,10 +57,10 @@ struct bar : foo<int>
     cpp_entity_index idx;
     auto             file = parse(idx, "cpp_member_function.cpp", code);
     auto count = test_visit<cpp_member_function>(*file, [&](const cpp_member_function& func) {
-        REQUIRE(count_children(func.parameters()) == 0u);
         REQUIRE(!func.is_variadic());
         REQUIRE(!func.is_constexpr());
         REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
+
         if (func.name() != "b" && func.name() != "d")
             REQUIRE(!func.noexcept_condition());
         if (func.name() != "g" && func.name() != "h")
@@ -74,6 +74,7 @@ struct bar : foo<int>
                 REQUIRE(func.is_definition());
             REQUIRE(func.cv_qualifier() == cpp_cv_none);
             REQUIRE(func.ref_qualifier() == cpp_ref_none);
+            REQUIRE(func.signature() == "()");
         }
         else if (func.name() == "b")
         {
@@ -84,31 +85,37 @@ struct bar : foo<int>
                                                                  "true")));
             REQUIRE(func.cv_qualifier() == cpp_cv_none);
             REQUIRE(func.ref_qualifier() == cpp_ref_none);
+            REQUIRE(func.signature() == "()");
         }
         else if (func.name() == "c")
         {
             REQUIRE(func.cv_qualifier() == cpp_cv_const);
             REQUIRE(func.ref_qualifier() == cpp_ref_none);
+            REQUIRE(func.signature() == "() const");
         }
         else if (func.name() == "d")
         {
             REQUIRE(func.cv_qualifier() == cpp_cv_const_volatile);
             REQUIRE(func.ref_qualifier() == cpp_ref_none);
+            REQUIRE(func.signature() == "() const volatile");
         }
         else if (func.name() == "e")
         {
             REQUIRE(func.cv_qualifier() == cpp_cv_none);
             REQUIRE(func.ref_qualifier() == cpp_ref_lvalue);
+            REQUIRE(func.signature() == "() &");
         }
         else if (func.name() == "f")
         {
             REQUIRE(func.cv_qualifier() == cpp_cv_const_volatile);
             REQUIRE(func.ref_qualifier() == cpp_ref_rvalue);
+            REQUIRE(func.signature() == "() const volatile &&");
         }
         else if (func.name() == "g")
         {
             REQUIRE(func.cv_qualifier() == cpp_cv_none);
             REQUIRE(func.ref_qualifier() == cpp_ref_none);
+            REQUIRE(func.signature() == "()");
             REQUIRE(func.virtual_info());
             if (func.parent().value().name() == "foo")
                 REQUIRE(func.virtual_info().value() == type_safe::flag_set<cpp_virtual_flags>{});
@@ -124,6 +131,7 @@ struct bar : foo<int>
         {
             REQUIRE(func.cv_qualifier() == cpp_cv_none);
             REQUIRE(func.ref_qualifier() == cpp_ref_none);
+            REQUIRE(func.signature() == "()");
             REQUIRE(func.virtual_info());
             if (func.parent().value().name() == "foo")
                 REQUIRE(func.virtual_info().value() == cpp_virtual_flags::pure);
@@ -137,12 +145,14 @@ struct bar : foo<int>
         {
             REQUIRE(func.cv_qualifier() == cpp_cv_none);
             REQUIRE(func.ref_qualifier() == cpp_ref_none);
+            REQUIRE(func.signature() == "()");
             REQUIRE(func.body_kind() == cpp_function_definition);
         }
         else if (func.name() == "j")
         {
             REQUIRE(func.cv_qualifier() == cpp_cv_none);
             REQUIRE(func.ref_qualifier() == cpp_ref_none);
+            REQUIRE(func.signature() == "()");
             REQUIRE(func.body_kind() == cpp_function_deleted);
         }
         else
@@ -207,16 +217,19 @@ struct foo
                                 *cpp_reference_type::build(cpp_builtin_type::build(cpp_int),
                                                            cpp_ref_lvalue)));
             REQUIRE(op.cv_qualifier() == cpp_cv_none);
+            REQUIRE(op.signature() == "()");
         }
         else if (op.is_explicit() && !op.is_constexpr())
         {
             REQUIRE(op.name() == "operator bool");
             REQUIRE(equal_types(idx, op.return_type(), *cpp_builtin_type::build(cpp_bool)));
             REQUIRE(op.cv_qualifier() == cpp_cv_const);
+            REQUIRE(op.signature() == "() const");
         }
         else if (!op.is_explicit() && op.is_constexpr())
         {
             REQUIRE(op.cv_qualifier() == cpp_cv_none);
+            REQUIRE(op.signature() == "()");
             if (op.name() == "operator ns::type<int>")
             {
                 REQUIRE(op.return_type().kind() == cpp_type_kind::template_instantiation_t);
@@ -316,6 +329,7 @@ foo<T>::foo(int) {}
                 REQUIRE(!cont.is_explicit());
                 REQUIRE(!cont.is_constexpr());
                 REQUIRE(cont.body_kind() == cpp_function_defaulted);
+                REQUIRE(cont.signature() == "()");
             }
             else if (count_children(cont.parameters()) == 1u)
             {
@@ -323,6 +337,7 @@ foo<T>::foo(int) {}
                 REQUIRE(cont.is_explicit());
                 REQUIRE(!cont.is_constexpr());
                 REQUIRE(cont.body_kind() == cpp_function_declaration);
+                REQUIRE(cont.signature() == "(int)");
             }
             else if (count_children(cont.parameters()) == 2u)
             {
@@ -330,6 +345,7 @@ foo<T>::foo(int) {}
                 REQUIRE(!cont.is_explicit());
                 REQUIRE(cont.is_constexpr());
                 REQUIRE(cont.body_kind() == cpp_function_deleted);
+                REQUIRE(cont.signature() == "(int,char)");
             }
             else
                 REQUIRE(false);
@@ -372,7 +388,7 @@ d::~d() {}
 
     auto file  = parse({}, "cpp_destructor.cpp", code);
     auto count = test_visit<cpp_destructor>(*file, [&](const cpp_destructor& dtor) {
-        REQUIRE(count_children(dtor.parameters()) == 0u);
+        REQUIRE(dtor.signature() == "()");
         REQUIRE(!dtor.is_variadic());
 
         if (dtor.name() == "~a")

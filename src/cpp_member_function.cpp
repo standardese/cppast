@@ -8,6 +8,23 @@
 
 using namespace cppast;
 
+std::string cpp_member_function_base::do_get_signature() const
+{
+    auto result = cpp_function_base::do_get_signature();
+
+    if (is_const(cv_qualifier()))
+        result += " const";
+    if (is_volatile(cv_qualifier()))
+        result += " volatile";
+
+    if (ref_qualifier() == cpp_ref_lvalue)
+        result += " &";
+    else if (ref_qualifier() == cpp_ref_rvalue)
+        result += " &&";
+
+    return result;
+}
+
 cpp_entity_kind cpp_member_function::kind() noexcept
 {
     return cpp_entity_kind::member_function_t;
