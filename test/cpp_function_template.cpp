@@ -75,6 +75,7 @@ d::d(const int&);
     auto             file = parse(idx, "cpp_function_template.cpp", code);
     auto count = test_visit<cpp_function_template>(*file, [&](const cpp_function_template& tfunc) {
         REQUIRE(is_templated(tfunc.function()));
+        REQUIRE(!tfunc.scope_name());
 
         if (tfunc.name() == "a")
         {
@@ -104,8 +105,9 @@ d::d(const int&);
         else if (tfunc.name() == "b")
         {
             check_parent(tfunc, "d", "d::b");
-            check_template_parameters(tfunc, {{cpp_entity_kind::non_type_template_parameter_t, "I"},
-                                              {cpp_entity_kind::template_type_parameter_t, "T"}});
+            check_template_parameters(tfunc,
+                                      {{cpp_entity_kind::non_type_template_parameter_t, "I"},
+                                       {cpp_entity_kind::template_type_parameter_t, "T"}});
 
             REQUIRE(tfunc.function().kind() == cpp_entity_kind::function_t);
             auto& func = static_cast<const cpp_function&>(tfunc.function());
@@ -183,6 +185,7 @@ d::d(const int&);
         *file, [&](const cpp_function_template_specialization& tfunc) {
             REQUIRE(tfunc.is_full_specialization());
             REQUIRE(!tfunc.arguments_exposed());
+            REQUIRE(!tfunc.scope_name());
 
             auto templ = tfunc.primary_template();
             if (tfunc.name() == "operator int")

@@ -83,6 +83,13 @@ namespace cppast
         }
 
     private:
+        type_safe::optional<cppast::cpp_scope_name> do_get_scope_name() const override
+        {
+            return begin()->scope_name() ?
+                       type_safe::make_optional(cppast::cpp_scope_name(type_safe::ref(*this))) :
+                       type_safe::nullopt;
+        }
+
         detail::intrusive_list<cpp_template_parameter> parameters_;
     };
 

@@ -57,6 +57,7 @@ using h = g<T, a>;
     auto             file = parse(idx, "cpp_alias_template.cpp", code);
     auto count = test_visit<cpp_alias_template>(*file, [&](const cpp_alias_template& alias) {
         REQUIRE(is_templated(alias.type_alias()));
+        REQUIRE(!alias.scope_name());
 
         if (alias.name() == "a")
         {
@@ -66,8 +67,9 @@ using h = g<T, a>;
         }
         else if (alias.name() == "b")
         {
-            check_template_parameters(alias, {{cpp_entity_kind::non_type_template_parameter_t, "I"},
-                                              {cpp_entity_kind::template_type_parameter_t, "T"}});
+            check_template_parameters(alias,
+                                      {{cpp_entity_kind::non_type_template_parameter_t, "I"},
+                                       {cpp_entity_kind::template_type_parameter_t, "T"}});
             REQUIRE(equal_types(idx, alias.type_alias().underlying_type(),
                                 *cpp_template_parameter_type::build(
                                     cpp_template_type_parameter_ref(cpp_entity_id(""), "T"))));

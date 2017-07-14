@@ -100,6 +100,7 @@ struct b<0, T> {};
         auto& c = templ.class_();
         REQUIRE(!c.is_final());
         REQUIRE(is_templated(c));
+        REQUIRE(templ.scope_name());
 
         if (templ.name() == "a")
         {
@@ -109,8 +110,9 @@ struct b<0, T> {};
         }
         else if (templ.name() == "b")
         {
-            check_template_parameters(templ, {{cpp_entity_kind::non_type_template_parameter_t, "I"},
-                                              {cpp_entity_kind::template_type_parameter_t, "T"}});
+            check_template_parameters(templ,
+                                      {{cpp_entity_kind::non_type_template_parameter_t, "I"},
+                                       {cpp_entity_kind::template_type_parameter_t, "T"}});
             REQUIRE(c.class_kind() == cpp_class_kind::struct_t);
             REQUIRE(c.is_definition());
         }
@@ -224,6 +226,7 @@ struct b<0, T> {};
     count = test_visit<cpp_class_template_specialization>(
         *file, [&](const cpp_class_template_specialization& templ) {
             REQUIRE(!templ.arguments_exposed());
+            REQUIRE(templ.scope_name());
 
             if (templ.name() == "a")
             {

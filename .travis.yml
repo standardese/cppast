@@ -57,6 +57,6 @@ install:
 
 script:
   - mkdir build/ && cd build/
-  - $CMAKE -DCMAKE_CXX_FLAGS="-Werror -pedantic -Wall -Wextra -Wconversion -Wsign-conversion -Wno-parentheses" -DLLVM_DOWNLOAD_OS_NAME=$LLVM_DOWNLOAD_OS_NAME -DLLVM_PREFERRED_VERSION=$LLVM_VERSION ../
+  - $CMAKE -DCMAKE_CXX_FLAGS="-Werror -pedantic -Wall -Wextra -Wconversion -Wsign-conversion -Wno-parentheses -Wno-assume" -DLLVM_DOWNLOAD_OS_NAME=$LLVM_DOWNLOAD_OS_NAME -DLLVM_PREFERRED_VERSION=$LLVM_VERSION ../
   - $CMAKE --build .
   - if [[ "$LLVM_VERSION" == "4.0.0" ]]; then ./test/cppast_test \*; else ./test/cppast_test; fi
