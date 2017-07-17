@@ -193,7 +193,7 @@ namespace cppast
             /// the other functions have no effects.
             explicit operator bool() const noexcept
             {
-                return options_ != exclude;
+                return !options_.is_set(exclude);
             }
 
             /// \returns The generation options.

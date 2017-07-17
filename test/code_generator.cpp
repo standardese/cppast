@@ -157,7 +157,7 @@ struct foo{
             generation_options do_get_options(const cpp_entity& e) override
             {
                 if (e.name().front() == 'e')
-                    return code_generator::exclude;
+                    return code_generator::exclude | code_generator::declaration;
                 return {};
             }
         };
