@@ -92,7 +92,7 @@ namespace
                 output << preprocessor_token("(") << bracket_ws
                        << preprocessor_token(def.parameters().value()) << bracket_ws
                        << preprocessor_token(")");
-            if (!def.replacement().empty())
+            if (!def.replacement().empty() && !output.options().is_set(code_generator::declaration))
                 output << whitespace << preprocessor_token(def.replacement()) << newl;
             else
                 output << newl;

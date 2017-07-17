@@ -147,7 +147,6 @@ struct foo{
     }
     SECTION("exclude")
     {
-        // exclude all entities starting with `e`
         class exclude_generator : public test_generator
         {
         public:
@@ -157,7 +156,12 @@ struct foo{
             generation_options do_get_options(const cpp_entity& e) override
             {
                 if (e.name().front() == 'e')
+                    // exclude all entities starting with `e`
+                    // add declaration flag to detect check for equality
                     return code_generator::exclude | code_generator::declaration;
+                else if (e.name() == "FOO")
+                    // don't show macro replacement
+                    return code_generator::declaration;
                 return {};
             }
         };
@@ -166,6 +170,8 @@ struct foo{
 void e();
 
 void func(int a, int e, int c);
+
+#define FOO hidden
 
 template <typename e1, typename e2>
 void tfunc(int a);
@@ -195,6 +201,8 @@ private:
 )";
 
         auto synopsis = R"(void func(int a,int c);
+
+#define FOO
 
 void tfunc(int a);
 
