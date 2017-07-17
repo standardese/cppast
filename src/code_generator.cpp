@@ -500,7 +500,14 @@ namespace
         else
         {
             output << keyword("noexcept") << punctuation("(") << bracket_ws;
-            detail::write_expression(output, cond);
+            // update check when expression gets exposed
+            if (cond.kind() == cpp_expression_kind::unexposed_t
+                && static_cast<const cpp_unexposed_expression&>(cond).expression() == "false")
+                output << keyword("false");
+            else if (output.options().is_set(code_generator::exclude_noexcept_condition))
+                output.excluded(base);
+            else
+                detail::write_expression(output, cond);
             output << bracket_ws << punctuation(")");
         }
     }

@@ -162,7 +162,7 @@ struct foo{
                 else if (e.name() == "FOO")
                     // don't show macro replacement
                     return code_generator::declaration;
-                return {};
+                return code_generator::exclude_noexcept_condition;
             }
         };
 
@@ -174,7 +174,7 @@ void func(int a, int e, int c);
 #define FOO hidden
 
 template <typename e1, typename e2>
-void tfunc(int a);
+void tfunc(int a) noexcept(false);
 
 struct base {};
 struct e_t {};
@@ -198,13 +198,15 @@ public:
 private:
     int e3;
 };
+
+void func2() noexcept(0 == 1 && 42);
 )";
 
         auto synopsis = R"(void func(int a,int c);
 
 #define FOO
 
-void tfunc(int a);
+void tfunc(int a)noexcept(false);
 
 struct base{
 };
@@ -221,6 +223,8 @@ class foo{
 public:
   int c;
 };
+
+void func2()noexcept(excluded);
 )";
 
         auto file = parse({}, "code_generator_exclude.cpp", code);

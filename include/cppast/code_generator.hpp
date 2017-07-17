@@ -159,7 +159,8 @@ namespace cppast
             exclude,        //< Exclude the entire entity.
             exclude_return, //< Exclude the return type of a function entity.
             exclude_target, //< Exclude the underlying entity of an alias (e.g. typedef).
-            declaration,    //< Only write declaration.
+            exclude_noexcept_condition, //< Exclude the condition of a noexcept.`
+            declaration,                //< Only write declaration.
             /// For a macro, it won't show the replacement if this flag is set
             _flag_set_size, //< \exclude
         };
