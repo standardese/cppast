@@ -153,9 +153,13 @@ struct foo{
             using test_generator::test_generator;
 
         private:
-            generation_options do_get_options(const cpp_entity& e) override
+            generation_options do_get_options(const cpp_entity&         e,
+                                              cpp_access_specifier_kind cur_access) override
             {
-                if (e.name().front() == 'e')
+                if (cur_access == cpp_protected)
+                    // exclude all protected
+                    return code_generator::exclude;
+                else if (e.name().front() == 'e')
                     // exclude all entities starting with `e`
                     // add declaration flag to detect check for equality
                     return code_generator::exclude | code_generator::declaration;
@@ -181,7 +185,7 @@ struct e_t {};
 
 struct bar : e_t, base {};
 
-class foo : e_t
+class foo : e_t, protected base
 {
     int a;
 
@@ -190,6 +194,9 @@ public:
 
 private:
     int b;
+
+protected:
+    int p1;
 
 public:
     int c;

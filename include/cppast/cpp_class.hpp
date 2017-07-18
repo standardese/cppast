@@ -24,7 +24,7 @@ namespace cppast
     const char* to_string(cpp_class_kind kind) noexcept;
 
     /// The C++ access specifiers.
-    enum cpp_access_specifier_kind
+    enum cpp_access_specifier_kind : int
     {
         cpp_public,
         cpp_protected,

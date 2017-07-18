@@ -15,6 +15,8 @@
 
 namespace cppast
 {
+    enum cpp_access_specifier_kind : int;
+
     /// A simple string view implementation, like [std::string_view]().
     ///
     /// It "views" - stores a pointer to - some kind of string.
@@ -174,8 +176,9 @@ namespace cppast
         public:
             /// \effects Creates it giving the generator and the entity.
             explicit output(type_safe::object_ref<code_generator>   gen,
-                            type_safe::object_ref<const cpp_entity> e)
-            : gen_(gen), e_(e), options_(gen->do_get_options(*e))
+                            type_safe::object_ref<const cpp_entity> e,
+                            cppast::cpp_access_specifier_kind       access)
+            : gen_(gen), e_(e), options_(gen->do_get_options(*e, access))
             {
                 gen_->on_begin(*e_);
             }
@@ -205,9 +208,9 @@ namespace cppast
             }
 
             /// \returns The generation options for the given entity.
-            generation_options options(const cpp_entity& e) const
+            generation_options options(const cpp_entity& e, cpp_access_specifier_kind access) const
             {
-                return gen_->do_get_options(e);
+                return gen_->do_get_options(e, access);
             }
 
             /// \returns The formatting.
@@ -369,10 +372,21 @@ namespace cppast
 
         /// \returns The generation options for that entity.
         /// The base class version always returns no special options.
+        /// \notes This function will not be called if the one with the access specifier is overridden.
         virtual generation_options do_get_options(const cpp_entity& e)
         {
             (void)e;
             return {};
+        }
+
+        /// \returns The generation options for that entity with the given access specifier.
+        /// If an entity is not part of a class, returns [cppast::cpp_public]().
+        /// The base class version forwards to the overload that doesn't take an access specifier.
+        virtual generation_options do_get_options(const cpp_entity&                 e,
+                                                  cppast::cpp_access_specifier_kind access)
+        {
+            (void)access;
+            return do_get_options(e);
         }
 
         /// \effects Will be invoked before code of an entity is generated.

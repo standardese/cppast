@@ -56,25 +56,30 @@ namespace
             output << whitespace;
     }
 
+    bool generate_code_impl(code_generator& generator, const cpp_entity& e,
+                            cpp_access_specifier_kind cur_access);
+
     template <class Container, typename Sep>
-    bool write_container(code_generator::output& output, const Container& cont, Sep s)
+    bool write_container(code_generator::output& output, const Container& cont, Sep s,
+                         cpp_access_specifier_kind cur_access)
     {
         auto need_sep = false;
         for (auto& child : cont)
         {
             if (need_sep)
                 output << s;
-            need_sep = generate_code(*output.generator(), child);
+            need_sep = generate_code_impl(*output.generator(), child, cur_access);
         }
         return need_sep;
     }
 
-    bool generate_file(code_generator& generator, const cpp_file& f)
+    bool generate_file(code_generator& generator, const cpp_file& f,
+                       cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(f));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(f), cur_access);
         if (output)
         {
-            auto need_sep = write_container(output, f, newl);
+            auto need_sep = write_container(output, f, newl, cur_access);
             if (!need_sep)
                 // file empty, write newl
                 output << newl;
@@ -82,9 +87,10 @@ namespace
         return static_cast<bool>(output);
     }
 
-    bool generate_macro_definition(code_generator& generator, const cpp_macro_definition& def)
+    bool generate_macro_definition(code_generator& generator, const cpp_macro_definition& def,
+                                   cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(def));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(def), cur_access);
         if (output)
         {
             output << preprocessor_token("#define") << whitespace << identifier(def.name());
@@ -100,9 +106,11 @@ namespace
         return static_cast<bool>(output);
     }
 
-    bool generate_include_directive(code_generator& generator, const cpp_include_directive& include)
+    bool generate_include_directive(code_generator& generator, const cpp_include_directive& include,
+                                    cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(include));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(include),
+                                      cur_access);
         if (output)
         {
             output << preprocessor_token("#include") << whitespace;
@@ -120,9 +128,11 @@ namespace
         return static_cast<bool>(output);
     }
 
-    bool generate_language_linkage(code_generator& generator, const cpp_language_linkage& linkage)
+    bool generate_language_linkage(code_generator& generator, const cpp_language_linkage& linkage,
+                                   cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(linkage));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(linkage),
+                                      cur_access);
         if (output)
         {
             output << keyword("extern") << whitespace << string_literal(linkage.name());
@@ -131,7 +141,7 @@ namespace
                 output << opening_brace;
                 output.indent();
 
-                write_container(output, linkage, newl);
+                write_container(output, linkage, newl, cur_access);
 
                 output.unindent();
                 output << punctuation("}") << newl;
@@ -139,15 +149,16 @@ namespace
             else
             {
                 output << whitespace;
-                generate_code(generator, *linkage.begin());
+                generate_code_impl(generator, *linkage.begin(), cur_access);
             }
         }
         return static_cast<bool>(output);
     }
 
-    bool generate_namespace(code_generator& generator, const cpp_namespace& ns)
+    bool generate_namespace(code_generator& generator, const cpp_namespace& ns,
+                            cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(ns));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(ns), cur_access);
         if (output)
         {
             if (ns.is_inline())
@@ -156,7 +167,7 @@ namespace
             output << opening_brace;
             output.indent();
 
-            write_container(output, ns, newl);
+            write_container(output, ns, newl, cur_access);
 
             output.unindent();
             output << punctuation("}") << newl;
@@ -164,9 +175,10 @@ namespace
         return static_cast<bool>(output);
     }
 
-    bool generate_namespace_alias(code_generator& generator, const cpp_namespace_alias& alias)
+    bool generate_namespace_alias(code_generator& generator, const cpp_namespace_alias& alias,
+                                  cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(alias));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(alias), cur_access);
         if (output)
         {
             output << keyword("namespace") << whitespace << identifier(alias.name()) << operator_ws
@@ -180,9 +192,11 @@ namespace
         return static_cast<bool>(output);
     }
 
-    bool generate_using_directive(code_generator& generator, const cpp_using_directive& directive)
+    bool generate_using_directive(code_generator& generator, const cpp_using_directive& directive,
+                                  cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(directive));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(directive),
+                                      cur_access);
         if (output)
             output << keyword("using") << whitespace << keyword("namespace") << whitespace
                    << directive.target() << punctuation(";") << newl;
@@ -190,18 +204,21 @@ namespace
     }
 
     bool generate_using_declaration(code_generator&              generator,
-                                    const cpp_using_declaration& declaration)
+                                    const cpp_using_declaration& declaration,
+                                    cpp_access_specifier_kind    cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(declaration));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(declaration),
+                                      cur_access);
         if (output)
             output << keyword("using") << whitespace << declaration.target() << punctuation(";")
                    << newl;
         return static_cast<bool>(output);
     }
 
-    bool generate_type_alias(code_generator& generator, const cpp_type_alias& alias)
+    bool generate_type_alias(code_generator& generator, const cpp_type_alias& alias,
+                             cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(alias));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(alias), cur_access);
         if (output)
         {
             output << keyword("using") << whitespace << identifier(alias.name()) << operator_ws
@@ -215,9 +232,10 @@ namespace
         return static_cast<bool>(output);
     }
 
-    bool generate_enum_value(code_generator& generator, const cpp_enum_value& value)
+    bool generate_enum_value(code_generator& generator, const cpp_enum_value& value,
+                             cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(value));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(value), cur_access);
         if (output)
         {
             output << identifier(value.name());
@@ -233,9 +251,10 @@ namespace
         return static_cast<bool>(output);
     }
 
-    bool generate_enum(code_generator& generator, const cpp_enum& e)
+    bool generate_enum(code_generator& generator, const cpp_enum& e,
+                       cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(e));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(e), cur_access);
         if (output)
         {
             output << keyword("enum");
@@ -253,9 +272,11 @@ namespace
                 output << opening_brace;
                 output.indent();
 
-                auto need_sep = write_container(output, e, [](const code_generator::output& out) {
-                    out << punctuation(",") << newl;
-                });
+                auto need_sep = write_container(output, e,
+                                                [](const code_generator::output& out) {
+                                                    out << punctuation(",") << newl;
+                                                },
+                                                cur_access);
                 if (need_sep)
                     output << newl;
 
@@ -275,21 +296,25 @@ namespace
         output.indent();
     }
 
-    bool generate_access_specifier(code_generator& generator, const cpp_access_specifier& access)
+    bool generate_access_specifier(code_generator& generator, const cpp_access_specifier& access,
+                                   cpp_access_specifier_kind)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(access));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(access),
+                                      access.access_specifier());
         if (output)
             write_access_specifier(output, access.access_specifier());
         return static_cast<bool>(output);
     }
 
-    bool generate_base_class(code_generator& generator, const cpp_base_class& base)
+    bool generate_base_class(code_generator& generator, const cpp_base_class& base,
+                             cpp_access_specifier_kind)
     {
         DEBUG_ASSERT(base.parent() && base.parent().value().kind() == cpp_entity_kind::class_t,
                      detail::assert_handler{});
         auto parent_kind = static_cast<const cpp_class&>(base.parent().value()).class_kind();
 
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(base));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(base),
+                                      base.access_specifier());
         if (output)
         {
             if (base.is_virtual())
@@ -324,21 +349,23 @@ namespace
         auto first    = true;
         for (auto& base : c.bases())
         {
-            if (first && !output.options(base).is_set(code_generator::exclude))
+            auto opt = output.options(base, base.access_specifier());
+            if (first && !opt.is_set(code_generator::exclude))
             {
                 first = false;
                 output << newl << punctuation(":") << operator_ws;
             }
             else if (need_sep)
                 output << comma;
-            need_sep = generate_base_class(generator, base);
+            need_sep = generate_base_class(generator, base, cpp_public);
         }
     }
 
     bool generate_class(code_generator& generator, const cpp_class& c,
+                        cpp_access_specifier_kind                                  cur_access,
                         type_safe::optional_ref<const cpp_template_specialization> spec = nullptr)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(c));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(c), cur_access);
         if (output)
         {
             if (is_friended(c))
@@ -376,7 +403,7 @@ namespace
                         auto& access = static_cast<const cpp_access_specifier&>(member);
                         last_access  = access.access_specifier();
                     }
-                    else if (output.options(member).is_set(code_generator::exclude))
+                    else if (output.options(member, last_access).is_set(code_generator::exclude))
                         continue;
                     else
                     {
@@ -387,7 +414,7 @@ namespace
                             write_access_specifier(output, last_access);
                             last_written_access = last_access;
                         }
-                        need_sep = generate_code(generator, member);
+                        need_sep = generate_code_impl(generator, member, last_access);
                     }
                 }
 
@@ -424,9 +451,10 @@ namespace
             output << keyword("constexpr") << whitespace;
     }
 
-    bool generate_variable(code_generator& generator, const cpp_variable& var)
+    bool generate_variable(code_generator& generator, const cpp_variable& var,
+                           cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(var));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(var), cur_access);
         if (output)
         {
             write_storage_class(output, var.storage_class(), var.is_constexpr());
@@ -437,9 +465,10 @@ namespace
         return static_cast<bool>(output);
     }
 
-    bool generate_member_variable(code_generator& generator, const cpp_member_variable& var)
+    bool generate_member_variable(code_generator& generator, const cpp_member_variable& var,
+                                  cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(var));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(var), cur_access);
         if (output)
         {
             if (var.is_mutable())
@@ -450,9 +479,10 @@ namespace
         return static_cast<bool>(output);
     }
 
-    bool generate_bitfield(code_generator& generator, const cpp_bitfield& var)
+    bool generate_bitfield(code_generator& generator, const cpp_bitfield& var,
+                           cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(var));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(var), cur_access);
         if (output)
         {
             if (var.is_mutable())
@@ -465,9 +495,10 @@ namespace
         return static_cast<bool>(output);
     }
 
-    bool generate_function_parameter(code_generator& generator, const cpp_function_parameter& param)
+    bool generate_function_parameter(code_generator& generator, const cpp_function_parameter& param,
+                                     cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(param));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(param), cur_access);
         if (output)
             write_variable_base(output, param, param.name());
         return static_cast<bool>(output);
@@ -476,7 +507,7 @@ namespace
     void write_function_parameters(code_generator::output& output, const cpp_function_base& base)
     {
         output << punctuation("(") << bracket_ws;
-        auto need_sep = write_container(output, base.parameters(), comma);
+        auto need_sep = write_container(output, base.parameters(), comma, cpp_public);
         if (base.is_variadic())
         {
             if (need_sep)
@@ -536,10 +567,10 @@ namespace
     }
 
     bool generate_function(
-        code_generator& generator, const cpp_function& func,
+        code_generator& generator, const cpp_function& func, cpp_access_specifier_kind cur_access,
         type_safe::optional_ref<const cpp_template_specialization> spec = nullptr)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(func));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(func), cur_access);
         if (output)
         {
             if (is_friended(func))
@@ -637,9 +668,10 @@ namespace
 
     bool generate_member_function(
         code_generator& generator, const cpp_member_function& func,
+        cpp_access_specifier_kind                                  cur_access,
         type_safe::optional_ref<const cpp_template_specialization> spec = nullptr)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(func));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(func), cur_access);
         if (output)
         {
             if (is_friended(func))
@@ -685,9 +717,10 @@ namespace
         return static_cast<bool>(output);
     }
 
-    bool generate_conversion_op(code_generator& generator, const cpp_conversion_op& op)
+    bool generate_conversion_op(code_generator& generator, const cpp_conversion_op& op,
+                                cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(op));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(op), cur_access);
         if (output)
         {
             if (is_friended(op))
@@ -719,9 +752,10 @@ namespace
         return static_cast<bool>(output);
     }
 
-    bool generate_constructor(code_generator& generator, const cpp_constructor& ctor)
+    bool generate_constructor(code_generator& generator, const cpp_constructor& ctor,
+                              cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(ctor));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(ctor), cur_access);
         if (output)
         {
             if (is_friended(ctor))
@@ -740,9 +774,10 @@ namespace
         return static_cast<bool>(output);
     }
 
-    bool generate_destructor(code_generator& generator, const cpp_destructor& dtor)
+    bool generate_destructor(code_generator& generator, const cpp_destructor& dtor,
+                             cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(dtor));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(dtor), cur_access);
         if (output)
         {
             if (is_friended(dtor))
@@ -759,21 +794,24 @@ namespace
     }
 
     bool generate_function_base(code_generator& generator, const cpp_function_base& base,
+                                cpp_access_specifier_kind          cur_access,
                                 const cpp_template_specialization& spec)
     {
         switch (base.kind())
         {
         case cpp_entity_kind::function_t:
-            return generate_function(generator, static_cast<const cpp_function&>(base),
+            return generate_function(generator, static_cast<const cpp_function&>(base), cur_access,
                                      type_safe::ref(spec));
         case cpp_entity_kind::member_function_t:
             return generate_member_function(generator,
                                             static_cast<const cpp_member_function&>(base),
-                                            type_safe::ref(spec));
+                                            cur_access, type_safe::ref(spec));
         case cpp_entity_kind::conversion_op_t:
-            return generate_conversion_op(generator, static_cast<const cpp_conversion_op&>(base));
+            return generate_conversion_op(generator, static_cast<const cpp_conversion_op&>(base),
+                                          cur_access);
         case cpp_entity_kind::constructor_t:
-            return generate_constructor(generator, static_cast<const cpp_constructor&>(base));
+            return generate_constructor(generator, static_cast<const cpp_constructor&>(base),
+                                        cur_access);
 
         default:
             DEBUG_UNREACHABLE(detail::assert_handler{});
@@ -782,13 +820,14 @@ namespace
         return false;
     }
 
-    bool generate_friend(code_generator& generator, const cpp_friend& f)
+    bool generate_friend(code_generator& generator, const cpp_friend& f,
+                         cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(f));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(f), cur_access);
         if (output)
         {
             if (auto e = f.entity())
-                generate_code(generator, e.value());
+                generate_code_impl(generator, e.value(), cur_access);
             else if (auto type = f.type())
             {
                 output << keyword("friend") << whitespace;
@@ -802,9 +841,10 @@ namespace
     }
 
     bool generate_template_type_parameter(code_generator&                    generator,
-                                          const cpp_template_type_parameter& param)
+                                          const cpp_template_type_parameter& param,
+                                          cpp_access_specifier_kind          cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(param));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(param), cur_access);
         if (output)
         {
             output << keyword(to_string(param.keyword()));
@@ -822,9 +862,10 @@ namespace
     }
 
     bool generate_non_type_template_parameter(code_generator&                        generator,
-                                              const cpp_non_type_template_parameter& param)
+                                              const cpp_non_type_template_parameter& param,
+                                              cpp_access_specifier_kind              cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(param));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(param), cur_access);
         if (output)
         {
             detail::write_type(output, param.type(), param.name(), param.is_variadic());
@@ -838,13 +879,14 @@ namespace
     }
 
     bool generate_template_template_parameter(code_generator&                        generator,
-                                              const cpp_template_template_parameter& param)
+                                              const cpp_template_template_parameter& param,
+                                              cpp_access_specifier_kind              cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(param));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(param), cur_access);
         if (output)
         {
             output << keyword("template") << operator_ws << punctuation("<") << bracket_ws;
-            write_container(output, param.parameters(), punctuation(","));
+            write_container(output, param.parameters(), punctuation(","), cur_access);
             output << bracket_ws << punctuation(">") << operator_ws
                    << keyword(to_string(param.keyword()));
             if (param.is_variadic())
@@ -868,94 +910,103 @@ namespace
         for (auto& param : templ.parameters())
         {
             if (first
-                && !output.options(*templ.parameters().begin()).is_set(code_generator::exclude))
+                && !output.options(*templ.parameters().begin(), cpp_public)
+                        .is_set(code_generator::exclude))
             {
                 first = false;
                 output << keyword("template") << operator_ws << punctuation("<") << bracket_ws;
             }
             else if (need_sep)
                 output << comma;
-            need_sep = generate_code(*output.generator(), param);
+            need_sep = generate_code_impl(*output.generator(), param, cpp_public);
         }
 
         if (!hide_if_empty || need_sep)
             output << bracket_ws << punctuation(">") << newl;
     }
 
-    bool generate_alias_template(code_generator& generator, const cpp_alias_template& alias)
+    bool generate_alias_template(code_generator& generator, const cpp_alias_template& alias,
+                                 cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(alias));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(alias), cur_access);
         if (output)
         {
             write_template_parameters(output, alias, true);
-            generate_code(generator, alias.type_alias());
+            generate_code_impl(generator, alias.type_alias(), cur_access);
         }
         return static_cast<bool>(output);
     }
 
-    bool generate_variable_template(code_generator& generator, const cpp_variable_template& var)
+    bool generate_variable_template(code_generator& generator, const cpp_variable_template& var,
+                                    cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(var));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(var), cur_access);
         if (output)
         {
             write_template_parameters(output, var, true);
-            generate_code(generator, var.variable());
+            generate_code_impl(generator, var.variable(), cur_access);
         }
         return static_cast<bool>(output);
     }
 
-    bool generate_function_template(code_generator& generator, const cpp_function_template& func)
+    bool generate_function_template(code_generator& generator, const cpp_function_template& func,
+                                    cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(func));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(func), cur_access);
         if (output)
         {
             write_template_parameters(output, func, true);
-            generate_code(generator, func.function());
+            generate_code_impl(generator, func.function(), cur_access);
         }
         return static_cast<bool>(output);
     }
 
     bool generate_function_template_specialization(code_generator& generator,
-                                                   const cpp_function_template_specialization& func)
+                                                   const cpp_function_template_specialization& func,
+                                                   cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(func));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(func), cur_access);
         if (output)
         {
             DEBUG_ASSERT(func.is_full_specialization(), detail::assert_handler{});
             if (!is_friended(func))
                 // don't write template parameters in friend
                 write_template_parameters(output, func, false);
-            generate_function_base(generator, func.function(), func);
+            generate_function_base(generator, func.function(), cur_access, func);
         }
         return static_cast<bool>(output);
     }
 
-    bool generate_class_template(code_generator& generator, const cpp_class_template& templ)
+    bool generate_class_template(code_generator& generator, const cpp_class_template& templ,
+                                 cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(templ));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(templ), cur_access);
         if (output)
         {
             write_template_parameters(output, templ, true);
-            generate_class(generator, templ.class_());
+            generate_class(generator, templ.class_(), cur_access);
         }
         return static_cast<bool>(output);
     }
 
     bool generate_class_template_specialization(code_generator&                          generator,
-                                                const cpp_class_template_specialization& templ)
+                                                const cpp_class_template_specialization& templ,
+                                                cpp_access_specifier_kind                cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(templ));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(templ), cur_access);
         if (output)
         {
             write_template_parameters(output, templ, false);
-            generate_class(generator, templ.class_(), type_safe::ref(templ));
+            generate_class(generator, templ.class_(), cur_access, type_safe::ref(templ));
         }
         return static_cast<bool>(output);
     }
 
-    bool generate_static_assert(code_generator& generator, const cpp_static_assert& assert)
+    bool generate_static_assert(code_generator& generator, const cpp_static_assert& assert,
+                                cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(assert));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(assert),
+                                      cur_access);
         if (output)
         {
             output << keyword("static_assert") << punctuation("(") << bracket_ws;
@@ -966,80 +1017,89 @@ namespace
         return static_cast<bool>(output);
     }
 
-    bool generate_unexposed(code_generator& generator, const cpp_unexposed_entity& entity)
+    bool generate_unexposed(code_generator& generator, const cpp_unexposed_entity& entity,
+                            cpp_access_specifier_kind cur_access)
     {
-        code_generator::output output(type_safe::ref(generator), type_safe::ref(entity));
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(entity),
+                                      cur_access);
         if (output)
             output << token_seq(entity.spelling());
         return static_cast<bool>(output);
+    }
+
+    bool generate_code_impl(code_generator& generator, const cpp_entity& e,
+                            cpp_access_specifier_kind cur_access)
+    {
+        switch (e.kind())
+        {
+#define CPPAST_DETAIL_HANDLE(Name)                                                                 \
+    case cpp_entity_kind::Name##_t:                                                                \
+        return generate_##Name(generator, static_cast<const cpp_##Name&>(e), cur_access);
+
+            CPPAST_DETAIL_HANDLE(file)
+
+            CPPAST_DETAIL_HANDLE(macro_definition)
+            CPPAST_DETAIL_HANDLE(include_directive)
+
+            CPPAST_DETAIL_HANDLE(language_linkage)
+            CPPAST_DETAIL_HANDLE(namespace)
+            CPPAST_DETAIL_HANDLE(namespace_alias)
+            CPPAST_DETAIL_HANDLE(using_directive)
+            CPPAST_DETAIL_HANDLE(using_declaration)
+
+            CPPAST_DETAIL_HANDLE(type_alias)
+
+            CPPAST_DETAIL_HANDLE(enum)
+            CPPAST_DETAIL_HANDLE(enum_value)
+
+            CPPAST_DETAIL_HANDLE(class)
+            CPPAST_DETAIL_HANDLE(access_specifier)
+            CPPAST_DETAIL_HANDLE(base_class)
+
+            CPPAST_DETAIL_HANDLE(variable)
+            CPPAST_DETAIL_HANDLE(member_variable)
+            CPPAST_DETAIL_HANDLE(bitfield)
+
+            CPPAST_DETAIL_HANDLE(function_parameter)
+            CPPAST_DETAIL_HANDLE(function)
+            CPPAST_DETAIL_HANDLE(member_function)
+            CPPAST_DETAIL_HANDLE(conversion_op)
+            CPPAST_DETAIL_HANDLE(constructor)
+            CPPAST_DETAIL_HANDLE(destructor)
+
+            CPPAST_DETAIL_HANDLE(friend)
+
+            CPPAST_DETAIL_HANDLE(template_type_parameter)
+            CPPAST_DETAIL_HANDLE(non_type_template_parameter)
+            CPPAST_DETAIL_HANDLE(template_template_parameter)
+
+            CPPAST_DETAIL_HANDLE(alias_template)
+            CPPAST_DETAIL_HANDLE(variable_template)
+            CPPAST_DETAIL_HANDLE(function_template)
+            CPPAST_DETAIL_HANDLE(function_template_specialization)
+            CPPAST_DETAIL_HANDLE(class_template)
+            CPPAST_DETAIL_HANDLE(class_template_specialization)
+
+            CPPAST_DETAIL_HANDLE(static_assert)
+
+        case cpp_entity_kind::unexposed_t:
+            return generate_unexposed(generator, static_cast<const cpp_unexposed_entity&>(e),
+                                      cur_access);
+
+#undef CPPAST_DETAIL_HANDLE
+
+        case cpp_entity_kind::count:
+            DEBUG_UNREACHABLE(detail::assert_handler{});
+            break;
+        }
+
+        return false;
     }
 }
 
 bool cppast::generate_code(code_generator& generator, const cpp_entity& e)
 {
-    switch (e.kind())
-    {
-#define CPPAST_DETAIL_HANDLE(Name)                                                                 \
-    case cpp_entity_kind::Name##_t:                                                                \
-        return generate_##Name(generator, static_cast<const cpp_##Name&>(e));
-
-        CPPAST_DETAIL_HANDLE(file)
-
-        CPPAST_DETAIL_HANDLE(macro_definition)
-        CPPAST_DETAIL_HANDLE(include_directive)
-
-        CPPAST_DETAIL_HANDLE(language_linkage)
-        CPPAST_DETAIL_HANDLE(namespace)
-        CPPAST_DETAIL_HANDLE(namespace_alias)
-        CPPAST_DETAIL_HANDLE(using_directive)
-        CPPAST_DETAIL_HANDLE(using_declaration)
-
-        CPPAST_DETAIL_HANDLE(type_alias)
-
-        CPPAST_DETAIL_HANDLE(enum)
-        CPPAST_DETAIL_HANDLE(enum_value)
-
-        CPPAST_DETAIL_HANDLE(class)
-        CPPAST_DETAIL_HANDLE(access_specifier)
-        CPPAST_DETAIL_HANDLE(base_class)
-
-        CPPAST_DETAIL_HANDLE(variable)
-        CPPAST_DETAIL_HANDLE(member_variable)
-        CPPAST_DETAIL_HANDLE(bitfield)
-
-        CPPAST_DETAIL_HANDLE(function_parameter)
-        CPPAST_DETAIL_HANDLE(function)
-        CPPAST_DETAIL_HANDLE(member_function)
-        CPPAST_DETAIL_HANDLE(conversion_op)
-        CPPAST_DETAIL_HANDLE(constructor)
-        CPPAST_DETAIL_HANDLE(destructor)
-
-        CPPAST_DETAIL_HANDLE(friend)
-
-        CPPAST_DETAIL_HANDLE(template_type_parameter)
-        CPPAST_DETAIL_HANDLE(non_type_template_parameter)
-        CPPAST_DETAIL_HANDLE(template_template_parameter)
-
-        CPPAST_DETAIL_HANDLE(alias_template)
-        CPPAST_DETAIL_HANDLE(variable_template)
-        CPPAST_DETAIL_HANDLE(function_template)
-        CPPAST_DETAIL_HANDLE(function_template_specialization)
-        CPPAST_DETAIL_HANDLE(class_template)
-        CPPAST_DETAIL_HANDLE(class_template_specialization)
-
-        CPPAST_DETAIL_HANDLE(static_assert)
-
-    case cpp_entity_kind::unexposed_t:
-        return generate_unexposed(generator, static_cast<const cpp_unexposed_entity&>(e));
-
-#undef CPPAST_DETAIL_HANDLE
-
-    case cpp_entity_kind::count:
-        DEBUG_UNREACHABLE(detail::assert_handler{});
-        break;
-    }
-
-    return false;
+    return generate_code_impl(generator, e, cpp_public);
 }
 
 void detail::write_template_arguments(
