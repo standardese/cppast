@@ -5,6 +5,7 @@
 #ifndef CPPAST_VISITOR_HPP_INCLUDED
 #define CPPAST_VISITOR_HPP_INCLUDED
 
+#include <cppast/cpp_class.hpp>
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_kind.hpp>
 
@@ -24,6 +25,9 @@ namespace cppast
             container_entity_exit, //< Callback called for a container entity after the children.
             /// If callback returns `false`, visit operation will be aborted.
         } event;
+
+        cpp_access_specifier_kind access; //< The current access specifier.
+
         bool
             last_child; //< True when the current entity is the last child of the visited parent entity.
         /// \notes It will always be `false` for the initial entity.
@@ -42,7 +46,8 @@ namespace cppast
             return func(e, info);
         }
 
-        bool visit(const cpp_entity& e, visitor_callback_t cb, void* functor, bool last_child);
+        bool visit(const cpp_entity& e, visitor_callback_t cb, void* functor,
+                   cpp_access_specifier_kind cur_access, bool last_child);
     } // namespace detail
 
     /// Visits a [cppast::cpp_entity]().
@@ -54,7 +59,7 @@ namespace cppast
     template <typename Func>
     void visit(const cpp_entity& e, Func f)
     {
-        detail::visit(e, &detail::visitor_callback<Func>, &f, false);
+        detail::visit(e, &detail::visitor_callback<Func>, &f, cpp_public, false);
     }
 
     /// Visits a [cppast::cpp_entity]().
