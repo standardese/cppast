@@ -59,7 +59,8 @@ public:
     }
 
 private:
-    generation_options do_get_options(const cppast::cpp_entity&) override
+    generation_options do_get_options(const cppast::cpp_entity&,
+                                      cppast::cpp_access_specifier_kind) override
     {
         return options_;
     }

@@ -370,23 +370,15 @@ namespace cppast
             return {};
         }
 
-        /// \returns The generation options for that entity.
-        /// The base class version always returns no special options.
-        /// \notes This function will not be called if the one with the access specifier is overridden.
-        virtual generation_options do_get_options(const cpp_entity& e)
-        {
-            (void)e;
-            return {};
-        }
-
         /// \returns The generation options for that entity with the given access specifier.
-        /// If an entity is not part of a class, returns [cppast::cpp_public]().
-        /// The base class version forwards to the overload that doesn't take an access specifier.
+        /// If an entity is not part of a class the access specifier is alwasy [cppast::cpp_public]().
+        /// The base class version always returns no special options.
         virtual generation_options do_get_options(const cpp_entity&                 e,
                                                   cppast::cpp_access_specifier_kind access)
         {
+            (void)e;
             (void)access;
-            return do_get_options(e);
+            return {};
         }
 
         /// \effects Will be invoked before code of an entity is generated.

@@ -79,7 +79,8 @@ void print_entity(std::ostream& out, const cppast::cpp_entity& e)
 
         private:
             // called to retrieve the generation options of an entity
-            generation_options do_get_options(const cppast::cpp_entity&) override
+            generation_options do_get_options(const cppast::cpp_entity&,
+                                              cppast::cpp_access_specifier_kind) override
             {
                 // generate declaration only
                 return code_generator::declaration;
