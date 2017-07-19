@@ -5,6 +5,7 @@
 #include <cppast/cpp_type.hpp>
 
 #include <cppast/cpp_array_type.hpp>
+#include <cppast/cpp_class.hpp>
 #include <cppast/cpp_decltype_type.hpp>
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_kind.hpp>
@@ -576,7 +577,8 @@ std::string detail::to_string(const cpp_type& type)
 
     // just a dummy type for the output
     static auto dummy_entity = cpp_type_alias::build("foo", cpp_builtin_type::build(cpp_int));
-    to_string_generator::output output(type_safe::ref(generator), type_safe::ref(*dummy_entity));
+    to_string_generator::output output(type_safe::ref(generator), type_safe::ref(*dummy_entity),
+                                       cpp_public);
     write_type(output, type, "");
     return generator.get();
 }
