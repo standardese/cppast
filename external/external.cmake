@@ -14,6 +14,17 @@ if(NOT type_safe_FOUND)
 endif()
 
 #
+# install type fmt
+#
+find_package(fmt QUIET)
+if(NOT fmt_FOUND)
+    message(STATUS "Installing fmt via submodule")
+    execute_process(COMMAND git submodule update --init -- external/fmt
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/fmt EXCLUDE_FROM_ALL)
+endif()
+
+#
 # install the tiny-process-library
 #
 message(STATUS "Installing tiny-process-library via submodule")
