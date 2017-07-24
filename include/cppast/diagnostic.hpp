@@ -6,8 +6,11 @@
 #define CPPAST_DIAGNOSTIC_HPP_INCLUDED
 
 #include <string>
+#include <atomic>
 
 #include <type_safe/optional.hpp>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 
 namespace cppast
 {
@@ -41,6 +44,12 @@ namespace cppast
         static source_location make_entity(std::string entity)
         {
             return {std::move(entity), type_safe::nullopt, type_safe::nullopt};
+        }
+
+        /// \returns A source location with no information available
+        static source_location make_unknown()
+        {
+            return {type_safe::nullopt, type_safe::nullopt, type_safe::nullopt};
         }
 
         /// \returns A possible string representation of the source location.
@@ -100,6 +109,20 @@ namespace cppast
         source_location  location;
         cppast::severity severity;
     };
+
+    /// Returns a [cppast::diagnostic]() with the given information
+    ///
+    /// This function composes a diagnostic from the given severity and location,
+    /// with the message formatted from args
+    template<typename... Args>
+    diagnostic make_diagnostic(severity severity, const source_location& location, Args&&... args)
+    {
+        return {
+            fmt::format(std::forward<Args>(args)...),
+            location,
+            severity
+        };
+    }
 } // namespace cppast
 
 #endif // CPPAST_DIAGNOSTIC_HPP_INCLUDED

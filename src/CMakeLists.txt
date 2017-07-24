@@ -74,11 +74,15 @@ set(source
         cpp_variable_template.cpp
         diagnostic_logger.cpp
         visitor.cpp
-        parser.cpp
+        detail/parser/token.cpp
         detail/parser/lexer.cpp
+        detail/parser/fake_lexer.cpp
+        detail/parser/istream_lexer.cpp
         detail/parser/buffered_lexer.cpp
         detail/parser/ast.cpp
-        detail/parser/parser.cpp)
+        detail/parser/parser.cpp
+        detail/utils/format.cpp
+        detail/info_tracking_logger.cpp)
 
 set(libclang_source
         libclang/class_parser.cpp
@@ -106,7 +110,7 @@ set(libclang_source
 
 add_library(cppast ${detail_header} ${header} ${source} ${libclang_source})
 target_include_directories(cppast PUBLIC ../include)
-target_link_libraries(cppast PUBLIC type_safe _cppast_tiny_process _cppast_libclang)
+target_link_libraries(cppast PUBLIC type_safe fmt _cppast_tiny_process _cppast_libclang)
 target_compile_definitions(cppast PUBLIC
                                 CPPAST_VERSION_MINOR="${cppast_VERSION_MINOR}"
                                 CPPAST_VERSION_MAJOR="${cppast_VERSION_MAJOR}"

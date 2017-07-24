@@ -1,6 +1,8 @@
 #include <cppast/detail/parser/parser.hpp>
+#include <cppast/detail/parser/istream_lexer.hpp>
 #include <iostream>
 
+using namespace cppast;
 using namespace cppast::detail::parser;
 
 class print_visitor : public detailed_visitor
@@ -65,15 +67,22 @@ int main(int argc, char** argv)
     if(argc == 2)
     {
         std::istringstream input{argv[1]};
-        buffered_lexer lexer{input, 10};
+        stderr_diagnostic_logger logger;
+        logger.set_verbose(true);
 
-        std::shared_ptr<ast_node> expr = parse_invoke(lexer);
+        istream_lexer lexer{input, logger};
+        parser parser{lexer};
+
+        std::cout << "Parsing \"" << input.str() << "\" as invoke expr...\n";
+        std::shared_ptr<ast_node> expr = parser.parse_invoke();
 
         // Try again with an attribute
         if(expr == nullptr)
         {
             input.str(argv[1]);
-            expr = parse_cpp_attribute(lexer);
+            lexer.reset();
+            std::cout << "Parsing \"" << input.str() << "\" as C++ attribute expr...\n";
+            expr = parser.parse_cpp_attribute();
         }
 
         if(expr != nullptr)

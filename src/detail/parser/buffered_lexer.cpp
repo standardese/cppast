@@ -1,14 +1,24 @@
+// Copyright (C) 2017 Manu Sanchez <Manu343726@gmail.com>
+// This file is subject to the license terms in the LICENSE file
+// found in the top-level directory of this distribution.
+
 #include <cppast/detail/parser/buffered_lexer.hpp>
 
 using namespace cppast::detail::parser;
 
-buffered_lexer::buffered_lexer(std::istream& input, std::size_t size) :
-    lexer{input}
+buffered_lexer::buffered_lexer(lexer& lexer, std::size_t size) :
+    cppast::detail::parser::lexer{lexer.logger()},
+    _lexer(lexer)
 {
-    _lookahead_buffer.reserve(size + 1);
-    while(_lookahead_buffer.size() < _lookahead_buffer.capacity() && lexer::read_next_token())
+    _lookahead_buffer.reserve(size);
+    reset();
+}
+
+void buffered_lexer::reset()
+{
+    while(_lookahead_buffer.size() < _lookahead_buffer.capacity() && _lexer.read_next_token())
     {
-        _lookahead_buffer.push_back(lexer::current_token());
+        _lookahead_buffer.push_back(_lexer.current_token());
     }
 }
 
@@ -21,14 +31,9 @@ bool buffered_lexer::read_next_token()
 {
     bool got_something = false;
 
-    if(!lexer::good())
+    while(_lookahead_buffer.size() < _lookahead_buffer.capacity() && _lexer.read_next_token())
     {
-        return false;
-    }
-
-    while(_lookahead_buffer.size() < _lookahead_buffer.capacity() && lexer::read_next_token())
-    {
-        _lookahead_buffer.push_back(lexer::current_token());
+        _lookahead_buffer.push_back(_lexer.current_token());
         got_something = true;
     }
 
@@ -39,7 +44,13 @@ bool buffered_lexer::read_next_token()
         got_something = true;
     }
 
-    return lexer::good() && got_something;
+    if(got_something)
+    {
+        logger().log("buffered_lexer.read_next_token", severity::debug, source_location::make_unknown(),
+            "got: {} ", current_token());
+    }
+
+    return got_something;
 }
 
 std::size_t buffered_lexer::buffer_size() const
@@ -52,4 +63,14 @@ const token& buffered_lexer::next_token(std::size_t i) const
     i = std::min(buffer_size() - 1, i);
 
     return _lookahead_buffer[i];
+}
+
+bool buffered_lexer::good() const
+{
+    return _lexer.good() && eof();
+}
+
+bool buffered_lexer::eof() const
+{
+    return _lookahead_buffer.empty();
 }

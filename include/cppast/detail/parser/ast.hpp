@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <sstream>
 #include <type_traits>
 
 
