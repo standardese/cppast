@@ -3,6 +3,7 @@
 // found in the top-level directory of this distribution.
 
 #include <cppast/detail/parser/buffered_lexer.hpp>
+#include <stdexcept>
 
 using namespace cppast::detail::parser;
 
@@ -11,15 +12,6 @@ buffered_lexer::buffered_lexer(lexer& lexer, std::size_t size) :
     _lexer(lexer)
 {
     _lookahead_buffer.reserve(size);
-    reset();
-}
-
-void buffered_lexer::reset()
-{
-    while(_lookahead_buffer.size() < _lookahead_buffer.capacity() && _lexer.read_next_token())
-    {
-        _lookahead_buffer.push_back(_lexer.current_token());
-    }
 }
 
 const token& buffered_lexer::current_token() const
@@ -34,7 +26,6 @@ bool buffered_lexer::read_next_token()
     while(_lookahead_buffer.size() < _lookahead_buffer.capacity() && _lexer.read_next_token())
     {
         _lookahead_buffer.push_back(_lexer.current_token());
-        got_something = true;
     }
 
     if(!_lookahead_buffer.empty())
@@ -47,7 +38,7 @@ bool buffered_lexer::read_next_token()
     if(got_something)
     {
         logger().log("buffered_lexer.read_next_token", severity::debug, source_location::make_unknown(),
-            "got: {} ", current_token());
+            "got: {} (buffer size: {}, capacity: {})", current_token(), buffer_size(), _lookahead_buffer.capacity());
     }
 
     return got_something;
@@ -60,9 +51,14 @@ std::size_t buffered_lexer::buffer_size() const
 
 const token& buffered_lexer::next_token(std::size_t i) const
 {
-    i = std::min(buffer_size() - 1, i);
-
-    return _lookahead_buffer[i];
+    if(i >= buffer_size())
+    {
+        throw;
+    }
+    else
+    {
+        return _lookahead_buffer[i];
+    }
 }
 
 bool buffered_lexer::good() const

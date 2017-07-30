@@ -31,8 +31,6 @@ public:
     bool good() const override;
     bool eof() const override;
 
-    void reset() override;
-
 private:
     lexer& _lexer;
     token _current_token;

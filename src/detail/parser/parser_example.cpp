@@ -66,35 +66,29 @@ private:
     }
 };
 
+std::shared_ptr<ast::node> parse(const std::string& input, diagnostic_logger& logger)
+{
+    std::istringstream istream{input};
+    logger.set_verbose(true);
+    istream_lexer lexer{istream, logger};
+    parser parser{lexer};
+
+    return parser.parse_cpp_attribute();
+}
+
 int main(int argc, char** argv)
 {
     if(argc == 2)
     {
-        std::istringstream input{argv[1]};
         stderr_diagnostic_logger logger;
-        logger.set_verbose(true);
+        auto attribute = parse(argv[1], logger);
 
-        istream_lexer lexer{input, logger};
-        parser parser{lexer};
-
-        std::cout << "Parsing \"" << input.str() << "\" as invoke expr...\n";
-        std::shared_ptr<ast::node> expr = parser.parse_invoke();
-
-        // Try again with an attribute
-        if(expr == nullptr)
-        {
-            input.str(argv[1]);
-            lexer.reset();
-            std::cout << "Parsing \"" << input.str() << "\" as C++ attribute expr...\n";
-            expr = parser.parse_cpp_attribute();
-        }
-
-        if(expr != nullptr)
+        if(attribute != nullptr)
         {
             std::cout << "ok\n";
 
             print_visitor visitor;
-            expr->visit(visitor);
+            attribute->visit(visitor);
         }
         else
         {

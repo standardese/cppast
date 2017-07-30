@@ -23,7 +23,7 @@ const token& istream_lexer::current_token() const
 
 bool is_space(char c)
 {
-    return c == ' ';
+    return c == ' ' || c == '\n';
 }
 
 struct key_token_match_info
@@ -47,7 +47,7 @@ bool istream_lexer::read_next_token()
 {
     _token_buffer.str("");
 
-    if(!good() || !_input.good())
+    if(!_input.good())
     {
         return false;
     }
@@ -252,4 +252,7 @@ void istream_lexer::save_token(const token::token_kind kind, const std::string& 
 
     _current_token.kind = kind;
     _current_token.column = _pos - _current_token.token.length();
+
+    logger().log("istream_lexer.save_token", severity::debug, source_location::make_unknown(),
+        "token {} saved", _current_token);
 }

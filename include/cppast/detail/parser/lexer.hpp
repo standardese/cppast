@@ -22,8 +22,6 @@ class lexer
 public:
     virtual ~lexer() = default;
 
-    virtual void reset();
-
     virtual bool read_next_token() = 0;
     virtual const token& current_token() const = 0;
     virtual bool good() const = 0;

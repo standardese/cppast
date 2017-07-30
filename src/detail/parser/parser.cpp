@@ -9,7 +9,7 @@ using namespace cppast::detail::parser;
 using namespace cppast::detail::parser::ast;
 
 parser::parser(lexer& lexer) :
-    _lexer{lexer, 10}
+    _lexer{lexer, 3}
 {}
 
 const diagnostic_logger& parser::logger() const
@@ -91,7 +91,7 @@ std::shared_ptr<node> parser::do_parse_expression()
                 }
                 default:
                     logger().log("parser.expr", severity::error, source_location::make_unknown(),
-                        "Unexpected token \"" + _lexer.next_token(0).string_value() + "\"");
+                        "Unexpected token {}", _lexer.next_token(0));
                     return nullptr;
                 }
             }
@@ -164,49 +164,57 @@ std::pair<bool, node_list> parser::do_parse_arguments(const token::token_kind op
        _lexer.current_token().kind != open_delim)
     {
         logger().log("parser.invoke_args", severity::error, source_location::make_unknown(),
-            std::string("Expected ") + to_string(open_delim) + ", got " + to_string(_lexer.current_token().kind)
-            + "(\"" + _lexer.current_token().string_value() + "\")");
+            std::string("Expected ") + to_string(open_delim) + ", got " + to_string(_lexer.current_token()));
         return std::make_pair(false, std::move(args));
     }
 
-    while(!error && !finished)
+    if(_lexer.buffer_size() > 0 &&
+       _lexer.next_token(0).kind == close_delim)
     {
-        auto arg = do_parse_expression();
-
-        if(arg != nullptr)
+        // eat closing token
+        _lexer.read_next_token();
+    }
+    else
+    {
+        while(!error && !finished)
         {
-            args.push_back(std::move(arg));
-        }
+            auto arg = do_parse_expression();
 
-        if(_lexer.buffer_size() > 0)
-        {
-            if(_lexer.next_token(0).kind == close_delim)
+            if(arg != nullptr)
             {
-                finished = true;
+                args.push_back(std::move(arg));
 
-                // eat closing token
-                _lexer.read_next_token();
-            }
-            else if(_lexer.next_token(0).kind == token::token_kind::comma)
-            {
-                // eat comma
-                _lexer.read_next_token();
+                if(_lexer.read_next_token())
+                {
+                    if(_lexer.current_token().kind == close_delim)
+                    {
+                        finished = true;
+                    }
+                    else if(_lexer.current_token().kind == token::token_kind::comma)
+                    {
+                        // nop, continue reading args
+                    }
+                    else
+                    {
+                        // expected comma or closing token
+                        logger().log("parser.invoke_args", severity::error, source_location::make_unknown(),
+                            "Expected {} or comma (','), got {}", close_delim, _lexer.current_token());
+                        error = true;
+                    }
+                }
+                else
+                {
+                    logger().log("parser.invoke_args", severity::error, source_location::make_unknown(),
+                            std::string("Expected ") + to_string(open_delim) + " or comma (','), but no more tokens are available");
+                    error = true;
+                }
             }
             else
             {
-                // expected comma or closing token
                 logger().log("parser.invoke_args", severity::error, source_location::make_unknown(),
-                    std::string("Expected ") + to_string(open_delim) + "or comma, got " + to_string(_lexer.next_token(0).kind)
-                    + "(\"" + _lexer.next_token(0).string_value() + "\")");
+                    "Expected invoke argument");
                 error = true;
             }
-        }
-        else
-        {
-            logger().log("parser.invoke_args", severity::error, source_location::make_unknown(),
-                std::string("Expected ") + to_string(open_delim) + "or comma, got " + to_string(_lexer.next_token(0).kind)
-                + "(\"" + _lexer.next_token(0).string_value() + "\")");
-            error = true;
         }
     }
 
@@ -278,6 +286,9 @@ std::shared_ptr<expression_cpp_attribute> parser::do_parse_cpp_attribute()
     {
         if(_lexer.current_token().kind == token::token_kind::double_bracket_open)
         {
+            logger().log("parser.cpp_attribute", severity::debug, source_location::make_unknown(),
+                "Got {}, continue parsing body (next token is: {})", _lexer.current_token(),
+                _lexer.next_token(0));
             auto body = do_parse_invoke();
 
             if(body == nullptr)

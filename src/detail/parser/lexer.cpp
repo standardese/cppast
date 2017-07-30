@@ -16,6 +16,3 @@ const diagnostic_logger& lexer::logger() const
 {
     return _logger;
 }
-
-void lexer::reset()
-{}
