@@ -22,9 +22,12 @@ namespace detail
 namespace parser
 {
 
-class ast_node;
+namespace ast
+{
 
-class ast_visitor
+class node;
+
+class visitor
 {
 public:
     enum class event
@@ -33,14 +36,14 @@ public:
         children_exit
     };
 
-    virtual ~ast_visitor() = default;
+    virtual ~visitor() = default;
 
-    virtual void on_node(const ast_node& node) {}
+    virtual void on_node(const node& node) {}
 
     virtual void on_event(event event) {}
 };
 
-class ast_node
+class node
 {
 public:
     enum class node_kind
@@ -56,20 +59,20 @@ public:
 
     node_kind kind = node_kind::unespecified;
 
-    virtual ~ast_node() = default;
+    virtual ~node() = default;
 
-    void visit(ast_visitor& visitor) const;
+    void visit(visitor& visitor) const;
 
 protected:
-    virtual void do_visit(ast_visitor& visitor) const;
+    virtual void do_visit(visitor& visitor) const;
 };
 
-using node_list = std::vector<std::shared_ptr<ast_node>>;
+using node_list = std::vector<std::shared_ptr<node>>;
 
 template<typename T>
-struct ast_terminal : public ast_node
+struct terminal : public node
 {
-    ast_terminal(const T& value) :
+    terminal(const T& value) :
         value{value}
     {
         if(std::is_same<T, std::string>::value)
@@ -90,67 +93,67 @@ struct ast_terminal : public ast_node
 };
 
 template<typename T>
-struct ast_terminal_number : public ast_terminal<T>
+struct terminal_number : public terminal<T>
 {
-    using ast_terminal<T>::ast_terminal;
+    using terminal<T>::terminal;
 
     static_assert(std::is_arithmetic<T>::value, "An arithmetic type is required for numeric terminals");
 
-    static constexpr ast_node::node_kind node_class_kind = (std::is_floating_point<T>::value ?
-            ast_node::node_kind::terminal_float :
-            ast_node::node_kind::terminal_integer);
+    static constexpr node::node_kind node_class_kind = (std::is_floating_point<T>::value ?
+            node::node_kind::terminal_float :
+            node::node_kind::terminal_integer);
 };
 
-using ast_terminal_integer = ast_terminal_number<long long>;
-using ast_terminal_float   = ast_terminal_number<double>;
+using terminal_integer = terminal_number<long long>;
+using terminal_float   = terminal_number<double>;
 
-struct ast_terminal_string : public ast_terminal<std::string>
+struct terminal_string : public terminal<std::string>
 {
-    using ast_terminal<std::string>::ast_terminal;
+    using terminal<std::string>::terminal;
 
-    static constexpr ast_node::node_kind node_class_kind = ast_node::node_kind::terminal_string;
+    static constexpr node::node_kind node_class_kind = node::node_kind::terminal_string;
 };
 
-struct ast_identifier : public ast_node
+struct identifier : public node
 {
-    ast_identifier(const std::string& name);
-    ast_identifier(const std::vector<std::string>& scope_names);
+    identifier(const std::string& name);
+    identifier(const std::vector<std::string>& scope_names);
 
     std::vector<std::string> scope_names;
 
     const std::string& unqualified_name() const;
     std::string full_qualified_name() const;
 
-    static constexpr ast_node::node_kind node_class_kind = ast_node::node_kind::identifier;
+    static constexpr node::node_kind node_class_kind = node::node_kind::identifier;
 };
 
-struct ast_expression_invoke : public ast_node
+struct expression_invoke : public node
 {
-    ast_expression_invoke(const std::shared_ptr<ast_identifier>& callee, const node_list& args);
+    expression_invoke(const std::shared_ptr<identifier>& callee, const node_list& args);
 
-    std::shared_ptr<ast_identifier> callee;
+    std::shared_ptr<identifier> callee;
     node_list args;
 
     static constexpr node_kind node_class_kind = node_kind::expression_invoke;
 
 private:
-    void do_visit(ast_visitor& visitor) const override final;
+    void do_visit(visitor& visitor) const override final;
 };
 
-struct ast_expression_cpp_attribute : public ast_node
+struct expression_cpp_attribute : public node
 {
-    ast_expression_cpp_attribute(const std::shared_ptr<ast_expression_invoke>& body);
+    expression_cpp_attribute(const std::shared_ptr<expression_invoke>& body);
 
-    std::shared_ptr<ast_expression_invoke> body;
+    std::shared_ptr<expression_invoke> body;
 
     static constexpr node_kind node_class_kind = node_kind::expression_cpp_attribute;
 
 private:
-    void do_visit(ast_visitor& visitor) const override final;
+    void do_visit(visitor& visitor) const override final;
 };
 
 template<typename T>
-T* node_cast(ast_node* node)
+T* node_cast(node* node)
 {
     if(T::node_class_kind == node->kind)
     {
@@ -159,7 +162,7 @@ T* node_cast(ast_node* node)
 }
 
 template<typename T>
-std::shared_ptr<T> node_cast(const std::shared_ptr<ast_node>& node)
+std::shared_ptr<T> node_cast(const std::shared_ptr<node>& node)
 {
     if(T::node_class_kind == node->kind)
     {
@@ -168,56 +171,58 @@ std::shared_ptr<T> node_cast(const std::shared_ptr<ast_node>& node)
 }
 
 template<typename Function>
-void visit_node(ast_node* node, Function function)
+void visit_node(node* node, Function function)
 {
     switch(node->kind)
     {
-    case ast_node::node_kind::terminal_integer:
-        function(node_cast<ast_terminal_integer>(node)); break;
-    case ast_node::node_kind::terminal_float:
-        function(node_cast<ast_terminal_float>(node)); break;
-    case ast_node::node_kind::terminal_string:
-        function(node_cast<ast_terminal_string>(node)); break;
-    case ast_node::node_kind::identifier:
-        function(node_cast<ast_identifier>(node)); break;
-    case ast_node::node_kind::expression_invoke:
-        function(node_cast<ast_expression_invoke>(node)); break;
-    case ast_node::node_kind::expression_cpp_attribute:
-        function(node_cast<ast_expression_cpp_attribute>(node)); break;
+    case node::node_kind::terminal_integer:
+        function(node_cast<terminal_integer>(node)); break;
+    case node::node_kind::terminal_float:
+        function(node_cast<terminal_float>(node)); break;
+    case node::node_kind::terminal_string:
+        function(node_cast<terminal_string>(node)); break;
+    case node::node_kind::identifier:
+        function(node_cast<identifier>(node)); break;
+    case node::node_kind::expression_invoke:
+        function(node_cast<expression_invoke>(node)); break;
+    case node::node_kind::expression_cpp_attribute:
+        function(node_cast<expression_cpp_attribute>(node)); break;
     default:
         throw std::logic_error{"unespecified kind nodes cannot be visited"};
     }
 }
 
 template<typename Function>
-void visit_node(const std::shared_ptr<ast_node>& node, Function function)
+void visit_node(const std::shared_ptr<node>& node, Function function)
 {
     visit_node(node.get(), function);
 }
 
-class detailed_visitor : public ast_visitor
+class detailed_visitor : public visitor
 {
 public:
-    virtual void on_node(const ast_terminal_integer& node) {}
-    virtual void on_node(const ast_terminal_float& node) {}
-    virtual void on_node(const ast_terminal_string& node) {}
-    virtual void on_node(const ast_identifier& node) {}
-    virtual void on_node(const ast_expression_invoke& node) {}
-    virtual void on_node(const ast_expression_cpp_attribute& node) {}
+    virtual void on_node(const terminal_integer& node) {}
+    virtual void on_node(const terminal_float& node) {}
+    virtual void on_node(const terminal_string& node) {}
+    virtual void on_node(const identifier& node) {}
+    virtual void on_node(const expression_invoke& node) {}
+    virtual void on_node(const expression_cpp_attribute& node) {}
 
 private:
-    void on_node(const ast_node& node) override final;
+    void on_node(const node& node) override final;
 };
 
-std::shared_ptr<ast_node> literal_integer(long long value);
-std::shared_ptr<ast_node> literal_float(float value);
-std::shared_ptr<ast_node> literal_string(const std::string& str);
-std::shared_ptr<ast_node> literal(const token& token);
+std::shared_ptr<node> make_literal_integer(long long value);
+std::shared_ptr<node> make_literal_float(float value);
+std::shared_ptr<node> make_literal_string(const std::string& str);
+std::shared_ptr<node> make_literal(const token& token);
 
-}
+} // namespace cppast::detail::parser::ast
 
-}
+} // namespace cppast::detail::parser
 
-}
+} // namespace cppast::detail
+
+} // namespace cppast
 
 #endif // CPPAST_DETAIL_PARSER_AST_HPP_INCLUDED

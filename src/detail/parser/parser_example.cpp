@@ -9,36 +9,36 @@
 using namespace cppast;
 using namespace cppast::detail::parser;
 
-class print_visitor : public detailed_visitor
+class print_visitor : public ast::detailed_visitor
 {
 public:
-    void on_node(const ast_terminal_integer& node) override
+    void on_node(const ast::terminal_integer& node) override
     {
         print() << "integer literal (" << node.value << ")\n";
     }
 
-    void on_node(const ast_terminal_float& node) override
+    void on_node(const ast::terminal_float& node) override
     {
         print() << "float literal (" << node.value << ")\n";
     }
 
-    void on_node(const ast_terminal_string& node) override
+    void on_node(const ast::terminal_string& node) override
     {
         print() << "string literal (" << node.value << ")\n";
     }
 
-    void on_node(const ast_identifier& node) override
+    void on_node(const ast::identifier& node) override
     {
         print() << "identifier (full name: \"" << node.full_qualified_name() << "\")\n";
     }
 
-    void on_node(const ast_expression_invoke& node) override
+    void on_node(const ast::expression_invoke& node) override
     {
         print() << "invoke expression (\"" << node.callee->full_qualified_name() << "(<"
             << node.args.size() << " args>)\")\n";
     }
 
-    void on_node(const ast_expression_cpp_attribute& node) override
+    void on_node(const ast::expression_cpp_attribute& node) override
     {
         print() << "C++ attribute expression (\"" << node.body->callee->full_qualified_name() << "(<"
             << node.body->args.size() << " args>)\")\n";
@@ -78,7 +78,7 @@ int main(int argc, char** argv)
         parser parser{lexer};
 
         std::cout << "Parsing \"" << input.str() << "\" as invoke expr...\n";
-        std::shared_ptr<ast_node> expr = parser.parse_invoke();
+        std::shared_ptr<ast::node> expr = parser.parse_invoke();
 
         // Try again with an attribute
         if(expr == nullptr)

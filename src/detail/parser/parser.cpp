@@ -6,6 +6,7 @@
 
 using namespace cppast;
 using namespace cppast::detail::parser;
+using namespace cppast::detail::parser::ast;
 
 parser::parser(lexer& lexer) :
     _lexer{lexer, 10}
@@ -16,7 +17,7 @@ const diagnostic_logger& parser::logger() const
     return _lexer.logger();
 }
 
-std::shared_ptr<ast_expression_invoke> parser::parse_invoke()
+std::shared_ptr<expression_invoke> parser::parse_invoke()
 {
     auto result = do_parse_invoke();
 
@@ -29,7 +30,7 @@ std::shared_ptr<ast_expression_invoke> parser::parse_invoke()
     return result;
 }
 
-std::shared_ptr<ast_expression_cpp_attribute> parser::parse_cpp_attribute()
+std::shared_ptr<expression_cpp_attribute> parser::parse_cpp_attribute()
 {
     auto result = do_parse_cpp_attribute();
 
@@ -42,9 +43,9 @@ std::shared_ptr<ast_expression_cpp_attribute> parser::parse_cpp_attribute()
     return result;
 }
 
-std::shared_ptr<ast_node> parser::do_parse_expression()
+std::shared_ptr<node> parser::do_parse_expression()
 {
-    std::shared_ptr<ast_node> expr = nullptr;
+    std::shared_ptr<node> expr = nullptr;
 
     if(_lexer.buffer_size() > 0)
     {
@@ -79,7 +80,7 @@ std::shared_ptr<ast_node> parser::do_parse_expression()
                 {
                     if(_lexer.read_next_token())
                     {
-                        return literal(_lexer.current_token());
+                        return make_literal(_lexer.current_token());
                     }
                     else
                     {
@@ -106,7 +107,7 @@ std::shared_ptr<ast_node> parser::do_parse_expression()
     return expr;
 }
 
-std::shared_ptr<ast_expression_invoke> parser::do_parse_invoke()
+std::shared_ptr<expression_invoke> parser::do_parse_invoke()
 {
     auto callee = do_parse_identifier();
 
@@ -125,7 +126,7 @@ std::shared_ptr<ast_expression_invoke> parser::do_parse_invoke()
 
             if(args_result.first)
             {
-                return std::make_shared<ast_expression_invoke>(
+                return std::make_shared<expression_invoke>(
                     std::move(callee),
                     std::move(args_result.second)
                 );
@@ -140,7 +141,7 @@ std::shared_ptr<ast_expression_invoke> parser::do_parse_invoke()
         else
         {
             // no parens is interpreted as call without args
-            return std::make_shared<ast_expression_invoke>(
+            return std::make_shared<expression_invoke>(
                 std::move(callee),
                 node_list{}
             );
@@ -212,7 +213,7 @@ std::pair<bool, node_list> parser::do_parse_arguments(const token::token_kind op
     return std::make_pair(!error, std::move(args));
 }
 
-std::shared_ptr<ast_identifier> parser::do_parse_identifier()
+std::shared_ptr<identifier> parser::do_parse_identifier()
 {
     std::vector<std::string> scope_names;
     bool finished = false, error = false;
@@ -267,11 +268,11 @@ std::shared_ptr<ast_identifier> parser::do_parse_identifier()
     }
     else
     {
-        return std::make_shared<ast_identifier>(std::move(scope_names));
+        return std::make_shared<identifier>(std::move(scope_names));
     }
 }
 
-std::shared_ptr<ast_expression_cpp_attribute> parser::do_parse_cpp_attribute()
+std::shared_ptr<expression_cpp_attribute> parser::do_parse_cpp_attribute()
 {
     if(_lexer.read_next_token())
     {
@@ -289,7 +290,7 @@ std::shared_ptr<ast_expression_cpp_attribute> parser::do_parse_cpp_attribute()
 
             if(_lexer.read_next_token() && _lexer.current_token().kind == token::token_kind::double_bracket_close)
             {
-                return std::make_shared<ast_expression_cpp_attribute>(std::move(body));
+                return std::make_shared<expression_cpp_attribute>(std::move(body));
             }
             else
             {
