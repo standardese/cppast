@@ -1,5 +1,9 @@
-#ifndef CPPAST_DETAIL_PARSER_BUFFERED_LEXER_INCLUDED
-#define CPPAST_DETAIL_PARSER_BUFFERED_LEXER_INCLUDED
+// Copyright (C) 2017 Manu Sanchez <Manu343726@gmail.com>
+// This file is subject to the license terms in the LICENSE file
+// found in the top-level directory of this distribution.
+
+#ifndef CPPAST_DETAIL_PARSER_BUFFERED_LEXER_HPP_INCLUDED
+#define CPPAST_DETAIL_PARSER_BUFFERED_LEXER_HPP_INCLUDED
 
 #include <cppast/detail/parser/lexer.hpp>
 #include <vector>
@@ -41,4 +45,4 @@ private:
 
 }
 
-#endif // CPPAST_DETAIL_PARSER_BUFFERED_LEXER_INCLUDED
+#endif // CPPAST_DETAIL_PARSER_BUFFERED_LEXER_HPP_INCLUDED

@@ -2,8 +2,8 @@
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
-#ifndef CPPAST_DETAIL_PARSER_PARSER_INCLUDED
-#define CPPAST_DETAIL_PARSER_PARSER_INCLUDED
+#ifndef CPPAST_DETAIL_PARSER_PARSER_HPP_INCLUDED
+#define CPPAST_DETAIL_PARSER_PARSER_HPP_INCLUDED
 
 #include <cppast/detail/parser/ast.hpp>
 #include <cppast/detail/parser/buffered_lexer.hpp>
@@ -49,4 +49,4 @@ private:
 
 }
 
-#endif // CPPAST_DETAIL_PARSER_PARSER_INCLUDED
+#endif // CPPAST_DETAIL_PARSER_PARSER_HPP_INCLUDED

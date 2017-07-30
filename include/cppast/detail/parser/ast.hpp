@@ -1,5 +1,9 @@
-#ifndef CPPAST_DETAIL_PARSER_AST_INCLUDED
-#define CPPAST_DETAIL_PARSER_AST_INCLUDED
+// Copyright (C) 2017 Manu Sanchez <Manu343726@gmail.com>
+// This file is subject to the license terms in the LICENSE file
+// found in the top-level directory of this distribution.
+
+#ifndef CPPAST_DETAIL_PARSER_AST_HPP_INCLUDED
+#define CPPAST_DETAIL_PARSER_AST_HPP_INCLUDED
 
 #include <cppast/detail/parser/lexer.hpp>
 #include <memory>
@@ -216,4 +220,4 @@ std::shared_ptr<ast_node> literal(const token& token);
 
 }
 
-#endif // CPPAST_DETAIL_PARSER_AST_INCLUDED
+#endif // CPPAST_DETAIL_PARSER_AST_HPP_INCLUDED
