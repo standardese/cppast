@@ -26,6 +26,7 @@ public:
     virtual const token& current_token() const = 0;
     virtual bool good() const = 0;
     virtual bool eof() const = 0;
+    virtual source_location location() const = 0;
 
     const diagnostic_logger& logger() const;
 

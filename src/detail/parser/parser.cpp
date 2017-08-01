@@ -23,7 +23,7 @@ std::shared_ptr<expression_invoke> parser::parse_invoke()
 
     if(result != nullptr && _lexer.buffer_size() > 0)
     {
-        logger().log("parser.parse_invoke", severity::warning, source_location::make_unknown(),
+        logger().log("parser.parse_invoke", severity::warning, _lexer.location(),
             "Unexpected token \"" + _lexer.next_token(0).string_value() + "\" after invoke expression");
     }
 
@@ -36,7 +36,7 @@ std::shared_ptr<expression_cpp_attribute> parser::parse_cpp_attribute()
 
     if(result != nullptr && _lexer.buffer_size() > 0)
     {
-        logger().log("parser.parse_cpp_attribute", severity::warning, source_location::make_unknown(),
+        logger().log("parser.parse_cpp_attribute", severity::warning, _lexer.location(),
             "Unexpected token \"" + _lexer.next_token(0).string_value() + "\" after C++ attribute expression");
     }
 
@@ -59,7 +59,7 @@ std::shared_ptr<node> parser::do_parse_expression()
             if(_lexer.read_next_token() &&
                _lexer.current_token().kind != token::token_kind::paren_close)
             {
-                logger().log("parser.expr", severity::error, source_location::make_unknown(),
+                logger().log("parser.expr", severity::error, _lexer.location(),
                     "Expected \")\" after expression");
                 return nullptr;
             }
@@ -84,20 +84,20 @@ std::shared_ptr<node> parser::do_parse_expression()
                     }
                     else
                     {
-                        logger().log("parser.expr", severity::error, source_location::make_unknown(),
+                        logger().log("parser.expr", severity::error, _lexer.location(),
                             "Expected literal");
                         return nullptr;
                     }
                 }
                 default:
-                    logger().log("parser.expr", severity::error, source_location::make_unknown(),
+                    logger().log("parser.expr", severity::error, _lexer.location(),
                         "Unexpected token {}", _lexer.next_token(0));
                     return nullptr;
                 }
             }
             else
             {
-                logger().log("parser.expr", severity::error, source_location::make_unknown(),
+                logger().log("parser.expr", severity::error, _lexer.location(),
                     "Expected token after \"" + _lexer.current_token().string_value() + "\"");
                 return nullptr;
             }
@@ -113,7 +113,7 @@ std::shared_ptr<expression_invoke> parser::do_parse_invoke()
 
     if(callee == nullptr)
     {
-        logger().log("parser.invoke_expr", severity::error, source_location::make_unknown(),
+        logger().log("parser.invoke_expr", severity::error, _lexer.location(),
             "Expected identifier, got \"" + _lexer.current_token().string_value() + "\"");
         return nullptr;
     }
@@ -133,7 +133,7 @@ std::shared_ptr<expression_invoke> parser::do_parse_invoke()
             }
             else
             {
-                logger().log("parser.invoke_expr", severity::error, source_location::make_unknown(),
+                logger().log("parser.invoke_expr", severity::error, _lexer.location(),
                     "Expected arguments after \"(\"");
                 return nullptr;
             }
@@ -149,7 +149,7 @@ std::shared_ptr<expression_invoke> parser::do_parse_invoke()
     }
     else
     {
-        logger().log("parser.invoke_expr", severity::error, source_location::make_unknown(),
+        logger().log("parser.invoke_expr", severity::error, _lexer.location(),
             "Expected \"(\"");
         return nullptr;
     }
@@ -163,7 +163,7 @@ std::pair<bool, node_list> parser::do_parse_arguments(const token::token_kind op
     if(!_lexer.read_next_token() ||
        _lexer.current_token().kind != open_delim)
     {
-        logger().log("parser.invoke_args", severity::error, source_location::make_unknown(),
+        logger().log("parser.invoke_args", severity::error, _lexer.location(),
             std::string("Expected ") + to_string(open_delim) + ", got " + to_string(_lexer.current_token()));
         return std::make_pair(false, std::move(args));
     }
@@ -197,21 +197,21 @@ std::pair<bool, node_list> parser::do_parse_arguments(const token::token_kind op
                     else
                     {
                         // expected comma or closing token
-                        logger().log("parser.invoke_args", severity::error, source_location::make_unknown(),
+                        logger().log("parser.invoke_args", severity::error, _lexer.location(),
                             "Expected {} or comma (','), got {}", close_delim, _lexer.current_token());
                         error = true;
                     }
                 }
                 else
                 {
-                    logger().log("parser.invoke_args", severity::error, source_location::make_unknown(),
+                    logger().log("parser.invoke_args", severity::error, _lexer.location(),
                             std::string("Expected ") + to_string(open_delim) + " or comma (','), but no more tokens are available");
                     error = true;
                 }
             }
             else
             {
-                logger().log("parser.invoke_args", severity::error, source_location::make_unknown(),
+                logger().log("parser.invoke_args", severity::error, _lexer.location(),
                     "Expected invoke argument");
                 error = true;
             }
@@ -251,12 +251,12 @@ std::shared_ptr<identifier> parser::do_parse_identifier()
         {
             if(_lexer.buffer_size() > 0)
             {
-                logger().log("parser.invoke_expr", severity::error, source_location::make_unknown(),
+                logger().log("parser.invoke_expr", severity::error, _lexer.location(),
                     "Expected identifier, got \"" + _lexer.current_token().string_value() + "\"");
             }
             else
             {
-                logger().log("parser.invoke_expr", severity::error, source_location::make_unknown(),
+                logger().log("parser.invoke_expr", severity::error, _lexer.location(),
                     "Expected identifier");
             }
 
@@ -268,7 +268,7 @@ std::shared_ptr<identifier> parser::do_parse_identifier()
     {
         if(!error)
         {
-            logger().log("parser.invoke_expr", severity::error, source_location::make_unknown(),
+            logger().log("parser.invoke_expr", severity::error, _lexer.location(),
                 "Expected identifier");
         }
 
@@ -286,7 +286,7 @@ std::shared_ptr<expression_cpp_attribute> parser::do_parse_cpp_attribute()
     {
         if(_lexer.current_token().kind == token::token_kind::double_bracket_open)
         {
-            logger().log("parser.cpp_attribute", severity::debug, source_location::make_unknown(),
+            logger().log("parser.cpp_attribute", severity::debug, _lexer.location(),
                 "Got {}, continue parsing body (next token is: {})", _lexer.current_token(),
                 _lexer.next_token(0));
             auto body = do_parse_invoke();
@@ -294,7 +294,7 @@ std::shared_ptr<expression_cpp_attribute> parser::do_parse_cpp_attribute()
             if(body == nullptr)
             {
                 // expected body expression
-                logger().log("parser.cpp_attribute", severity::error, source_location::make_unknown(),
+                logger().log("parser.cpp_attribute", severity::error, _lexer.location(),
                     "Expected attribute body");
                 return nullptr;
             }
@@ -305,21 +305,21 @@ std::shared_ptr<expression_cpp_attribute> parser::do_parse_cpp_attribute()
             }
             else
             {
-                logger().log("parser.cpp_attribute", severity::error, source_location::make_unknown(),
+                logger().log("parser.cpp_attribute", severity::error, _lexer.location(),
                     "Expected ]]");
                 return nullptr;
             }
         }
         else
         {
-            logger().log("parser.cpp_attribute", severity::error, source_location::make_unknown(),
+            logger().log("parser.cpp_attribute", severity::error, _lexer.location(),
                 "Expected [[, got \"{}\" ({})", _lexer.current_token().string_value(), _lexer.current_token().kind);
             return nullptr;
         }
     }
     else
     {
-        logger().log("parser.cpp_attribute", severity::error, source_location::make_unknown(),
+        logger().log("parser.cpp_attribute", severity::error, _lexer.location(),
             "Expected [[, got nothing");
         return nullptr;
     }

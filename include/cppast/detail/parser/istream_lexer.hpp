@@ -21,22 +21,26 @@ namespace parser
 class istream_lexer : public lexer
 {
 public:
-    istream_lexer(std::istream& input, const diagnostic_logger& logger);
+    istream_lexer(std::istream& input, const diagnostic_logger& logger, const std::string& filename = "");
 
     bool read_next_token() override;
     const token& current_token() const override;
 
     bool good() const override;
     bool eof() const override;
+    source_location location() const override;
 
 private:
     std::istream& _input;
+    std::string _filename;
     std::ostringstream _token_buffer;
     token _current_token;
-    std::size_t _pos;
+    std::size_t _line, _column, _previous_line_length;
     char _last_char;
 
     void save_token(const token::token_kind kind, const std::string& token = "");
+    bool advance();
+    bool put_back();
 };
 
 } // namespace cppast::detail::parser

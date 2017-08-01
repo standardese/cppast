@@ -9,10 +9,11 @@
 using namespace cppast;
 using namespace cppast::detail::parser;
 
-istream_lexer::istream_lexer(std::istream& input, const diagnostic_logger& logger) :
+istream_lexer::istream_lexer(std::istream& input, const diagnostic_logger& logger, const std::string& filename) :
     lexer{logger},
     _input(input),
-    _pos{0},
+    _filename{filename},
+    _line{0}, _column{0}, _previous_line_length{0},
     _last_char{' '}
 {}
 
@@ -43,6 +44,52 @@ bool istream_lexer::good() const
     return !_logger.error_logged();
 }
 
+bool istream_lexer::advance()
+{
+    if(_input.get(_last_char))
+    {
+        if(_last_char == '\n')
+        {
+            _line++;
+            _previous_line_length = _column;
+            _column = 0;
+        }
+        else
+        {
+            _column++;
+        }
+
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool istream_lexer::put_back()
+{
+    if(_input.putback(_last_char))
+    {
+        if(_column > 1)
+        {
+            _column--;
+        }
+        else
+        {
+            _column = _previous_line_length;
+            _previous_line_length = 0;
+            _line--;
+        }
+
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 bool istream_lexer::read_next_token()
 {
     _token_buffer.str("");
@@ -52,14 +99,10 @@ bool istream_lexer::read_next_token()
         return false;
     }
 
-    _input.get(_last_char);
-    _pos++;
+    advance();
 
     while(is_space(_last_char) &&
-          _input.get(_last_char))
-    {
-        _pos++;
-    }
+          advance());
 
     if(!_input.good())
     {
@@ -68,10 +111,9 @@ bool istream_lexer::read_next_token()
 
     if(_last_char == '"')
     {
-        while(_input.get(_last_char) && _last_char != '"')
+        while(advance() && _last_char != '"')
         {
             _token_buffer.put(_last_char);
-            _pos++;
         }
 
         save_token(token::token_kind::string_literal);
@@ -82,16 +124,15 @@ bool istream_lexer::read_next_token()
     {
         _token_buffer.put(_last_char);
 
-        while(_input.get(_last_char) && (std::isalnum(_last_char) ||
+        while(advance() && (std::isalnum(_last_char) ||
                 _last_char == '_'))
         {
             _token_buffer.put(_last_char);
-            _pos++;
         }
 
         if(_input.good())
         {
-            _input.putback(_last_char);
+            put_back();
         }
 
         save_token(token::token_kind::identifier);
@@ -103,11 +144,9 @@ bool istream_lexer::read_next_token()
         bool dot = false;
         _token_buffer.put(_last_char);
 
-        while(_input.get(_last_char) && (std::isdigit(_last_char) ||
+        while(advance() && (std::isdigit(_last_char) ||
                 _last_char == '.'))
         {
-            _pos++;
-
             if(_last_char == '.')
             {
                 if(!dot)
@@ -117,7 +156,7 @@ bool istream_lexer::read_next_token()
                 }
                 else
                 {
-                    _logger.log("lexer", severity::error, source_location::make_unknown(),
+                    _logger.log("lexer", severity::error, location(),
                         "Unexpected floating point dot after \"{}\"",
                         _token_buffer.str()
                     );
@@ -161,9 +200,8 @@ bool istream_lexer::read_next_token()
     {
         if(_last_char == expected)
         {
-            if(_input.get(_last_char) && _last_char == expected)
+            if(advance() && _last_char == expected)
             {
-                _pos++;
                 save_token(kind, std::string{{expected, expected}});
                 DEBUG_ASSERT(_token_buffer.str().empty(), detail::assert_handler{});
                 return true;
@@ -251,8 +289,14 @@ void istream_lexer::save_token(const token::token_kind kind, const std::string& 
     }
 
     _current_token.kind = kind;
-    _current_token.column = _pos - _current_token.token.length();
+    _current_token.line = _line;
+    _current_token.column = _column - _current_token.token.length();
 
-    logger().log("istream_lexer.save_token", severity::debug, source_location::make_unknown(),
+    logger().log("istream_lexer.save_token", severity::debug, location(),
         "token {} saved", _current_token);
+}
+
+source_location istream_lexer::location() const
+{
+    return source_location::make_file(_filename, _line, _column);
 }

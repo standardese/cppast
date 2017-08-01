@@ -5,6 +5,7 @@
 #include <cppast/detail/parser/buffered_lexer.hpp>
 #include <stdexcept>
 
+using namespace cppast;
 using namespace cppast::detail::parser;
 
 buffered_lexer::buffered_lexer(lexer& lexer, std::size_t size) :
@@ -37,7 +38,7 @@ bool buffered_lexer::read_next_token()
 
     if(got_something)
     {
-        logger().log("buffered_lexer.read_next_token", severity::debug, source_location::make_unknown(),
+        logger().log("buffered_lexer.read_next_token", severity::debug, location(),
             "got: {} (buffer size: {}, capacity: {})", current_token(), buffer_size(), _lookahead_buffer.capacity());
     }
 
@@ -69,4 +70,11 @@ bool buffered_lexer::good() const
 bool buffered_lexer::eof() const
 {
     return _lookahead_buffer.empty();
+}
+
+source_location buffered_lexer::location() const
+{
+    auto lexer_location = _lexer.location();
+    lexer_location.line = current_token().line;
+    return lexer_location;
 }

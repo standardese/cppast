@@ -70,7 +70,7 @@ std::shared_ptr<ast::node> parse(const std::string& input, diagnostic_logger& lo
 {
     std::istringstream istream{input};
     logger.set_verbose(true);
-    istream_lexer lexer{istream, logger};
+    istream_lexer lexer{istream, logger, "file.cpp"};
     parser parser{lexer};
 
     return parser.parse_cpp_attribute();

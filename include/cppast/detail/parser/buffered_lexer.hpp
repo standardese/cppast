@@ -24,6 +24,7 @@ public:
 
     bool read_next_token() override;
     const token& current_token() const override;
+    source_location location() const override;
 
     const token& next_token(std::size_t i) const;
     std::size_t buffer_size() const;

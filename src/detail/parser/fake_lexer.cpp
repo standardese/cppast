@@ -39,3 +39,8 @@ const token& fake_lexer::current_token() const
 {
     return _tokens[_current_token];
 }
+
+source_location fake_lexer::location() const
+{
+    return source_location::make_file("fake_lexer.cpp", current_token().line);
+}

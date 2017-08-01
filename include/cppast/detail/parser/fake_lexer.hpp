@@ -28,6 +28,8 @@ public:
     bool good() const override;
     bool eof() const override;
 
+    source_location location() const override;
+
 private:
     std::size_t _current_token;
     std::vector<token> _tokens;
