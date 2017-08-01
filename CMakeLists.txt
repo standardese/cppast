@@ -40,3 +40,8 @@ endif()
 if(${build_tool})
     add_subdirectory(tool)
 endif()
+
+configure_file(
+    ${CMAKE_SOURCE_DIR}/.ycm_extra_conf.py.in
+    ${CMAKE_SOURCE_DIR}/.ycm_extra_conf.py
+)
