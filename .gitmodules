@@ -10,3 +10,6 @@
 [submodule "external/fmt"]
 	path = external/fmt
 	url = https://github.com/fmtlib/fmt
+[submodule "external/trompeloeil"]
+	path = external/trompeloeil
+	url = https://github.com/rollbear/trompeloeil

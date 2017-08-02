@@ -13,9 +13,9 @@ std::size_t token::length() const
     return token.length();
 }
 
-const std::string& token::string_value() const
+std::string token::string_value() const
 {
-    return token;
+    return token.substr(1, token.size() - 2);
 }
 
 long long token::int_value() const

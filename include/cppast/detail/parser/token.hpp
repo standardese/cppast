@@ -22,23 +22,24 @@ struct token
 {
     enum class token_kind : char
     {
-        identifier           = -1,
-        string_literal       = -2,
-        int_iteral           = -3,
-        unint_literal        = -4,
-        float_literal        = -5,
-        bool_literal         = -6,
-        double_colon         = -7,
-        comma                = -8,
-        semicolon            = -9,
-        bracket_open         = -10,
-        bracket_close        = -11,
-        double_bracket_open  = -12,
-        double_bracket_close = -13,
-        paren_open           = -14,
-        paren_close          = -15,
-        angle_bracket_open   = -16,
-        angle_bracket_close  = -17
+        unknown              = -1,
+        identifier           = -2,
+        string_literal       = -3,
+        int_iteral           = -4,
+        unint_literal        = -5,
+        float_literal        = -6,
+        bool_literal         = -7,
+        double_colon         = -8,
+        comma                = -9,
+        semicolon            = -10,
+        bracket_open         = -11,
+        bracket_close        = -12,
+        double_bracket_open  = -13,
+        double_bracket_close = -14,
+        paren_open           = -15,
+        paren_close          = -16,
+        angle_bracket_open   = -17,
+        angle_bracket_close  = -18,
     };
 
     token_kind kind;
@@ -48,7 +49,7 @@ struct token
 
     std::size_t length() const;
 
-    const std::string& string_value() const;
+    std::string string_value() const;
     long long int_value() const;
     unsigned long long uint_value() const;
     double float_value() const;

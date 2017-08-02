@@ -13,6 +13,12 @@ istream_lexer::istream_lexer(std::istream& input, const diagnostic_logger& logge
     lexer{logger},
     _input(input),
     _filename{filename},
+    _current_token{
+        token::token_kind::unknown,
+        "",
+        0,
+        0
+    },
     _line{0}, _column{0}, _previous_line_length{0},
     _last_char{' '}
 {}
@@ -111,9 +117,22 @@ bool istream_lexer::read_next_token()
 
     if(_last_char == '"')
     {
+        _token_buffer.put(_last_char);
+
         while(advance() && _last_char != '"')
         {
             _token_buffer.put(_last_char);
+        }
+
+        if(!eof())
+        {
+            _token_buffer.put(_last_char);
+        }
+        else
+        {
+            logger().log("lexer", severity::error, location(),
+                "Expected closing '\"' after \"" + _token_buffer.str() + "\"");
+            return false;
         }
 
         save_token(token::token_kind::string_literal);
@@ -139,19 +158,46 @@ bool istream_lexer::read_next_token()
         return true;
     }
 
-    if(std::isdigit(_last_char))
+    auto is_numeric = [](char c)
     {
-        bool dot = false;
+        return std::isdigit(c) ||
+            c == '+' ||
+            c == '-' ||
+            c == '.';
+    };
+
+    if(is_numeric(_last_char))
+    {
+        enum class sign_status : char
+        {
+            no_sign,
+            positive = '+',
+            negative = '-'
+        };
+
+        bool dot;
+        sign_status sign;
+
+        switch(_last_char)
+        {
+        case '.':
+            dot = true; sign = sign_status::no_sign; break;
+        case '+':
+            dot = false; sign = sign_status::positive; break;
+        case '-':
+            dot = false; sign = sign_status::negative; break;
+        default:
+            dot = false; sign = sign_status::no_sign; break;
+        }
+
         _token_buffer.put(_last_char);
 
-        while(advance() && (std::isdigit(_last_char) ||
-                _last_char == '.'))
+        while(advance() && is_numeric(_last_char))
         {
             if(_last_char == '.')
             {
                 if(!dot)
                 {
-                    _token_buffer.put(_last_char);
                     dot = true;
                 }
                 else
@@ -165,8 +211,23 @@ bool istream_lexer::read_next_token()
             }
             else
             {
-                _token_buffer.put(_last_char);
+                if(_last_char == '+' || _last_char == '-')
+                {
+                    if(sign == sign_status::no_sign)
+                    {
+                        sign = static_cast<sign_status>(_last_char);
+                    }
+                    else
+                    {
+                        _logger.log("lexer", severity::error, location(),
+                            "Unexpected '" + std::string{_last_char} + "' character after \"" +
+                            _token_buffer.str() + "\"");
+                        return false;
+                    }
+                }
             }
+
+            _token_buffer.put(_last_char);
         }
 
         save_token(dot ? token::token_kind::float_literal : token::token_kind::int_iteral);

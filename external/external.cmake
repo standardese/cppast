@@ -25,6 +25,19 @@ if(NOT fmt_FOUND)
 endif()
 
 #
+# install trompeloeil for mocking in tests
+#
+if(build_test)
+    find_package(trompeloeil QUIET)
+    if(NOT trompeloeil_FOUND)
+        message(STATUS "Installing trompeloeil via submodule")
+        execute_process(COMMAND git submodule update --init -- external/trompeloeil
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/trompeloeil EXCLUDE_FROM_ALL)
+    endif()
+endif()
+
+#
 # install the tiny-process-library
 #
 message(STATUS "Installing tiny-process-library via submodule")

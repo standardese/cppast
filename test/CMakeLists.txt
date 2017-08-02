@@ -29,12 +29,13 @@ set(tests
         integration.cpp
         libclang_parser.cpp
         parser.cpp
-        visitor.cpp)
+        visitor.cpp
+        detail/parser/istream_lexer.cpp)
 
 add_executable(cppast_test test.cpp test_parser.hpp ${tests})
 target_include_directories(cppast_test PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(cppast_test PUBLIC cppast)
-set_target_properties(cppast_test PROPERTIES CXX_STANDARD 11)
+target_link_libraries(cppast_test PUBLIC cppast trompeloeil)
+set_target_properties(cppast_test PROPERTIES CXX_STANDARD 14)
 
 enable_testing()
 add_test(NAME test COMMAND cppast_test)
