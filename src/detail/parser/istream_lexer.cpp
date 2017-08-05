@@ -9,6 +9,8 @@
 using namespace cppast;
 using namespace cppast::detail::parser;
 
+constexpr istream_lexer::scan_function istream_lexer::scanners[];
+
 istream_lexer::istream_lexer(std::istream& input, const diagnostic_logger& logger, const std::string& filename) :
     lexer{logger},
     _input(input),
@@ -19,7 +21,9 @@ istream_lexer::istream_lexer(std::istream& input, const diagnostic_logger& logge
         0,
         0
     },
-    _line{0}, _column{0}, _previous_line_length{0},
+    _column{-1},
+    _line{0}, _previous_line_length{0},
+    _token_line{0}, _token_column{0},
     _last_char{' '}
 {}
 
@@ -58,12 +62,15 @@ bool istream_lexer::advance()
         {
             _line++;
             _previous_line_length = _column;
-            _column = 0;
+            _column = -1;
         }
         else
         {
             _column++;
         }
+
+        logger().log("istream_lexer.advance", severity::debug, location(),
+            "Moved to {}:{}", _line, _column);
 
         return true;
     }
@@ -77,7 +84,7 @@ bool istream_lexer::put_back()
 {
     if(_input.putback(_last_char))
     {
-        if(_column > 1)
+        if(_column > 0)
         {
             _column--;
         }
@@ -88,6 +95,9 @@ bool istream_lexer::put_back()
             _line--;
         }
 
+        logger().log("istream_lexer.put_back", severity::debug, location(),
+            "Moved to {}:{}", _line, _column);
+
         return true;
     }
     else
@@ -96,57 +106,47 @@ bool istream_lexer::put_back()
     }
 }
 
-bool istream_lexer::read_next_token()
+istream_lexer::scan_result istream_lexer::scan_string_literal()
 {
-    _token_buffer.str("");
-
-    if(!_input.good())
-    {
-        return false;
-    }
-
-    advance();
-
-    while(is_space(_last_char) &&
-          advance());
-
-    if(!_input.good())
-    {
-        return false;
-    }
-
     if(_last_char == '"')
     {
-        _token_buffer.put(_last_char);
+        save_char(_last_char);
 
         while(advance() && _last_char != '"')
         {
-            _token_buffer.put(_last_char);
+            save_char(_last_char);
         }
 
         if(!eof())
         {
-            _token_buffer.put(_last_char);
+            save_char(_last_char);
         }
         else
         {
             logger().log("lexer", severity::error, location(),
                 "Expected closing '\"' after \"" + _token_buffer.str() + "\"");
-            return false;
+            return scan_result::error;
         }
 
         save_token(token::token_kind::string_literal);
-        return true;
+        return scan_result::successful;
     }
+    else
+    {
+        return scan_result::unsuccessful;
+    }
+}
 
+istream_lexer::scan_result istream_lexer::scan_identifier()
+{
     if(std::isalpha(_last_char))
     {
-        _token_buffer.put(_last_char);
+        save_char(_last_char);
 
         while(advance() && (std::isalnum(_last_char) ||
                 _last_char == '_'))
         {
-            _token_buffer.put(_last_char);
+            save_char(_last_char);
         }
 
         if(_input.good())
@@ -155,9 +155,16 @@ bool istream_lexer::read_next_token()
         }
 
         save_token(token::token_kind::identifier);
-        return true;
+        return scan_result::successful;
     }
+    else
+    {
+        return scan_result::unsuccessful;
+    }
+}
 
+istream_lexer::scan_result istream_lexer::scan_number()
+{
     auto is_numeric = [](char c)
     {
         return std::isdigit(c) ||
@@ -190,7 +197,7 @@ bool istream_lexer::read_next_token()
             dot = false; sign = sign_status::no_sign; break;
         }
 
-        _token_buffer.put(_last_char);
+        save_char(_last_char);
 
         while(advance() && is_numeric(_last_char))
         {
@@ -206,7 +213,7 @@ bool istream_lexer::read_next_token()
                         "Unexpected floating point dot after \"{}\"",
                         _token_buffer.str()
                     );
-                    return false;
+                    return scan_result::error;
                 }
             }
             else
@@ -222,139 +229,171 @@ bool istream_lexer::read_next_token()
                         _logger.log("lexer", severity::error, location(),
                             "Unexpected '" + std::string{_last_char} + "' character after \"" +
                             _token_buffer.str() + "\"");
-                        return false;
+                        return scan_result::error;
                     }
                 }
             }
 
-            _token_buffer.put(_last_char);
+            save_char(_last_char);
         }
 
         save_token(dot ? token::token_kind::float_literal : token::token_kind::int_iteral);
-
-        if(!std::isdigit(_last_char))
-        {
-            // Put the character that finished with number parsing
-            // back into the input for further processing. Else we're
-            // consuming one extra char
-            _input.putback(_last_char);
-        }
-
-        return true;
-    }
-
-    auto handle_simple_token = [&](char expected, const token::token_kind kind)
-    {
-        if(_last_char == expected)
-        {
-            save_token(kind, {expected});
-            DEBUG_ASSERT(_token_buffer.str().empty(), detail::assert_handler{});
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    };
-
-    auto handle_double_token = [&](char expected, const token::token_kind kind)
-    {
-        if(_last_char == expected)
-        {
-            if(advance() && _last_char == expected)
-            {
-                save_token(kind, std::string{{expected, expected}});
-                DEBUG_ASSERT(_token_buffer.str().empty(), detail::assert_handler{});
-                return true;
-            }
-            else
-            {
-                if(_input.good())
-                {
-                    // De-eat the last character
-                    _input.putback(_last_char);
-                    _last_char = expected;
-                }
-                return false;
-            }
-        }
-        else
-        {
-            return false;
-        }
-    };
-
-    if(handle_double_token('[', token::token_kind::double_bracket_open))
-    {
-        return true;
-    }
-
-    if(handle_double_token(']', token::token_kind::double_bracket_close))
-    {
-        return true;
-    }
-
-    if(handle_double_token(':', token::token_kind::double_colon))
-    {
-        return true;
-    }
-
-    if(handle_simple_token(',', token::token_kind::comma))
-    {
-        return true;
-    }
-
-    if(handle_simple_token('(', token::token_kind::paren_open))
-    {
-        return true;
-    }
-
-    if(handle_simple_token(')', token::token_kind::paren_close))
-    {
-        return true;
-    }
-
-    if(handle_simple_token('[', token::token_kind::bracket_open))
-    {
-        return true;
-    }
-
-    if(handle_simple_token(']', token::token_kind::bracket_close))
-    {
-        return true;
-    }
-
-    if(handle_simple_token('<', token::token_kind::angle_bracket_open))
-    {
-        return true;
-    }
-
-    if(handle_simple_token('>', token::token_kind::angle_bracket_close))
-    {
-        return true;
-    }
-
-    save_token(static_cast<token::token_kind>(_last_char), {_last_char});
-    return true;
-}
-
-void istream_lexer::save_token(const token::token_kind kind, const std::string& token)
-{
-    if(token.empty())
-    {
-        _current_token.token = _token_buffer.str();
+        return scan_result::successful;
     }
     else
     {
-        _current_token.token = token;
+        return scan_result::unsuccessful;
+    }
+}
+
+istream_lexer::scan_result istream_lexer::scan_samechars_symbol()
+{
+    static const std::unordered_map<char, std::vector<token::token_kind>> kind_map = {
+        {'(', {token::token_kind::paren_open}},
+        {')', {token::token_kind::paren_close}},
+        {'[', {token::token_kind::bracket_open, token::token_kind::double_bracket_open}},
+        {']', {token::token_kind::bracket_close, token::token_kind::double_bracket_close}},
+        {'<', {token::token_kind::angle_bracket_open}},
+        {'>', {token::token_kind::angle_bracket_close}},
+        {':', {token::token_kind::unknown, token::token_kind::double_colon}},
+        {',', {token::token_kind::comma}}
+    };
+
+    auto it = kind_map.find(_last_char);
+
+    if(it != kind_map.end())
+    {
+        char target_char = _last_char;
+        save_char(_last_char);
+
+        while(advance() && _last_char == target_char)
+        {
+            save_char(_last_char);
+        }
+
+        if(_last_char != target_char)
+        {
+            put_back();
+        }
+
+        const std::string token = _token_buffer.str();
+        logger().log("istream_lexer.scan_samechars_symbol", severity::debug, location(),
+            "token: " + token);
+
+        auto backtrack = [&]
+        {
+            for(auto it = token.rbegin(); it != token.rend(); ++it)
+            {
+                discard_char();
+                _last_char = *it;
+            }
+        };
+
+        if(token.size() <= it->second.size())
+        {
+            auto kind = it->second[token.size() - 1];
+
+            if(kind != token::token_kind::unknown)
+            {
+                save_token(kind);
+                return scan_result::successful;
+            }
+            else
+            {
+                backtrack();
+                return scan_result::unsuccessful;
+            }
+        }
+        else
+        {
+            backtrack();
+            return scan_result::unsuccessful;
+        }
+    }
+    else
+    {
+        return scan_result::unsuccessful;
+    }
+}
+
+istream_lexer::scan_result istream_lexer::scan_char()
+{
+    save_char(_last_char);
+    save_token(static_cast<token::token_kind>(_last_char));
+    return scan_result::successful;
+}
+
+bool istream_lexer::read_next_token()
+{
+    _token_buffer.str("");
+
+    if(!_input.good())
+    {
+        return false;
     }
 
+    // Read first char in the input
+    advance();
+
+    // Discard all leading spaces
+    while(is_space(_last_char) &&
+          advance());
+
+    // If no more input after consuming
+    // spaces, error
+    if(!_input.good())
+    {
+        return false;
+    }
+
+    for(auto scanner : scanners)
+    {
+        switch((this->*scanner)())
+        {
+        case scan_result::successful:
+            return true;
+        case scan_result::unsuccessful:
+            continue;
+        case scan_result::error:
+            return false;
+        }
+    }
+
+    DEBUG_UNREACHABLE(detail::assert_handler{});
+    return false;
+}
+
+void istream_lexer::save_token(const token::token_kind kind)
+{
+    _current_token.token = _token_buffer.str();
     _current_token.kind = kind;
-    _current_token.line = _line;
-    _current_token.column = _column - _current_token.token.length();
+    _current_token.line = _token_line;
+    _current_token.column = _token_column;
 
     logger().log("istream_lexer.save_token", severity::debug, location(),
         "token {} saved", _current_token);
+}
+
+void istream_lexer::save_char(char c)
+{
+    if(_token_buffer.str().empty())
+    {
+        _token_line = _line;
+        _token_column = _column;
+    }
+
+    _token_buffer.put(c);
+
+    logger().log("istream_lexer.save_char", severity::debug, location(),
+        "'{}' saved (token line: {}, token column: {}", c, _token_line, _token_column);
+}
+
+void istream_lexer::discard_char()
+{
+    // kill me
+    _token_buffer.seekp(-1, std::ios_base::end);
+
+    put_back();
 }
 
 source_location istream_lexer::location() const

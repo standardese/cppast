@@ -4,6 +4,7 @@
 
 #include <cppast/detail/parser/token.hpp>
 #include <sstream>
+#include <tuple>
 
 using namespace cppast;
 using namespace cppast::detail::parser;
@@ -51,7 +52,8 @@ std::ostream& operator<<(std::ostream& os, const token::token_kind kind)
 std::ostream& operator<<(std::ostream& os, const token& token)
 {
     return os << "token{\"" << token.token << "\", kind: "
-        << token.kind << ", column: " << token.column << "}";
+        << token.kind << ", line: " << token.line
+        << ", column: " << token.column << "}";
 }
 std::string to_string(const token& token)
 {
@@ -101,6 +103,17 @@ std::string to_string(token::token_kind kind)
     default:
         return std::string("'") + static_cast<char>(kind) + "'";
     }
+}
+
+bool operator==(const token& lhs, const token& rhs)
+{
+    return std::tie(lhs.kind, lhs.token, lhs.line, lhs.column) ==
+        std::tie(rhs.kind, rhs.token, rhs.line, rhs.column);
+}
+
+bool operator!=(const token& lhs, const token& rhs)
+{
+    return !(lhs == rhs);
 }
 
 }

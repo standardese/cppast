@@ -35,6 +35,9 @@ set(tests
 add_executable(cppast_test test.cpp test_parser.hpp ${tests})
 target_include_directories(cppast_test PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(cppast_test PUBLIC cppast trompeloeil)
+if(CPPAST_TEST_DISABLE_SIGNAL_HANDLERS)
+    target_compile_definitions(cppast_test PRIVATE -DCATCH_CONFIG_NO_POSIX_SIGNALS)
+endif()
 set_target_properties(cppast_test PROPERTIES CXX_STANDARD 14)
 
 enable_testing()

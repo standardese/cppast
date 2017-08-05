@@ -40,6 +40,7 @@ struct token
         paren_close          = -16,
         angle_bracket_open   = -17,
         angle_bracket_close  = -18,
+        end_of_enum          = -19
     };
 
     token_kind kind;
@@ -57,6 +58,8 @@ struct token
 
 std::ostream& operator<<(std::ostream& os, const token::token_kind kind);
 std::ostream& operator<<(std::ostream& os, const token& token);
+bool operator==(const token& lhs, const token& rhs);
+bool operator!=(const token& lhs, const token& rhs);
 std::string to_string(const token& token);
 std::string to_string(token::token_kind kind);
 
