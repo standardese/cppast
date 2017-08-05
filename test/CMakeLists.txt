@@ -30,7 +30,8 @@ set(tests
         libclang_parser.cpp
         parser.cpp
         visitor.cpp
-        detail/parser/istream_lexer.cpp)
+        detail/parser/istream_lexer.cpp
+        detail/parser/parser.cpp)
 
 add_executable(cppast_test test.cpp test_parser.hpp ${tests})
 target_include_directories(cppast_test PUBLIC ${CMAKE_CURRENT_BINARY_DIR})

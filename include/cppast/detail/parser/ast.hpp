@@ -166,7 +166,7 @@ std::shared_ptr<T> node_cast(const std::shared_ptr<node>& node)
 {
     if(T::node_class_kind == node->kind)
     {
-        return {node, static_cast<T*>(node)};
+        return {node, static_cast<T*>(node.get())};
     }
 }
 

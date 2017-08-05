@@ -30,8 +30,10 @@ public:
 
     source_location location() const override;
 
+    const std::vector<token>& tokens() const;
+
 private:
-    std::size_t _current_token;
+    std::int64_t _current_token;
     std::vector<token> _tokens;
 };
 

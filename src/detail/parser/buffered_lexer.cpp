@@ -13,6 +13,14 @@ buffered_lexer::buffered_lexer(lexer& lexer, std::size_t size) :
     _lexer(lexer)
 {
     _lookahead_buffer.reserve(size);
+
+    while(_lookahead_buffer.size() < _lookahead_buffer.capacity() && _lexer.read_next_token())
+    {
+        _lookahead_buffer.push_back(_lexer.current_token());
+    }
+
+    logger().log("buffered_lexer.buffered_lexer", severity::debug, source_location::make_unknown(),
+        "buffered_lexer initialized");
 }
 
 const token& buffered_lexer::current_token() const

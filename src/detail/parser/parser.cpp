@@ -24,7 +24,7 @@ std::shared_ptr<expression_invoke> parser::parse_invoke()
     if(result != nullptr && _lexer.buffer_size() > 0)
     {
         logger().log("parser.parse_invoke", severity::warning, _lexer.location(),
-            "Unexpected token \"" + _lexer.next_token(0).string_value() + "\" after invoke expression");
+            "Unexpected token \"" + _lexer.next_token(0).token + "\" after invoke expression");
     }
 
     return result;
@@ -37,7 +37,7 @@ std::shared_ptr<expression_cpp_attribute> parser::parse_cpp_attribute()
     if(result != nullptr && _lexer.buffer_size() > 0)
     {
         logger().log("parser.parse_cpp_attribute", severity::warning, _lexer.location(),
-            "Unexpected token \"" + _lexer.next_token(0).string_value() + "\" after C++ attribute expression");
+            "Unexpected token \"" + _lexer.next_token(0).token + "\" after C++ attribute expression");
     }
 
     return result;

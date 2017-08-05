@@ -1,92 +1,32 @@
+// Copyright (C) 2017 Manu Sanchez <Manu343726@gmail.com>
+// This file is subject to the license terms in the LICENSE file
+// found in the top-level directory of this distribution.
+
 #include <catch.hpp>
 #include <trompeloeil.hpp>
 #include <cppast/detail/parser/istream_lexer.hpp>
-#include <iostream>
-#include <random>
+#include "logger_mock.hpp"
+#include "token_generator.hpp"
 
 using namespace trompeloeil;
 
-class diagnostic_logger_mock_base : public cppast::diagnostic_logger
+
+struct istream_lexer_context : public cppast::test::logger_context
 {
-public:
-    // Optionally log to stdout for debugging
-    diagnostic_logger_mock_base(bool log_to_stdout = false) :
-        _log_to_stout{log_to_stdout}
-    {}
-
-private:
-    bool _log_to_stout;
-
-    bool do_log(const char* source, const cppast::diagnostic& d) const override final
-    {
-        diagnostic_logged(
-            source,
-            d.severity,
-            d.location.file.value_or(""),
-            d.location.line.value_or(0),
-            d.location.column.value_or(0),
-            d.message
-        );
-
-        if(_log_to_stout)
-        {
-            std::cout << source << " " << d.location.to_string() << " " << d.message << "\n";
-        }
-
-        return true;
-    }
-
-    virtual void diagnostic_logged(
-        const std::string& source,
-        cppast::severity severity,
-        const std::string& file,
-        std::size_t line,
-        std::size_t column,
-        const std::string& message
-    ) const = 0;
-};
-
-class diagnostic_logger_mock : public diagnostic_logger_mock_base
-{
-public:
-    using diagnostic_logger_mock_base::diagnostic_logger_mock_base;
-
-    MAKE_CONST_MOCK6(
-        diagnostic_logged,
-        void(const std::string&, cppast::severity, const std::string&, std::size_t, std::size_t, const std::string&),
-        override final);
-};
-
-struct istream_lexer_context
-{
-    diagnostic_logger_mock logger;
+    cppast::test::diagnostic_logger_mock logger;
     const std::string filename;
     const std::string input;
     std::istringstream stream;
     cppast::detail::parser::istream_lexer lexer;
     std::vector<cppast::detail::parser::token> tokens;
-    std::unique_ptr<trompeloeil::expectation> debug_logs_expectation;
 
     istream_lexer_context(const std::string& input, bool log_to_stdout = false) :
-        logger{log_to_stdout},
+        logger_context{log_to_stdout},
         filename{"file.cpp"},
         input{input},
         stream{input},
-        lexer{stream, logger, filename},
-        debug_logs_expectation{
-            // Allow debug logs by default
-            NAMED_ALLOW_CALL(logger, diagnostic_logged(
-                _, // source
-                cppast::severity::debug,
-                _, // file
-                _, // line
-                _, // column
-                _  // message
-            ))
-        }
-    {
-        logger.set_verbose(true);
-    }
+        lexer{stream, logger, filename}
+    {}
 
     const std::vector<cppast::detail::parser::token>& read_all()
     {
@@ -125,183 +65,8 @@ struct istream_lexer_context
 class fuzzy
 {
 public:
-    fuzzy() :
-        prng{std::random_device()()}
-    {}
-
-    template<typename T>
-    T random_int(T min = std::numeric_limits<T>::min(), T max = std::numeric_limits<T>::max())
-    {
-        return std::uniform_int_distribution<T>{min, max}(prng);
-    }
-
-    template<typename T>
-    T random_float(T min = std::numeric_limits<T>::min(), T max = std::numeric_limits<T>::max())
-    {
-        return std::uniform_real_distribution<T>{min, max}(prng);
-    }
-
-    std::size_t random_length(std::size_t max)
-    {
-        return random_int(static_cast<std::size_t>(1), max);
-    }
-
-    struct any
-    {
-        constexpr bool operator()(char) const
-        {
-            return true;
-        }
-    };
-
-    template<typename Predicate>
-    char random_char(Predicate predicate = any{})
-    {
-        char c = random_int<char>();
-
-        while(!predicate(c) || c == '\0')
-        {
-            c = random_int<char>();
-        }
-
-        return c;
-    }
-
-    template<typename Predicate>
-    void randomize_string(std::string& str, Predicate predicate = any{})
-    {
-        for(char& c : str)
-        {
-            c = random_char(predicate);
-        }
-    }
-
-    template<typename Predicate>
-    std::string random_string(Predicate predicate)
-    {
-        std::string str(random_length(100), ' ');
-        randomize_string(str, predicate);
-        return str;
-    }
-
-    std::string random_string()
-    {
-        return random_string(any{});
-    }
-
-    std::string random_spaces()
-    {
-        std::string str(random_length(5), ' ');
-
-        for(std::size_t i = 0; i < str.size(); ++i)
-        {
-            if(random_int<std::size_t>(0, str.size()) == i)
-            {
-                str[i] = '\n';
-            }
-        }
-
-        return str;
-    }
-
-    std::string random_string_literal()
-    {
-        return "\"" + random_string([](char c)
-        {
-            return std::isalnum(c) ||
-                c == '+' || c == '-' || c == '*';
-        }) + "\"";
-    }
-
-    std::string random_integer()
-    {
-        return std::to_string(random_int<std::int64_t>());
-    }
-
-    std::string random_float()
-    {
-        return std::to_string(random_float<double>());
-    }
-
-    std::string random_id()
-    {
-        auto str = random_string([](char c)
-        {
-            return std::isalnum(c) || c == '_';
-        });
-
-        if(!std::isalpha(str.at(0)))
-        {
-            str[0] = 'c';
-        }
-
-        return str;
-    }
-
-    cppast::detail::parser::token random_token()
-    {
-        using cppast::detail::parser::token;
-
-        auto kind = static_cast<token::token_kind>(
-            random_int<char>(static_cast<char>(token::token_kind::end_of_enum), -1)
-        );
-
-        token result;
-        result.kind = kind;
-
-        switch(kind)
-        {
-        case token::token_kind::identifier:
-            result.token = random_id(); break;
-        case token::token_kind::string_literal:
-            result.token = random_string_literal(); break;
-        case token::token_kind::int_iteral:
-            result.token = random_integer(); break;
-        case token::token_kind::float_literal:
-            result.token = random_float(); break;
-        case token::token_kind::double_colon:
-            result.token = "::"; break;
-        case token::token_kind::comma:
-            result.token = ","; break;
-        case token::token_kind::bracket_open:
-            result.token = "["; break;
-        case token::token_kind::bracket_close:
-            result.token = "]"; break;
-        case token::token_kind::double_bracket_open:
-            result.token = "[["; break;
-        case token::token_kind::double_bracket_close:
-            result.token = "]]"; break;
-        case token::token_kind::paren_open:
-            result.token = "("; break;
-        case token::token_kind::paren_close:
-            result.token = ")"; break;
-        case token::token_kind::angle_bracket_open:
-            result.token = "<"; break;
-        case token::token_kind::angle_bracket_close:
-            result.token = ">"; break;
-        case token::token_kind::unknown:
-            result.token = "\"unknown\"";
-            result.kind = token::token_kind::string_literal;
-            break;
-        case token::token_kind::bool_literal:
-            result.token = "\"bool\"";
-            result.kind = token::token_kind::string_literal;
-            break;
-        case token::token_kind::unint_literal:
-            result.token = "\"uint\"";
-            result.kind = token::token_kind::string_literal;
-            break;
-        default:
-            result.token = std::string{{'\"', static_cast<char>(kind), '\"'}};
-            result.kind = token::token_kind::string_literal;
-            break;
-        }
-
-        return result;
-    }
-
-    // To generate testable random input, this function generates n random tokens using the above
-    // random_token() function, then inserts n + 1 sets of blank input (random spaces/newlines) between
+    // To generate testable random input, this function generates n random tokens using
+    // token_generator::random_token() function, then inserts n + 1 sets of blank input (random spaces/newlines) between
     // the generated tokens, the final input following the pattern "<spaces/newlines>token0<spaces/newlines>token1...<spaces/newlines>tokenN-1<spaces/newlines>"
     // The source location of the generated tokens is then extracted from the leading input before each token (See advance() lambda bellow).
 
@@ -334,13 +99,13 @@ public:
             if(i % 2 == 0)
             {
                 // insert spaces between tokens
-                auto spaces = random_spaces();
+                auto spaces = token_generator.random_spaces();
                 advance(spaces);
                 input_buffer << spaces;
             }
             else
             {
-                auto token = random_token();
+                auto token = token_generator.random_token();
                 token.line = line;
                 token.column = column + 1;
 
@@ -357,7 +122,7 @@ public:
     }
 
 private:
-    std::default_random_engine prng;
+    cppast::test::token_generator token_generator;
 };
 
 TEST_CASE("istream_lexer properties after construction", "[istream_lexer]")
