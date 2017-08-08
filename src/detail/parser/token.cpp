@@ -16,7 +16,14 @@ std::size_t token::length() const
 
 std::string token::string_value() const
 {
-    return token.substr(1, token.size() - 2);
+    if(kind == token_kind::string_literal)
+    {
+        return token.substr(1, token.size() - 2);
+    }
+    else
+    {
+        return token;
+    }
 }
 
 long long token::int_value() const

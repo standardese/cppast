@@ -82,7 +82,8 @@ set(source
         detail/parser/ast.cpp
         detail/parser/parser.cpp
         detail/utils/format.cpp
-        detail/info_tracking_logger.cpp)
+        detail/info_tracking_logger.cpp
+        detail/utils/format.cpp)
 
 set(libclang_source
         libclang/class_parser.cpp
@@ -110,7 +111,7 @@ set(libclang_source
 
 add_library(cppast ${detail_header} ${header} ${source} ${libclang_source})
 target_include_directories(cppast PUBLIC ../include)
-target_link_libraries(cppast PUBLIC type_safe fmt _cppast_tiny_process _cppast_libclang)
+target_link_libraries(cppast PUBLIC type_safe _cppast_tiny_process _cppast_libclang)
 target_compile_definitions(cppast PUBLIC
                                 CPPAST_VERSION_MINOR="${cppast_VERSION_MINOR}"
                                 CPPAST_VERSION_MAJOR="${cppast_VERSION_MAJOR}"
@@ -121,12 +122,17 @@ endif()
 if(CPPAST_ENABLE_PRECONDITION_CHECKS)
     target_compile_definitions(cppast PUBLIC CPPAST_ENABLE_PRECONDITION_CHECKS)
 endif()
-set_target_properties(cppast PROPERTIES CXX_STANDARD 11)
+set_target_properties(cppast PROPERTIES CXX_STANDARD 14)
 
 add_executable(lexer_example detail/parser/lexer_example.cpp)
 target_link_libraries(lexer_example PRIVATE cppast)
-set_target_properties(lexer_example PROPERTIES CXX_STANDARD 11)
+set_target_properties(lexer_example PROPERTIES CXX_STANDARD 14)
 
 add_executable(parser_example detail/parser/parser_example.cpp)
 target_link_libraries(parser_example PRIVATE cppast)
-set_target_properties(parser_example PROPERTIES CXX_STANDARD 11)
+set_target_properties(parser_example PROPERTIES CXX_STANDARD 14)
+
+if(CPPAST_USE_FMT)
+    target_link_libraries(cppast PUBLIC fmt)
+    target_compile_definitions(cppast PUBLIC CPPAST_USE_FMT)
+endif()

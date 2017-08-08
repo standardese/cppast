@@ -6,6 +6,7 @@
 #define CPPAST_DETAIL_PARSER_AST_HPP_INCLUDED
 
 #include <cppast/detail/parser/lexer.hpp>
+#include <cppast/detail/utils/overloaded_function.hpp>
 #include <memory>
 #include <string>
 #include <vector>
@@ -43,6 +44,11 @@ public:
     virtual void on_event(event event) {}
 };
 
+template<typename T>
+const T& node_cast(const node& node);
+template<typename T>
+T& node_cast(node& node);
+
 class node
 {
 public:
@@ -63,17 +69,110 @@ public:
 
     void visit(visitor& visitor) const;
 
+
+    template<typename Node>
+    Node& as()
+    {
+        return node_cast<Node>(*this);
+    }
+
+    template<typename Node>
+    const Node& as() const
+    {
+        return node_cast<Node>(*this);
+    }
+
 protected:
     virtual void do_visit(visitor& visitor) const;
 };
+
+constexpr const char* to_string(node::node_kind kind)
+{
+    switch(kind)
+    {
+    case node::node_kind::unespecified:
+        return "unespecified";
+    case node::node_kind::terminal_float:
+        return "terminal_float";
+    case node::node_kind::terminal_integer:
+        return "terminal_integer";
+    case node::node_kind::terminal_string:
+        return "terminal_string";
+    case node::node_kind::identifier:
+        return "identifier";
+    case node::node_kind::expression_invoke:
+        return "expression_invoke";
+    case node::node_kind::expression_cpp_attribute:
+        return "expression_cpp_attribute";
+    }
+}
+
+std::ostream& operator<<(std::ostream& os, node::node_kind kind);
+
+template<typename T>
+T* node_cast(node* node)
+{
+    if(T::node_class_kind == node->kind)
+    {
+        return static_cast<T*>(node);
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+struct bad_node_cast : public std::exception
+{
+    using std::exception::exception;
+};
+
+template<typename T>
+const T& node_cast(const node& node)
+{
+    auto* ptr = node_cast<T>(&node);
+
+    if(ptr != nullptr)
+    {
+        return *ptr;
+    }
+    else
+    {
+        throw ast::bad_node_cast{};
+    }
+}
+
+template<typename T>
+T& node_cast(node& node)
+{
+    auto* ptr = node_cast<T>(&node);
+
+    if(ptr != nullptr)
+    {
+        return *ptr;
+    }
+    else
+    {
+        throw ast::bad_node_cast{};
+    }
+}
+
+template<typename T>
+std::shared_ptr<T> node_cast(const std::shared_ptr<node>& node)
+{
+    return {node, node_cast<T>(node.get())};
+}
 
 using node_list = std::vector<std::shared_ptr<node>>;
 
 template<typename T>
 struct terminal : public node
 {
-    terminal(const T& value) :
-        value{value}
+    terminal(
+        const T& value,
+        const type_safe::optional<cppast::detail::parser::token>& token = type_safe::nullopt) :
+        value{value},
+        token{token}
     {
         if(std::is_same<T, std::string>::value)
         {
@@ -90,6 +189,7 @@ struct terminal : public node
     }
 
     T value;
+    type_safe::optional<cppast::detail::parser::token> token;
 };
 
 template<typename T>
@@ -152,26 +252,11 @@ private:
     void do_visit(visitor& visitor) const override final;
 };
 
-template<typename T>
-T* node_cast(node* node)
+namespace
 {
-    if(T::node_class_kind == node->kind)
-    {
-        return static_cast<T*>(node);
-    }
-}
-
-template<typename T>
-std::shared_ptr<T> node_cast(const std::shared_ptr<node>& node)
-{
-    if(T::node_class_kind == node->kind)
-    {
-        return {node, static_cast<T*>(node.get())};
-    }
-}
 
 template<typename Function>
-void visit_node(node* node, Function function)
+void do_visit_node(node* node, Function function)
 {
     switch(node->kind)
     {
@@ -192,10 +277,68 @@ void visit_node(node* node, Function function)
     }
 }
 
+template<typename Function, typename = void>
+struct is_complete_node_visitor : public std::false_type {};
+
+template<typename Function>
+struct is_complete_node_visitor<Function, std::void_t<decltype(
+    (do_visit_node(std::declval<ast::terminal_integer*>(), std::declval<Function>()), true) &&
+    (do_visit_node(std::declval<ast::terminal_float*>(), std::declval<Function>()), true) &&
+    (do_visit_node(std::declval<ast::terminal_string*>(), std::declval<Function>()), true) &&
+    (do_visit_node(std::declval<node*>(), std::declval<Function>()), true) &&
+    (do_visit_node(std::declval<node*>(), std::declval<Function>()), true) &&
+    (do_visit_node(std::declval<node*>(), std::declval<Function>()), true)
+)>> : public std::true_type {};
+
+}
+
+template<typename Function, typename = std::enable_if_t<is_complete_node_visitor<Function>::value>>
+void visit_node(node* node, Function function)
+{
+    do_visit_node(node, function);
+}
+
+template<typename Function, std::enable_if_t<!is_complete_node_visitor<Function>::value>>
+void visit_node(node* node, Function function)
+{
+    do_visit_node(node, cppast::detail::utils::overloaded_function(
+        function,
+        [](auto* node){}
+    ));;
+}
+
+template<typename Function>
+void visit_node(const node* node, Function function)
+{
+    // yeah....
+    visit_node(const_cast<ast::node*>(node), [function](auto* node)
+    {
+        function(const_cast<const decltype(node)>(node));
+    });
+}
+
 template<typename Function>
 void visit_node(const std::shared_ptr<node>& node, Function function)
 {
     visit_node(node.get(), function);
+}
+
+template<typename Function>
+void visit_node(node& node, Function function)
+{
+    visit_node(&node, [function](auto* node)
+    {
+        function(*node);
+    });
+}
+
+template<typename Function>
+void visit_node(const node& node, Function function)
+{
+    visit_node(&node, [function](auto* node)
+    {
+        function(*node);
+    });
 }
 
 class detailed_visitor : public visitor

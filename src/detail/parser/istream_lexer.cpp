@@ -5,6 +5,7 @@
 #include <cppast/detail/parser/istream_lexer.hpp>
 #include <cppast/detail/assert.hpp>
 #include <unordered_map>
+#include <vector>
 
 using namespace cppast;
 using namespace cppast::detail::parser;

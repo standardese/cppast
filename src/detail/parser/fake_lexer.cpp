@@ -3,6 +3,7 @@
 // found in the top-level directory of this distribution.
 
 #include <cppast/detail/parser/fake_lexer.hpp>
+#include <cppast/detail/assert.hpp>
 
 using namespace cppast;
 using namespace cppast::detail::parser;
@@ -38,20 +39,21 @@ bool fake_lexer::read_next_token()
 
 const token& fake_lexer::current_token() const
 {
-    if(_current_token < 0 || eof())
-    {
-        logger().log("fake_lexer.current_token", severity::critical, source_location::make_unknown(),
-            "Cannot read current token pointing at {} (total tokens: {})", _current_token, _tokens.size());
-
-        throw std::runtime_error{"cannot read current token"};
-    }
-
+    DEBUG_ASSERT(_current_token >= 0 && _current_token < _tokens.size(),
+        detail::assert_handler());
     return _tokens[_current_token];
 }
 
 source_location fake_lexer::location() const
 {
-    return source_location::make_file("fake_lexer.cpp", current_token().line);
+    if(_current_token >= 0 && ! eof())
+    {
+        return source_location::make_file("fake_lexer.cpp", current_token().line, current_token().column);
+    }
+    else
+    {
+        return source_location::make_unknown();
+    }
 }
 
 const std::vector<token>& fake_lexer::tokens() const

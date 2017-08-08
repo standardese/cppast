@@ -9,8 +9,7 @@
 #include <atomic>
 
 #include <type_safe/optional.hpp>
-#include <fmt/format.h>
-#include <fmt/ostream.h>
+#include <cppast/detail/utils/format.hpp>
 
 namespace cppast
 {
@@ -116,6 +115,13 @@ namespace cppast
         return "programmer error";
     }
 
+    /// Writes the human-readable string of a given severity to an
+    /// output string
+    inline std::ostream& operator<<(std::ostream& os, severity s)
+    {
+        return os << to_string(s);
+    }
+
     /// A diagnostic.
     ///
     /// It represents an error message from a [cppast::parser]().
@@ -134,7 +140,7 @@ namespace cppast
     diagnostic make_diagnostic(severity severity, const source_location& location, Args&&... args)
     {
         return {
-            fmt::format(std::forward<Args>(args)...),
+            cppast::detail::utils::format(std::forward<Args>(args)...),
             location,
             severity
         };

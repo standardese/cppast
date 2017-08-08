@@ -131,14 +131,19 @@ std::shared_ptr<node> make_literal(const token& token)
     switch(token.kind)
     {
     case token::token_kind::int_iteral:
-        return make_literal_integer(token.int_value());
+        return std::make_shared<terminal_integer>(token.int_value(), token);
     case token::token_kind::float_literal:
-        return make_literal_float(token.float_value());
+        return std::make_shared<terminal_float>(token.float_value(), token);
     case token::token_kind::string_literal:
-        return make_literal_string(token.string_value());
+        return std::make_shared<terminal_string>(token.string_value(), token);
     default:
         return nullptr;
     }
+}
+
+std::ostream& operator<<(std::ostream& os, node::node_kind kind)
+{
+    return os << to_string(kind);
 }
 
 } // namespace cppast::detail::parser::ast

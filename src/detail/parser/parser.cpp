@@ -164,7 +164,7 @@ std::pair<bool, node_list> parser::do_parse_arguments(const token::token_kind op
        _lexer.current_token().kind != open_delim)
     {
         logger().log("parser.invoke_args", severity::error, _lexer.location(),
-            std::string("Expected ") + to_string(open_delim) + ", got " + to_string(_lexer.current_token()));
+            "Expected '{}'", open_delim);
         return std::make_pair(false, std::move(args));
     }
 
@@ -198,14 +198,14 @@ std::pair<bool, node_list> parser::do_parse_arguments(const token::token_kind op
                     {
                         // expected comma or closing token
                         logger().log("parser.invoke_args", severity::error, _lexer.location(),
-                            "Expected {} or comma (','), got {}", close_delim, _lexer.current_token());
+                            "Expected '{}' or comma (','), got \"{}\"", close_delim, _lexer.current_token().token);
                         error = true;
                     }
                 }
                 else
                 {
                     logger().log("parser.invoke_args", severity::error, _lexer.location(),
-                            std::string("Expected ") + to_string(open_delim) + " or comma (','), but no more tokens are available");
+                        "Expected '{}' or comma (','), but no more tokens are available", close_delim);
                     error = true;
                 }
             }
@@ -225,6 +225,14 @@ std::shared_ptr<identifier> parser::do_parse_identifier()
 {
     std::vector<std::string> scope_names;
     bool finished = false, error = false;
+
+    if(_lexer.buffer_size() > 0 &&
+       _lexer.next_token(0).kind == token::token_kind::double_colon)
+    {
+        // it seems that the identifier is full qualified, eat the leading
+        // double colon
+        _lexer.read_next_token();
+    }
 
     while(!finished && !error)
     {
