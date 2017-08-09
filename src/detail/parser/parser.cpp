@@ -114,7 +114,7 @@ std::shared_ptr<expression_invoke> parser::do_parse_invoke()
     if(callee == nullptr)
     {
         logger().log("parser.invoke_expr", severity::error, _lexer.location(),
-            "Expected identifier, got \"" + _lexer.current_token().string_value() + "\"");
+            "Expected callee identifier");
         return nullptr;
     }
 
@@ -134,7 +134,7 @@ std::shared_ptr<expression_invoke> parser::do_parse_invoke()
             else
             {
                 logger().log("parser.invoke_expr", severity::error, _lexer.location(),
-                    "Expected arguments after \"(\"");
+                    "Expected arguments after '('");
                 return nullptr;
             }
         }
@@ -149,9 +149,11 @@ std::shared_ptr<expression_invoke> parser::do_parse_invoke()
     }
     else
     {
-        logger().log("parser.invoke_expr", severity::error, _lexer.location(),
-            "Expected \"(\"");
-        return nullptr;
+        // no parens is interpreted as call without args
+        return std::make_shared<expression_invoke>(
+            std::move(callee),
+            node_list{}
+        );
     }
 }
 
@@ -259,12 +261,12 @@ std::shared_ptr<identifier> parser::do_parse_identifier()
         {
             if(_lexer.buffer_size() > 0)
             {
-                logger().log("parser.invoke_expr", severity::error, _lexer.location(),
-                    "Expected identifier, got \"" + _lexer.current_token().string_value() + "\"");
+                logger().log("parser.identifier", severity::error, _lexer.location(),
+                    "Expected identifier, got \"" + _lexer.next_token(0).token + "\"");
             }
             else
             {
-                logger().log("parser.invoke_expr", severity::error, _lexer.location(),
+                logger().log("parser.identifier", severity::error, _lexer.location(),
                     "Expected identifier");
             }
 

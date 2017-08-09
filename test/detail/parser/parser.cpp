@@ -65,6 +65,22 @@ public:
     {}
 };
 
+class text_parser_context : public cppast::test::logger_context
+{
+private:
+    std::istringstream is;
+
+public:
+    cppast::detail::parser::istream_lexer lexer;
+    test_parser parser;
+
+    text_parser_context(const std::string& input) :
+        is{input},
+        lexer{is, logger},
+        parser{lexer}
+    {}
+};
+
 TEST_CASE("the expression parser parses terminals", "[parser]")
 {
     SECTION("parses string literals")
@@ -150,6 +166,45 @@ TEST_CASE("the expression parser parses identifiers", "[parser]")
     }
 }
 
+void node_test(const std::shared_ptr<ast::node>& result_node, const std::shared_ptr<ast::node>& expected_node)
+{
+    REQUIRE(result_node != nullptr);
+    REQUIRE(result_node->kind == expected_node->kind);
+    bool visited = false;
+
+    ast::visit_node(*expected_node, cppast::detail::utils::overloaded_function(
+        [&](const ast::terminal_string& str)
+        {
+            CHECK(str.value == expected_node->as<ast::terminal_string>().value);
+            visited = true;
+        },
+        [&](const ast::terminal_integer& i)
+        {
+            CHECK(i.value == expected_node->as<ast::terminal_integer>().value);
+            visited = true;
+        },
+        [&](const ast::terminal_float& f)
+        {
+            CHECK(f.value == expected_node->as<ast::terminal_float>().value);
+            visited = true;
+        },
+        [&](const ast::expression_invoke& i)
+        {
+            CHECK(i.callee->full_qualified_name() == expected_node->as<ast::expression_invoke>().callee->full_qualified_name());
+            REQUIRE(i.args.size() == expected_node->as<ast::expression_invoke>().args.size());
+
+            for(std::size_t j = 0; j < i.args.size(); ++j)
+            {
+                node_test(i.args[j], expected_node->as<ast::expression_invoke>().args[j]);
+            }
+            visited = true;
+        },
+        [](const auto&){}
+    ));
+
+    CHECK(visited);
+};
+
 TEST_CASE("the expression parser parses invoke expression arguments", "[parser]")
 {
     cppast::test::syntax_generator syntax_generator;
@@ -164,45 +219,6 @@ TEST_CASE("the expression parser parses invoke expression arguments", "[parser]"
 
         for(std::size_t i = 0; i < syntax.first.size(); ++i)
         {
-            std::function<void(const std::shared_ptr<ast::node>&, const std::shared_ptr<ast::node>&)> node_test =
-                [&](const std::shared_ptr<ast::node>& result_node, const std::shared_ptr<ast::node>& expected_node)
-            {
-                REQUIRE(result_node != nullptr);
-                REQUIRE(result_node->kind == expected_node->kind);
-                bool visited = false;
-
-                ast::visit_node(*expected_node, cppast::detail::utils::overloaded_function(
-                    [&](const ast::terminal_string& str)
-                    {
-                        CHECK(str.value == expected_node->as<ast::terminal_string>().value);
-                        visited = true;
-                    },
-                    [&](const ast::terminal_integer& i)
-                    {
-                        CHECK(i.value == expected_node->as<ast::terminal_integer>().value);
-                        visited = true;
-                    },
-                    [&](const ast::terminal_float& f)
-                    {
-                        CHECK(f.value == expected_node->as<ast::terminal_float>().value);
-                        visited = true;
-                    },
-                    [&](const ast::expression_invoke& i)
-                    {
-                        CHECK(i.callee->full_qualified_name() == expected_node->as<ast::expression_invoke>().callee->full_qualified_name());
-                        REQUIRE(i.args.size() == expected_node->as<ast::expression_invoke>().args.size());
-
-                        for(std::size_t j = 0; j < i.args.size(); ++j)
-                        {
-                            node_test(i.args[j], expected_node->as<ast::expression_invoke>().args[j]);
-                        }
-                        visited = true;
-                    },
-                    [](const auto&){}
-                ));
-
-                CHECK(visited);
-            };
 
             node_test(result.second[i], syntax.first[i]);
         }
@@ -242,12 +258,8 @@ TEST_CASE("the expression parser parses invoke expression arguments", "[parser]"
     {
         auto test = [](const std::string& input, const std::string& error_source, const std::string& expected_error)
         {
-            std::istringstream is{input};
-            cppast::test::logger_context logger_context;
-            cppast::detail::parser::istream_lexer lexer{is, logger_context.logger};
-            test_parser parser{lexer};
-
-            REQUIRE_CALL(logger_context.logger, diagnostic_logged(
+            text_parser_context context{input};
+            REQUIRE_CALL(context.logger, diagnostic_logged(
                 error_source,
                 cppast::severity::error,
                 trompeloeil::_, // file
@@ -256,7 +268,7 @@ TEST_CASE("the expression parser parses invoke expression arguments", "[parser]"
                 expected_error
             ));
 
-            auto result = parser.do_parse_arguments();
+            auto result = context.parser.do_parse_arguments();
             CHECK_FALSE(result.first);
         };
 
@@ -274,5 +286,87 @@ TEST_CASE("the expression parser parses invoke expression arguments", "[parser]"
         {
             test("(foo(), bar(), quux() 42)", "parser.invoke_args", "Expected 'paren_close' or comma (','), got \"42\"");
         }
+    }
+}
+
+TEST_CASE("the expression parser parses invoke expressions")
+{
+    cppast::test::syntax_generator syntax_generator;
+
+    SECTION("Parses complete invoke expressions without errors")
+    {
+        auto test = [&](std::size_t args, std::size_t depth)
+        {
+            const auto syntax = syntax_generator.random_expression_invoke(args, depth);
+            parser_context context{syntax};
+
+            auto node = context.parser.parse_invoke();
+            const auto& expected_node = syntax.first;
+            REQUIRE(node != nullptr);
+            CHECK(node->kind == ast::node::node_kind::expression_invoke);
+            node_test(node, expected_node);
+        };
+
+        test(0, 0);
+        test(1, 0);
+        test(10, 4);
+        test(20, 4);
+    }
+
+    SECTION("error checking on ill-formed input")
+    {
+        auto test = [](const std::string& input, const std::string& error_source, const std::string& expected_error)
+        {
+            INFO("input: \"" << input << "\"");
+            INFO("error_source: \"" << error_source << "\"");
+            INFO("expected_error: \"" << expected_error << "\"");
+
+            text_parser_context context{input};
+
+            // Allow more nested errors
+            ALLOW_CALL(context.logger, diagnostic_logged(
+                trompeloeil::ne(error_source),
+                cppast::severity::error,
+                trompeloeil::_,
+                trompeloeil::_,
+                trompeloeil::_,
+                trompeloeil::ne(expected_error)
+            ));
+
+            REQUIRE_CALL(context.logger, diagnostic_logged(
+                error_source,
+                cppast::severity::error,
+                trompeloeil::_, // file
+                trompeloeil::_, // line
+                trompeloeil::_, // column
+                expected_error
+            ));
+
+            auto result = context.parser.parse_invoke();
+            CHECK(result == nullptr);
+        };
+
+        SECTION("missing identifier")
+        {
+            test("(42, 42)", "parser.invoke_expr", "Expected callee identifier");
+            test("42(42, 42)", "parser.invoke_expr", "Expected callee identifier");
+        }
+
+        SECTION("Wrong args expression")
+        {
+            test("foo(,,,)", "parser.invoke_expr", "Expected arguments after '('");
+            test("foo::bar(foo foo foo)", "parser.invoke_expr", "Expected arguments after '('");
+        }
+    }
+
+    SECTION("Invoke without parens is interpreted as all without args")
+    {
+        text_parser_context context{"foobar"};
+        auto node = context.parser.parse_invoke();
+
+        REQUIRE(node != nullptr);
+        CHECK(node->kind == ast::node::node_kind::expression_invoke);
+        CHECK(node->callee->full_qualified_name() == "foobar");
+        CHECK(node->args.empty());
     }
 }
