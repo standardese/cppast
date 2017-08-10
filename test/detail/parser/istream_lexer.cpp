@@ -7,6 +7,7 @@
 #include <cppast/detail/parser/istream_lexer.hpp>
 #include "logger_mock.hpp"
 #include "token_generator.hpp"
+#include <cppast/detail/utils/prettyprint.hpp>
 
 using namespace trompeloeil;
 
@@ -40,25 +41,19 @@ struct istream_lexer_context : public cppast::test::logger_context
         return tokens;
     }
 
-    bool equal_tokens(const std::vector<std::pair<cppast::detail::parser::token::token_kind, std::string>>& expected)
+    void check_equal_tokens(const std::vector<std::pair<cppast::detail::parser::token::token_kind, std::string>>& expected)
     {
         read_all();
+        INFO("tokens: " << tokens);
+        INFO("expected: " << expected);
 
-        if(tokens.size() != expected.size())
+        REQUIRE(tokens.size() == expected.size());
+
+        for(std::size_t i = 0; i < expected.size(); ++i)
         {
-            return false;
+            CHECK(tokens[i].kind == expected[i].first);
+            CHECK(tokens[i].token == expected[i].second);
         }
-
-        for(std::size_t i = 0; i < tokens.size(); ++i)
-        {
-            if(tokens[i].kind != expected[i].first ||
-               tokens[i].token != expected[i].second)
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 };
 
@@ -181,10 +176,10 @@ TEST_CASE("istream_lexer reads numeric literals", "[istream_lexer]")
     SECTION("-/+ operators are interpreted as part of a literal")
     {
         istream_lexer_context context{"+42 -42"};
-        CHECK(context.equal_tokens({
+        context.check_equal_tokens({
             {cppast::detail::parser::token::token_kind::int_iteral, "+42"},
             {cppast::detail::parser::token::token_kind::int_iteral, "-42"}
-        }));
+        });
 
         CHECK(context.tokens[0].int_value() ==  42);
         CHECK(context.tokens[1].int_value() == -42);
@@ -247,13 +242,24 @@ TEST_CASE("istream_lexer reads numeric literals", "[istream_lexer]")
     SECTION("-/+ operators are interpreted as part of a float literal")
     {
         istream_lexer_context context{"+42.0 -42.0"};
-        CHECK(context.equal_tokens({
+        context.check_equal_tokens({
             {cppast::detail::parser::token::token_kind::float_literal, "+42.0"},
             {cppast::detail::parser::token::token_kind::float_literal, "-42.0"}
-        }));
+        });
 
         CHECK(context.tokens[0].float_value() ==  42.0);
         CHECK(context.tokens[1].float_value() == -42.0);
+    }
+
+    SECTION("the number parser does not eat extra input")
+    {
+        istream_lexer_context context{"42)42.0)"};
+        context.check_equal_tokens({
+            {cppast::detail::parser::token::token_kind::int_iteral, "42"},
+            {cppast::detail::parser::token::token_kind::paren_close, ")"},
+            {cppast::detail::parser::token::token_kind::float_literal, "42.0"},
+            {cppast::detail::parser::token::token_kind::paren_close, ")"}
+        });
     }
 }
 
@@ -262,10 +268,10 @@ TEST_CASE("istream_lexer reads string literals", "[istream_lexer]")
     SECTION("Spaces are ignored")
     {
         istream_lexer_context context{"      \"hello world\"    \"42\"    "};
-        CHECK(context.equal_tokens({
+        context.check_equal_tokens({
             {cppast::detail::parser::token::token_kind::string_literal, "\"hello world\""},
             {cppast::detail::parser::token::token_kind::string_literal, "\"42\""},
-        }));
+        });
     }
 
     SECTION("Tokens store the original source location")

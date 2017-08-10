@@ -199,8 +199,9 @@ istream_lexer::scan_result istream_lexer::scan_number()
         }
 
         save_char(_last_char);
+        bool could_advance = true;
 
-        while(advance() && is_numeric(_last_char))
+        while((could_advance = advance()) && is_numeric(_last_char))
         {
             if(_last_char == '.')
             {
@@ -236,6 +237,11 @@ istream_lexer::scan_result istream_lexer::scan_number()
             }
 
             save_char(_last_char);
+        }
+
+        if(could_advance && !is_numeric(_last_char))
+        {
+            put_back();
         }
 
         save_token(dot ? token::token_kind::float_literal : token::token_kind::int_iteral);
