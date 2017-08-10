@@ -370,3 +370,29 @@ TEST_CASE("the expression parser parses invoke expressions")
         CHECK(node->args.empty());
     }
 }
+
+TEST_CASE("the expression parser parses cpp attributes")
+{
+    cppast::test::syntax_generator syntax_generator;
+
+    SECTION("Parses complete cpp attributes without errors")
+    {
+        auto test = [&](std::size_t args, std::size_t depth)
+        {
+            const auto syntax = syntax_generator.random_expression_cpp_attribute(args, depth);
+            parser_context context{syntax};
+
+            auto node = context.parser.parse_cpp_attribute();
+            const auto& expected_node = syntax.first;
+            REQUIRE(node != nullptr);
+            CHECK(node->kind == ast::node::node_kind::expression_cpp_attribute);
+            REQUIRE(node->body != nullptr);
+            node_test(node->body, expected_node->body);
+        };
+
+        test(0, 0);
+        test(1, 0);
+        test(10, 4);
+        test(20, 4);
+    }
+}
