@@ -85,14 +85,14 @@ int main(int argc, char** argv)
 
         if(attribute != nullptr)
         {
-            std::cout << "ok\n";
+            std::cout << "\n\ninput \"" << argv[1] << "\" parsed ok\n";
 
             print_visitor visitor;
             attribute->visit(visitor);
         }
         else
         {
-            std::cout << "error\n";
+            std::cout << "\n\ninput \"" << argv[1] << "\" parsed with errors\n";
         }
     }
     else
