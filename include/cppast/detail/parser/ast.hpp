@@ -58,6 +58,7 @@ public:
         terminal_float,
         terminal_integer,
         terminal_string,
+        terminal_boolean,
         identifier,
         expression_invoke,
         expression_cpp_attribute
@@ -98,6 +99,8 @@ constexpr const char* to_string(node::node_kind kind)
         return "terminal_integer";
     case node::node_kind::terminal_string:
         return "terminal_string";
+    case node::node_kind::terminal_boolean:
+        return "terminal_boolean";
     case node::node_kind::identifier:
         return "identifier";
     case node::node_kind::expression_invoke:
@@ -178,6 +181,10 @@ struct terminal : public node
         {
             kind = node_kind::terminal_string;
         }
+        else if(std::is_same<T, bool>::value)
+        {
+            kind = node_kind::terminal_boolean;
+        }
         else if(std::is_floating_point<T>::value)
         {
             kind = node_kind::terminal_float;
@@ -212,6 +219,13 @@ struct terminal_string : public terminal<std::string>
     using terminal<std::string>::terminal;
 
     static constexpr node::node_kind node_class_kind = node::node_kind::terminal_string;
+};
+
+struct terminal_boolean : public terminal<bool>
+{
+    using terminal<bool>::terminal;
+
+    static constexpr node::node_kind node_class_kind = node::node_kind::terminal_boolean;
 };
 
 struct identifier : public node
@@ -266,6 +280,8 @@ void do_visit_node(node* node, Function function)
         function(node_cast<terminal_float>(node)); break;
     case node::node_kind::terminal_string:
         function(node_cast<terminal_string>(node)); break;
+    case node::node_kind::terminal_boolean:
+        function(node_cast<terminal_boolean>(node)); break;
     case node::node_kind::identifier:
         function(node_cast<identifier>(node)); break;
     case node::node_kind::expression_invoke:
@@ -347,6 +363,7 @@ public:
     virtual void on_node(const terminal_integer& node) {}
     virtual void on_node(const terminal_float& node) {}
     virtual void on_node(const terminal_string& node) {}
+    virtual void on_node(const terminal_boolean& node) {}
     virtual void on_node(const identifier& node) {}
     virtual void on_node(const expression_invoke& node) {}
     virtual void on_node(const expression_cpp_attribute& node) {}
@@ -358,6 +375,7 @@ private:
 std::shared_ptr<node> make_literal_integer(long long value);
 std::shared_ptr<node> make_literal_float(float value);
 std::shared_ptr<node> make_literal_string(const std::string& str);
+std::shared_ptr<node> make_literal_boolean(bool value);
 std::shared_ptr<node> make_literal(const token& token);
 
 } // namespace cppast::detail::parser::ast

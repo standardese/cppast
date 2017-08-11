@@ -126,16 +126,23 @@ std::shared_ptr<node> make_literal_string(const std::string& value)
     return std::make_shared<terminal_string>(value);
 }
 
+std::shared_ptr<node> make_literal_boolean(bool value)
+{
+    return std::make_shared<terminal_boolean>(value);
+}
+
 std::shared_ptr<node> make_literal(const token& token)
 {
     switch(token.kind)
     {
-    case token::token_kind::int_iteral:
+    case token::token_kind::int_literal:
         return std::make_shared<terminal_integer>(token.int_value(), token);
     case token::token_kind::float_literal:
         return std::make_shared<terminal_float>(token.float_value(), token);
     case token::token_kind::string_literal:
         return std::make_shared<terminal_string>(token.string_value(), token);
+    case token::token_kind::bool_literal:
+        return std::make_shared<terminal_boolean>(token.bool_value(), token);
     default:
         return nullptr;
     }

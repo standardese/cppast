@@ -75,8 +75,9 @@ std::shared_ptr<node> parser::do_parse_expression()
                 case token::token_kind::identifier:
                     return do_parse_invoke();
                 case token::token_kind::string_literal:
-                case token::token_kind::int_iteral:
+                case token::token_kind::int_literal:
                 case token::token_kind::float_literal:
+                case token::token_kind::bool_literal:
                 {
                     if(_lexer.read_next_token())
                     {

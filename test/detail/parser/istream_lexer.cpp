@@ -152,7 +152,7 @@ TEST_CASE("istream_lexer reads numeric literals", "[istream_lexer]")
         istream_lexer_context context{"    1234   "};
         REQUIRE(context.lexer.read_next_token());
         CHECK(context.lexer.current_token().token == "1234");
-        CHECK(context.lexer.current_token().kind == cppast::detail::parser::token::token_kind::int_iteral);
+        CHECK(context.lexer.current_token().kind == cppast::detail::parser::token::token_kind::int_literal);
         CHECK_FALSE(context.lexer.read_next_token());
     }
 
@@ -177,8 +177,8 @@ TEST_CASE("istream_lexer reads numeric literals", "[istream_lexer]")
     {
         istream_lexer_context context{"+42 -42"};
         context.check_equal_tokens({
-            {cppast::detail::parser::token::token_kind::int_iteral, "+42"},
-            {cppast::detail::parser::token::token_kind::int_iteral, "-42"}
+            {cppast::detail::parser::token::token_kind::int_literal, "+42"},
+            {cppast::detail::parser::token::token_kind::int_literal, "-42"}
         });
 
         CHECK(context.tokens[0].int_value() ==  42);
@@ -255,11 +255,69 @@ TEST_CASE("istream_lexer reads numeric literals", "[istream_lexer]")
     {
         istream_lexer_context context{"42)42.0)"};
         context.check_equal_tokens({
-            {cppast::detail::parser::token::token_kind::int_iteral, "42"},
+            {cppast::detail::parser::token::token_kind::int_literal, "42"},
             {cppast::detail::parser::token::token_kind::paren_close, ")"},
             {cppast::detail::parser::token::token_kind::float_literal, "42.0"},
             {cppast::detail::parser::token::token_kind::paren_close, ")"}
         });
+    }
+}
+
+TEST_CASE("istream_lexer reads identifiers", "[istream_lexer]")
+{
+    SECTION("Spaces are ignored")
+    {
+        istream_lexer_context context{"      hello    world    "};
+        context.check_equal_tokens({
+            {cppast::detail::parser::token::token_kind::identifier, "hello"},
+            {cppast::detail::parser::token::token_kind::identifier, "world"},
+        });
+    }
+
+    SECTION("Boolean literals are not identifiers")
+    {
+        istream_lexer_context context{"true false"};
+        context.read_all();
+
+        REQUIRE(context.tokens.size() == 2);
+
+        CHECK(context.tokens[0].kind != cppast::detail::parser::token::token_kind::identifier);
+        CHECK(context.tokens[1].kind != cppast::detail::parser::token::token_kind::identifier);
+    }
+
+    SECTION("Underscore separated identifiers are valid")
+    {
+        istream_lexer_context context{"hello_world"};
+        context.read_all();
+
+        REQUIRE(context.tokens.size() == 1);
+        CHECK(context.tokens[0].kind == cppast::detail::parser::token::token_kind::identifier);
+        CHECK(context.tokens[0].token == "hello_world");
+    }
+}
+
+TEST_CASE("istream_lexer reads bool literals", "[istream_lexer]")
+{
+    SECTION("reads \"true\"")
+    {
+        istream_lexer_context context{"true"};
+        context.read_all();
+
+        REQUIRE(context.tokens.size() == 1);
+        CHECK(context.tokens[0].kind == cppast::detail::parser::token::token_kind::bool_literal);
+        CHECK(context.tokens[0].token == "true");
+        CHECK(context.tokens[0].bool_value());
+    }
+
+    SECTION("reads \"false\"")
+    {
+        istream_lexer_context context{"false"};
+        context.read_all();
+
+        REQUIRE(context.tokens.size() == 1);
+        CHECK(context.tokens[0].kind == cppast::detail::parser::token::token_kind::bool_literal);
+        CHECK(context.tokens[0].token == "false");
+        CHECK_FALSE(context.tokens[0].bool_value());
     }
 }
 

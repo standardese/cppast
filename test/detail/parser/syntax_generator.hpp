@@ -23,6 +23,7 @@ public:
         using terminal_string = cppast::detail::parser::ast::terminal_string;
         using terminal_integer = cppast::detail::parser::ast::terminal_integer;
         using terminal_float = cppast::detail::parser::ast::terminal_float;
+        using terminal_boolean = cppast::detail::parser::ast::terminal_boolean;
         using identifier = cppast::detail::parser::ast::identifier;
         using expression_invoke = cppast::detail::parser::ast::expression_invoke;
         using expression_cpp_attribute = cppast::detail::parser::ast::expression_cpp_attribute;
@@ -39,6 +40,7 @@ public:
     syntax<ast::terminal_string> random_terminal_string();
     syntax<ast::terminal_integer> random_terminal_integer();
     syntax<ast::terminal_float> random_terminal_float();
+    syntax<ast::terminal_boolean> random_terminal_boolean();
     syntax<ast::identifier> random_identifier(std::size_t scopes = 1);
     syntax<ast::identifier> random_full_qualified_identifier(std::size_t scopes = 1);
 

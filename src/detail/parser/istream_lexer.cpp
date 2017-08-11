@@ -140,6 +140,11 @@ istream_lexer::scan_result istream_lexer::scan_string_literal()
 
 istream_lexer::scan_result istream_lexer::scan_identifier()
 {
+    static std::unordered_map<std::string, token::token_kind> keywords{
+        {"true", token::token_kind::bool_literal},
+        {"false", token::token_kind::bool_literal}
+    };
+
     if(std::isalpha(_last_char))
     {
         save_char(_last_char);
@@ -155,7 +160,17 @@ istream_lexer::scan_result istream_lexer::scan_identifier()
             put_back();
         }
 
-        save_token(token::token_kind::identifier);
+        auto keyword_it = keywords.find(_token_buffer.str());
+
+        if(keyword_it != keywords.end())
+        {
+            save_token(keyword_it->second);
+        }
+        else
+        {
+            save_token(token::token_kind::identifier);
+        }
+
         return scan_result::successful;
     }
     else
@@ -244,7 +259,7 @@ istream_lexer::scan_result istream_lexer::scan_number()
             put_back();
         }
 
-        save_token(dot ? token::token_kind::float_literal : token::token_kind::int_iteral);
+        save_token(dot ? token::token_kind::float_literal : token::token_kind::int_literal);
         return scan_result::successful;
     }
     else

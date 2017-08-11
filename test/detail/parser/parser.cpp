@@ -96,7 +96,7 @@ TEST_CASE("the expression parser parses terminals", "[parser]")
 
     SECTION("parses integer literals")
     {
-        parser_context context{{token_kind::int_iteral}};
+        parser_context context{{token_kind::int_literal}};
         auto node = context.parser.do_parse_expression();
         REQUIRE(node != nullptr);
         auto terminal = ast::node_cast<ast::terminal_integer>(node);
@@ -114,6 +114,31 @@ TEST_CASE("the expression parser parses terminals", "[parser]")
 
         REQUIRE(terminal != nullptr);
         CHECK(terminal->value == context.lexer.tokens()[0].float_value());
+    }
+
+    SECTION("parses boolean literals")
+    {
+        SECTION("parses \"true\"")
+        {
+            text_parser_context context{"true"};
+            auto node = context.parser.do_parse_expression();
+            REQUIRE(node != nullptr);
+            auto terminal = ast::node_cast<ast::terminal_boolean>(node);
+
+            REQUIRE(terminal != nullptr);
+            CHECK(terminal->value);
+        }
+
+        SECTION("parses \"false\"")
+        {
+            text_parser_context context{"false"};
+            auto node = context.parser.do_parse_expression();
+            REQUIRE(node != nullptr);
+            auto terminal = ast::node_cast<ast::terminal_boolean>(node);
+
+            REQUIRE(terminal != nullptr);
+            CHECK_FALSE(terminal->value);
+        }
     }
 }
 
@@ -186,6 +211,11 @@ void node_test(const std::shared_ptr<ast::node>& result_node, const std::shared_
         [&](const ast::terminal_float& f)
         {
             CHECK(f.value == expected_node->as<ast::terminal_float>().value);
+            visited = true;
+        },
+        [&](const ast::terminal_boolean& b)
+        {
+            CHECK(b.value == expected_node->as<ast::terminal_boolean>().value);
             visited = true;
         },
         [&](const ast::expression_invoke& i)

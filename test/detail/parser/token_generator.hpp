@@ -29,6 +29,11 @@ public:
         return std::uniform_real_distribution<T>{min, max}(prng);
     }
 
+    bool random_bool()
+    {
+        return random_int(0, 1);
+    }
+
     std::size_t random_length(std::size_t max)
     {
         return random_int(static_cast<std::size_t>(1), max);
@@ -111,6 +116,18 @@ public:
         return std::to_string(random_float<double>());
     }
 
+    std::string random_boolean()
+    {
+        if(random_bool())
+        {
+            return "true";
+        }
+        else
+        {
+            return "false";
+        }
+    }
+
     std::string random_id()
     {
         auto str = random_string([](char c)
@@ -139,10 +156,12 @@ public:
             result.token = random_id(); break;
         case token::token_kind::string_literal:
             result.token = random_string_literal(); break;
-        case token::token_kind::int_iteral:
+        case token::token_kind::int_literal:
             result.token = random_integer(); break;
         case token::token_kind::float_literal:
             result.token = random_float(); break;
+        case token::token_kind::bool_literal:
+            result.token = random_boolean(); break;
         case token::token_kind::double_colon:
             result.token = "::"; break;
         case token::token_kind::comma:
@@ -165,14 +184,6 @@ public:
             result.token = ">"; break;
         case token::token_kind::unknown:
             result.token = "\"unknown\"";
-            result.kind = token::token_kind::string_literal;
-            break;
-        case token::token_kind::bool_literal:
-            result.token = "\"bool\"";
-            result.kind = token::token_kind::string_literal;
-            break;
-        case token::token_kind::unint_literal:
-            result.token = "\"uint\"";
             result.kind = token::token_kind::string_literal;
             break;
         default:

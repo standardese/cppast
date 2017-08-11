@@ -42,6 +42,11 @@ double token::float_value() const
     return std::atof(token.c_str());
 }
 
+bool token::bool_value() const
+{
+    return token == "true";
+}
+
 namespace cppast
 {
 
@@ -77,10 +82,8 @@ std::string to_string(token::token_kind kind)
         return "identifier";
     case token::token_kind::string_literal:
         return "string_literal";
-    case token::token_kind::int_iteral:
+    case token::token_kind::int_literal:
         return "int_literal";
-    case token::token_kind::unint_literal:
-        return "unint_literal";
     case token::token_kind::float_literal:
         return "float_literal";
     case token::token_kind::bool_literal:

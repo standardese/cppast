@@ -24,7 +24,7 @@ syntax<ast::terminal_string> syntax_generator::random_terminal_string()
 
 syntax<ast::terminal_integer> syntax_generator::random_terminal_integer()
 {
-    auto token = token_generator.random_token(token::token_kind::int_iteral);
+    auto token = token_generator.random_token(token::token_kind::int_literal);
 
     return {
         std::make_shared<ast::terminal_integer>(token.int_value(), token),
@@ -38,6 +38,16 @@ syntax<ast::terminal_float> syntax_generator::random_terminal_float()
 
     return {
         std::make_shared<ast::terminal_float>(token.float_value(), token),
+        {token}
+    };
+}
+
+syntax<ast::terminal_boolean> syntax_generator::random_terminal_boolean()
+{
+    auto token = token_generator.random_token(token::token_kind::float_literal);
+
+    return {
+        std::make_shared<ast::terminal_boolean>(token.bool_value(), token),
         {token}
     };
 }
@@ -151,6 +161,8 @@ syntax<ast::node> syntax_generator::random_node(ast::node::node_kind kind, std::
         return random_terminal_integer();
     case ast::node::node_kind::terminal_float:
         return random_terminal_float();
+    case ast::node::node_kind::terminal_boolean:
+        return random_terminal_boolean();
     case ast::node::node_kind::identifier:
         return random_identifier(token_generator.random_int(0, 100));
     case ast::node::node_kind::expression_invoke:
