@@ -296,34 +296,12 @@ void do_visit_node(node* node, Function function)
     }
 }
 
-template<typename Function, typename = void>
-struct is_complete_node_visitor : public std::false_type {};
-
-template<typename Function>
-struct is_complete_node_visitor<Function, std::void_t<decltype(
-    (do_visit_node(std::declval<ast::terminal_integer*>(), std::declval<Function>()), true) &&
-    (do_visit_node(std::declval<ast::terminal_float*>(), std::declval<Function>()), true) &&
-    (do_visit_node(std::declval<ast::terminal_string*>(), std::declval<Function>()), true) &&
-    (do_visit_node(std::declval<node*>(), std::declval<Function>()), true) &&
-    (do_visit_node(std::declval<node*>(), std::declval<Function>()), true) &&
-    (do_visit_node(std::declval<node*>(), std::declval<Function>()), true)
-)>> : public std::true_type {};
-
 }
 
-template<typename Function, typename = std::enable_if_t<is_complete_node_visitor<Function>::value>>
+template<typename Function>
 void visit_node(node* node, Function function)
 {
     do_visit_node(node, function);
-}
-
-template<typename Function, std::enable_if_t<!is_complete_node_visitor<Function>::value>>
-void visit_node(node* node, Function function)
-{
-    do_visit_node(node, cppast::detail::utils::overloaded_function(
-        function,
-        [](auto* node){}
-    ));;
 }
 
 template<typename Function>
