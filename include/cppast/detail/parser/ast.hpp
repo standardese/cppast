@@ -7,6 +7,7 @@
 
 #include <cppast/detail/parser/lexer.hpp>
 #include <cppast/detail/utils/overloaded_function.hpp>
+#include <cppast/detail/assert.hpp>
 #include <memory>
 #include <string>
 #include <vector>
@@ -39,9 +40,9 @@ public:
 
     virtual ~visitor() = default;
 
-    virtual void on_node(const node& node) {}
+    virtual void on_node(const node& /* node */) {}
 
-    virtual void on_event(event event) {}
+    virtual void on_event(event /* event */) {}
 };
 
 template<typename T>
@@ -108,6 +109,8 @@ constexpr const char* to_string(node::node_kind kind)
     case node::node_kind::expression_cpp_attribute:
         return "expression_cpp_attribute";
     }
+
+    return nullptr;
 }
 
 std::ostream& operator<<(std::ostream& os, node::node_kind kind);
@@ -360,13 +363,13 @@ void visit_node(const node& node, Function function)
 class detailed_visitor : public visitor
 {
 public:
-    virtual void on_node(const terminal_integer& node) {}
-    virtual void on_node(const terminal_float& node) {}
-    virtual void on_node(const terminal_string& node) {}
-    virtual void on_node(const terminal_boolean& node) {}
-    virtual void on_node(const identifier& node) {}
-    virtual void on_node(const expression_invoke& node) {}
-    virtual void on_node(const expression_cpp_attribute& node) {}
+    virtual void on_node(const terminal_integer& /* node */) {}
+    virtual void on_node(const terminal_float&   /* node */) {}
+    virtual void on_node(const terminal_string&  /* node */) {}
+    virtual void on_node(const terminal_boolean& /* node */) {}
+    virtual void on_node(const identifier&        /* node */) {}
+    virtual void on_node(const expression_invoke& /* node */) {}
+    virtual void on_node(const expression_cpp_attribute& /* node */) {}
 
 private:
     void on_node(const node& node) override final;

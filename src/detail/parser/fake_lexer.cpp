@@ -39,16 +39,20 @@ bool fake_lexer::read_next_token()
 
 const token& fake_lexer::current_token() const
 {
-    DEBUG_ASSERT(_current_token >= 0 && _current_token < _tokens.size(),
+    DEBUG_ASSERT(_current_token >= 0 && static_cast<std::size_t>(_current_token) < _tokens.size(),
         detail::assert_handler());
-    return _tokens[_current_token];
+    return _tokens[static_cast<std::size_t>(_current_token)];
 }
 
 source_location fake_lexer::location() const
 {
     if(_current_token >= 0 && ! eof())
     {
-        return source_location::make_file("fake_lexer.cpp", current_token().line, current_token().column);
+        return source_location::make_file(
+            "fake_lexer.cpp",
+            static_cast<unsigned>(current_token().line),
+            static_cast<unsigned>(current_token().column)
+        );
     }
     else
     {

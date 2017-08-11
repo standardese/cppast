@@ -62,7 +62,7 @@ bool istream_lexer::advance()
         if(_last_char == '\n')
         {
             _line++;
-            _previous_line_length = _column;
+            _previous_line_length = static_cast<std::size_t>(_column);
             _column = -1;
         }
         else
@@ -91,7 +91,7 @@ bool istream_lexer::put_back()
         }
         else
         {
-            _column = _previous_line_length;
+            _column = static_cast<std::int64_t>(_previous_line_length);
             _previous_line_length = 0;
             _line--;
         }
@@ -401,7 +401,7 @@ void istream_lexer::save_char(char c)
     if(_token_buffer.str().empty())
     {
         _token_line = _line;
-        _token_column = _column;
+        _token_column = static_cast<std::size_t>(_column);
     }
 
     _token_buffer.put(c);
@@ -420,5 +420,9 @@ void istream_lexer::discard_char()
 
 source_location istream_lexer::location() const
 {
-    return source_location::make_file(_filename, _line, _column);
+    return source_location::make_file(
+        _filename,
+        static_cast<unsigned>(_line),
+        static_cast<unsigned>(_column)
+    );
 }

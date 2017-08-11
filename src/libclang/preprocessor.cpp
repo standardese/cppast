@@ -97,7 +97,7 @@ namespace
         DEBUG_ASSERT(*ptr == ':', detail::assert_handler{});
         ++ptr;
 
-        return {type_safe::nullopt, std::move(filename), std::move(line)};
+        return {type_safe::nullopt, std::move(filename), std::move(line), type_safe::nullopt};
     }
 
     severity parse_severity(const char*& ptr)

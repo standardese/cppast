@@ -2,6 +2,8 @@
 # This file is subject to the license terms in the LICENSE file
 # found in the top-level directory of this distribution.
 
+include(DisableWNoExceptType)
+
 set(detail_header
         ../include/cppast/detail/assert.hpp
         ../include/cppast/detail/intrusive_list.hpp)
@@ -122,6 +124,14 @@ endif()
 if(CPPAST_ENABLE_PRECONDITION_CHECKS)
     target_compile_definitions(cppast PUBLIC CPPAST_ENABLE_PRECONDITION_CHECKS)
 endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # GCC 7 warns about mangling changes in C++17 related to
+    # noexcept as part of function signatures. Btw the warning
+    # is not from cppast code but from type_safe
+    disable_wnoexcept_type_on_target(cppast)
+endif()
+
 set_target_properties(cppast PROPERTIES CXX_STANDARD 14)
 
 add_executable(lexer_example detail/parser/lexer_example.cpp)

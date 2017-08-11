@@ -79,9 +79,9 @@ std::string format_replace(const std::string& format_string, const std::initiali
             };
         }
 
-        os << format_string.substr(prefix_begin, (match[0].first - format_string.begin()) - prefix_begin);
+        os << format_string.substr(prefix_begin, static_cast<std::size_t>(match[0].first - format_string.begin()) - prefix_begin);
         os << *(values.begin() + index);
-        prefix_begin = match[0].second - format_string.begin();
+        prefix_begin = static_cast<std::size_t>(match[0].second - format_string.begin());
     }
 
     if(prefix_begin < format_string.size())

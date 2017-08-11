@@ -83,6 +83,6 @@ bool buffered_lexer::eof() const
 source_location buffered_lexer::location() const
 {
     auto lexer_location = _lexer.location();
-    lexer_location.line = current_token().line;
+    lexer_location.line = static_cast<unsigned>(current_token().line);
     return lexer_location;
 }

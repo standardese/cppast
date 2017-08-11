@@ -56,9 +56,9 @@ private:
     {
         switch(event)
         {
-        case event::children_enter:
+        case ast::visitor::event::children_enter:
             _depth++; break;
-        case event::children_exit:
+        case ast::visitor::event::children_exit:
             _depth--; break;
         default:
             (void)42;

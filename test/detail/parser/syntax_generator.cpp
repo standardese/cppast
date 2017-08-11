@@ -164,12 +164,15 @@ syntax<ast::node> syntax_generator::random_node(ast::node::node_kind kind, std::
     case ast::node::node_kind::terminal_boolean:
         return random_terminal_boolean();
     case ast::node::node_kind::identifier:
-        return random_identifier(token_generator.random_int(0, 100));
+        return random_identifier(token_generator.random_int<std::size_t>(0, 100));
     case ast::node::node_kind::expression_invoke:
         return random_expression_invoke(args, depth);
     case ast::node::node_kind::expression_cpp_attribute:
         return random_expression_cpp_attribute(args, depth);
     }
+
+    DEBUG_UNREACHABLE(detail::assert_handler{});
+    return {nullptr, {}};
 }
 
 syntax<ast::node> syntax_generator::random_invoke_arg(std::size_t depth)
@@ -185,7 +188,7 @@ syntax<ast::node> syntax_generator::random_invoke_arg(std::size_t depth)
     auto node_kind = supported_kinds[index];
 
     depth = (depth == 0 ? 0 : depth - 1);
-    return random_node(node_kind, token_generator.random_int(0, 4), depth);
+    return random_node(node_kind, token_generator.random_int<std::size_t>(0, 4), depth);
 }
 
 invoke_args_syntax syntax_generator::random_invoke_args(std::size_t count, std::size_t depth)

@@ -102,7 +102,7 @@ public:
             {
                 auto token = token_generator.random_token();
                 token.line = line;
-                token.column = column + 1;
+                token.column = static_cast<std::size_t>(column + 1);
 
                 tokens.push_back(token);
                 input_buffer << token.token;

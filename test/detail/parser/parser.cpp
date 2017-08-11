@@ -54,6 +54,7 @@ public:
 
     template<typename Node>
     parser_context(const cppast::test::syntax_generator::syntax<Node>& syntax) :
+        cppast::test::logger_context{},
         lexer{syntax.second, logger},
         parser{lexer},
         expected_node{syntax.first, syntax.first.get()}
@@ -233,7 +234,7 @@ void node_test(const std::shared_ptr<ast::node>& result_node, const std::shared_
     ));
 
     CHECK(visited);
-};
+}
 
 TEST_CASE("the expression parser parses invoke expression arguments", "[parser]")
 {
@@ -258,7 +259,7 @@ TEST_CASE("the expression parser parses invoke expression arguments", "[parser]"
     {
         for(std::size_t i = 0; i < 10; ++i)
         {
-            std::size_t count = std::pow(2, i);
+            auto count = static_cast<std::size_t>(std::pow(2, i));
             std::ostringstream os;
 
             os << count << " invoke arguments with up to "
