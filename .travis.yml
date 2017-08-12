@@ -14,6 +14,14 @@ matrix:
       compiler: gcc
       addons:
         apt:
+          sources: ['ubuntu-toolchain-r-test', 'jonathonf/gcc-7.1']
+          packages: ['g++-7']
+      env: TOOLSET=g++-7 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=3.9.1 CPPAST_USE_FMT=ON
+
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
           sources: ['ubuntu-toolchain-r-test']
           packages: ['g++-5', 'lcov']
       env: TOOLSET=g++-5 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=4.0.0 CPPAST_TEST_GCOV=ON
