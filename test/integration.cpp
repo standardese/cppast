@@ -113,3 +113,19 @@ TEST_CASE("stdlib", "[!hide][integration]")
     resolve_includes(parser, file.value(), config);
     REQUIRE(!parser.error());
 }
+
+TEST_CASE("cppast", "[!hide][integration]")
+{
+    const char* files[] = {
+#include <cppast_files.hpp>
+    };
+
+    cpp_entity_index                    idx;
+    simple_file_parser<libclang_parser> parser(type_safe::ref(idx), default_logger());
+
+    libclang_compilation_database database("../");
+    libclang_compile_config       config(database, CPPAST_INTEGRATION_FILE);
+    parse_files(parser, files, config);
+
+    REQUIRE(!parser.error());
+}

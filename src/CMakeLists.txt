@@ -15,7 +15,6 @@ set(header
     ../include/cppast/cpp_class_template.hpp
     ../include/cppast/cpp_decltype_type.hpp
     ../include/cppast/cpp_entity.hpp
-    ../include/cppast/cpp_entity.hpp
     ../include/cppast/cpp_entity_container.hpp
     ../include/cppast/cpp_entity_index.hpp
     ../include/cppast/cpp_entity_kind.hpp

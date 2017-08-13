@@ -21,6 +21,7 @@ option(BUILD_TESTING "build test" OFF) # The ctest variable for building tests
 
 if(${CPPAST_BUILD_TEST} OR ${BUILD_TESTING} OR (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
     set(build_test ON)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # for the self integration test
 else()
     set(build_test OFF)
 endif()
