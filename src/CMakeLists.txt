@@ -6,7 +6,12 @@ include(DisableWNoExceptType)
 
 set(detail_header
         ../include/cppast/detail/assert.hpp
-        ../include/cppast/detail/intrusive_list.hpp)
+        ../include/cppast/detail/intrusive_list.hpp
+        ../include/cppast/detail/info_tracking_logger.hpp
+        ../include/cppast/detail/utils/format.hpp
+        ../include/cppast/detail/utils/overloaded_function.hpp
+        ../include/cppast/detail/utils/prettyprint.hpp
+        ../include/cppast/detail/parser/token.hpp)
 set(header
     ../include/cppast/code_generator.hpp
     ../include/cppast/compile_config.hpp
