@@ -18,16 +18,30 @@ namespace detail
 namespace parser
 {
 
+/// Implements a lexer that reads input through an standard
+/// inout stream
 class istream_lexer : public lexer
 {
 public:
+    /// Initializes the lexer given the stream input to read from and a
+    /// diagnostic logger.
+    /// \notes The third `filename` optional parameter sets the name of
+    /// the input sourcefile to use it in diagnostics.
     istream_lexer(std::istream& input, const diagnostic_logger& logger, const std::string& filename = "");
 
+    /// Reads the next token in the input. See [`cppast::detail::parser::lexer::rwad_next_token()`]()
     bool read_next_token() override;
+
+    /// Returns the last token read fromthe input. See [`cppast::detail::parser::lexer::current_token()`]()
     const token& current_token() const override;
 
+    /// Checks if the lexer could continue scanning input
     bool good() const override;
+
+    /// Checks if the lexer reached the end of the input
     bool eof() const override;
+
+    /// Returns the location in the input the lexer is currently pointing ti
     source_location location() const override;
 
 private:
