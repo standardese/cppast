@@ -13,7 +13,8 @@ set(detail_header
         ../include/cppast/detail/utils/prettyprint.hpp
         ../include/cppast/detail/parser/token.hpp
         ../include/cppast/detail/parser/lexer.hpp
-        ../include/cppast/detail/parser/istream_lexer.hpp)
+        ../include/cppast/detail/parser/istream_lexer.hpp
+        ../include/cppast/detail/parser/buffered_lexer.hpp)
 set(header
     ../include/cppast/code_generator.hpp
     ../include/cppast/compile_config.hpp
