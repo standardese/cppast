@@ -29,19 +29,24 @@ namespace ast
 
 class node;
 
+/// Provides a visitation interface for the parser AST
 class visitor
 {
 public:
+    /// Represents AST traversal events
     enum class event
     {
-        children_enter,
-        children_exit
+        children_enter, /// The visitor started traversing children of a node
+        children_exit   /// The visitor finished traversiong children of a node
     };
 
     virtual ~visitor() = default;
 
+    /// Invoked when an AST node is reached
+    /// \param node The node currently being visited
     virtual void on_node(const node& /* node */) {}
 
+    /// Fired when a traversal event occurs
     virtual void on_event(event /* event */) {}
 };
 
@@ -50,9 +55,11 @@ const T& node_cast(const node& node);
 template<typename T>
 T& node_cast(node& node);
 
+/// Represents a node in the parser AST
 class node
 {
 public:
+    /// Represents the different types of nodes supported by the parser AST
     enum class node_kind
     {
         unespecified,
@@ -65,19 +72,33 @@ public:
         expression_cpp_attribute
     };
 
+    /// The type of this node.
+    /// \notes Any AST node is tagged with this kind value to know which node
+    /// represents even in type erased context such as when accessing the node
+    /// through its base class. See [`as()`]() and [`node_cast()`]() for safe node conversions.
     node_kind kind = node_kind::unespecified;
 
     virtual ~node() = default;
 
+    /// Starts AST traversal from the current node using the given
+    /// AST visitor.
     void visit(visitor& visitor) const;
 
 
+    /// Returns this node instance converted to the given AST node type.
+    /// \returns A reference to this converted to the requested type if this node
+    /// if of the kind represented by the given AST node type. Throws [`ast::bad_node_cast`]()
+    /// otherwise.
     template<typename Node>
     Node& as()
     {
         return node_cast<Node>(*this);
     }
 
+    /// Returns this node instance converted to the given AST node type.
+    /// \returns A reference to this converted to the requested type if this node
+    /// if of the kind represented by the given AST node type. Throws [`ast::bad_node_cast`]()
+    /// otherwise.
     template<typename Node>
     const Node& as() const
     {
@@ -85,9 +106,11 @@ public:
     }
 
 protected:
+    /// AST visitation implementation, to be customized by AST node types.
     virtual void do_visit(visitor& visitor) const;
 };
 
+/// Returns a human readable string representation of an AST node kind.
 constexpr const char* to_string(node::node_kind kind)
 {
     switch(kind)
@@ -115,6 +138,10 @@ constexpr const char* to_string(node::node_kind kind)
 
 std::ostream& operator<<(std::ostream& os, node::node_kind kind);
 
+/// Converts a pointer to an AST node to a pointer of the given AST node type.
+/// \returns A pointer of the requested type pointing to the same node object if
+/// the node has the same kind that the AST node type given represents. Returns
+/// nullptr otherwise.
 template<typename T>
 T* node_cast(node* node)
 {
@@ -128,11 +155,15 @@ T* node_cast(node* node)
     }
 }
 
+/// Indicates a failure in the conversion of an AST node.
 struct bad_node_cast : public std::exception
 {
     using std::exception::exception;
 };
 
+/// Converts a reference to an AST node to a reference of the given AST node type.
+/// \returns A reference of the requested type pointing to the same node object if
+/// the node has the kind represented by that AST node type. Else throws [`ast::bad_node_cast`]().
 template<typename T>
 const T& node_cast(const node& node)
 {
@@ -148,6 +179,9 @@ const T& node_cast(const node& node)
     }
 }
 
+/// Converts a reference to an AST node to a reference of the given AST node type.
+/// \returns A reference of the requested type pointing to the same node object if
+/// the node has the kind represented by that AST node type. Else throws [`ast::bad_node_cast`]().
 template<typename T>
 T& node_cast(node& node)
 {
@@ -163,17 +197,26 @@ T& node_cast(node& node)
     }
 }
 
+/// Converts a shared pointer  to an AST node to a shared pointer of the given AST node type.
+/// \returns A shared pointer of the requested type pointing to the same node object if
+/// the node has the kind represented by that AST node type. Else return a null shared pointer
+/// of the requested type.
 template<typename T>
 std::shared_ptr<T> node_cast(const std::shared_ptr<node>& node)
 {
     return {node, node_cast<T>(node.get())};
 }
 
+/// A sequence of AST ndoes.
 using node_list = std::vector<std::shared_ptr<node>>;
 
+/// Represents an AST terminal.
+/// \tparam T The value type of the terminal.
 template<typename T>
 struct terminal : public node
 {
+    /// Initializes a terminal by its value and (optionally) the token where that value
+    /// was extracted from.
     terminal(
         const T& value,
         const type_safe::optional<cppast::detail::parser::token>& token = type_safe::nullopt) :
@@ -198,10 +241,15 @@ struct terminal : public node
         }
     }
 
+    /// Value of the terminal.
     T value;
+
+    /// The token from which this terminal node was generated.
     type_safe::optional<cppast::detail::parser::token> token;
 };
 
+/// Represents a numeric terminal node.
+/// \tparam T The value type of the terminal.
 template<typename T>
 struct terminal_number : public terminal<T>
 {
@@ -214,9 +262,13 @@ struct terminal_number : public terminal<T>
             node::node_kind::terminal_integer);
 };
 
+/// An integer terminal node.
 using terminal_integer = terminal_number<long long>;
+
+/// A floating point terminal node.
 using terminal_float   = terminal_number<double>;
 
+/// An string terminal node.
 struct terminal_string : public terminal<std::string>
 {
     using terminal<std::string>::terminal;
@@ -224,6 +276,7 @@ struct terminal_string : public terminal<std::string>
     static constexpr node::node_kind node_class_kind = node::node_kind::terminal_string;
 };
 
+/// A boolean terminal node.
 struct terminal_boolean : public terminal<bool>
 {
     using terminal<bool>::terminal;
@@ -231,24 +284,45 @@ struct terminal_boolean : public terminal<bool>
     static constexpr node::node_kind node_class_kind = node::node_kind::terminal_boolean;
 };
 
+/// An identifier AST node.
 struct identifier : public node
 {
+    /// Initializes a non-qualified terminal with its non-qualified name.
+    /// \notes Terminals initialized this way are assumed to be defined in
+    /// the global namespace (i.e. "foo" is non-qualified "::foo").
     identifier(const std::string& name);
+
+    /// Initializes an identifier with its full qualified name, represented
+    /// as the sequence of the scope names that form it. For example,
+    /// `["foo", "bar", "quux"]` is "::foo::bar::quux".
     identifier(const std::vector<std::string>& scope_names);
 
+    /// Returns the sequence of scope names that form the full qualified name
+    /// of the identifier.
     std::vector<std::string> scope_names;
 
+    /// Returns the unqualified name of the identifier, i.e. "foo" for "std::foo".
     const std::string& unqualified_name() const;
+
+    /// Returns the full qualified name of the identifier, i.e. "foo::bar::quux".
+    /// \notes Note that the returned name is not completelly full-qualified, the
+    /// initial double colon referencing the global namespace is omitted.
     std::string full_qualified_name() const;
 
     static constexpr node::node_kind node_class_kind = node::node_kind::identifier;
 };
 
+/// Represents an invoke expression
 struct expression_invoke : public node
 {
+    /// Initializes an invoke expression with the callee identifier and the set
+    /// of call arguments.
     expression_invoke(const std::shared_ptr<identifier>& callee, const node_list& args);
 
+    /// Callee identifier node.
     std::shared_ptr<identifier> callee;
+
+    /// Set of invoke argument nodes.
     node_list args;
 
     static constexpr node_kind node_class_kind = node_kind::expression_invoke;
@@ -257,10 +331,13 @@ private:
     void do_visit(visitor& visitor) const override final;
 };
 
+/// Represents a C++ attribute expression
 struct expression_cpp_attribute : public node
 {
+    /// Initializes an attribute with its body expression.
     expression_cpp_attribute(const std::shared_ptr<expression_invoke>& body);
 
+    /// The attribute body node.
     std::shared_ptr<expression_invoke> body;
 
     static constexpr node_kind node_class_kind = node_kind::expression_cpp_attribute;
@@ -272,6 +349,7 @@ private:
 namespace
 {
 
+// Reflection would help here, isn't?
 template<typename Function>
 void do_visit_node(node* node, Function function)
 {
@@ -298,12 +376,24 @@ void do_visit_node(node* node, Function function)
 
 }
 
+/// Invokes the given callback with a pointer of the dynamic type
+/// of the given AST node.
+/// \notes Given a callback callable with all the supported AST node type,
+/// this function performs the conversion of the node to its dynamic type and
+/// calls the appropiate callback overload. For the function to work, the callback
+/// **must** implement an overload for each AST node type.
 template<typename Function>
 void visit_node(node* node, Function function)
 {
     do_visit_node(node, function);
 }
 
+/// Invokes the given callback with a pointer of the dynamic type
+/// of the given AST node.
+/// \notes Given a callback callable with all the supported AST node type,
+/// this function performs the conversion of the node to its dynamic type and
+/// calls the appropiate callback overload. For the function to work, the callback
+/// **must** implement an overload for each AST node type.
 template<typename Function>
 void visit_node(const node* node, Function function)
 {
@@ -314,12 +404,24 @@ void visit_node(const node* node, Function function)
     });
 }
 
+/// Invokes the given callback with a pointer of the dynamic type
+/// of the given AST node.
+/// \notes Given a callback callable with all the supported AST node type,
+/// this function performs the conversion of the node to its dynamic type and
+/// calls the appropiate callback overload. For the function to work, the callback
+/// **must** implement an overload for each AST node type.
 template<typename Function>
 void visit_node(const std::shared_ptr<node>& node, Function function)
 {
     visit_node(node.get(), function);
 }
 
+/// Invokes the given callback with a reference of the dynamic type
+/// of the given AST node.
+/// \notes Given a callback callable with all the supported AST node type,
+/// this function performs the conversion of the node to its dynamic type and
+/// calls the appropiate callback overload. For the function to work, the callback
+/// **must** implement an overload for each AST node type.
 template<typename Function>
 void visit_node(node& node, Function function)
 {
@@ -329,6 +431,12 @@ void visit_node(node& node, Function function)
     });
 }
 
+/// Invokes the given callback with a reference of the dynamic type
+/// of the given AST node.
+/// \notes Given a callback callable with all the supported AST node type,
+/// this function performs the conversion of the node to its dynamic type and
+/// calls the appropiate callback overload. For the function to work, the callback
+/// **must** implement an overload for each AST node type.
 template<typename Function>
 void visit_node(const node& node, Function function)
 {
@@ -338,25 +446,48 @@ void visit_node(const node& node, Function function)
     });
 }
 
+/// Provides an AST visitor with a callback per AST node type
 class detailed_visitor : public visitor
 {
 public:
+    /// Invoked when the current node is an integer terminal.
     virtual void on_node(const terminal_integer& /* node */) {}
+
+    /// Invoked when the current node is a floating point terminal.
     virtual void on_node(const terminal_float&   /* node */) {}
+
+    /// Invoked when the current node is a string terminal.
     virtual void on_node(const terminal_string&  /* node */) {}
+
+    /// Invoked when the current node is an bool terminal.
     virtual void on_node(const terminal_boolean& /* node */) {}
+
+    /// Invoked when the current node is an identifier.
     virtual void on_node(const identifier&        /* node */) {}
+
+    /// Invoked when the current node is an invoke expression.
     virtual void on_node(const expression_invoke& /* node */) {}
+
+    /// Invoked when the current node is a C++ attribute expression.
     virtual void on_node(const expression_cpp_attribute& /* node */) {}
 
 private:
     void on_node(const node& node) override final;
 };
 
+/// Creates an integer literal with the given value.
 std::shared_ptr<node> make_literal_integer(long long value);
+
+/// Creates a floating point literal with the given value.
 std::shared_ptr<node> make_literal_float(float value);
+
+/// Creates a string literal with the given value.
 std::shared_ptr<node> make_literal_string(const std::string& str);
+
+/// Creates a boolean literal with the given value.
 std::shared_ptr<node> make_literal_boolean(bool value);
+
+/// Creates a literal with the given value.
 std::shared_ptr<node> make_literal(const token& token);
 
 } // namespace cppast::detail::parser::ast

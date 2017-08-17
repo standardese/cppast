@@ -16,7 +16,8 @@ set(detail_header
         ../include/cppast/detail/parser/istream_lexer.hpp
         ../include/cppast/detail/parser/buffered_lexer.hpp
         ../include/cppast/detail/parser/fake_lexer.hpp
-        ../include/cppast/detail/parser/parser.hpp)
+        ../include/cppast/detail/parser/parser.hpp
+        ../include/cppast/detail/parser/ast.hpp)
 set(header
     ../include/cppast/code_generator.hpp
     ../include/cppast/compile_config.hpp
