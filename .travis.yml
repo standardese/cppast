@@ -48,7 +48,8 @@ matrix:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.9']
           packages: ['g++-4.9', 'g++-5', 'clang-3.9']
-      env: TOOLSET=clang++-3.9 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=4.0.0 CPPAST_USE_FMT=ON
+      # Clang warns about GNU extensions used by stdlibc++ assert, that's why we enable -Wno-gnu here
+      env: TOOLSET=clang++-3.9 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=4.0.0 CPPAST_USE_FMT=ON WNO_GNU="-Wno-gnu"
 
     - os: osx
       compiler: clang
@@ -75,7 +76,7 @@ install:
 
 script:
   - mkdir build/ && cd build/
-  - $CMAKE -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-Werror -pedantic -Wall -Wextra -Wconversion -Wsign-conversion -Wno-parentheses -Wno-assume" -DLLVM_DOWNLOAD_OS_NAME=$LLVM_DOWNLOAD_OS_NAME -DLLVM_PREFERRED_VERSION=$LLVM_VERSION ../ -DCPPAST_TEST_GCOV=$CPPAST_TEST_GCOV -DCPPAST_USE_FMT=$CPPAST_USE_FMT
+  - $CMAKE -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-Werror -pedantic -Wall -Wextra -Wconversion -Wsign-conversion -Wno-parentheses -Wno-assume $WNO_GNU" -DLLVM_DOWNLOAD_OS_NAME=$LLVM_DOWNLOAD_OS_NAME -DLLVM_PREFERRED_VERSION=$LLVM_VERSION ../ -DCPPAST_TEST_GCOV=$CPPAST_TEST_GCOV -DCPPAST_USE_FMT=$CPPAST_USE_FMT
   - $CMAKE --build .
   - if [[ "$LLVM_VERSION" == "4.0.0" ]]; then ./test/cppast_test \*; else ./test/cppast_test; fi
 
