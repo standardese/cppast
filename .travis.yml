@@ -14,9 +14,9 @@ matrix:
       compiler: gcc
       addons:
         apt:
-          sources: ['ubuntu-toolchain-r-test', 'jonathonf/gcc-7.1']
-          packages: ['g++-7']
-      env: TOOLSET=g++-7 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=3.9.1 CPPAST_USE_FMT=ON
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-5']
+      env: TOOLSET=g++-5 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=3.9.1 CPPAST_USE_FMT=ON
 
     - os: linux
       compiler: gcc
@@ -41,6 +41,14 @@ matrix:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.9']
           packages: ['g++-4.9', 'g++-5', 'clang-3.9']
       env: TOOLSET=clang++-3.9 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=4.0.0
+
+    - os: linux
+      compiler: clang
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.9']
+          packages: ['g++-4.9', 'g++-5', 'clang-3.9']
+      env: TOOLSET=clang++-3.9 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=4.0.0 CPPAST_USE_FMT=ON
 
     - os: osx
       compiler: clang
