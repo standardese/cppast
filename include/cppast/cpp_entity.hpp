@@ -5,6 +5,7 @@
 #ifndef CPPAST_CPP_ENTITY_HPP_INCLUDED
 #define CPPAST_CPP_ENTITY_HPP_INCLUDED
 
+#include <atomic>
 #include <string>
 
 #include <type_safe/optional_ref.hpp>
@@ -121,9 +122,26 @@ namespace cppast
             comment_ = comment.value_or("");
         }
 
+        /// \returns The specified user data.
+        void* user_data() const noexcept
+        {
+            return user_data_.load();
+        }
+
+        /// \effects Sets some kind of user data.
+        ///
+        /// User data is just some kind of pointer, there are no requirements.
+        /// The class will do no lifetime management.
+        ///
+        /// User data is useful if you need to store additional data for an entity without the need to maintain a registry.
+        void set_user_data(void* data) const noexcept
+        {
+            user_data_ = data;
+        }
+
     protected:
         /// \effects Creates it giving it the the name.
-        cpp_entity(std::string name) : name_(std::move(name))
+        cpp_entity(std::string name) : name_(std::move(name)), user_data_(nullptr)
         {
         }
 
@@ -146,6 +164,7 @@ namespace cppast
         std::string                               name_;
         std::string                               comment_;
         type_safe::optional_ref<const cpp_entity> parent_;
+        mutable std::atomic<void*>                user_data_;
 
         template <typename T>
         friend struct detail::intrusive_list_access;

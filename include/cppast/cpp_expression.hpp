@@ -5,6 +5,7 @@
 #ifndef CPPAST_CPP_EXPRESSION_HPP_INCLUDED
 #define CPPAST_CPP_EXPRESSION_HPP_INCLUDED
 
+#include <atomic>
 #include <memory>
 
 #include <cppast/cpp_type.hpp>
@@ -40,10 +41,27 @@ namespace cppast
             return *type_;
         }
 
+        /// \returns The specified user data.
+        void* user_data() const noexcept
+        {
+            return user_data_.load();
+        }
+
+        /// \effects Sets some kind of user data.
+        ///
+        /// User data is just some kind of pointer, there are no requirements.
+        /// The class will do no lifetime management.
+        ///
+        /// User data is useful if you need to store additional data for an entity without the need to maintain a registry.
+        void set_user_data(void* data) const noexcept
+        {
+            user_data_ = data;
+        }
+
     protected:
         /// \effects Creates it given the type.
         /// \requires The type must not be `nullptr`.
-        cpp_expression(std::unique_ptr<cpp_type> type) : type_(std::move(type))
+        cpp_expression(std::unique_ptr<cpp_type> type) : type_(std::move(type)), user_data_(nullptr)
         {
             DEBUG_ASSERT(type_ != nullptr, detail::precondition_error_handler{});
         }
@@ -52,7 +70,8 @@ namespace cppast
         /// \returns The [cppast::cpp_expression_kind]().
         virtual cpp_expression_kind do_get_kind() const noexcept = 0;
 
-        std::unique_ptr<cpp_type> type_;
+        std::unique_ptr<cpp_type>  type_;
+        mutable std::atomic<void*> user_data_;
     };
 
     /// An unexposed [cppast::cpp_expression]().

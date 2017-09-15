@@ -5,6 +5,7 @@
 #ifndef CPPAST_CPP_TYPE_HPP_INCLUDED
 #define CPPAST_CPP_TYPE_HPP_INCLUDED
 
+#include <atomic>
 #include <memory>
 
 #include <cppast/detail/intrusive_list.hpp>
@@ -55,8 +56,27 @@ namespace cppast
             return do_get_kind();
         }
 
+        /// \returns The specified user data.
+        void* user_data() const noexcept
+        {
+            return user_data_.load();
+        }
+
+        /// \effects Sets some kind of user data.
+        ///
+        /// User data is just some kind of pointer, there are no requirements.
+        /// The class will do no lifetime management.
+        ///
+        /// User data is useful if you need to store additional data for an entity without the need to maintain a registry.
+        void set_user_data(void* data) const noexcept
+        {
+            user_data_ = data;
+        }
+
     protected:
-        cpp_type() noexcept = default;
+        cpp_type() noexcept : user_data_(nullptr)
+        {
+        }
 
     private:
         /// \returns The [cppast::cpp_type_kind]().
@@ -65,6 +85,8 @@ namespace cppast
         void on_insert(const cpp_type&)
         {
         }
+
+        mutable std::atomic<void*> user_data_;
 
         template <typename T>
         friend struct detail::intrusive_list_access;
