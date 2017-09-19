@@ -479,8 +479,52 @@ namespace
         case CXType_Vector:
         case CXType_ObjCInterface:
         case CXType_ObjCObjectPointer:
+#if CINDEX_VERSION_MINOR >= 43
+        case CXType_Half:
+        case CXType_Pipe:
+        case CXType_OCLImage1dRO:
+        case CXType_OCLImage1dArrayRO:
+        case CXType_OCLImage1dBufferRO:
+        case CXType_OCLImage2dRO:
+        case CXType_OCLImage2dArrayRO:
+        case CXType_OCLImage2dDepthRO:
+        case CXType_OCLImage2dArrayDepthRO:
+        case CXType_OCLImage2dMSAARO:
+        case CXType_OCLImage2dArrayMSAARO:
+        case CXType_OCLImage2dMSAADepthRO:
+        case CXType_OCLImage2dArrayMSAADepthRO:
+        case CXType_OCLImage3dRO:
+        case CXType_OCLImage1dWO:
+        case CXType_OCLImage1dArrayWO:
+        case CXType_OCLImage1dBufferWO:
+        case CXType_OCLImage2dWO:
+        case CXType_OCLImage2dArrayWO:
+        case CXType_OCLImage2dDepthWO:
+        case CXType_OCLImage2dArrayDepthWO:
+        case CXType_OCLImage2dMSAAWO:
+        case CXType_OCLImage2dArrayMSAAWO:
+        case CXType_OCLImage2dMSAADepthWO:
+        case CXType_OCLImage2dArrayMSAADepthWO:
+        case CXType_OCLImage3dWO:
+        case CXType_OCLImage1dRW:
+        case CXType_OCLImage1dArrayRW:
+        case CXType_OCLImage1dBufferRW:
+        case CXType_OCLImage2dRW:
+        case CXType_OCLImage2dArrayRW:
+        case CXType_OCLImage2dDepthRW:
+        case CXType_OCLImage2dArrayDepthRW:
+        case CXType_OCLImage2dMSAARW:
+        case CXType_OCLImage2dArrayMSAARW:
+        case CXType_OCLImage2dMSAADepthRW:
+        case CXType_OCLImage2dArrayMSAADepthRW:
+        case CXType_OCLImage3dRW:
+        case CXType_OCLSampler:
+        case CXType_OCLEvent:
+        case CXType_OCLQueue:
+        case CXType_OCLReserveID:
+#endif
         {
-            auto msg = detail::format("unexpected type of kind '",
+            auto msg      = detail::format("unexpected type of kind '",
                                       detail::get_type_kind_spelling(type).c_str(), "'");
             auto location = source_location::make_entity(get_type_spelling(type).c_str());
             context.logger->log("libclang parser", diagnostic{msg, location, severity::warning});
