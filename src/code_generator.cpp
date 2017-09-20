@@ -1099,7 +1099,10 @@ namespace
 
 bool cppast::generate_code(code_generator& generator, const cpp_entity& e)
 {
-    return generate_code_impl(generator, e, cpp_public);
+    generator.main_entity_ = type_safe::ref(e);
+    auto result            = generate_code_impl(generator, e, cpp_public);
+    generator.main_entity_ = nullptr;
+    return result;
 }
 
 void detail::write_template_arguments(

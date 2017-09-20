@@ -379,6 +379,12 @@ namespace cppast
             return cur_output_.value();
         }
 
+        /// \returns The entity whose code is being generated with [cppast::generate_code()]().
+        const cpp_entity& main_entity() const noexcept
+        {
+            return main_entity_.value();
+        }
+
     private:
         /// \returns The formatting options that should be used.
         /// The base class version has no flags set.
@@ -498,7 +504,10 @@ namespace cppast
             do_write_token_seq(" ");
         }
 
-        type_safe::optional_ref<const output> cur_output_;
+        type_safe::optional_ref<const output>     cur_output_;
+        type_safe::optional_ref<const cpp_entity> main_entity_;
+
+        friend bool generate_code(code_generator& generator, const cpp_entity& e);
     };
 
     /// Generates code for the given entity.
