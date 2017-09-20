@@ -24,14 +24,10 @@ namespace cppast
     {
     public:
         /// \effects Creates it viewing the [std::string]().
-        string_view(const std::string& str) noexcept : str_(str.c_str()), length_(str.length())
-        {
-        }
+        string_view(const std::string& str) noexcept : str_(str.c_str()), length_(str.length()) {}
 
         /// \effects Creates it viewing the C string `str`.
-        string_view(const char* str) noexcept : str_(str), length_(std::strlen(str))
-        {
-        }
+        string_view(const char* str) noexcept : str_(str), length_(std::strlen(str)) {}
 
         /// \effects Creates it viewing the C string literal.
         template <std::size_t Size>
@@ -107,6 +103,9 @@ namespace cppast
 
     /// A special [cppast::string_view]() representing a C++ preprocessor token.
     using preprocessor_token = detail::semantic_string_view<struct preprocessor_tag>;
+
+    /// A special [cppast::string_view]() representing a comment.
+    using comment = detail::semantic_string_view<struct comment_tag>;
 
     /// A special [cppast::string_view]() representing a sequence of unknown C++ tokens.
     using token_seq = detail::semantic_string_view<struct token_seq_tag>;
@@ -321,6 +320,14 @@ namespace cppast
                 return *this;
             }
 
+            /// \effects Calls `do_write_comment()`.
+            const output& operator<<(const comment& c) const
+            {
+                if (*this)
+                    gen_->do_write_comment(c.str());
+                return *this;
+            }
+
             /// \effects Calls `do_write_token_seq()`.
             const output& operator<<(const token_seq& seq) const
             {
@@ -450,6 +457,11 @@ namespace cppast
         virtual void do_write_preprocessor(string_view punct)
         {
             do_write_token_seq(punct);
+        }
+        /// \group write
+        virtual void do_write_comment(string_view c)
+        {
+            do_write_token_seq(c);
         }
 
         /// \effects Writes a string for an excluded target or return type for the given entity.
