@@ -174,10 +174,13 @@ namespace cppast
         {
         public:
             /// \effects Creates it giving the generator and the entity.
+            /// \requires No other output must be active for the same code generator.
             explicit output(type_safe::object_ref<code_generator>   gen,
                             type_safe::object_ref<const cpp_entity> e,
                             cppast::cpp_access_specifier_kind       access)
-            : gen_(gen), e_(e), options_(gen->do_get_options(*e, access))
+            : gen_(gen),
+              e_(e),
+              options_((gen->cur_output_ = type_safe::ref(*this), gen->do_get_options(*e, access)))
             {
                 gen_->on_begin(*e_);
             }
@@ -186,6 +189,7 @@ namespace cppast
             {
                 if (*this)
                     gen_->on_end(*e_);
+                gen_->cur_output_ = nullptr;
             }
 
             output(const output&) = delete;
@@ -369,6 +373,12 @@ namespace cppast
     protected:
         code_generator() noexcept = default;
 
+        /// \returns The currently active [*output]().
+        const output& current_output() const noexcept
+        {
+            return cur_output_.value();
+        }
+
     private:
         /// \returns The formatting options that should be used.
         /// The base class version has no flags set.
@@ -487,6 +497,8 @@ namespace cppast
         {
             do_write_token_seq(" ");
         }
+
+        type_safe::optional_ref<const output> cur_output_;
     };
 
     /// Generates code for the given entity.
