@@ -178,18 +178,15 @@ namespace cppast
             explicit output(type_safe::object_ref<code_generator>   gen,
                             type_safe::object_ref<const cpp_entity> e,
                             cppast::cpp_access_specifier_kind       access)
-            : gen_(gen),
-              e_(e),
-              options_((gen->cur_output_ = type_safe::ref(*this), gen->do_get_options(*e, access)))
+            : gen_(gen), e_(e), options_(gen->do_get_options(*e, access))
             {
-                gen_->on_begin(*e_);
+                gen_->on_begin(*this, *e_);
             }
 
             ~output() noexcept
             {
                 if (*this)
-                    gen_->on_end(*e_);
-                gen_->cur_output_ = nullptr;
+                    gen_->on_end(*this, *e_);
             }
 
             output(const output&) = delete;
@@ -373,12 +370,6 @@ namespace cppast
     protected:
         code_generator() noexcept = default;
 
-        /// \returns The currently active [*output]().
-        const output& current_output() const noexcept
-        {
-            return cur_output_.value();
-        }
-
         /// \returns The entity whose code is being generated with [cppast::generate_code()]().
         const cpp_entity& main_entity() const noexcept
         {
@@ -406,15 +397,17 @@ namespace cppast
 
         /// \effects Will be invoked before code of an entity is generated.
         /// The base class version has no effect.
-        virtual void on_begin(const cpp_entity& e)
+        virtual void on_begin(const output& out, const cpp_entity& e)
         {
+            (void)out;
             (void)e;
         }
 
         /// \effects Will be invoked after all code of an entity has been generated.
         /// The base class version has no effect.
-        virtual void on_end(const cpp_entity& e)
+        virtual void on_end(const output& out, const cpp_entity& e)
         {
+            (void)out;
             (void)e;
         }
 
@@ -504,7 +497,6 @@ namespace cppast
             do_write_token_seq(" ");
         }
 
-        type_safe::optional_ref<const output>     cur_output_;
         type_safe::optional_ref<const cpp_entity> main_entity_;
 
         friend bool generate_code(code_generator& generator, const cpp_entity& e);
