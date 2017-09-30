@@ -636,15 +636,15 @@ namespace
         case cpp_cv_none:
             break;
         case cpp_cv_const:
-            output << keyword("const");
+            output << operator_ws << keyword("const");
             need_ws = true;
             break;
         case cpp_cv_volatile:
-            output << keyword("volatile");
+            output << operator_ws << keyword("volatile");
             need_ws = true;
             break;
         case cpp_cv_const_volatile:
-            output << keyword("const") << whitespace << keyword("volatile");
+            output << operator_ws << keyword("const") << whitespace << keyword("volatile");
             need_ws = true;
             break;
         }
@@ -654,11 +654,11 @@ namespace
         case cpp_ref_none:
             break;
         case cpp_ref_lvalue:
-            output << operator_ws << punctuation("&") << operator_ws;
+            output << operator_ws << punctuation("&");
             need_ws = false;
             break;
         case cpp_ref_rvalue:
-            output << operator_ws << punctuation("&&") << operator_ws;
+            output << operator_ws << punctuation("&&");
             need_ws = false;
             break;
         }
