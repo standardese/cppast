@@ -438,6 +438,8 @@ namespace
             if (spelling.empty() || spelling.back() != '>')
                 return nullptr;
             spelling.pop_back();
+            while (!spelling.empty() && spelling.back() == ' ')
+                spelling.pop_back();
             builder.add_unexposed_arguments(ptr);
 
             return builder.finish();
