@@ -66,9 +66,13 @@ namespace
         auto need_sep = false;
         for (auto& child : cont)
         {
-            if (need_sep)
-                output << s;
-            need_sep = generate_code_impl(*output.generator(), child, cur_access);
+            auto is_excluded = output.options(child, cur_access).is_set(code_generator::exclude);
+            if (!is_excluded)
+            {
+                if (need_sep)
+                    output << s;
+                need_sep = generate_code_impl(*output.generator(), child, cur_access);
+            }
         }
         return need_sep;
     }
@@ -905,23 +909,25 @@ namespace
         if (!hide_if_empty)
             output << keyword("template") << operator_ws << punctuation("<") << bracket_ws;
 
-        auto need_sep = false;
-        auto first    = hide_if_empty;
+        auto need_sep    = false;
+        auto need_header = hide_if_empty;
         for (auto& param : templ.parameters())
         {
-            if (first
-                && !output.options(*templ.parameters().begin(), cpp_public)
-                        .is_set(code_generator::exclude))
+            auto is_excluded = output.options(param, cpp_public).is_set(code_generator::exclude);
+            if (!is_excluded)
             {
-                first = false;
-                output << keyword("template") << operator_ws << punctuation("<") << bracket_ws;
+                if (need_header)
+                {
+                    need_header = false;
+                    output << keyword("template") << operator_ws << punctuation("<") << bracket_ws;
+                }
+                else if (need_sep)
+                    output << comma;
+                need_sep = generate_code_impl(*output.generator(), param, cpp_public);
             }
-            else if (need_sep)
-                output << comma;
-            need_sep = generate_code_impl(*output.generator(), param, cpp_public);
         }
 
-        if (!hide_if_empty || need_sep)
+        if (!need_header)
             output << bracket_ws << punctuation(">") << newl;
     }
 
