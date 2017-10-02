@@ -358,6 +358,12 @@ namespace cppast
             return main_entity_.value();
         }
 
+        /// \effects Generates the code for the specified entity.
+        /// It can be used to generate additional entities while generating another one.
+        /// \returns Whether or not any code was generated.
+        /// \notes This does not affect the main entity, but otherwise behaves just like [cppast::generate_code()]().
+        bool generate_code(const cpp_entity& entity);
+
     private:
         /// \returns The formatting options that should be used.
         /// The base class version has no flags set.

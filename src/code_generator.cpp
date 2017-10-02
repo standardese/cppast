@@ -1103,6 +1103,11 @@ namespace
     }
 }
 
+bool code_generator::generate_code(const cpp_entity& entity)
+{
+    return generate_code_impl(*this, entity, cpp_public);
+}
+
 bool cppast::generate_code(code_generator& generator, const cpp_entity& e)
 {
     generator.main_entity_ = type_safe::ref(e);
