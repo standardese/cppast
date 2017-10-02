@@ -66,9 +66,13 @@ namespace
         auto need_sep = false;
         for (auto& child : cont)
         {
-            if (need_sep)
-                output << s;
-            need_sep = generate_code_impl(*output.generator(), child, cur_access);
+            auto is_excluded = output.options(child, cur_access).is_set(code_generator::exclude);
+            if (!is_excluded)
+            {
+                if (need_sep)
+                    output << s;
+                need_sep = generate_code_impl(*output.generator(), child, cur_access);
+            }
         }
         return need_sep;
     }
@@ -636,15 +640,15 @@ namespace
         case cpp_cv_none:
             break;
         case cpp_cv_const:
-            output << keyword("const");
+            output << operator_ws << keyword("const");
             need_ws = true;
             break;
         case cpp_cv_volatile:
-            output << keyword("volatile");
+            output << operator_ws << keyword("volatile");
             need_ws = true;
             break;
         case cpp_cv_const_volatile:
-            output << keyword("const") << whitespace << keyword("volatile");
+            output << operator_ws << keyword("const") << whitespace << keyword("volatile");
             need_ws = true;
             break;
         }
@@ -654,11 +658,11 @@ namespace
         case cpp_ref_none:
             break;
         case cpp_ref_lvalue:
-            output << operator_ws << punctuation("&") << operator_ws;
+            output << operator_ws << punctuation("&");
             need_ws = false;
             break;
         case cpp_ref_rvalue:
-            output << operator_ws << punctuation("&&") << operator_ws;
+            output << operator_ws << punctuation("&&");
             need_ws = false;
             break;
         }
@@ -905,23 +909,25 @@ namespace
         if (!hide_if_empty)
             output << keyword("template") << operator_ws << punctuation("<") << bracket_ws;
 
-        auto need_sep = false;
-        auto first    = hide_if_empty;
+        auto need_sep    = false;
+        auto need_header = hide_if_empty;
         for (auto& param : templ.parameters())
         {
-            if (first
-                && !output.options(*templ.parameters().begin(), cpp_public)
-                        .is_set(code_generator::exclude))
+            auto is_excluded = output.options(param, cpp_public).is_set(code_generator::exclude);
+            if (!is_excluded)
             {
-                first = false;
-                output << keyword("template") << operator_ws << punctuation("<") << bracket_ws;
+                if (need_header)
+                {
+                    need_header = false;
+                    output << keyword("template") << operator_ws << punctuation("<") << bracket_ws;
+                }
+                else if (need_sep)
+                    output << comma;
+                need_sep = generate_code_impl(*output.generator(), param, cpp_public);
             }
-            else if (need_sep)
-                output << comma;
-            need_sep = generate_code_impl(*output.generator(), param, cpp_public);
         }
 
-        if (!hide_if_empty || need_sep)
+        if (!need_header)
             output << bracket_ws << punctuation(">") << newl;
     }
 
@@ -1095,6 +1101,11 @@ namespace
 
         return false;
     }
+}
+
+bool code_generator::generate_code(const cpp_entity& entity)
+{
+    return generate_code_impl(*this, entity, cpp_public);
 }
 
 bool cppast::generate_code(code_generator& generator, const cpp_entity& e)
