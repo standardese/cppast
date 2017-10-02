@@ -157,6 +157,7 @@ namespace cppast
         /// Flags that control the generation.
         enum generation_flags
         {
+            custom,         //< A custom output is written.
             exclude,        //< Exclude the entire entity.
             exclude_return, //< Exclude the return type of a function entity.
             exclude_target, //< Exclude the underlying entity of an alias (e.g. typedef).
@@ -193,12 +194,10 @@ namespace cppast
 
             output& operator=(const output&) = delete;
 
-            /// \returns Whether or not the `on_XXX` function returned something other than `exclude`.
-            /// \notes If this returns `false`,
-            /// the other functions have no effects.
+            /// \returns Whether or not the `on_XXX` function returned something other than `exclude` or `custom`.
             explicit operator bool() const noexcept
             {
-                return !options_.is_set(exclude);
+                return !options_.is_set(exclude) && !options_.is_set(custom);
             }
 
             /// \returns The generation options.
@@ -234,19 +233,15 @@ namespace cppast
             /// \effects Call `do_indent()` followed by `do_write_newline()` (if `print_newline` is `true`).
             void indent(bool print_newline = true) const noexcept
             {
-                if (*this)
-                {
-                    gen_->do_indent();
-                    if (print_newline)
-                        gen_->do_write_newline();
-                }
+                gen_->do_indent();
+                if (print_newline)
+                    gen_->do_write_newline();
             }
 
             /// \effects Calls `do_unindent()`.
             void unindent() const noexcept
             {
-                if (*this)
-                    gen_->do_unindent();
+                gen_->do_unindent();
             }
 
             /// \effects Calls `func(*this)`.
@@ -259,16 +254,14 @@ namespace cppast
             /// \effects Calls `do_write_keyword()`.
             const output& operator<<(const keyword& k) const
             {
-                if (*this)
-                    gen_->do_write_keyword(k.str());
+                gen_->do_write_keyword(k.str());
                 return *this;
             }
 
             /// \effects Calls `do_write_identifier()`.
             const output& operator<<(const identifier& ident) const
             {
-                if (*this)
-                    gen_->do_write_identifier(ident.str());
+                gen_->do_write_identifier(ident.str());
                 return *this;
             }
 
@@ -276,88 +269,77 @@ namespace cppast
             template <typename T, class Predicate>
             const output& operator<<(const basic_cpp_entity_ref<T, Predicate>& ref) const
             {
-                if (*this)
-                    gen_->do_write_reference(ref.id(), ref.name());
+                gen_->do_write_reference(ref.id(), ref.name());
                 return *this;
             }
 
             /// \effects Calls `do_write_punctuation()`.
             const output& operator<<(const punctuation& punct) const
             {
-                if (*this)
-                    gen_->do_write_punctuation(punct.str());
+                gen_->do_write_punctuation(punct.str());
                 return *this;
             }
 
             /// \effects Calls `do_write_str_literal`.
             const output& operator<<(const string_literal& lit) const
             {
-                if (*this)
-                    gen_->do_write_str_literal(lit.str());
+                gen_->do_write_str_literal(lit.str());
                 return *this;
             }
 
             /// \effects Calls `do_write_int_literal()`.
             const output& operator<<(const int_literal& lit) const
             {
-                if (*this)
-                    gen_->do_write_int_literal(lit.str());
+                gen_->do_write_int_literal(lit.str());
                 return *this;
             }
 
             /// \effects Calls `do_write_float_literal()`.
             const output& operator<<(const float_literal& lit) const
             {
-                if (*this)
-                    gen_->do_write_float_literal(lit.str());
+                gen_->do_write_float_literal(lit.str());
                 return *this;
             }
 
             /// \effects Calls `do_write_preprocessor()`.
             const output& operator<<(const preprocessor_token& tok) const
             {
-                if (*this)
-                    gen_->do_write_preprocessor(tok.str());
+                gen_->do_write_preprocessor(tok.str());
                 return *this;
             }
 
             /// \effects Calls `do_write_comment()`.
             const output& operator<<(const comment& c) const
             {
-                if (*this)
-                    gen_->do_write_comment(c.str());
+                gen_->do_write_comment(c.str());
                 return *this;
             }
 
             /// \effects Calls `do_write_token_seq()`.
             const output& operator<<(const token_seq& seq) const
             {
-                if (*this)
-                    gen_->do_write_token_seq(seq.str());
+                gen_->do_write_token_seq(seq.str());
                 return *this;
             }
 
             /// \effects Calls `do_write_excluded()`.
             const output& excluded(const cpp_entity& e) const
             {
-                if (*this)
-                    gen_->do_write_excluded(e);
+                gen_->do_write_excluded(e);
                 return *this;
             }
 
             /// \effects Calls `do_write_newline()`.
             const output& operator<<(newl_t) const
             {
-                if (*this)
-                    gen_->do_write_newline();
+                gen_->do_write_newline();
                 return *this;
             }
 
             /// \effects Calls `do_write_whitespace()`.
             const output& operator<<(whitespace_t) const
             {
-                if (*this)
-                    gen_->do_write_whitespace();
+                gen_->do_write_whitespace();
                 return *this;
             }
 
