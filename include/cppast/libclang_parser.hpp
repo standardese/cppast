@@ -23,6 +23,8 @@ namespace cppast
             static int clang_version(const libclang_compile_config& config);
 
             static const std::vector<std::string>& flags(const libclang_compile_config& config);
+
+            static bool write_preprocessed(const libclang_compile_config& config);
         };
 
         void for_each_file(const libclang_compilation_database& database, void* user_data,
@@ -34,9 +36,7 @@ namespace cppast
     {
     public:
         /// \effects Creates it with a message.
-        libclang_error(std::string msg) : std::runtime_error(std::move(msg))
-        {
-        }
+        libclang_error(std::string msg) : std::runtime_error(std::move(msg)) {}
     };
 
     /// A compilation database.
@@ -121,6 +121,13 @@ namespace cppast
             clang_version_ = major * 10000 + minor * 100 + patch;
         }
 
+        /// \effects Sets whether or not the preprocessed file will be written out.
+        /// Default value is `false`.
+        void write_preprocessed(bool b) noexcept
+        {
+            write_preprocessed_ = b;
+        }
+
     private:
         void do_set_flags(cpp_standard standard, compile_flags flags) override;
 
@@ -137,6 +144,7 @@ namespace cppast
 
         std::string clang_binary_;
         int         clang_version_;
+        bool        write_preprocessed_;
 
         friend detail::libclang_compile_config_access;
     };

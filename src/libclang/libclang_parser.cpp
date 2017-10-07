@@ -5,6 +5,7 @@
 #include <cppast/libclang_parser.hpp>
 
 #include <cstring>
+#include <fstream>
 #include <vector>
 
 #include <clang-c/CXCompilationDatabase.h>
@@ -33,6 +34,12 @@ const std::vector<std::string>& detail::libclang_compile_config_access::flags(
     const libclang_compile_config& config)
 {
     return config.get_flags();
+}
+
+bool detail::libclang_compile_config_access::write_preprocessed(
+    const libclang_compile_config& config)
+{
+    return config.write_preprocessed_;
 }
 
 libclang_compilation_database::libclang_compilation_database(const std::string& build_directory)
@@ -74,7 +81,7 @@ namespace
     }
 }
 
-libclang_compile_config::libclang_compile_config() : compile_config({})
+libclang_compile_config::libclang_compile_config() : compile_config({}), write_preprocessed_(false)
 {
     // set given clang binary
     auto ptr   = CPPAST_CLANG_VERSION_STRING;
@@ -446,8 +453,15 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
                  "config has mismatched type");
     auto& config = static_cast<const libclang_compile_config&>(c);
 
-    // preprocess + parse
+    // preprocess
     auto preprocessed = detail::preprocess(config, path.c_str(), logger());
+    if (detail::libclang_compile_config_access::write_preprocessed(config))
+    {
+        std::ofstream file(path + ".pp");
+        file << preprocessed.source;
+    }
+
+    // parse
     auto tu   = get_cxunit(logger(), pimpl_->index, config, path.c_str(), preprocessed.source);
     auto file = clang_getFile(tu.get(), path.c_str());
 
