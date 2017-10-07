@@ -371,7 +371,11 @@ namespace
             auto sev  = get_severity(diag);
             if (sev)
             {
-                auto loc  = source_location::make_file(path); // line number won't help
+                auto     diag_loc = clang_getDiagnosticLocation(diag);
+                unsigned line;
+                clang_getPresumedLocation(diag_loc, nullptr, &line, nullptr);
+
+                auto loc  = source_location::make_file(path, line);
                 auto text = detail::cxstring(clang_getDiagnosticSpelling(diag));
                 if (text != "too many errors emitted, stopping now")
                     logger.log("libclang", diagnostic{text.c_str(), loc, sev.value()});
