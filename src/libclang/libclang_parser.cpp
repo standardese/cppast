@@ -328,9 +328,7 @@ libclang_parser::libclang_parser(type_safe::object_ref<const diagnostic_logger> 
 {
 }
 
-libclang_parser::~libclang_parser() noexcept
-{
-}
+libclang_parser::~libclang_parser() noexcept {}
 
 namespace
 {
@@ -375,8 +373,8 @@ namespace
             {
                 auto loc  = source_location::make_file(path); // line number won't help
                 auto text = detail::cxstring(clang_getDiagnosticSpelling(diag));
-
-                logger.log("libclang", diagnostic{text.c_str(), loc, sev.value()});
+                if (text != "too many errors emitted, stopping now")
+                    logger.log("libclang", diagnostic{text.c_str(), loc, sev.value()});
             }
         }
     }
