@@ -19,6 +19,10 @@ template<template<typename>class... T>
 struct templated{
 };
 
+using struct_=int;
+
+struct_ var2;
+
 struct foo{
   int a;
 
@@ -55,6 +59,10 @@ template <template <typename> class ... T>
 struct templated
 {
 };
+
+using struct_ = int;
+
+struct_ var2;
 
 struct foo
 {

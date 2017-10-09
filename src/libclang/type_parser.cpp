@@ -33,10 +33,23 @@ namespace
             str.erase(0, 1);
     }
 
-    bool remove_suffix(std::string& str, const char* suffix)
+    bool can_extend_suffix(const std::string& str, std::size_t suffix_length)
+    {
+        if (str.length() <= suffix_length + 1u)
+        {
+            auto c = str[str.length() - suffix_length - 1u];
+            return std::isalnum(c) || c == '_';
+        }
+        else
+            return false;
+    }
+
+    // if identifier only removes maximal suffix according to tokenization
+    bool remove_suffix(std::string& str, const char* suffix, bool is_identifier)
     {
         auto length = std::strlen(suffix);
-        if (str.length() >= length && str.compare(str.length() - length, length, suffix) == 0)
+        if (str.length() >= length && str.compare(str.length() - length, length, suffix) == 0
+            && (!is_identifier || !can_extend_suffix(str, length)))
         {
             str.erase(str.length() - length);
             remove_trailing_ws(str);
@@ -46,10 +59,23 @@ namespace
             return false;
     }
 
-    bool remove_prefix(std::string& str, const char* prefix)
+    bool can_extend_prefix(const std::string& str, std::size_t prefix_length)
+    {
+        if (prefix_length < str.size())
+        {
+            auto c = str[prefix_length];
+            return std::isalnum(c) || c == '_';
+        }
+        else
+            return false;
+    }
+
+    // if identifier only removes maximal suffix according to tokenization
+    bool remove_prefix(std::string& str, const char* prefix, bool is_identifier)
     {
         auto length = std::strlen(prefix);
-        if (str.length() >= length && str.compare(0u, length, prefix) == 0)
+        if (str.length() >= length && str.compare(0u, length, prefix) == 0
+            && (!is_identifier || !can_extend_prefix(str, length)))
         {
             str.erase(0u, length);
             remove_leading_ws(str);
@@ -69,16 +95,16 @@ namespace
     cpp_cv suffix_cv(std::string& spelling)
     {
         auto cv = cpp_cv_none;
-        if (remove_suffix(spelling, "const"))
+        if (remove_suffix(spelling, "const", true))
         {
-            if (remove_suffix(spelling, "volatile"))
+            if (remove_suffix(spelling, "volatile", true))
                 cv = cpp_cv_const_volatile;
             else
                 cv = cpp_cv_const;
         }
-        else if (remove_suffix(spelling, "volatile"))
+        else if (remove_suffix(spelling, "volatile", true))
         {
-            if (remove_suffix(spelling, "const"))
+            if (remove_suffix(spelling, "const", true))
                 cv = cpp_cv_const_volatile;
             else
                 cv = cpp_cv_volatile;
@@ -88,20 +114,19 @@ namespace
     }
 
     // const/volatile at the beginning
-    // (weird that the better version is less performant, isn't it?)
     cpp_cv prefix_cv(std::string& spelling)
     {
         auto cv = cpp_cv_none;
-        if (remove_prefix(spelling, "const"))
+        if (remove_prefix(spelling, "const", true))
         {
-            if (remove_prefix(spelling, "volatile"))
+            if (remove_prefix(spelling, "volatile", true))
                 cv = cpp_cv_const_volatile;
             else
                 cv = cpp_cv_const;
         }
-        else if (remove_prefix(spelling, "volatile"))
+        else if (remove_prefix(spelling, "volatile", true))
         {
-            if (remove_prefix(spelling, "const"))
+            if (remove_prefix(spelling, "const", true))
                 cv = cpp_cv_const_volatile;
             else
                 cv = cpp_cv_volatile;
@@ -172,9 +197,9 @@ namespace
 
         // remove struct/class/union prefix on inline type definition
         // i.e. C's typedef struct idiom
-        remove_prefix(spelling, "struct");
-        remove_prefix(spelling, "class");
-        remove_prefix(spelling, "union");
+        remove_prefix(spelling, "struct", true);
+        remove_prefix(spelling, "class", true);
+        remove_prefix(spelling, "union", true);
 
         auto entity = b(std::move(spelling));
         if (!entity)
@@ -277,9 +302,9 @@ namespace
 
     cpp_reference member_function_ref_qualifier(std::string& spelling)
     {
-        if (remove_suffix(spelling, "&&"))
+        if (remove_suffix(spelling, "&&", false))
             return cpp_ref_rvalue;
-        else if (remove_suffix(spelling, "&"))
+        else if (remove_suffix(spelling, "&", false))
             return cpp_ref_lvalue;
         return cpp_ref_none;
     }
@@ -453,9 +478,9 @@ namespace
             return nullptr; // don't use decltype here
 
         return make_leave_type(type, [&](std::string&& spelling) -> std::unique_ptr<cpp_type> {
-            if (!remove_prefix(spelling, "decltype("))
+            if (!remove_prefix(spelling, "decltype(", false))
                 return nullptr;
-            remove_suffix(spelling, "..."); // variadic decltype. fun
+            remove_suffix(spelling, "...", false); // variadic decltype. fun
             DEBUG_ASSERT(!spelling.empty() && spelling.back() == ')', detail::parse_error_handler{},
                          type, "unexpected spelling");
             spelling.pop_back();
@@ -652,7 +677,7 @@ namespace
         case CXType_Typedef:
             return make_leave_type(type, [&](std::string&& spelling) {
                 auto decl = clang_getTypeDeclaration(type);
-                if (remove_prefix(spelling, "(anonymous"))
+                if (remove_prefix(spelling, "(anonymous", false))
                     spelling = ""; // anonymous type
                 return cpp_user_defined_type::build(
                     cpp_type_ref(detail::get_entity_id(decl), std::move(spelling)));
