@@ -100,6 +100,15 @@ namespace
         detail::skip_brackets(stream);
     }
 
+    std::vector<CXCursor> get_semantic_parents(CXCursor cur)
+    {
+        std::vector<CXCursor> result;
+        for (; !clang_isTranslationUnit(clang_getCursorKind(cur));
+             cur = clang_getCursorSemanticParent(cur))
+            result.push_back(cur);
+        return result;
+    }
+
     bool is_class(const CXCursor& parent)
     {
         auto kind = clang_getCursorKind(parent);
@@ -108,6 +117,9 @@ namespace
                || kind == CXCursor_ClassTemplatePartialSpecialization;
     }
 
+    // returns the scope where the function is contained in
+    // for regular functions that is the lexcial parent
+    // for friend functions it is the enclosing scope of the class
     CXCursor get_definition_scope(const CXCursor& cur, bool is_friend)
     {
         auto parent = clang_getCursorLexicalParent(cur);
@@ -138,25 +150,63 @@ namespace
 
     type_safe::optional<cpp_entity_ref> parse_scope(const CXCursor& cur, bool is_friend)
     {
-        std::string scope;
-        // find the semantic parents we need until we're at the same level of the parent where the definition is
-        // the semantic parents are all the scopes that need to be appended
-        for (auto definition = get_definition_scope(cur, is_friend),
-                  parent     = clang_getCursorSemanticParent(cur);
-             !equivalent_cursor(definition, parent); parent = clang_getCursorSemanticParent(parent))
+        std::string scope_name;
+
+        auto friended = clang_getCursorReferenced(cur);
+        if (is_friend && !clang_Cursor_isNull(friended))
         {
-            DEBUG_ASSERT(!clang_isTranslationUnit(clang_getCursorKind(parent)),
+            // it refers to another function
+            // find the common parent between the two cursors
+            // scope is the scope from the common parent down to the function
+
+            auto friended_parents = get_semantic_parents(friended);
+            auto cur_parents      = get_semantic_parents(get_definition_scope(cur, true));
+
+            // remove common parents
+            while (!friended_parents.empty() && !cur_parents.empty()
+                   && equivalent_cursor(friended_parents.back(), cur_parents.back()))
+            {
+                friended_parents.pop_back();
+                cur_parents.pop_back();
+            }
+            DEBUG_ASSERT(!clang_isTranslationUnit(clang_getCursorKind(friended_parents.back()))
+                             && !friended_parents.empty(),
                          detail::parse_error_handler{}, cur,
-                         "infinite loop while calculating scope");
-            auto parent_name = detail::cxstring(clang_getCursorDisplayName(parent));
-            scope            = parent_name.std_str() + "::" + std::move(scope);
+                         "invalid common parent of friend and friended");
+
+            // scope consists of all remaining parents of friended
+            // (last one is cursor itself)
+            for (auto iter = friended_parents.rbegin(); iter != std::prev(friended_parents.rend());
+                 ++iter)
+            {
+                auto parent_name = detail::cxstring(clang_getCursorDisplayName(*iter));
+                scope_name += parent_name.std_str() + "::";
+            }
+        }
+        else
+        {
+            // find the difference between the definition scope parent and semantic parent
+            // all semantic parents in between form the scope
+            // the definition scope is the lexical parent for regular functions,
+            // and the scope outside of the class for friend functions
+            for (auto definition = get_definition_scope(cur, is_friend),
+                      parent     = clang_getCursorSemanticParent(cur);
+                 !equivalent_cursor(definition, parent);
+                 parent = clang_getCursorSemanticParent(parent))
+            {
+                DEBUG_ASSERT(!clang_isTranslationUnit(clang_getCursorKind(parent)),
+                             detail::parse_error_handler{}, cur,
+                             "infinite loop while calculating scope");
+                auto parent_name = detail::cxstring(clang_getCursorDisplayName(parent));
+                scope_name       = parent_name.std_str() + "::" + std::move(scope_name);
+            }
         }
 
-        if (scope.empty())
+        if (scope_name.empty())
             return type_safe::nullopt;
         else
             return cpp_entity_ref(detail::get_entity_id(clang_getCursorSemanticParent(cur)),
-                                  std::move(scope));
+                                  std::move(scope_name));
     }
 
     // just the tokens occurring in the prefix

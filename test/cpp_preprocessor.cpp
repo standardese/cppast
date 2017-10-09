@@ -173,23 +173,20 @@ f **/
 #define g(name) \
 class name \
 { \
-    /** i
-        i */ \
-    void i(); \
 };
 
 /// h
 /// h
 g(h)
 
-/// j
-/// j
-using j = int;
+/// i
+/// i
+using i = int;
 
-/// k
-/// k
+/// j
+/// j
 template <typename T/**/>
-void k();
+void j();
 )";
 
     auto file = parse({}, "comment-matching.cpp", code);

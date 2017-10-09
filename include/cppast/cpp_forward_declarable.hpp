@@ -49,7 +49,7 @@ namespace cppast
             return semantic_parent_;
         }
 
-        /// \returns The name of the semantic parent, if it has own,
+        /// \returns The name of the semantic parent, if it has one,
         /// else the empty string.
         /// \notes This may include template parameters.
         std::string semantic_scope() const noexcept

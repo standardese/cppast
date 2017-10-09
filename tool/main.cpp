@@ -87,12 +87,8 @@ void print_entity(std::ostream& out, const cppast::cpp_entity& e)
             }
 
             // no need to handle indentation, as only a single line is used
-            void do_indent() override
-            {
-            }
-            void do_unindent() override
-            {
-            }
+            void do_indent() override {}
+            void do_unindent() override {}
 
             // called when a generic token sequence should be generated
             // there are specialized callbacks for various token kinds,
@@ -248,6 +244,9 @@ int main(int argc, char* argv[]) try
                 config =
                     cppast::libclang_compile_config(database, options["file"].as<std::string>());
         }
+
+        if (options.count("verbose"))
+            config.write_preprocessed(true);
 
         if (options.count("include_directory"))
             for (auto& include : options["include_directory"].as<std::vector<std::string>>())

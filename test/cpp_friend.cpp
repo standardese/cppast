@@ -36,8 +36,21 @@ class g {};
 
 namespace ns
 {
+    namespace other_ns
+    {
+        namespace inner
+        {
+            /// h2
+            void h2() {}
+        }
+    }
+
     /// h
-    class h {};
+    class h
+    {
+         /// friend void other_ns::inner::h2();
+         friend void other_ns::inner::h2();
+    };
 }
 
 /// b::f
@@ -115,7 +128,7 @@ int d() {}
 )";
 
     cpp_entity_index idx;
-    auto check_definition = [&](cpp_entity_id id, const char* name) {
+    auto             check_definition = [&](cpp_entity_id id, const char* name) {
         auto def = idx.lookup_definition(id);
         REQUIRE(def.has_value());
         REQUIRE(def.value().comment());
@@ -183,6 +196,13 @@ int d() {}
                     REQUIRE(func.is_declaration());
                     REQUIRE(func.definition());
                     check_definition(func.definition().value(), "b::f");
+                }
+                else if (func.name() == "h2")
+                {
+                    REQUIRE(func.semantic_scope() == "other_ns::inner::");
+                    REQUIRE(func.is_declaration());
+                    REQUIRE(func.definition());
+                    check_definition(func.definition().value(), "h2");
                 }
                 else if (func.name() == "operator int")
                 {
@@ -269,5 +289,5 @@ int d() {}
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 17u);
+    REQUIRE(count == 18u);
 }
