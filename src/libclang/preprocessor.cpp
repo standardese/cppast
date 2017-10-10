@@ -30,6 +30,11 @@ namespace
         return '"' + std::move(str) + '"';
     }
 
+    bool support_include(const libclang_compile_config& c)
+    {
+        return detail::libclang_compile_config_access::clang_version(c) >= 40000;
+    }
+
     // build the command that runs the preprocessor
     std::string get_command(const libclang_compile_config& c, const char* full_path)
     {
@@ -39,7 +44,7 @@ namespace
         // -C: keep comments
         // -dD: print macro definitions as well
         auto flags = std::string("-x c++ -I. -E -C -dD");
-        if (detail::libclang_compile_config_access::clang_version(c) >= 40000)
+        if (support_include(c))
             // -Xclang -dI: print include directives as well (clang >= 4.0.0)
             flags += " -Xclang -dI";
         // -fno-caret-diagnostics: don't show the source extract in diagnostics
@@ -784,9 +789,16 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                 if (file_depth == 0u)
                 {
                     DEBUG_ASSERT(lm.value().file == path, detail::assert_handler{});
-                    // difference is 1 if coming from an included file (because newline of include is already written)
-                    // difference is 0 if coming from a builtin file (because no include has been written)
-                    DEBUG_ASSERT(p.cur_line() - lm.value().line <= 1u, detail::assert_handler{});
+
+                    if (lm.value().line > p.cur_line())
+                        // might happen in weird cases
+                        p.write_str(std::string(lm.value().line - p.cur_line(), '\n'));
+                    else
+                        // difference is 1 if coming from an included file (because newline of include is already written)
+                        // difference is 0 if coming from a builtin file (because no include has been written)
+                        DEBUG_ASSERT(p.cur_line() - lm.value().line <= 1u,
+                                     detail::assert_handler{});
+
                     p.enable_write();
                 }
                 break;
