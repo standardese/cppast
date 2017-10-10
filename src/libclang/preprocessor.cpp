@@ -438,7 +438,7 @@ namespace
         if (starts_with(p, "*/"))
             // empty comment
             p.skip(2u);
-        else if (in_main_file && starts_with(p, "*"))
+        else if (in_main_file && (starts_with(p, "*") || starts_with(p, "!")))
         {
             // doc comment
             p.skip();

@@ -216,8 +216,8 @@ class name \
 /// h
 g(h)
 
-/// i
-/// i
+/*! i
+ i */
 using i = int;
 
 /// j
