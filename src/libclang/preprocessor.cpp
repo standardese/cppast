@@ -701,7 +701,8 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
             {
                 auto message = detail::format("parsing macro '", macro->name(), "'");
                 logger.log("preprocessor",
-                           diagnostic{std::move(message), source_location::make_file(path),
+                           diagnostic{std::move(message),
+                                      source_location::make_file(path, p.cur_line()),
                                       severity::debug});
             }
 
@@ -715,7 +716,8 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                 {
                     auto message = detail::format("undefining macro '", undef.value(), "'");
                     logger.log("preprocessor",
-                               diagnostic{std::move(message), source_location::make_file(path),
+                               diagnostic{std::move(message),
+                                          source_location::make_file(path, p.cur_line()),
                                           severity::debug});
                 }
                 result.macros.erase(std::remove_if(result.macros.begin(), result.macros.end(),
@@ -732,7 +734,8 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                 auto message =
                     detail::format("parsing include '", include.value().file.name(), "'");
                 logger.log("preprocessor",
-                           diagnostic{std::move(message), source_location::make_file(path),
+                           diagnostic{std::move(message),
+                                      source_location::make_file(path, p.cur_line()),
                                       severity::debug});
             }
             result.includes.push_back(std::move(include.value()));

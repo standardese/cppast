@@ -19,7 +19,13 @@ namespace cppast
     {
         inline source_location make_location(const CXCursor& cur)
         {
-            return source_location::make_entity(get_display_name(cur).c_str());
+            auto loc = clang_getCursorLocation(cur);
+
+            CXString file;
+            unsigned line;
+            clang_getPresumedLocation(loc, &file, &line, nullptr);
+
+            return source_location::make_file(cxstring(file).c_str(), line);
         }
 
         inline source_location make_location(const CXType& type)
