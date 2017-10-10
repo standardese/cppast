@@ -191,6 +191,16 @@ namespace
         {
         }
 
+        void undo_write()
+        {
+            if (write_ == true && !result_->empty())
+            {
+                if (result_->back() == '\n')
+                    --cur_line_;
+                result_->pop_back();
+            }
+        }
+
         void write_str(std::string str)
         {
             if (write_ == false)
@@ -363,7 +373,7 @@ namespace
                 break;
             }
         }
-        p.skip();
+        skip(p, "\n");
 
         return result;
     }
@@ -734,16 +744,32 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
             switch (lm.value().flag)
             {
             case linemarker::line_directive:
-                break; // ignore
-                // no need to handle it, preprocessed output doesn't need to match line numbers precisely
+                if (file_depth == 0u && lm.value().line > p.cur_line())
+                {
+                    // write the necessary newlines
+                    p.write_str(std::string(lm.value().line - p.cur_line(), '\n'));
+                    DEBUG_ASSERT(p.cur_line() == lm.value().line, detail::assert_handler{});
+                }
+                else if (file_depth == 0u)
+                    // current line may be one higher than the expected line,
+                    // because the include directives inserted by -dI have an additional newline
+                    // that is not yet removed
+                    DEBUG_ASSERT(p.cur_line() - lm.value().line <= 1u, detail::assert_handler{});
+                break;
 
             case linemarker::enter_new:
                 if (file_depth == 0u && lm.value().file.front() != '<')
                 {
                     // this file is directly included by the given file
-                    // write include with full path
-                    // note: don't build include here, do it when an #include is encountered
+                    // and it is not a fake file like builtin or command line
+
+                    // remove the trailing newline from the include that brought us here
+                    DEBUG_ASSERT(p.was_newl(), detail::assert_handler{});
+                    p.undo_write();
+
+                    // and write include with full path
                     p.write_str("#include \"" + lm.value().file + "\"\n");
+                    // note: don't build include here, do it when an #include is encountered
                 }
 
                 ++file_depth;
@@ -755,6 +781,9 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                 if (file_depth == 0u)
                 {
                     DEBUG_ASSERT(lm.value().file == path, detail::assert_handler{});
+                    // difference is 1 if coming from an included file (because newline of include is already written)
+                    // difference is 0 if coming from a builtin file (because no include has been written)
+                    DEBUG_ASSERT(p.cur_line() - lm.value().line <= 1u, detail::assert_handler{});
                     p.enable_write();
                 }
                 break;

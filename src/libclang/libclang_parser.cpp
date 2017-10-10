@@ -510,7 +510,7 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
     for (auto& c : preprocessed.comments)
     {
         if (!c.comment.empty())
-            builder.add_unmatched_comment(std::move(c.comment));
+            builder.add_unmatched_comment(cpp_doc_comment(std::move(c.comment), c.line));
     }
 
     if (context.error)
