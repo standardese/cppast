@@ -223,9 +223,15 @@ namespace
                  || clang_isExpression(kind) || kind == CXCursor_CXXBaseSpecifier
                  || kind == CXCursor_TemplateTypeParameter
 #endif
-                 )
+        )
             // need to shrink range by one
             end = get_next_location(tu, file, end, -1);
+        else if (kind == CXCursor_UnexposedDecl)
+        {
+            // include semicolon, if necessary
+            if (token_after_is(tu, file, cur, end, ";"))
+                end = get_next_location(tu, file, end);
+        }
 
         return clang_getRange(begin, end);
     }

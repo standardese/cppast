@@ -6,7 +6,6 @@
 
 #include <cppast/cpp_member_variable.hpp>
 #include <cppast/cpp_variable.hpp>
-#include <clang-c/Index.h>
 
 #include "libclang_visitor.hpp"
 
