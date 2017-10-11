@@ -31,6 +31,12 @@ else()
 endif()
 
 include(external/external.cmake)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
+if(build_test AND CPPAST_TEST_GCOV AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
+    include(CodeCoverage)
+    APPEND_COVERAGE_COMPILER_FLAGS()
+endif()
 
 add_subdirectory(src)
 
@@ -40,3 +46,8 @@ endif()
 if(${build_tool})
     add_subdirectory(tool)
 endif()
+
+configure_file(
+    ${CMAKE_SOURCE_DIR}/.ycm_extra_conf.py.in
+    ${CMAKE_SOURCE_DIR}/.ycm_extra_conf.py
+)

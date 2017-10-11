@@ -16,7 +16,15 @@ matrix:
         apt:
           sources: ['ubuntu-toolchain-r-test']
           packages: ['g++-5']
-      env: TOOLSET=g++-5 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=4.0.0
+      env: TOOLSET=g++-5 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=3.9.1 CPPAST_USE_FMT=ON
+
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-5', 'lcov']
+      env: TOOLSET=g++-5 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=4.0.0 CPPAST_TEST_GCOV=ON
 
     - os: linux
       compiler: clang
@@ -34,12 +42,23 @@ matrix:
           packages: ['g++-4.9', 'g++-5', 'clang-3.9']
       env: TOOLSET=clang++-3.9 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=4.0.0
 
+    - os: linux
+      compiler: clang
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.9']
+          packages: ['g++-4.9', 'g++-5', 'clang-3.9']
+      # Clang warns about GNU extensions used by stdlibc++ assert, that's why we enable -Wno-gnu here
+      env: TOOLSET=clang++-3.9 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=4.0.0 CPPAST_USE_FMT=ON WNO_GNU="-Wno-gnu"
+
     - os: osx
       compiler: clang
       env: TOOLSET=clang++ LLVM_DOWNLOAD_OS_NAME=x86_64-apple-darwin LLVM_VERSION=4.0.0
 
 install:
   - cd ../
+
+  - if [[ "$CPPAST_TEST_GCOV" == "ON" ]]; then pip install --user cpp-coveralls; fi
 
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget --no-check-certificate https://www.cmake.org/files/v3.3/cmake-3.3.1-Linux-x86_64.tar.gz; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then tar -xzf cmake-3.3.1-Linux-x86_64.tar.gz; fi
@@ -57,6 +76,9 @@ install:
 
 script:
   - mkdir build/ && cd build/
-  - $CMAKE -DCMAKE_CXX_FLAGS="-Werror -pedantic -Wall -Wextra -Wconversion -Wsign-conversion -Wno-parentheses -Wno-assume" -DLLVM_DOWNLOAD_OS_NAME=$LLVM_DOWNLOAD_OS_NAME -DLLVM_PREFERRED_VERSION=$LLVM_VERSION ../
+  - $CMAKE -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-Werror -pedantic -Wall -Wextra -Wconversion -Wsign-conversion -Wno-parentheses -Wno-assume $WNO_GNU" -DLLVM_DOWNLOAD_OS_NAME=$LLVM_DOWNLOAD_OS_NAME -DLLVM_PREFERRED_VERSION=$LLVM_VERSION ../ -DCPPAST_TEST_GCOV=$CPPAST_TEST_GCOV -DCPPAST_USE_FMT=$CPPAST_USE_FMT
   - $CMAKE --build .
   - if [[ "$LLVM_VERSION" == "4.0.0" ]]; then ./test/cppast_test \*; else ./test/cppast_test; fi
+
+after_script:
+  - if [[ "$CPPAST_TEST_GCOV" == "ON" ]]; then $CMAKE --build . --target cppast_coverage && cd ../ && coveralls --no-gcov --lcov-file build/cppast_coverage.info.cleaned; fi

@@ -1,4 +1,4 @@
-# cppast
+# cppast [![Build Status](https://travis-ci.org/Manu343726/cppast.svg?branch=master)](https://travis-ci.org/Manu343726/cppast) [![Coverage Status](https://coveralls.io/repos/github/Manu343726/cppast/badge.svg)](https://coveralls.io/github/Manu343726/cppast)
 
 Library interface to the C++ AST &mdash; parse source files, synthesize entities, get documentation comments and generate code.
 

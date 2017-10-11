@@ -31,6 +31,17 @@ namespace cppast
         /// \notes `source` points to a string literal that gives additional context to what generates the message.
         bool log(const char* source, const diagnostic& d) const;
 
+        /// \effects Builds a diagnostics from the given args and logs it by invoking
+        /// `do_log()` member function.
+        /// \returns Whether or not the diagnostic was logged
+        /// \notes See [cppast::make_diagnostic]() for information about the diagnostic
+        /// parameters.
+        template<typename... Args>
+        bool log(const char* source, cppast::severity s, const cppast::source_location& loc, Args&&... args) const
+        {
+            return log(source, cppast::make_diagnostic(s, loc, std::forward<Args>(args)...));
+        }
+
         /// \effects Sets whether or not the logger prints debugging diagnostics.
         void set_verbose(bool value) noexcept
         {

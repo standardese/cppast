@@ -29,12 +29,28 @@ set(tests
         integration.cpp
         libclang_parser.cpp
         parser.cpp
-        visitor.cpp)
+        visitor.cpp
+        detail/parser/istream_lexer.cpp
+        detail/parser/parser.cpp
+        detail/parser/syntax_generator.cpp)
 
 add_executable(cppast_test test.cpp test_parser.hpp ${tests})
 target_include_directories(cppast_test PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(cppast_test PUBLIC cppast)
-set_target_properties(cppast_test PROPERTIES CXX_STANDARD 11)
+target_link_libraries(cppast_test PUBLIC cppast trompeloeil)
+if(CPPAST_TEST_DISABLE_SIGNAL_HANDLERS)
+    target_compile_definitions(cppast_test PRIVATE -DCATCH_CONFIG_NO_POSIX_SIGNALS)
+endif()
+set_target_properties(cppast_test PROPERTIES CXX_STANDARD 14)
 
 enable_testing()
 add_test(NAME test COMMAND cppast_test)
+
+if(CPPAST_TEST_GCOV AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
+    setup_target_for_coverage(
+        DIRECTORY ${CMAKE_SOURCE_DIR}
+        NAME cppast_coverage
+        SOURCES src/* include/* test/*
+        COLLECT_EXISTING
+    )
+    target_link_libraries(cppast_test PRIVATE gcov)
+endif()

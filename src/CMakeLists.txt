@@ -2,9 +2,22 @@
 # This file is subject to the license terms in the LICENSE file
 # found in the top-level directory of this distribution.
 
+include(DisableWNoExceptType)
+
 set(detail_header
         ../include/cppast/detail/assert.hpp
-        ../include/cppast/detail/intrusive_list.hpp)
+        ../include/cppast/detail/intrusive_list.hpp
+        ../include/cppast/detail/info_tracking_logger.hpp
+        ../include/cppast/detail/utils/format.hpp
+        ../include/cppast/detail/utils/overloaded_function.hpp
+        ../include/cppast/detail/utils/prettyprint.hpp
+        ../include/cppast/detail/parser/token.hpp
+        ../include/cppast/detail/parser/lexer.hpp
+        ../include/cppast/detail/parser/istream_lexer.hpp
+        ../include/cppast/detail/parser/buffered_lexer.hpp
+        ../include/cppast/detail/parser/fake_lexer.hpp
+        ../include/cppast/detail/parser/parser.hpp
+        ../include/cppast/detail/parser/ast.hpp)
 set(header
     ../include/cppast/code_generator.hpp
     ../include/cppast/compile_config.hpp
@@ -75,7 +88,18 @@ set(source
         cpp_variable.cpp
         cpp_variable_template.cpp
         diagnostic_logger.cpp
-        visitor.cpp)
+        visitor.cpp
+        detail/parser/token.cpp
+        detail/parser/lexer.cpp
+        detail/parser/fake_lexer.cpp
+        detail/parser/istream_lexer.cpp
+        detail/parser/buffered_lexer.cpp
+        detail/parser/ast.cpp
+        detail/parser/parser.cpp
+        detail/utils/format.cpp
+        detail/info_tracking_logger.cpp
+        detail/utils/format.cpp)
+
 set(libclang_source
         libclang/class_parser.cpp
         libclang/debug_helper.cpp
@@ -113,4 +137,25 @@ endif()
 if(CPPAST_ENABLE_PRECONDITION_CHECKS)
     target_compile_definitions(cppast PUBLIC CPPAST_ENABLE_PRECONDITION_CHECKS)
 endif()
-set_target_properties(cppast PROPERTIES CXX_STANDARD 11)
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # GCC 7 warns about mangling changes in C++17 related to
+    # noexcept as part of function signatures. Btw the warning
+    # is not from cppast code but from type_safe
+    disable_wnoexcept_type_on_target(cppast)
+endif()
+
+set_target_properties(cppast PROPERTIES CXX_STANDARD 14)
+
+add_executable(lexer_example detail/parser/lexer_example.cpp)
+target_link_libraries(lexer_example PRIVATE cppast)
+set_target_properties(lexer_example PROPERTIES CXX_STANDARD 14)
+
+add_executable(parser_example detail/parser/parser_example.cpp)
+target_link_libraries(parser_example PRIVATE cppast)
+set_target_properties(parser_example PROPERTIES CXX_STANDARD 14)
+
+if(CPPAST_USE_FMT)
+    target_link_libraries(cppast PUBLIC fmt)
+    target_compile_definitions(cppast PUBLIC CPPAST_USE_FMT)
+endif()

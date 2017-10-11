@@ -7,3 +7,9 @@
 [submodule "external/cxxopts"]
 	path = external/cxxopts
 	url = https://github.com/jarro2783/cxxopts
+[submodule "external/fmt"]
+	path = external/fmt
+	url = https://github.com/Manu343726/fmt
+[submodule "external/trompeloeil"]
+	path = external/trompeloeil
+	url = https://github.com/rollbear/trompeloeil
