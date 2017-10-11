@@ -36,6 +36,7 @@ set(header
     ../include/cppast/cpp_storage_class_specifiers.hpp
     ../include/cppast/cpp_template.hpp
     ../include/cppast/cpp_template_parameter.hpp
+    ../include/cppast/cpp_token.hpp
     ../include/cppast/cpp_type.hpp
     ../include/cppast/cpp_type_alias.hpp
     ../include/cppast/cpp_variable.hpp
@@ -68,6 +69,7 @@ set(source
         cpp_preprocessor.cpp
         cpp_static_assert.cpp
         cpp_template_parameter.cpp
+        cpp_token.cpp
         cpp_type.cpp
         cpp_type_alias.cpp
         cpp_variable.cpp

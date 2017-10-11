@@ -19,7 +19,7 @@ std::unique_ptr<cpp_expression> detail::parse_expression(const detail::parse_con
 
     auto type = parse_type(context, cur, clang_getCursorType(cur));
     auto expr = to_string(stream, stream.end());
-    if (kind == CXCursor_CallExpr && (expr.empty() || expr.back() != ')'))
+    if (kind == CXCursor_CallExpr && (expr.empty() || expr.back().spelling != ")"))
     {
         // we have a call expression that doesn't end in a closing parentheses
         // this means default constructor, don't parse it at all
@@ -30,7 +30,7 @@ std::unique_ptr<cpp_expression> detail::parse_expression(const detail::parse_con
              || kind == CXCursor_FloatingLiteral || kind == CXCursor_ImaginaryLiteral
              || kind == CXCursor_IntegerLiteral || kind == CXCursor_StringLiteral
              || kind == CXCursor_CXXBoolLiteralExpr || kind == CXCursor_CXXNullPtrLiteralExpr)
-        return cpp_literal_expression::build(std::move(type), std::move(expr));
+        return cpp_literal_expression::build(std::move(type), expr.as_string());
     else
         return cpp_unexposed_expression::build(std::move(type), std::move(expr));
 }
@@ -42,8 +42,7 @@ std::unique_ptr<cpp_expression> detail::parse_raw_expression(const parse_context
 {
     if (stream.done())
         return nullptr;
-    auto expr = to_string(stream, end);
-    if (!expr.empty() && expr.back() == ';')
-        expr.pop_back();
+
+    auto expr = to_string(stream, std::prev(end)->value() == ";" ? std::prev(end) : end);
     return cpp_unexposed_expression::build(std::move(type), std::move(expr));
 }

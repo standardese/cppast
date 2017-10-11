@@ -34,12 +34,17 @@ struct foo
             REQUIRE(equal_expressions(assert.expression(),
                                       *cpp_literal_expression::build(std::move(bool_t), "true")));
         else if (assert.message() == "a")
-            REQUIRE(equal_expressions(assert.expression(),
-                                      *cpp_unexposed_expression::build(std::move(bool_t),
-                                                                       "true||false")));
+            REQUIRE(
+                equal_expressions(assert.expression(),
+                                  *cpp_unexposed_expression::build(std::move(bool_t),
+                                                                   cpp_token_string::from_string(
+                                                                       "true||false"))));
         else if (assert.message() == "b")
-            REQUIRE(equal_expressions(assert.expression(),
-                                      *cpp_unexposed_expression::build(std::move(bool_t), "!B")));
+            REQUIRE(
+                equal_expressions(assert.expression(),
+                                  *cpp_unexposed_expression::build(std::move(bool_t),
+                                                                   cpp_token_string::from_string(
+                                                                       "!B"))));
         else
             REQUIRE(false);
     });

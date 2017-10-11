@@ -65,8 +65,8 @@ void ns::l()
     };
 
     cpp_entity_index idx;
-    auto             file = parse(idx, "cpp_function.cpp", code);
-    auto count            = test_visit<cpp_function>(*file, [&](const cpp_function& func) {
+    auto             file  = parse(idx, "cpp_function.cpp", code);
+    auto             count = test_visit<cpp_function>(*file, [&](const cpp_function& func) {
         if (func.name() == "a" || func.name() == "b" || func.name() == "c")
         {
             REQUIRE(!func.noexcept_condition());
@@ -99,11 +99,12 @@ void ns::l()
                                             *cpp_pointer_type::build(
                                                 cpp_builtin_type::build(cpp_float))));
                         REQUIRE(param.default_value());
-                        REQUIRE(equal_expressions(param.default_value().value(),
-                                                  *cpp_unexposed_expression::
-                                                      build(cpp_pointer_type::build(
-                                                                cpp_builtin_type::build(cpp_float)),
-                                                            "nullptr")));
+                        REQUIRE(
+                            equal_expressions(param.default_value().value(),
+                                              *cpp_unexposed_expression::
+                                                  build(cpp_pointer_type::build(
+                                                            cpp_builtin_type::build(cpp_float)),
+                                                        cpp_token_string::from_string("nullptr"))));
                     }
                     else
                         REQUIRE(false);
@@ -130,12 +131,11 @@ void ns::l()
                 {
                     if (param.name() == "a")
                     {
-                        REQUIRE(
-                            equal_types(idx, param.type(),
-                                        *cpp_decltype_type::build(
-                                            cpp_unexposed_expression::build(cpp_builtin_type::build(
-                                                                                cpp_int),
-                                                                            "42"))));
+                        REQUIRE(equal_types(idx, param.type(),
+                                            *cpp_decltype_type::build(
+                                                cpp_unexposed_expression::
+                                                    build(cpp_builtin_type::build(cpp_int),
+                                                          cpp_token_string::from_string("42")))));
                         REQUIRE(!param.default_value());
                     }
                     else
@@ -163,12 +163,15 @@ void ns::l()
                                       *cpp_literal_expression::build(std::move(bool_t), "true")));
             else if (func.name() == "e")
                 REQUIRE(equal_expressions(func.noexcept_condition().value(),
-                                          *cpp_unexposed_expression::build(std::move(bool_t),
-                                                                           "false")));
+                                          *cpp_unexposed_expression::
+                                              build(std::move(bool_t),
+                                                    cpp_token_string::from_string("false"))));
             else if (func.name() == "f")
-                REQUIRE(equal_expressions(func.noexcept_condition().value(),
-                                          *cpp_unexposed_expression::build(std::move(bool_t),
-                                                                           "noexcept(d())")));
+                REQUIRE(
+                    equal_expressions(func.noexcept_condition().value(),
+                                      *cpp_unexposed_expression::
+                                          build(std::move(bool_t),
+                                                cpp_token_string::from_string("noexcept(d())"))));
         }
         else if (func.name() == "g" || func.name() == "h" || func.name() == "i"
                  || func.name() == "j")
@@ -246,8 +249,8 @@ void foo::a() {}
 )";
 
     cpp_entity_index idx;
-    auto             file = parse(idx, "static_cpp_function.cpp", code);
-    auto count            = test_visit<cpp_function>(*file, [&](const cpp_function& func) {
+    auto             file  = parse(idx, "static_cpp_function.cpp", code);
+    auto             count = test_visit<cpp_function>(*file, [&](const cpp_function& func) {
         REQUIRE(!func.is_variadic());
         REQUIRE(func.signature() == "()");
         REQUIRE(func.storage_class() == cpp_storage_class_static);

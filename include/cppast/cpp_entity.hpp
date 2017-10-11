@@ -11,6 +11,7 @@
 #include <type_safe/optional_ref.hpp>
 
 #include <cppast/detail/intrusive_list.hpp>
+#include <cppast/cpp_token.hpp>
 
 namespace cppast
 {
@@ -141,9 +142,7 @@ namespace cppast
 
     protected:
         /// \effects Creates it giving it the the name.
-        cpp_entity(std::string name) : name_(std::move(name)), user_data_(nullptr)
-        {
-        }
+        cpp_entity(std::string name) : name_(std::move(name)), user_data_(nullptr) {}
 
     private:
         /// \returns The kind of the entity.
@@ -182,27 +181,27 @@ namespace cppast
         /// \returns A newly built and registered unexposed entity.
         /// \notes It will be registered as a declaration.
         static std::unique_ptr<cpp_entity> build(const cpp_entity_index& index, cpp_entity_id id,
-                                                 std::string name, std::string spelling);
+                                                 std::string name, cpp_token_string spelling);
 
         /// \returns A newly built unnamed unexposed entity.
         /// It will not be registered.
-        static std::unique_ptr<cpp_entity> build(std::string spelling);
+        static std::unique_ptr<cpp_entity> build(cpp_token_string spelling);
 
         /// \returns The spelling of that entity.
-        const std::string& spelling() const noexcept
+        const cpp_token_string& spelling() const noexcept
         {
             return spelling_;
         }
 
     private:
-        cpp_unexposed_entity(std::string name, std::string spelling)
+        cpp_unexposed_entity(std::string name, cpp_token_string spelling)
         : cpp_entity(std::move(name)), spelling_(std::move(spelling))
         {
         }
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
-        std::string spelling_;
+        cpp_token_string spelling_;
     };
 
     /// \returns Whether or not the entity is templated.

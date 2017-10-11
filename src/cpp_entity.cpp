@@ -45,7 +45,7 @@ cpp_entity_kind cpp_unexposed_entity::kind() noexcept
 
 std::unique_ptr<cpp_entity> cpp_unexposed_entity::build(const cpp_entity_index& index,
                                                         cpp_entity_id id, std::string name,
-                                                        std::string spelling)
+                                                        cpp_token_string spelling)
 {
     std::unique_ptr<cpp_entity> result(
         new cpp_unexposed_entity(std::move(name), std::move(spelling)));
@@ -53,7 +53,7 @@ std::unique_ptr<cpp_entity> cpp_unexposed_entity::build(const cpp_entity_index& 
     return result;
 }
 
-std::unique_ptr<cpp_entity> cpp_unexposed_entity::build(std::string spelling)
+std::unique_ptr<cpp_entity> cpp_unexposed_entity::build(cpp_token_string spelling)
 {
     return std::unique_ptr<cpp_entity>(new cpp_unexposed_entity("", std::move(spelling)));
 }

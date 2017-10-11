@@ -223,9 +223,15 @@ namespace
                  || clang_isExpression(kind) || kind == CXCursor_CXXBaseSpecifier
                  || kind == CXCursor_TemplateTypeParameter
 #endif
-                 )
+        )
             // need to shrink range by one
             end = get_next_location(tu, file, end, -1);
+        else if (kind == CXCursor_UnexposedDecl)
+        {
+            // include semicolon, if necessary
+            if (token_after_is(tu, file, cur, end, ";"))
+                end = get_next_location(tu, file, end);
+        }
 
         return clang_getRange(begin, end);
     }
@@ -405,29 +411,41 @@ bool detail::skip_attribute(detail::token_stream& stream)
 
 namespace
 {
-    bool is_identifier(char c)
+    cpp_token_kind get_kind(CXTokenKind kind)
     {
-        return std::isalnum(c) || c == '_';
+        switch (kind)
+        {
+        case CXToken_Punctuation:
+            return cpp_token_kind::punctuation;
+        case CXToken_Keyword:
+            return cpp_token_kind::keyword;
+        case CXToken_Identifier:
+            return cpp_token_kind::identifier;
+        case CXToken_Literal:
+            return cpp_token_kind::literal;
+        case CXToken_Comment:
+            break;
+        }
+
+        DEBUG_UNREACHABLE(detail::assert_handler{});
+        return cpp_token_kind ::literal;
     }
 }
 
-std::string detail::to_string(token_stream& stream, token_iterator end)
+cpp_token_string detail::to_string(token_stream& stream, token_iterator end)
 {
-    std::string result;
+    cpp_token_string::builder builder;
+
     while (stream.cur() != end)
     {
         auto& token = stream.get();
-        if (!result.empty() && is_identifier(result.back()) && is_identifier(token.value()[0u]))
-            result += ' ';
-        result += token.c_str();
+        builder.add_token(cpp_token(get_kind(token.kind()), token.c_str()));
     }
+
     if (stream.unmunch())
-    {
-        DEBUG_ASSERT(!result.empty() && result.back() == '>', detail::assert_handler{});
-        result.pop_back();
-        DEBUG_ASSERT(!result.empty() && result.back() == '>', detail::assert_handler{});
-    }
-    return result;
+        builder.unmunch();
+
+    return builder.finish();
 }
 
 bool detail::append_scope(detail::token_stream& stream, std::string& scope)
@@ -449,7 +467,7 @@ bool detail::append_scope(detail::token_stream& stream, std::string& scope)
     else if (stream.peek() == "<")
     {
         auto iter = detail::find_closing_bracket(stream);
-        scope += detail::to_string(stream, iter);
+        scope += detail::to_string(stream, iter).as_string();
         if (!detail::skip_if(stream, ">>"))
             detail::skip(stream, ">");
         scope += ">";

@@ -279,7 +279,7 @@ namespace
             b.add_unexposed_arguments(std::move(args));
         }
         else
-            b.add_unexposed_arguments("");
+            b.add_unexposed_arguments(cpp_token_string::builder().finish());
     }
 }
 

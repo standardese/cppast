@@ -62,7 +62,7 @@ int r[] = {0};
 )";
 
     cpp_entity_index idx;
-    auto check_variable = [&](const cpp_variable& var, const cpp_type& type,
+    auto             check_variable = [&](const cpp_variable& var, const cpp_type& type,
                               type_safe::optional_ref<const cpp_expression> default_value,
                               int storage_class, bool is_constexpr, bool is_declaration) {
         if (is_declaration)
@@ -101,13 +101,15 @@ int r[] = {0};
                            // unexposed due to implicit cast, I think
                            type_safe::ref(
                                *cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
-                                                                "42")),
+                                                                cpp_token_string::from_string(
+                                                                    "42"))),
                            cpp_storage_class_none, false, false);
         else if (var.name() == "c")
             check_variable(var, *cpp_builtin_type::build(cpp_float),
                            type_safe::ref(
                                *cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_float),
-                                                                "3.f+0.14f")),
+                                                                cpp_token_string::from_string(
+                                                                    "3.f+0.14f"))),
                            cpp_storage_class_none, false, false);
         else if (var.name() == "d")
             check_variable(var, *int_type, nullptr, cpp_storage_class_extern, false, true);
@@ -119,11 +121,13 @@ int r[] = {0};
             check_variable(var, *int_type, nullptr,
                            cpp_storage_class_static | cpp_storage_class_thread_local, false, false);
         else if (var.name() == "h")
-            check_variable(var, *cpp_cv_qualified_type::build(cpp_builtin_type::build(cpp_int),
-                                                              cpp_cv_const),
+            check_variable(var,
+                           *cpp_cv_qualified_type::build(cpp_builtin_type::build(cpp_int),
+                                                         cpp_cv_const),
                            type_safe::ref(
                                *cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
-                                                                "12")),
+                                                                cpp_token_string::from_string(
+                                                                    "12"))),
                            cpp_storage_class_none, true, false);
         else if (var.name() == "i")
         {
@@ -134,15 +138,17 @@ int r[] = {0};
         }
         else if (var.name() == "j")
         {
-            check_variable(var, *cpp_cv_qualified_type::build(cpp_user_defined_type::build(
-                                                                  cpp_type_ref(cpp_entity_id(""),
-                                                                               "bar")),
-                                                              cpp_cv_const),
+            check_variable(var,
+                           *cpp_cv_qualified_type::build(cpp_user_defined_type::build(
+                                                             cpp_type_ref(cpp_entity_id(""),
+                                                                          "bar")),
+                                                         cpp_cv_const),
                            type_safe::ref(
                                *cpp_unexposed_expression::build(cpp_user_defined_type::build(
                                                                     cpp_type_ref(cpp_entity_id(""),
                                                                                  "bar")),
-                                                                "bar()")),
+                                                                cpp_token_string::from_string(
+                                                                    "bar()"))),
                            cpp_storage_class_none, false, false);
             return false;
         }
@@ -163,35 +169,40 @@ int r[] = {0};
             check_variable(var, *cpp_auto_type::build(),
                            type_safe::ref(
                                *cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
-                                                                "128")),
+                                                                cpp_token_string::from_string(
+                                                                    "128"))),
                            cpp_storage_class_none, false, false);
         else if (var.name() == "n")
-            check_variable(var, *cpp_reference_type::
-                                    build(cpp_cv_qualified_type::build(cpp_auto_type::build(),
-                                                                       cpp_cv_const),
-                                          cpp_ref_lvalue),
+            check_variable(var,
+                           *cpp_reference_type::
+                               build(cpp_cv_qualified_type::build(cpp_auto_type::build(),
+                                                                  cpp_cv_const),
+                                     cpp_ref_lvalue),
                            type_safe::ref(
                                *cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
-                                                                "m")),
+                                                                cpp_token_string::from_string(
+                                                                    "m"))),
                            cpp_storage_class_none, false, false);
         else if (var.name() == "o")
             check_variable(var,
                            *cpp_decltype_type::build(
                                cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
-                                                               "0")),
+                                                               cpp_token_string::from_string("0"))),
                            nullptr, cpp_storage_class_none, false, false);
         else if (var.name() == "p")
-            check_variable(var, *cpp_reference_type::
-                                    build(cpp_cv_qualified_type::
-                                              build(cpp_decltype_type::build(
-                                                        cpp_unexposed_expression::
-                                                            build(cpp_builtin_type::build(cpp_int),
-                                                                  "o")),
-                                                    cpp_cv_const),
-                                          cpp_ref_lvalue),
+            check_variable(var,
+                           *cpp_reference_type::
+                               build(cpp_cv_qualified_type::
+                                         build(cpp_decltype_type::build(
+                                                   cpp_unexposed_expression::
+                                                       build(cpp_builtin_type::build(cpp_int),
+                                                             cpp_token_string::from_string("o"))),
+                                               cpp_cv_const),
+                                     cpp_ref_lvalue),
                            type_safe::ref(
                                *cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
-                                                                "o")),
+                                                                cpp_token_string::from_string(
+                                                                    "o"))),
                            cpp_storage_class_none, false, false);
         else if (var.name() == "q")
             check_variable(var,
@@ -208,7 +219,8 @@ int r[] = {0};
                                                             "1")),
                            type_safe::ref(
                                *cpp_unexposed_expression::build(cpp_unexposed_type::build(""),
-                                                                "{0}")),
+                                                                cpp_token_string::from_string(
+                                                                    "{0}"))),
                            cpp_storage_class_none, false, false);
         else
             REQUIRE(false);
