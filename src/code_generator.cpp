@@ -1034,7 +1034,10 @@ namespace
         code_generator::output output(type_safe::ref(generator), type_safe::ref(entity),
                                       cur_access);
         if (output)
+        {
             detail::write_token_string(output, entity.spelling());
+            output << newl;
+        }
         return static_cast<bool>(output);
     }
 
@@ -1196,10 +1199,9 @@ void detail::write_token_string(code_generator::output& output, const cpp_token_
             // operators that are always binary operators in all contexts
             else if (token.spelling.back() == '=' // all assignment operators
                      || token.spelling == "/" || token.spelling == "%" || token.spelling == "=="
-                     || token.spelling == "!=" || token.spelling == "<" || token.spelling == ">"
-                     || token.spelling == "<=" || token.spelling == ">=" || token.spelling == "&&"
-                     || token.spelling == "||" || token.spelling == "|" || token.spelling == "^"
-                     || token.spelling == "?")
+                     || token.spelling == "!=" || token.spelling == "<=" || token.spelling == ">="
+                     || token.spelling == "&&" || token.spelling == "||" || token.spelling == "|"
+                     || token.spelling == "^" || token.spelling == "?")
                 output << operator_ws << punctuation(token.spelling) << operator_ws;
             else
                 output << punctuation(token.spelling);
