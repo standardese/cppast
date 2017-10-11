@@ -219,11 +219,16 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         detail::tokenizer    tokenizer(context.tu, context.file, cur);
         detail::token_stream stream(tokenizer, cur);
         auto                 spelling = detail::to_string(stream, stream.end());
+
+        std::unique_ptr<cppast::cpp_entity> entity;
         if (name.empty())
-            return cpp_unexposed_entity::build(std::move(spelling));
+            entity = cpp_unexposed_entity::build(std::move(spelling));
         else
-            return cpp_unexposed_entity::build(*context.idx, detail::get_entity_id(cur),
-                                               name.c_str(), std::move(spelling));
+            entity = cpp_unexposed_entity::build(*context.idx, detail::get_entity_id(cur),
+                                                 name.c_str(), std::move(spelling));
+
+        context.comments.match(*entity, cur);
+        return entity;
     }
     else
         return nullptr;
