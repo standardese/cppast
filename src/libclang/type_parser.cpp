@@ -552,12 +552,11 @@ namespace
         case CXType_OCLQueue:
         case CXType_OCLReserveID:
 #endif
-        {
-            auto msg      = detail::format("unexpected type of kind '",
-                                      detail::get_type_kind_spelling(type).c_str(), "'");
-            auto location = detail::make_location(type);
-            context.logger->log("libclang parser", diagnostic{msg, location, severity::warning});
-        }
+            context.logger->log("libclang parser",
+                                format_diagnostic(severity::warning, detail::make_location(type),
+                                                  "unexpected type of kind '",
+                                                  detail::get_type_kind_spelling(type).c_str(),
+                                                  "'"));
         // fallthrough
         case CXType_Dependent: // seems to have something to do with expressions, just ignore that (for now?)
         case CXType_Unexposed:

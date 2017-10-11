@@ -708,13 +708,10 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
         else if (auto macro = parse_macro(p, result, file_depth == 0u))
         {
             if (logger.is_verbose())
-            {
-                auto message = detail::format("parsing macro '", macro->name(), "'");
                 logger.log("preprocessor",
-                           diagnostic{std::move(message),
-                                      source_location::make_file(path, p.cur_line()),
-                                      severity::debug});
-            }
+                           format_diagnostic(severity::debug,
+                                             source_location::make_file(path, p.cur_line()),
+                                             "parsing macro '", macro->name(), "'"));
 
             result.macros.push_back({std::move(macro), p.cur_line()});
         }
@@ -723,13 +720,11 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
             if (file_depth == 0u)
             {
                 if (logger.is_verbose())
-                {
-                    auto message = detail::format("undefining macro '", undef.value(), "'");
                     logger.log("preprocessor",
-                               diagnostic{std::move(message),
-                                          source_location::make_file(path, p.cur_line()),
-                                          severity::debug});
-                }
+                               format_diagnostic(severity::debug,
+                                                 source_location::make_file(path, p.cur_line()),
+                                                 "undefining macro '", undef.value(), "'"));
+
                 result.macros.erase(std::remove_if(result.macros.begin(), result.macros.end(),
                                                    [&](const pp_macro& e) {
                                                        return e.macro->name() == undef.value();
@@ -740,14 +735,12 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
         else if (auto include = parse_include(p, file_depth == 0u))
         {
             if (logger.is_verbose())
-            {
-                auto message =
-                    detail::format("parsing include '", include.value().file.name(), "'");
                 logger.log("preprocessor",
-                           diagnostic{std::move(message),
-                                      source_location::make_file(path, p.cur_line()),
-                                      severity::debug});
-            }
+                           format_diagnostic(severity::debug,
+                                             source_location::make_file(path, p.cur_line()),
+                                             "parsing include '", include.value().file.name(),
+                                             "'"));
+
             result.includes.push_back(std::move(include.value()));
         }
         else if (bump_pragma(p))

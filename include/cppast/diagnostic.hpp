@@ -5,6 +5,7 @@
 #ifndef CPPAST_DIAGNOSTIC_HPP_INCLUDED
 #define CPPAST_DIAGNOSTIC_HPP_INCLUDED
 
+#include <sstream>
 #include <string>
 
 #include <type_safe/optional.hpp>
@@ -112,6 +113,27 @@ namespace cppast
         source_location  location;
         cppast::severity severity;
     };
+
+    namespace detail
+    {
+        template <typename... Args>
+        std::string format(Args&&... args)
+        {
+            std::ostringstream stream;
+            int                dummy[] = {(stream << std::forward<Args>(args), 0)...};
+            (void)dummy;
+            return stream.str();
+        }
+    } // namespace detail
+
+    /// Creates a diagnostic.
+    /// \returns A diagnostic with the specified severity and location.
+    /// The message is created by streaming each argument in order to a [std::ostringstream]().
+    template <typename... Args>
+    diagnostic format_diagnostic(severity sev, source_location loc, Args&&... args)
+    {
+        return {detail::format(std::forward<Args>(args)...), std::move(loc), sev};
+    }
 } // namespace cppast
 
 #endif // CPPAST_DIAGNOSTIC_HPP_INCLUDED
