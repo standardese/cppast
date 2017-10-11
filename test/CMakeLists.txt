@@ -38,3 +38,13 @@ set_target_properties(cppast_test PROPERTIES CXX_STANDARD 11)
 
 enable_testing()
 add_test(NAME test COMMAND cppast_test)
+
+if(CPPAST_TEST_GCOV AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
+    setup_target_for_coverage(
+        DIRECTORY ${CMAKE_SOURCE_DIR}
+        NAME cppast_coverage
+        SOURCES src/* include/*
+        COLLECT_EXISTING
+    )
+    target_link_libraries(cppast_test PRIVATE gcov)
+endif()

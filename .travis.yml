@@ -15,8 +15,8 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
-      env: TOOLSET=g++-5 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=4.0.0
+          packages: ['g++-5', 'lcov']
+      env: TOOLSET=g++-5 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=4.0.0 CPPAST_TEST_GCOV=ON
 
     - os: linux
       compiler: clang
@@ -41,6 +41,8 @@ matrix:
 install:
   - cd ../
 
+  - if [[ "$CPPAST_TEST_GCOV" == "ON" ]]; then pip install --user cpp-coveralls; fi
+
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget --no-check-certificate https://www.cmake.org/files/v3.3/cmake-3.3.1-Linux-x86_64.tar.gz; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then tar -xzf cmake-3.3.1-Linux-x86_64.tar.gz; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CMAKE=$TRAVIS_BUILD_DIR/../cmake-3.3.1-Linux-x86_64/bin/cmake; fi
@@ -57,6 +59,9 @@ install:
 
 script:
   - mkdir build/ && cd build/
-  - $CMAKE -DCMAKE_CXX_FLAGS="-Werror -pedantic -Wall -Wextra -Wconversion -Wsign-conversion -Wno-parentheses -Wno-assume" -DLLVM_DOWNLOAD_OS_NAME=$LLVM_DOWNLOAD_OS_NAME -DLLVM_PREFERRED_VERSION=$LLVM_VERSION ../
+  - $CMAKE -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-Werror -pedantic -Wall -Wextra -Wconversion -Wsign-conversion -Wno-parentheses -Wno-assume" -DLLVM_DOWNLOAD_OS_NAME=$LLVM_DOWNLOAD_OS_NAME -DLLVM_PREFERRED_VERSION=$LLVM_VERSION ../ -DCPPAST_TEST_GCOV=$CPPAST_TEST_GCOV
   - $CMAKE --build .
   - if [[ "$LLVM_VERSION" == "4.0.0" ]]; then ./test/cppast_test \*; else ./test/cppast_test; fi
+
+after_script:
+  - if [[ "$CPPAST_TEST_GCOV" == "ON" ]]; then $CMAKE --build . --target cppast_coverage && cd ../ && coveralls --no-gcov --lcov-file build/cppast_coverage.info.cleaned; fi
