@@ -49,9 +49,7 @@ inline std::unique_ptr<cppast::cpp_file> parse(const cppast::cpp_entity_index& i
 class test_generator : public cppast::code_generator
 {
 public:
-    test_generator(generation_options options) : options_(std::move(options))
-    {
-    }
+    test_generator(generation_options options) : options_(std::move(options)) {}
 
     const std::string& str() const noexcept
     {
@@ -205,8 +203,10 @@ inline bool equal_expressions(const cppast::cpp_expression& parsed,
     switch (parsed.kind())
     {
     case cpp_expression_kind::unexposed_t:
-        return static_cast<const cpp_unexposed_expression&>(parsed).expression()
-               == static_cast<const cpp_unexposed_expression&>(synthesized).expression();
+        return static_cast<const cpp_unexposed_expression&>(parsed).expression().as_string()
+               == static_cast<const cpp_unexposed_expression&>(synthesized)
+                      .expression()
+                      .as_string();
 
     case cpp_expression_kind::literal_t:
         return static_cast<const cpp_literal_expression&>(parsed).value()
@@ -217,10 +217,10 @@ inline bool equal_expressions(const cppast::cpp_expression& parsed,
 }
 
 template <typename T, class Predicate>
-bool equal_ref(const cppast::cpp_entity_index& idx,
+bool equal_ref(const cppast::cpp_entity_index&                   idx,
                const cppast::basic_cpp_entity_ref<T, Predicate>& parsed,
                const cppast::basic_cpp_entity_ref<T, Predicate>& synthesized,
-               const char* full_name_override = nullptr)
+               const char*                                       full_name_override = nullptr)
 {
     if (parsed.name() != synthesized.name())
         return false;

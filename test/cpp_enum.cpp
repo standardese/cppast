@@ -55,8 +55,8 @@ enum ns::c : int {};
 )";
 
     cpp_entity_index idx;
-    auto             file = parse(idx, "cpp_enum.cpp", code);
-    auto count            = test_visit<cpp_enum>(*file, [&](const cpp_enum& e) {
+    auto             file  = parse(idx, "cpp_enum.cpp", code);
+    auto             count = test_visit<cpp_enum>(*file, [&](const cpp_enum& e) {
         if (e.name() == "a")
         {
             REQUIRE(e.is_definition());
@@ -80,7 +80,9 @@ enum ns::c : int {};
                     if (equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_uint)))
                     {
                         REQUIRE(expr.kind() == cpp_expression_kind::unexposed_t);
-                        REQUIRE(static_cast<const cpp_unexposed_expression&>(expr).expression()
+                        REQUIRE(static_cast<const cpp_unexposed_expression&>(expr)
+                                    .expression()
+                                    .as_string()
                                 == "42");
                     }
                     else
@@ -96,8 +98,9 @@ enum ns::c : int {};
                     REQUIRE(val.value());
                     auto& expr = val.value().value();
                     REQUIRE(expr.kind() == cpp_expression_kind::unexposed_t);
-                    REQUIRE(static_cast<const cpp_unexposed_expression&>(expr).expression()
-                            == "a_a+2");
+                    REQUIRE(
+                        static_cast<const cpp_unexposed_expression&>(expr).expression().as_string()
+                        == "a_a+2");
                     if (!equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_int)))
                         REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_uint)));
                 }

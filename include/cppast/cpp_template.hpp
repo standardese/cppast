@@ -11,6 +11,7 @@
 
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_container.hpp>
+#include <cppast/cpp_token.hpp>
 #include <cppast/cpp_template_parameter.hpp>
 
 namespace cppast
@@ -179,7 +180,7 @@ namespace cppast
         }
 
         type_safe::variant<std::vector<cpp_template_argument>, std::string> arguments_;
-        cpp_template_ref templ_;
+        cpp_template_ref                                                    templ_;
     };
 
     /// Base class for all entities modelling a C++ template specialization.
@@ -214,9 +215,9 @@ namespace cppast
         /// \requires The arguments are not exposed, i.e. `arguments_exposed()` returns `false`.
         /// \notes For function template specializations it can be empty,
         /// meaning that the arguments are not explictly given but deduced from the signature.
-        const std::string& unexposed_arguments() const noexcept
+        const cpp_token_string& unexposed_arguments() const noexcept
         {
-            return arguments_.value(type_safe::variant_type<std::string>{});
+            return arguments_.value(type_safe::variant_type<cpp_token_string>{});
         }
 
         /// \returns Whether or not the specialization is a full specialization.
@@ -252,7 +253,7 @@ namespace cppast
             }
 
             /// \effects Adds unexposed arguments as string.
-            void add_unexposed_arguments(std::string arg)
+            void add_unexposed_arguments(cpp_token_string arg)
             {
                 auto& specialization =
                     static_cast<cpp_template_specialization&>(*this->template_entity);
@@ -276,8 +277,8 @@ namespace cppast
         }
 
     private:
-        type_safe::variant<std::vector<cpp_template_argument>, std::string> arguments_;
-        cpp_entity_id templ_;
+        type_safe::variant<std::vector<cpp_template_argument>, cpp_token_string> arguments_;
+        cpp_entity_id                                                            templ_;
     };
 } // namespace cppast
 

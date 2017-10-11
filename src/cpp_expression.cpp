@@ -75,7 +75,7 @@ namespace
 
     void write_unexposed(code_generator::output& output, const cpp_unexposed_expression& expr)
     {
-        output << token_seq(expr.expression());
+        detail::write_token_string(output, expr.expression());
     }
 }
 

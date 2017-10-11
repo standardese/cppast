@@ -8,6 +8,7 @@
 #include <atomic>
 #include <memory>
 
+#include <cppast/cpp_token.hpp>
 #include <cppast/cpp_type.hpp>
 
 namespace cppast
@@ -82,20 +83,20 @@ namespace cppast
     public:
         /// \returns A newly created unexposed expression.
         static std::unique_ptr<cpp_unexposed_expression> build(std::unique_ptr<cpp_type> type,
-                                                               std::string               str)
+                                                               cpp_token_string          str)
         {
             return std::unique_ptr<cpp_unexposed_expression>(
                 new cpp_unexposed_expression(std::move(type), std::move(str)));
         }
 
         /// \returns The expression as a string.
-        const std::string& expression() const noexcept
+        const cpp_token_string& expression() const noexcept
         {
             return str_;
         }
 
     private:
-        cpp_unexposed_expression(std::unique_ptr<cpp_type> type, std::string str)
+        cpp_unexposed_expression(std::unique_ptr<cpp_type> type, cpp_token_string str)
         : cpp_expression(std::move(type)), str_(std::move(str))
         {
         }
@@ -105,7 +106,7 @@ namespace cppast
             return cpp_expression_kind::unexposed_t;
         }
 
-        std::string str_;
+        cpp_token_string str_;
     };
 
     /// A [cppast::cpp_expression]() that is a literal.

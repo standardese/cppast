@@ -333,12 +333,13 @@ typedef decltype(0) w;
         if (literal)
             return cpp_literal_expression::build(std::move(type), std::move(size));
         else
-            return cpp_unexposed_expression::build(std::move(type), std::move(size));
+            return cpp_unexposed_expression::build(std::move(type),
+                                                   cpp_token_string::from_string(std::move(size)));
     };
 
     cpp_entity_index idx;
-    auto             file = parse(idx, "cpp_type_alias.cpp", code);
-    auto count            = test_visit<cpp_type_alias>(*file, [&](const cpp_type_alias& alias) {
+    auto             file  = parse(idx, "cpp_type_alias.cpp", code);
+    auto             count = test_visit<cpp_type_alias>(*file, [&](const cpp_type_alias& alias) {
         if (alias.name() == "a")
         {
             auto type = cpp_builtin_type::build(cpp_int);
@@ -505,7 +506,8 @@ typedef decltype(0) w;
         else if (alias.name() == "w")
         {
             auto type = cpp_decltype_type::build(
-                cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int), "0"));
+                cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
+                                                cpp_token_string::from_string("0")));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else

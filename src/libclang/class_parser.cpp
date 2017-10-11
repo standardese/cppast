@@ -81,7 +81,7 @@ namespace
             detail::skip(stream, "virtual");
         detail::skip_if(stream, to_string(access));
 
-        auto name = detail::to_string(stream, stream.end());
+        auto name = detail::to_string(stream, stream.end()).as_string();
 
         auto type = detail::parse_type(context, class_cur, clang_getCursorType(cur));
         builder.base_class(std::move(name), std::move(type), access, is_virtual);

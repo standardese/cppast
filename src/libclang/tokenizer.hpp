@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include <cppast/cpp_token.hpp>
+
 #include "raii_wrapper.hpp"
 
 namespace cppast
@@ -190,8 +192,8 @@ namespace cppast
         // skips an attribute
         bool skip_attribute(token_stream& stream);
 
-        // converts a token range to a string, adding whitespace where necessary
-        std::string to_string(token_stream& stream, token_iterator end);
+        // converts a token range to a string
+        cpp_token_string to_string(token_stream& stream, token_iterator end);
 
         // appends token to scope, if it is still valid
         // else clears it

@@ -705,7 +705,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
 
     // read the type
     stream.set_cur(type_start);
-    auto type_spelling = detail::to_string(stream, type_end);
+    auto type_spelling = detail::to_string(stream, type_end).as_string();
 
     // parse arguments again
     detail::skip(stream, "(");

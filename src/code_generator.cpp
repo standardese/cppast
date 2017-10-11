@@ -20,6 +20,7 @@
 #include <cppast/cpp_preprocessor.hpp>
 #include <cppast/cpp_static_assert.hpp>
 #include <cppast/cpp_template_parameter.hpp>
+#include <cppast/cpp_token.hpp>
 #include <cppast/cpp_type_alias.hpp>
 #include <cppast/cpp_variable.hpp>
 #include <cppast/cpp_variable_template.hpp>
@@ -343,8 +344,11 @@ namespace
         if (spec.arguments_exposed())
             detail::write_template_arguments(output, spec.arguments());
         else if (!spec.unexposed_arguments().empty())
-            output << punctuation("<") << bracket_ws << token_seq(spec.unexposed_arguments())
-                   << bracket_ws << punctuation(">");
+        {
+            output << punctuation("<") << bracket_ws;
+            detail::write_token_string(output, spec.unexposed_arguments());
+            output << bracket_ws << punctuation(">");
+        }
     }
 
     void write_bases(code_generator& generator, code_generator::output& output, const cpp_class& c)
@@ -537,7 +541,8 @@ namespace
             output << keyword("noexcept") << punctuation("(") << bracket_ws;
             // update check when expression gets exposed
             if (cond.kind() == cpp_expression_kind::unexposed_t
-                && static_cast<const cpp_unexposed_expression&>(cond).expression() == "false")
+                && static_cast<const cpp_unexposed_expression&>(cond).expression().front().spelling
+                       == "false")
                 output << keyword("false");
             else if (output.options().is_set(code_generator::exclude_noexcept_condition))
                 output.excluded(base);
@@ -1029,7 +1034,7 @@ namespace
         code_generator::output output(type_safe::ref(generator), type_safe::ref(entity),
                                       cur_access);
         if (output)
-            output << token_seq(entity.spelling());
+            detail::write_token_string(output, entity.spelling());
         return static_cast<bool>(output);
     }
 
@@ -1145,5 +1150,65 @@ void detail::write_template_arguments(
                 DEBUG_UNREACHABLE(detail::assert_handler{});
         }
         output << bracket_ws << punctuation(">");
+    }
+}
+
+void detail::write_token_string(code_generator::output& output, const cpp_token_string& tokens)
+{
+    auto last_kind = cpp_token_kind::unknown;
+    for (auto& token : tokens)
+    {
+        switch (token.kind)
+        {
+        case cpp_token_kind::identifier:
+            if (last_kind == cpp_token_kind::identifier || last_kind == cpp_token_kind::keyword)
+                output << whitespace;
+            output << keyword(token.spelling);
+            break;
+
+        case cpp_token_kind::keyword:
+            if (last_kind == cpp_token_kind::identifier || last_kind == cpp_token_kind::keyword)
+                output << whitespace;
+            output << identifier(token.spelling);
+            if (token.spelling == "template")
+                output << operator_ws;
+            break;
+
+        case cpp_token_kind::literal:
+            // determine kind of literal
+            if (token.spelling.front() == '\"')
+                output << string_literal(token.spelling);
+            else if (token.spelling.find('.') != std::string::npos)
+                output << float_literal(token.spelling);
+            else
+                output << int_literal(token.spelling);
+            break;
+
+        case cpp_token_kind::punctuation:
+            if (token.spelling == ",")
+                output << comma;
+            // print brackets
+            // don't treat <> special as they might be operators...
+            else if (token.spelling == "(" || token.spelling == "[" || token.spelling == "{")
+                output << punctuation(token.spelling) << bracket_ws;
+            else if (token.spelling == ")" || token.spelling == "]" || token.spelling == "}")
+                output << bracket_ws << punctuation(token.spelling);
+            // operators that are always binary operators in all contexts
+            else if (token.spelling.back() == '=' // all assignment operators
+                     || token.spelling == "/" || token.spelling == "%" || token.spelling == "=="
+                     || token.spelling == "!=" || token.spelling == "<" || token.spelling == ">"
+                     || token.spelling == "<=" || token.spelling == ">=" || token.spelling == "&&"
+                     || token.spelling == "||" || token.spelling == "|" || token.spelling == "^"
+                     || token.spelling == "?")
+                output << operator_ws << punctuation(token.spelling) << operator_ws;
+            else
+                output << punctuation(token.spelling);
+            break;
+
+        case cpp_token_kind::unknown:
+            output << token_seq(token.spelling);
+        }
+
+        last_kind = token.kind;
     }
 }

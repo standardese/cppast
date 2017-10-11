@@ -232,7 +232,7 @@ int d() {}
                 {
                     REQUIRE(func.function().is_declaration());
                     REQUIRE(!func.arguments_exposed());
-                    REQUIRE(func.unexposed_arguments() == "ns::h");
+                    REQUIRE(func.unexposed_arguments().as_string() == "ns::h");
                 }
                 else
                     REQUIRE(false);

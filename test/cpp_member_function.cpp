@@ -201,8 +201,8 @@ struct foo
 )";
 
     cpp_entity_index idx;
-    auto             file = parse(idx, "cpp_conversion_op.cpp", code);
-    auto count            = test_visit<cpp_conversion_op>(*file, [&](const cpp_conversion_op& op) {
+    auto             file  = parse(idx, "cpp_conversion_op.cpp", code);
+    auto             count = test_visit<cpp_conversion_op>(*file, [&](const cpp_conversion_op& op) {
         REQUIRE(count_children(op.parameters()) == 0u);
         REQUIRE(!op.is_variadic());
         REQUIRE(op.body_kind() == cpp_function_definition);
@@ -301,8 +301,8 @@ foo<T>::foo(int) {}
     }
 
     cpp_entity_index idx;
-    auto             file = parse(idx, "cpp_constructor.cpp", code);
-    auto count            = test_visit<cpp_constructor>(*file, [&](const cpp_constructor& cont) {
+    auto             file  = parse(idx, "cpp_constructor.cpp", code);
+    auto             count = test_visit<cpp_constructor>(*file, [&](const cpp_constructor& cont) {
         REQUIRE(!cont.is_variadic());
         REQUIRE(cont.name() == "foo");
 
@@ -402,10 +402,12 @@ d::~d() {}
             REQUIRE(!dtor.is_virtual());
             REQUIRE(dtor.body_kind() == cpp_function_definition);
             REQUIRE(dtor.noexcept_condition());
-            REQUIRE(equal_expressions(dtor.noexcept_condition().value(),
-                                      *cpp_unexposed_expression::build(cpp_builtin_type::build(
-                                                                           cpp_bool),
-                                                                       "false")));
+            REQUIRE(
+                equal_expressions(dtor.noexcept_condition().value(),
+                                  *cpp_unexposed_expression::build(cpp_builtin_type::build(
+                                                                       cpp_bool),
+                                                                   cpp_token_string::from_string(
+                                                                       "false"))));
         }
         else if (dtor.name() == "~c")
         {

@@ -110,9 +110,8 @@ struct b<0, T> {};
         }
         else if (templ.name() == "b")
         {
-            check_template_parameters(templ,
-                                      {{cpp_entity_kind::non_type_template_parameter_t, "I"},
-                                       {cpp_entity_kind::template_type_parameter_t, "T"}});
+            check_template_parameters(templ, {{cpp_entity_kind::non_type_template_parameter_t, "I"},
+                                              {cpp_entity_kind::template_type_parameter_t, "T"}});
             REQUIRE(c.class_kind() == cpp_class_kind::struct_t);
             REQUIRE(c.is_definition());
         }
@@ -223,45 +222,46 @@ struct b<0, T> {};
     });
     REQUIRE(count == 5u);
 
-    count = test_visit<cpp_class_template_specialization>(
-        *file, [&](const cpp_class_template_specialization& templ) {
-            REQUIRE(!templ.arguments_exposed());
-            REQUIRE(templ.scope_name());
+    count = test_visit<
+        cpp_class_template_specialization>(*file, [&](const cpp_class_template_specialization&
+                                                          templ) {
+        REQUIRE(!templ.arguments_exposed());
+        REQUIRE(templ.scope_name());
 
-            if (templ.name() == "a")
+        if (templ.name() == "a")
+        {
+            REQUIRE(
+                equal_ref(idx, templ.primary_template(), cpp_template_ref(cpp_entity_id(""), "a")));
+            if (templ.is_full_specialization())
             {
-                REQUIRE(equal_ref(idx, templ.primary_template(),
-                                  cpp_template_ref(cpp_entity_id(""), "a")));
-                if (templ.is_full_specialization())
-                {
-                    check_template_parameters(templ, {});
-                    REQUIRE(templ.unexposed_arguments() == "int");
-                }
-                else
-                {
-                    check_template_parameters(templ,
-                                              {{cpp_entity_kind::template_type_parameter_t, "T"}});
-                    REQUIRE(templ.unexposed_arguments() == "T*");
-                }
-            }
-            else if (templ.name() == "b")
-            {
-                REQUIRE(equal_ref(idx, templ.primary_template(),
-                                  cpp_template_ref(cpp_entity_id(""), "b")));
-                if (templ.is_full_specialization())
-                {
-                    check_template_parameters(templ, {});
-                    REQUIRE(templ.unexposed_arguments() == "0,int");
-                }
-                else
-                {
-                    check_template_parameters(templ,
-                                              {{cpp_entity_kind::template_type_parameter_t, "T"}});
-                    REQUIRE(templ.unexposed_arguments() == "0,T");
-                }
+                check_template_parameters(templ, {});
+                REQUIRE(templ.unexposed_arguments().as_string() == "int");
             }
             else
-                REQUIRE(false);
-        });
+            {
+                check_template_parameters(templ,
+                                          {{cpp_entity_kind::template_type_parameter_t, "T"}});
+                REQUIRE(templ.unexposed_arguments().as_string() == "T*");
+            }
+        }
+        else if (templ.name() == "b")
+        {
+            REQUIRE(
+                equal_ref(idx, templ.primary_template(), cpp_template_ref(cpp_entity_id(""), "b")));
+            if (templ.is_full_specialization())
+            {
+                check_template_parameters(templ, {});
+                REQUIRE(templ.unexposed_arguments().as_string() == "0,int");
+            }
+            else
+            {
+                check_template_parameters(templ,
+                                          {{cpp_entity_kind::template_type_parameter_t, "T"}});
+                REQUIRE(templ.unexposed_arguments().as_string() == "0,T");
+            }
+        }
+        else
+            REQUIRE(false);
+    });
     REQUIRE(count == 4u);
 }
