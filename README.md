@@ -1,5 +1,9 @@
 # cppast
 
+[![Build Status](https://travis-ci.org/foonathan/cppast.svg?branch=master)](https://travis-ci.org/foonathan/cppast)
+[![Build status](https://ci.appveyor.com/api/projects/status/8gp5btjq7eassvn7?svg=true)](https://ci.appveyor.com/project/foonathan/cppast)
+[![Coverage Status](https://coveralls.io/repos/github/foonathan/cppast/badge.svg)](https://coveralls.io/github/foonathan/cppast)
+
 Library interface to the C++ AST &mdash; parse source files, synthesize entities, get documentation comments and generate code.
 
 *Note: This is currently just a first prototype and everything is unstable for now. If your code can't be parsed, please file an issue.*
