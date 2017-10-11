@@ -242,6 +242,17 @@ namespace
             ptr_ += offset;
         }
 
+        void skip_with_linecount() noexcept
+        {
+            if (*ptr_ == '\n' && write_ == true)
+            {
+                result_->push_back('\n');
+                ++cur_line_;
+            }
+
+            ++ptr_;
+        }
+
         void enable_write() noexcept
         {
             write_.set();
@@ -395,9 +406,11 @@ namespace
                 // remove trailing spaces
                 while (!result.comment.empty() && result.comment.back() == ' ')
                     result.comment.pop_back();
+
                 // skip newline
-                p.skip();
+                p.skip_with_linecount();
                 result.comment += '\n';
+
                 // skip indentation
                 while (starts_with(p, " "))
                     p.skip();
@@ -447,16 +460,9 @@ namespace
         else
         {
             while (!starts_with(p, "*/"))
-                p.skip();
+                p.skip_with_linecount();
             p.skip(2u);
         }
-
-        if (!starts_with(p, "\n"))
-            // ensure an additional newline after each C comment
-            // this allows matching documentation comments to entities generated from macros
-            // as the entity corresponding to the documentation comment will be on the next line
-            // otherwise all entities would have the same line number
-            p.write_str("\n");
 
         return true;
     }

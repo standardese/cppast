@@ -162,15 +162,28 @@ foo {}
 
 /// 23
 
+/* C comment
+spanning
+multiple
+lines
+*/
+
+/**
+
+*/
+
 #include <vector>
 
-/// 27
+/// 37
 )";
 
     auto file = parse({}, "preprocessor_line_numbers.cpp", code);
     for (auto& comment : file->unmatched_comments())
-        REQUIRE(comment.line == std::stoi(comment.content));
-    REQUIRE((file->unmatched_comments().size() == 6u));
+    {
+        if (comment.content[0] != '\n')
+            REQUIRE(comment.line == std::stoi(comment.content));
+    }
+    REQUIRE((file->unmatched_comments().size() == 6u + 1u));
 }
 
 TEST_CASE("comment matching")
