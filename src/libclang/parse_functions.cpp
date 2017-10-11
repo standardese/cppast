@@ -80,7 +80,7 @@ void detail::comment_context::match(cpp_entity& e, const CXCursor& cur) const
 {
     auto     pos = clang_getRangeStart(clang_getCursorExtent(cur));
     unsigned line;
-    clang_getSpellingLocation(pos, nullptr, &line, nullptr, nullptr);
+    clang_getPresumedLocation(pos, nullptr, &line, nullptr);
 
     match(e, line);
 }

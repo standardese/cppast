@@ -13,6 +13,18 @@
 
 namespace cppast
 {
+    /// An unmatched documentation comment.
+    struct cpp_doc_comment
+    {
+        std::string content;
+        unsigned    line;
+
+        cpp_doc_comment(std::string content, unsigned line)
+        : content(std::move(content)), line(line)
+        {
+        }
+    };
+
     /// A [cppast::cpp_entity]() modelling a file.
     ///
     /// This is the top-level entity of the AST.
@@ -26,9 +38,7 @@ namespace cppast
         {
         public:
             /// \effects Sets the file name.
-            explicit builder(std::string name) : file_(new cpp_file(std::move(name)))
-            {
-            }
+            explicit builder(std::string name) : file_(new cpp_file(std::move(name))) {}
 
             /// \effects Adds an entity.
             void add_child(std::unique_ptr<cpp_entity> child) noexcept
@@ -37,9 +47,9 @@ namespace cppast
             }
 
             /// \effects Adds an unmatched documentation comment.
-            void add_unmatched_comment(std::string str)
+            void add_unmatched_comment(cpp_doc_comment comment)
             {
-                file_->comments_.push_back(std::move(str));
+                file_->comments_.push_back(std::move(comment));
             }
 
             /// \returns The not yet finished file.
@@ -62,20 +72,18 @@ namespace cppast
         };
 
         /// \returns The unmatched documentation comments.
-        type_safe::array_ref<const std::string> unmatched_comments() const noexcept
+        type_safe::array_ref<const cpp_doc_comment> unmatched_comments() const noexcept
         {
             return type_safe::ref(comments_.data(), comments_.size());
         }
 
     private:
-        cpp_file(std::string name) : cpp_entity(std::move(name))
-        {
-        }
+        cpp_file(std::string name) : cpp_entity(std::move(name)) {}
 
         /// \returns [cpp_entity_type::file_t]().
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
-        std::vector<std::string> comments_;
+        std::vector<cpp_doc_comment> comments_;
     };
 
     /// \exclude

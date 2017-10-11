@@ -403,9 +403,8 @@ namespace
         auto args = get_arguments(config);
 
         CXTranslationUnit tu;
-        auto              flags = CXTranslationUnit_Incomplete | CXTranslationUnit_KeepGoing;
-        if (detail::libclang_compile_config_access::clang_version(config) >= 40000)
-            flags |= CXTranslationUnit_DetailedPreprocessingRecord;
+        auto              flags = CXTranslationUnit_Incomplete | CXTranslationUnit_KeepGoing
+                     | CXTranslationUnit_DetailedPreprocessingRecord;
 
         auto error =
             clang_parseTranslationUnit2(idx.get(), path, // index and path
@@ -479,17 +478,20 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
     detail::visit_tu(tu, path.c_str(), [&](const CXCursor& cur) {
         if (clang_getCursorKind(cur) == CXCursor_InclusionDirective)
         {
-            DEBUG_ASSERT(include_iter != preprocessed.includes.end()
-                             && get_line_no(cur) >= include_iter->line,
-                         detail::assert_handler{});
+            if (!preprocessed.includes.empty())
+            {
+                DEBUG_ASSERT(include_iter != preprocessed.includes.end()
+                                 && get_line_no(cur) >= include_iter->line,
+                             detail::assert_handler{});
 
-            auto include =
-                cpp_include_directive::build(std::move(include_iter->file), include_iter->kind,
-                                             detail::get_cursor_name(cur).c_str());
-            context.comments.match(*include, include_iter->line);
-            builder.add_child(std::move(include));
+                auto include =
+                    cpp_include_directive::build(std::move(include_iter->file), include_iter->kind,
+                                                 detail::get_cursor_name(cur).c_str());
+                context.comments.match(*include, include_iter->line);
+                builder.add_child(std::move(include));
 
-            ++include_iter;
+                ++include_iter;
+            }
         }
         else if (clang_getCursorKind(cur) != CXCursor_MacroDefinition)
         {
@@ -510,7 +512,7 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
     for (auto& c : preprocessed.comments)
     {
         if (!c.comment.empty())
-            builder.add_unmatched_comment(std::move(c.comment));
+            builder.add_unmatched_comment(cpp_doc_comment(std::move(c.comment), c.line));
     }
 
     if (context.error)

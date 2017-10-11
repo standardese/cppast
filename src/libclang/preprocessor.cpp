@@ -30,6 +30,11 @@ namespace
         return '"' + std::move(str) + '"';
     }
 
+    bool support_include(const libclang_compile_config& c)
+    {
+        return detail::libclang_compile_config_access::clang_version(c) >= 40000;
+    }
+
     // build the command that runs the preprocessor
     std::string get_command(const libclang_compile_config& c, const char* full_path)
     {
@@ -39,7 +44,7 @@ namespace
         // -C: keep comments
         // -dD: print macro definitions as well
         auto flags = std::string("-x c++ -I. -E -C -dD");
-        if (detail::libclang_compile_config_access::clang_version(c) >= 40000)
+        if (support_include(c))
             // -Xclang -dI: print include directives as well (clang >= 4.0.0)
             flags += " -Xclang -dI";
         // -fno-caret-diagnostics: don't show the source extract in diagnostics
@@ -189,6 +194,12 @@ namespace
         position(ts::object_ref<std::string> result, const char* ptr) noexcept
         : result_(result), cur_line_(1u), ptr_(ptr), write_(true)
         {
+        }
+
+        void set_line(unsigned line)
+        {
+            *result_ += "#line " + std::to_string(line) + "\n";
+            cur_line_ = line;
         }
 
         void write_str(std::string str)
@@ -363,7 +374,7 @@ namespace
                 break;
             }
         }
-        p.skip();
+        skip(p, "\n");
 
         return result;
     }
@@ -691,7 +702,8 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
             {
                 auto message = detail::format("parsing macro '", macro->name(), "'");
                 logger.log("preprocessor",
-                           diagnostic{std::move(message), source_location::make_file(path),
+                           diagnostic{std::move(message),
+                                      source_location::make_file(path, p.cur_line()),
                                       severity::debug});
             }
 
@@ -705,7 +717,8 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                 {
                     auto message = detail::format("undefining macro '", undef.value(), "'");
                     logger.log("preprocessor",
-                               diagnostic{std::move(message), source_location::make_file(path),
+                               diagnostic{std::move(message),
+                                          source_location::make_file(path, p.cur_line()),
                                           severity::debug});
                 }
                 result.macros.erase(std::remove_if(result.macros.begin(), result.macros.end(),
@@ -722,7 +735,8 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                 auto message =
                     detail::format("parsing include '", include.value().file.name(), "'");
                 logger.log("preprocessor",
-                           diagnostic{std::move(message), source_location::make_file(path),
+                           diagnostic{std::move(message),
+                                      source_location::make_file(path, p.cur_line()),
                                       severity::debug});
             }
             result.includes.push_back(std::move(include.value()));
@@ -734,16 +748,19 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
             switch (lm.value().flag)
             {
             case linemarker::line_directive:
-                break; // ignore
-                // no need to handle it, preprocessed output doesn't need to match line numbers precisely
+                if (file_depth == 0u)
+                    p.set_line(lm.value().line);
+                break;
 
             case linemarker::enter_new:
                 if (file_depth == 0u && lm.value().file.front() != '<')
                 {
                     // this file is directly included by the given file
+                    // and it is not a fake file like builtin or command line
+
                     // write include with full path
-                    // note: don't build include here, do it when an #include is encountered
                     p.write_str("#include \"" + lm.value().file + "\"\n");
+                    // note: don't build include here, do it when an #include is encountered
                 }
 
                 ++file_depth;
@@ -755,6 +772,7 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                 if (file_depth == 0u)
                 {
                     DEBUG_ASSERT(lm.value().file == path, detail::assert_handler{});
+                    p.set_line(lm.value().line);
                     p.enable_write();
                 }
                 break;

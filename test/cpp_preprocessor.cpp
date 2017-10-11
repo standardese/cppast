@@ -136,6 +136,43 @@ TEST_CASE("cpp_include_directive", "[!hide][clang4]")
     REQUIRE(count == 1u);
 }
 
+TEST_CASE("preprocessor line numbers")
+{
+    auto code = R"(/// 1
+
+#include <iostream>
+
+/// 5
+
+#include <string>
+
+int foo;
+
+/// 11
+
+#define foo \
+    \
+    \
+    int \
+    main()
+
+/// 19
+
+foo {}
+
+/// 23
+
+#include <vector>
+
+/// 27
+)";
+
+    auto file = parse({}, "preprocessor_line_numbers.cpp", code);
+    for (auto& comment : file->unmatched_comments())
+        REQUIRE(comment.line == std::stoi(comment.content));
+    REQUIRE((file->unmatched_comments().size() == 6u));
+}
+
 TEST_CASE("comment matching")
 {
     auto code = R"(
@@ -205,6 +242,6 @@ void j();
     });
 
     for (auto& comment : file->unmatched_comments())
-        REQUIRE(comment == "u");
+        REQUIRE(comment.content == "u");
     REQUIRE((file->unmatched_comments().size() == 3u));
 }
