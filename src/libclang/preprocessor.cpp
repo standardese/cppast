@@ -198,8 +198,11 @@ namespace
 
         void set_line(unsigned line)
         {
-            *result_ += "#line " + std::to_string(line) + "\n";
-            cur_line_ = line;
+            if (cur_line_ != line)
+            {
+                *result_ += "#line " + std::to_string(line) + "\n";
+                cur_line_ = line;
+            }
         }
 
         void write_str(std::string str)
