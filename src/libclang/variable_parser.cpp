@@ -14,8 +14,8 @@ using namespace cppast;
 std::unique_ptr<cpp_expression> detail::parse_default_value(const detail::parse_context& context,
                                                             const CXCursor& cur, const char* name)
 {
-    detail::tokenizer    tokenizer(context.tu, context.file, cur);
-    detail::token_stream stream(tokenizer, cur);
+    detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+    detail::cxtoken_stream stream(tokenizer, cur);
 
     auto has_default = false;
     auto got_name    = *name == '\0';
@@ -57,7 +57,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_variable(const detail::parse_conte
 
     // just look for thread local or constexpr
     // can't appear anywhere else, so good enough
-    detail::tokenizer tokenizer(context.tu, context.file, cur);
+    detail::cxtokenizer tokenizer(context.tu, context.file, cur);
     for (auto& token : tokenizer)
         if (token.value() == "thread_local")
             storage_class =

@@ -15,7 +15,7 @@
 #include "parse_error.hpp"
 #include "parse_functions.hpp"
 #include "preprocessor.hpp"
-#include "tokenizer.hpp"
+#include "cxtokenizer.hpp"
 
 using namespace cppast;
 

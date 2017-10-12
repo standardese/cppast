@@ -731,8 +731,8 @@ std::unique_ptr<cpp_type> detail::parse_type(const detail::parse_context& contex
 }
 
 std::unique_ptr<cpp_type> detail::parse_raw_type(const detail::parse_context&,
-                                                 detail::token_stream&  stream,
-                                                 detail::token_iterator end)
+                                                 detail::cxtoken_stream&  stream,
+                                                 detail::cxtoken_iterator end)
 {
     auto result = detail::to_string(stream, end);
     return cpp_unexposed_type::build(result.as_string());

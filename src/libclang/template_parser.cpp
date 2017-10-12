@@ -50,9 +50,9 @@ namespace
         DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_TemplateTypeParameter,
                      detail::assert_handler{});
 
-        detail::tokenizer    tokenizer(context.tu, context.file, cur);
-        detail::token_stream stream(tokenizer, cur);
-        auto                 name = detail::get_cursor_name(cur);
+        detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+        detail::cxtoken_stream stream(tokenizer, cur);
+        auto                   name = detail::get_cursor_name(cur);
 
         // syntax: typename/class [...] name [= ...]
         auto keyword = cpp_template_keyword::keyword_class;
@@ -87,8 +87,8 @@ namespace
         auto type = clang_getCursorType(cur);
         auto def  = detail::parse_default_value(context, cur, name.c_str());
 
-        detail::tokenizer    tokenizer(context.tu, context.file, cur);
-        detail::token_stream stream(tokenizer, cur);
+        detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+        detail::cxtoken_stream stream(tokenizer, cur);
 
         // see if it is variadic
         // syntax a): some-tokens ... name some-tokens
@@ -120,9 +120,9 @@ namespace
         DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_TemplateTemplateParameter,
                      detail::assert_handler{});
 
-        detail::tokenizer    tokenizer(context.tu, context.file, cur);
-        detail::token_stream stream(tokenizer, cur);
-        auto                 name = detail::get_cursor_name(cur);
+        detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+        detail::cxtoken_stream stream(tokenizer, cur);
+        auto                   name = detail::get_cursor_name(cur);
 
         // syntax: template <…> class/typename [...] name [= …]
         detail::skip(stream, "template");
@@ -263,8 +263,8 @@ namespace
     template <class Builder>
     void parse_arguments(Builder& b, const detail::parse_context& context, const CXCursor& cur)
     {
-        detail::tokenizer    tokenizer(context.tu, context.file, cur);
-        detail::token_stream stream(tokenizer, cur);
+        detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+        detail::cxtoken_stream stream(tokenizer, cur);
 
         while (!stream.done()
                && !detail::skip_if(stream, detail::get_cursor_name(cur).c_str(), true))

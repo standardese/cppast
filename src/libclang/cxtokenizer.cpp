@@ -2,7 +2,7 @@
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
-#include "tokenizer.hpp"
+#include "cxtokenizer.hpp"
 
 #include <cctype>
 
@@ -11,7 +11,7 @@
 
 using namespace cppast;
 
-detail::token::token(const CXTranslationUnit& tu_unit, const CXToken& token)
+detail::cxtoken::cxtoken(const CXTranslationUnit& tu_unit, const CXToken& token)
 : value_(clang_getTokenSpelling(tu_unit, token)), kind_(clang_getTokenKind(token))
 {
 }
@@ -237,7 +237,8 @@ namespace
     }
 }
 
-detail::tokenizer::tokenizer(const CXTranslationUnit& tu, const CXFile& file, const CXCursor& cur)
+detail::cxtokenizer::cxtokenizer(const CXTranslationUnit& tu, const CXFile& file,
+                                 const CXCursor& cur)
 {
     auto extent = get_extent(tu, file, cur, unmunch_);
 
@@ -247,7 +248,7 @@ detail::tokenizer::tokenizer(const CXTranslationUnit& tu, const CXFile& file, co
         tokens_.emplace_back(tu, tokenizer[i]);
 }
 
-void detail::skip(detail::token_stream& stream, const char* str)
+void detail::skip(detail::cxtoken_stream& stream, const char* str)
 {
     if (*str)
     {
@@ -263,7 +264,7 @@ void detail::skip(detail::token_stream& stream, const char* str)
 
 namespace
 {
-    bool starts_with(const char*& str, const detail::token& t)
+    bool starts_with(const char*& str, const detail::cxtoken& t)
     {
         if (std::strncmp(str, t.c_str(), t.value().length()) != 0)
             return false;
@@ -274,7 +275,7 @@ namespace
     }
 }
 
-bool detail::skip_if(detail::token_stream& stream, const char* str, bool multi_token)
+bool detail::skip_if(detail::cxtoken_stream& stream, const char* str, bool multi_token)
 {
     if (!*str)
         return true;
@@ -298,7 +299,7 @@ namespace
 {
     // whether or not the current angle bracket can be a comparison
     // note: this is a heuristic I hope works often enough
-    bool is_comparison(CXTokenKind last_kind, const detail::token& cur, CXTokenKind next_kind)
+    bool is_comparison(CXTokenKind last_kind, const detail::cxtoken& cur, CXTokenKind next_kind)
     {
         if (cur == "<")
             return last_kind == CXToken_Literal;
@@ -308,7 +309,7 @@ namespace
     }
 }
 
-detail::token_iterator detail::find_closing_bracket(detail::token_stream stream)
+detail::cxtoken_iterator detail::find_closing_bracket(detail::cxtoken_stream stream)
 {
     auto        template_bracket = false;
     auto        open_bracket     = stream.peek().c_str();
@@ -359,7 +360,7 @@ detail::token_iterator detail::find_closing_bracket(detail::token_stream stream)
     return stream.cur();
 }
 
-void detail::skip_brackets(detail::token_stream& stream)
+void detail::skip_brackets(detail::cxtoken_stream& stream)
 {
     auto closing = find_closing_bracket(stream);
     stream.set_cur(std::next(closing));
@@ -367,7 +368,7 @@ void detail::skip_brackets(detail::token_stream& stream)
 
 namespace
 {
-    bool skip_attribute_impl(detail::token_stream& stream)
+    bool skip_attribute_impl(detail::cxtoken_stream& stream)
     {
         if (skip_if(stream, "[") && stream.peek() == "[")
         {
@@ -401,7 +402,7 @@ namespace
     }
 }
 
-bool detail::skip_attribute(detail::token_stream& stream)
+bool detail::skip_attribute(detail::cxtoken_stream& stream)
 {
     auto any = false;
     while (skip_attribute_impl(stream))
@@ -432,7 +433,7 @@ namespace
     }
 }
 
-cpp_token_string detail::to_string(token_stream& stream, token_iterator end)
+cpp_token_string detail::to_string(cxtoken_stream& stream, cxtoken_iterator end)
 {
     cpp_token_string::builder builder;
 
@@ -448,7 +449,7 @@ cpp_token_string detail::to_string(token_stream& stream, token_iterator end)
     return builder.finish();
 }
 
-bool detail::append_scope(detail::token_stream& stream, std::string& scope)
+bool detail::append_scope(detail::cxtoken_stream& stream, std::string& scope)
 {
     // add identifiers and "::" to current scope name,
     // clear if there is any other token in between, or mismatched combination

@@ -7,7 +7,7 @@
 #include <cstdio>
 #include <mutex>
 
-#include "tokenizer.hpp"
+#include "cxtokenizer.hpp"
 
 using namespace cppast;
 
@@ -50,7 +50,7 @@ void detail::print_tokens(const CXTranslationUnit& tu, const CXFile& file,
                           const CXCursor& cur) noexcept
 {
     std::lock_guard<std::mutex> lock(mtx);
-    detail::tokenizer           tokenizer(tu, file, cur);
+    detail::cxtokenizer         tokenizer(tu, file, cur);
     for (auto& token : tokenizer)
         std::fprintf(stderr, "%s ", token.c_str());
     std::fputs("\n", stderr);

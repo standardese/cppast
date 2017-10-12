@@ -71,8 +71,8 @@ namespace
         auto access     = convert_access(cur);
         auto is_virtual = clang_isVirtualBase(cur) != 0u;
 
-        detail::tokenizer    tokenizer(context.tu, context.file, cur);
-        detail::token_stream stream(tokenizer, cur);
+        detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+        detail::cxtoken_stream stream(tokenizer, cur);
 
         // [<attribute>] [virtual] [<access>] <name>
         // can't use spelling to get the name
@@ -108,8 +108,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class(const detail::parse_context&
                                 clang_getCursorLexicalParent(cur)))
         {
             // out-of-line definition
-            detail::tokenizer    tokenizer(context.tu, context.file, cur);
-            detail::token_stream stream(tokenizer, cur);
+            detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+            detail::cxtoken_stream stream(tokenizer, cur);
 
             std::string name = detail::get_cursor_name(cur).c_str();
             auto        pos  = name.find('<');
