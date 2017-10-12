@@ -6,7 +6,6 @@
 #define CPPAST_PARSE_ERROR_HPP_INCLUDED
 
 #include <stdexcept>
-#include <sstream>
 
 #include <debug_assert.hpp>
 #include <cppast/diagnostic.hpp>
@@ -78,15 +77,6 @@ namespace cppast
                 throw parse_error(type, std::move(message));
             }
         };
-
-        template <typename... Args>
-        std::string format(Args&&... args)
-        {
-            std::ostringstream stream;
-            int                dummy[] = {(stream << std::forward<Args>(args), 0)...};
-            (void)dummy;
-            return stream.str();
-        }
     }
 } // namespace cppast::detail
 

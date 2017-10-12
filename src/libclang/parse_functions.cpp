@@ -113,11 +113,10 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
 {
     if (context.logger->is_verbose())
     {
-        auto message = detail::format("parsing cursor of type '",
-                                      detail::get_cursor_kind_spelling(cur).c_str(), "'");
         context.logger->log("libclang parser",
-                            diagnostic{std::move(message), detail::make_location(cur),
-                                       severity::debug});
+                            format_diagnostic(severity::debug, detail::make_location(cur),
+                                              "parsing cursor of type '",
+                                              detail::get_cursor_kind_spelling(cur).c_str(), "'"));
     }
 
     auto kind = clang_getCursorKind(cur);
@@ -211,8 +210,9 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         auto msg = detail::format("unhandled cursor of kind '",
                                   detail::get_cursor_kind_spelling(cur).c_str(), "'");
         context.logger->log("libclang parser",
-                            diagnostic{std::move(msg), detail::make_location(cur),
-                                       severity::warning});
+                            format_diagnostic(severity::warning, detail::make_location(cur),
+                                              "unhandled cursor of kind '",
+                                              detail::get_cursor_kind_spelling(cur).c_str(), "'"));
 
         // build unexposed entity
         auto                 name = detail::get_cursor_name(cur);
