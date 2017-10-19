@@ -334,7 +334,7 @@ typedef decltype(0) w;
             return cpp_literal_expression::build(std::move(type), std::move(size));
         else
             return cpp_unexposed_expression::build(std::move(type),
-                                                   cpp_token_string::from_string(std::move(size)));
+                                                   cpp_token_string::tokenize(std::move(size)));
     };
 
     cpp_entity_index idx;
@@ -507,7 +507,7 @@ typedef decltype(0) w;
         {
             auto type = cpp_decltype_type::build(
                 cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
-                                                cpp_token_string::from_string("0")));
+                                                cpp_token_string::tokenize("0")));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else

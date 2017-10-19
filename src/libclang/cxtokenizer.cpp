@@ -412,9 +412,9 @@ bool detail::skip_attribute(detail::cxtoken_stream& stream)
 
 namespace
 {
-    cpp_token_kind get_kind(CXTokenKind kind)
+    cpp_token_kind get_kind(const detail::cxtoken& token)
     {
-        switch (kind)
+        switch (token.kind())
         {
         case CXToken_Punctuation:
             return cpp_token_kind::punctuation;
@@ -422,14 +422,26 @@ namespace
             return cpp_token_kind::keyword;
         case CXToken_Identifier:
             return cpp_token_kind::identifier;
+
         case CXToken_Literal:
-            return cpp_token_kind::literal;
+        {
+            auto spelling = token.value().std_str();
+            if (spelling.find('.') != std::string::npos)
+                return cpp_token_kind::float_literal;
+            else if (std::isdigit(spelling.front()))
+                return cpp_token_kind::int_literal;
+            else if (spelling.back() == '\'')
+                return cpp_token_kind::char_literal;
+            else
+                return cpp_token_kind::string_literal;
+        }
+
         case CXToken_Comment:
             break;
         }
 
         DEBUG_UNREACHABLE(detail::assert_handler{});
-        return cpp_token_kind ::literal;
+        return cpp_token_kind::punctuation;
     }
 }
 
@@ -440,7 +452,7 @@ cpp_token_string detail::to_string(cxtoken_stream& stream, cxtoken_iterator end)
     while (stream.cur() != end)
     {
         auto& token = stream.get();
-        builder.add_token(cpp_token(get_kind(token.kind()), token.c_str()));
+        builder.add_token(cpp_token(get_kind(token), token.c_str()));
     }
 
     if (stream.unmunch())

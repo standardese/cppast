@@ -1158,7 +1158,7 @@ void detail::write_template_arguments(
 
 void detail::write_token_string(code_generator::output& output, const cpp_token_string& tokens)
 {
-    auto last_kind = cpp_token_kind::unknown;
+    auto last_kind = cpp_token_kind::punctuation; // neutral regarding whitespace
     for (auto& token : tokens)
     {
         switch (token.kind)
@@ -1177,14 +1177,15 @@ void detail::write_token_string(code_generator::output& output, const cpp_token_
                 output << operator_ws;
             break;
 
-        case cpp_token_kind::literal:
-            // determine kind of literal
-            if (token.spelling.front() == '\"')
-                output << string_literal(token.spelling);
-            else if (token.spelling.find('.') != std::string::npos)
-                output << float_literal(token.spelling);
-            else
-                output << int_literal(token.spelling);
+        case cpp_token_kind::int_literal:
+            output << int_literal(token.spelling);
+            break;
+        case cpp_token_kind::float_literal:
+            output << float_literal(token.spelling);
+            break;
+        case cpp_token_kind::char_literal:
+        case cpp_token_kind::string_literal:
+            output << string_literal(token.spelling);
             break;
 
         case cpp_token_kind::punctuation:
@@ -1206,9 +1207,6 @@ void detail::write_token_string(code_generator::output& output, const cpp_token_
             else
                 output << punctuation(token.spelling);
             break;
-
-        case cpp_token_kind::unknown:
-            output << token_seq(token.spelling);
         }
 
         last_kind = token.kind;

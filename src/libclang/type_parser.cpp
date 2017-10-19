@@ -246,7 +246,7 @@ namespace
         return size_expr.empty() ?
                    nullptr :
                    cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_ulonglong),
-                                                   cpp_token_string::from_string(
+                                                   cpp_token_string::tokenize(
                                                        std::string(size_expr.rbegin(),
                                                                    size_expr.rend())));
     }
@@ -488,7 +488,7 @@ namespace
 
             return cpp_decltype_type::build(
                 cpp_unexposed_expression::build(cpp_unexposed_type::build("<decltype>"),
-                                                cpp_token_string::from_string(spelling)));
+                                                cpp_token_string::tokenize(spelling)));
         });
     }
 

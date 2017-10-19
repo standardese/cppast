@@ -402,12 +402,11 @@ d::~d() {}
             REQUIRE(!dtor.is_virtual());
             REQUIRE(dtor.body_kind() == cpp_function_definition);
             REQUIRE(dtor.noexcept_condition());
-            REQUIRE(
-                equal_expressions(dtor.noexcept_condition().value(),
-                                  *cpp_unexposed_expression::build(cpp_builtin_type::build(
-                                                                       cpp_bool),
-                                                                   cpp_token_string::from_string(
-                                                                       "false"))));
+            REQUIRE(equal_expressions(dtor.noexcept_condition().value(),
+                                      *cpp_unexposed_expression::build(cpp_builtin_type::build(
+                                                                           cpp_bool),
+                                                                       cpp_token_string::tokenize(
+                                                                           "false"))));
         }
         else if (dtor.name() == "~c")
         {

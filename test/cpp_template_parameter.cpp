@@ -151,13 +151,13 @@ using d = void;
                                                             cpp_builtin_type::build(cpp_char))));
                                         REQUIRE(!param.is_variadic());
                                         REQUIRE(param.default_value());
-                                        REQUIRE(equal_expressions(param.default_value().value(),
-                                                                  *cpp_unexposed_expression::
-                                                                      build(cpp_builtin_type::build(
-                                                                                cpp_nullptr),
-                                                                            cpp_token_string::
-                                                                                from_string(
-                                                                                    "nullptr"))));
+                                        REQUIRE(
+                                            equal_expressions(param.default_value().value(),
+                                                              *cpp_unexposed_expression::
+                                                                  build(cpp_builtin_type::build(
+                                                                            cpp_nullptr),
+                                                                        cpp_token_string::tokenize(
+                                                                            "nullptr"))));
                                     }
                                     else if (param.name() == "C")
                                     {

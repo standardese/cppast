@@ -24,6 +24,7 @@ set(tests
         cpp_preprocessor.cpp
         cpp_static_assert.cpp
         cpp_template_parameter.cpp
+        cpp_token.cpp
         cpp_type_alias.cpp
         cpp_variable.cpp
         integration.cpp
