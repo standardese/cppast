@@ -10,6 +10,7 @@ set(header
     ../include/cppast/compile_config.hpp
     ../include/cppast/cpp_alias_template.hpp
     ../include/cppast/cpp_array_type.hpp
+    ../include/cppast/cpp_attribute.hpp
     ../include/cppast/cpp_class.hpp
     ../include/cppast/cpp_class_template.hpp
     ../include/cppast/cpp_decltype_type.hpp
