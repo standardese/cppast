@@ -104,7 +104,7 @@ void ns::l()
                                               *cpp_unexposed_expression::
                                                   build(cpp_pointer_type::build(
                                                             cpp_builtin_type::build(cpp_float)),
-                                                        cpp_token_string::from_string("nullptr"))));
+                                                        cpp_token_string::tokenize("nullptr"))));
                     }
                     else
                         REQUIRE(false);
@@ -135,7 +135,7 @@ void ns::l()
                                             *cpp_decltype_type::build(
                                                 cpp_unexposed_expression::
                                                     build(cpp_builtin_type::build(cpp_int),
-                                                          cpp_token_string::from_string("42")))));
+                                                          cpp_token_string::tokenize("42")))));
                         REQUIRE(!param.default_value());
                     }
                     else
@@ -162,16 +162,17 @@ void ns::l()
                     equal_expressions(func.noexcept_condition().value(),
                                       *cpp_literal_expression::build(std::move(bool_t), "true")));
             else if (func.name() == "e")
-                REQUIRE(equal_expressions(func.noexcept_condition().value(),
-                                          *cpp_unexposed_expression::
-                                              build(std::move(bool_t),
-                                                    cpp_token_string::from_string("false"))));
+                REQUIRE(
+                    equal_expressions(func.noexcept_condition().value(),
+                                      *cpp_unexposed_expression::build(std::move(bool_t),
+                                                                       cpp_token_string::tokenize(
+                                                                           "false"))));
             else if (func.name() == "f")
                 REQUIRE(
                     equal_expressions(func.noexcept_condition().value(),
-                                      *cpp_unexposed_expression::
-                                          build(std::move(bool_t),
-                                                cpp_token_string::from_string("noexcept(d())"))));
+                                      *cpp_unexposed_expression::build(std::move(bool_t),
+                                                                       cpp_token_string::tokenize(
+                                                                           "noexcept(d())"))));
         }
         else if (func.name() == "g" || func.name() == "h" || func.name() == "i"
                  || func.name() == "j")

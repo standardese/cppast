@@ -16,8 +16,8 @@ namespace
     cpp_namespace::builder make_ns_builder(const detail::parse_context& context,
                                            const CXCursor&              cur)
     {
-        detail::tokenizer    tokenizer(context.tu, context.file, cur);
-        detail::token_stream stream(tokenizer, cur);
+        detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+        detail::cxtoken_stream stream(tokenizer, cur);
         // [inline] namespace [<attribute>] <identifier> {
 
         auto is_inline = false;
@@ -83,8 +83,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_namespace_alias(const detail::pars
 {
     DEBUG_ASSERT(cur.kind == CXCursor_NamespaceAlias, detail::assert_handler{});
 
-    detail::tokenizer    tokenizer(context.tu, context.file, cur);
-    detail::token_stream stream(tokenizer, cur);
+    detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+    detail::cxtoken_stream stream(tokenizer, cur);
 
     // namespace <identifier> = <nested identifier>;
     detail::skip(stream, "namespace");
@@ -108,8 +108,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_using_directive(const detail::pars
 {
     DEBUG_ASSERT(cur.kind == CXCursor_UsingDirective, detail::assert_handler{});
 
-    detail::tokenizer    tokenizer(context.tu, context.file, cur);
-    detail::token_stream stream(tokenizer, cur);
+    detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+    detail::cxtoken_stream stream(tokenizer, cur);
 
     // using namespace <nested identifier>;
     detail::skip(stream, "using");
@@ -182,8 +182,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_using_declaration(
 {
     DEBUG_ASSERT(cur.kind == CXCursor_UsingDeclaration, detail::assert_handler{});
 
-    detail::tokenizer    tokenizer(context.tu, context.file, cur);
-    detail::token_stream stream(tokenizer, cur);
+    detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+    detail::cxtoken_stream stream(tokenizer, cur);
 
     // using <nested identifier>;
     detail::skip(stream, "using");

@@ -14,8 +14,8 @@ std::unique_ptr<cpp_expression> detail::parse_expression(const detail::parse_con
     auto kind = clang_getCursorKind(cur);
     DEBUG_ASSERT(clang_isExpression(kind), detail::assert_handler{});
 
-    detail::tokenizer    tokenizer(context.tu, context.file, cur);
-    detail::token_stream stream(tokenizer, cur);
+    detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+    detail::cxtoken_stream stream(tokenizer, cur);
 
     auto type = parse_type(context, cur, clang_getCursorType(cur));
     auto expr = to_string(stream, stream.end());
@@ -36,8 +36,8 @@ std::unique_ptr<cpp_expression> detail::parse_expression(const detail::parse_con
 }
 
 std::unique_ptr<cpp_expression> detail::parse_raw_expression(const parse_context&,
-                                                             token_stream&             stream,
-                                                             token_iterator            end,
+                                                             cxtoken_stream&           stream,
+                                                             cxtoken_iterator          end,
                                                              std::unique_ptr<cpp_type> type)
 {
     if (stream.done())

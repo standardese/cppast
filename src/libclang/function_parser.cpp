@@ -92,7 +92,7 @@ namespace
     }
 
     // precondition: after the name
-    void skip_parameters(detail::token_stream& stream)
+    void skip_parameters(detail::cxtoken_stream& stream)
     {
         if (stream.peek() == "<")
             // specialization arguments
@@ -218,7 +218,7 @@ namespace
         bool is_friend    = false;
     };
 
-    bool prefix_end(detail::token_stream& stream, const char* name, bool is_ctor)
+    bool prefix_end(detail::cxtoken_stream& stream, const char* name, bool is_ctor)
     {
         auto cur = stream.cur();
         // name can have multiple tokens if it is an operator
@@ -262,7 +262,7 @@ namespace
             return true;
     }
 
-    prefix_info parse_prefix_info(detail::token_stream& stream, const char* name, bool is_ctor)
+    prefix_info parse_prefix_info(detail::cxtoken_stream& stream, const char* name, bool is_ctor)
     {
         prefix_info result;
 
@@ -302,7 +302,7 @@ namespace
         }
     };
 
-    cpp_cv parse_cv(detail::token_stream& stream)
+    cpp_cv parse_cv(detail::cxtoken_stream& stream)
     {
         if (detail::skip_if(stream, "const"))
         {
@@ -322,7 +322,7 @@ namespace
             return cpp_cv_none;
     }
 
-    cpp_reference parse_ref(detail::token_stream& stream)
+    cpp_reference parse_ref(detail::cxtoken_stream& stream)
     {
         if (detail::skip_if(stream, "&"))
             return cpp_ref_lvalue;
@@ -332,7 +332,7 @@ namespace
             return cpp_ref_none;
     }
 
-    std::unique_ptr<cpp_expression> parse_noexcept(detail::token_stream&        stream,
+    std::unique_ptr<cpp_expression> parse_noexcept(detail::cxtoken_stream&      stream,
                                                    const detail::parse_context& context)
     {
         if (!detail::skip_if(stream, "noexcept"))
@@ -351,7 +351,7 @@ namespace
         return expr;
     }
 
-    cpp_function_body_kind parse_body_kind(detail::token_stream& stream, bool& pure_virtual)
+    cpp_function_body_kind parse_body_kind(detail::cxtoken_stream& stream, bool& pure_virtual)
     {
         pure_virtual = false;
         if (detail::skip_if(stream, "default"))
@@ -369,7 +369,7 @@ namespace
         return cpp_function_declaration;
     }
 
-    void parse_body(detail::token_stream& stream, suffix_info& result, bool allow_virtual)
+    void parse_body(detail::cxtoken_stream& stream, suffix_info& result, bool allow_virtual)
     {
         auto pure_virtual = false;
         result.body_kind  = parse_body_kind(stream, pure_virtual);
@@ -385,7 +385,7 @@ namespace
     }
 
     // precondition: we've skipped the function parameters
-    suffix_info parse_suffix_info(detail::token_stream&        stream,
+    suffix_info parse_suffix_info(detail::cxtoken_stream&      stream,
                                   const detail::parse_context& context, bool allow_qualifier,
                                   bool allow_virtual)
     {
@@ -488,8 +488,8 @@ namespace
     {
         auto name = detail::get_cursor_name(cur);
 
-        detail::tokenizer    tokenizer(context.tu, context.file, cur);
-        detail::token_stream stream(tokenizer, cur);
+        detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+        detail::cxtoken_stream stream(tokenizer, cur);
 
         auto prefix = parse_prefix_info(stream, name.c_str(), false);
         DEBUG_ASSERT(!prefix.is_virtual && !prefix.is_explicit, detail::parse_error_handler{}, cur,
@@ -611,7 +611,7 @@ namespace
     template <class Builder>
     std::unique_ptr<cpp_entity> handle_suffix(const detail::parse_context& context,
                                               const CXCursor& cur, Builder& builder,
-                                              detail::token_stream& stream, bool is_virtual,
+                                              detail::cxtoken_stream& stream, bool is_virtual,
                                               type_safe::optional<cpp_entity_ref> semantic_parent)
     {
         auto allow_qualifiers = set_qualifier(0, builder, cpp_cv_none, cpp_ref_none);
@@ -640,8 +640,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
                  detail::assert_handler{});
     auto name = detail::get_cursor_name(cur);
 
-    detail::tokenizer    tokenizer(context.tu, context.file, cur);
-    detail::token_stream stream(tokenizer, cur);
+    detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+    detail::cxtoken_stream stream(tokenizer, cur);
 
     auto prefix = parse_prefix_info(stream, name.c_str(), false);
     DEBUG_ASSERT(!prefix.is_explicit, detail::parse_error_handler{}, cur,
@@ -670,8 +670,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
                      || clang_getTemplateCursorKind(cur) == CXCursor_ConversionFunction,
                  detail::assert_handler{});
 
-    detail::tokenizer    tokenizer(context.tu, context.file, cur);
-    detail::token_stream stream(tokenizer, cur);
+    detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+    detail::cxtoken_stream stream(tokenizer, cur);
 
     auto prefix = parse_prefix_info(stream, "operator", false);
     // heuristic to find arguments tokens
@@ -735,8 +735,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
     if (pos != std::string::npos)
         name.erase(pos);
 
-    detail::tokenizer    tokenizer(context.tu, context.file, cur);
-    detail::token_stream stream(tokenizer, cur);
+    detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+    detail::cxtoken_stream stream(tokenizer, cur);
 
     auto prefix = parse_prefix_info(stream, name.c_str(), true);
     DEBUG_ASSERT(!prefix.is_virtual, detail::parse_error_handler{}, cur,
@@ -771,8 +771,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_destructor(const detail::parse_con
 {
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_Destructor, detail::assert_handler{});
 
-    detail::tokenizer    tokenizer(context.tu, context.file, cur);
-    detail::token_stream stream(tokenizer, cur);
+    detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+    detail::cxtoken_stream stream(tokenizer, cur);
 
     auto prefix_info = parse_prefix_info(stream, "~", false);
     DEBUG_ASSERT(!prefix_info.is_constexpr && !prefix_info.is_explicit, detail::assert_handler{});

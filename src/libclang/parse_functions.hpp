@@ -9,7 +9,7 @@
 #include <cppast/parser.hpp>
 
 #include "raii_wrapper.hpp"
-#include "tokenizer.hpp"   // for convenience
+#include "cxtokenizer.hpp" // for convenience
 #include "parse_error.hpp" // for convenience
 #include "preprocessor.hpp"
 
@@ -76,8 +76,8 @@ namespace cppast
         // and ends at the given iterator
         // this is required for situations where there is no type exposed,
         // like default type of a template type parameter
-        std::unique_ptr<cpp_type> parse_raw_type(const parse_context& context, token_stream& stream,
-                                                 token_iterator end);
+        std::unique_ptr<cpp_type> parse_raw_type(const parse_context& context,
+                                                 cxtoken_stream& stream, cxtoken_iterator end);
 
         std::unique_ptr<cpp_expression> parse_expression(const parse_context& context,
                                                          const CXCursor&      cur);
@@ -86,8 +86,8 @@ namespace cppast
         // this is required for situations where there is no expression cursor exposed,
         // like member initializers
         std::unique_ptr<cpp_expression> parse_raw_expression(const parse_context&      context,
-                                                             token_stream&             stream,
-                                                             token_iterator            end,
+                                                             cxtoken_stream&           stream,
+                                                             cxtoken_iterator          end,
                                                              std::unique_ptr<cpp_type> type);
 
         // parse_entity() dispatches on the cursor type

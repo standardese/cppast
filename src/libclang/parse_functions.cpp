@@ -215,10 +215,10 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
                                               detail::get_cursor_kind_spelling(cur).c_str(), "'"));
 
         // build unexposed entity
-        auto                 name = detail::get_cursor_name(cur);
-        detail::tokenizer    tokenizer(context.tu, context.file, cur);
-        detail::token_stream stream(tokenizer, cur);
-        auto                 spelling = detail::to_string(stream, stream.end());
+        auto                   name = detail::get_cursor_name(cur);
+        detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+        detail::cxtoken_stream stream(tokenizer, cur);
+        auto                   spelling = detail::to_string(stream, stream.end());
 
         std::unique_ptr<cppast::cpp_entity> entity;
         if (name.empty())

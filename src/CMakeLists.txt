@@ -95,8 +95,8 @@ set(libclang_source
         libclang/preprocessor.hpp
         libclang/raii_wrapper.hpp
         libclang/template_parser.cpp
-        libclang/tokenizer.cpp
-        libclang/tokenizer.hpp
+    libclang/cxtokenizer.cpp
+    libclang/cxtokenizer.hpp
         libclang/type_parser.cpp
         libclang/variable_parser.cpp)
 

@@ -39,7 +39,7 @@ struct foo
 
             // all initializers are unexposed
             auto def = cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_float),
-                                                       cpp_token_string::from_string("3.14f"));
+                                                       cpp_token_string::tokenize("3.14f"));
             REQUIRE(var.default_value());
             REQUIRE(equal_expressions(var.default_value().value(), *def));
 

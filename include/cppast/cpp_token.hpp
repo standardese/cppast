@@ -15,12 +15,13 @@ namespace cppast
     /// The kinds of C++ tokens.
     enum class cpp_token_kind
     {
-        identifier,  //< Any identifier.
-        keyword,     //< Any keyword.
-        literal,     //< Any literal.
-        punctuation, //< Any other punctuation.
-
-        unknown, //< An unknown token.
+        identifier,     //< Any identifier.
+        keyword,        //< Any keyword.
+        int_literal,    //< An integer literal.
+        float_literal,  //< A floating point literal.
+        char_literal,   //< A character literal.
+        string_literal, //< A string literal.
+        punctuation     //< Any other punctuation.
     };
 
     /// A C++ token.
@@ -74,15 +75,14 @@ namespace cppast
             std::vector<cpp_token> tokens_;
         };
 
+        /// Tokenizes a string.
+        /// \effects Splits the string into C++ tokens.
+        /// The string must contain valid tokens and must already be preprocessed (i.e. translation phase 6 is already done).
+        /// \returns The tokenized string.
+        static cpp_token_string tokenize(std::string str);
+
         /// \effects Creates it from a sequence of tokens.
         cpp_token_string(std::vector<cpp_token> tokens) : tokens_(std::move(tokens)) {}
-
-        /// \effects Creates from a string.
-        /// \notes This does not do tokenization, it will only store a single, unknown token!
-        static cpp_token_string from_string(std::string str)
-        {
-            return cpp_token_string({cpp_token(cpp_token_kind::unknown, std::move(str))});
-        }
 
         /// \exclude target
         using iterator = std::vector<cpp_token>::const_iterator;

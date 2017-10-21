@@ -246,7 +246,7 @@ namespace
         return size_expr.empty() ?
                    nullptr :
                    cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_ulonglong),
-                                                   cpp_token_string::from_string(
+                                                   cpp_token_string::tokenize(
                                                        std::string(size_expr.rbegin(),
                                                                    size_expr.rend())));
     }
@@ -488,7 +488,7 @@ namespace
 
             return cpp_decltype_type::build(
                 cpp_unexposed_expression::build(cpp_unexposed_type::build("<decltype>"),
-                                                cpp_token_string::from_string(spelling)));
+                                                cpp_token_string::tokenize(spelling)));
         });
     }
 
@@ -731,8 +731,8 @@ std::unique_ptr<cpp_type> detail::parse_type(const detail::parse_context& contex
 }
 
 std::unique_ptr<cpp_type> detail::parse_raw_type(const detail::parse_context&,
-                                                 detail::token_stream&  stream,
-                                                 detail::token_iterator end)
+                                                 detail::cxtoken_stream&  stream,
+                                                 detail::cxtoken_iterator end)
 {
     auto result = detail::to_string(stream, end);
     return cpp_unexposed_type::build(result.as_string());

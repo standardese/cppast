@@ -2,8 +2,8 @@
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
-#ifndef CPPAST_TOKENIZER_HPP_INCLUDED
-#define CPPAST_TOKENIZER_HPP_INCLUDED
+#ifndef CPPAST_CXTOKENIZER_HPP_INCLUDED
+#define CPPAST_CXTOKENIZER_HPP_INCLUDED
 
 #include <string>
 #include <vector>
@@ -16,10 +16,10 @@ namespace cppast
 {
     namespace detail
     {
-        class token
+        class cxtoken
         {
         public:
-            explicit token(const CXTranslationUnit& tu_unit, const CXToken& token);
+            explicit cxtoken(const CXTranslationUnit& tu_unit, const CXToken& token);
 
             const cxstring& value() const noexcept
             {
@@ -41,40 +41,40 @@ namespace cppast
             CXTokenKind kind_;
         };
 
-        inline bool operator==(const token& tok, const char* str) noexcept
+        inline bool operator==(const cxtoken& tok, const char* str) noexcept
         {
             return tok.value() == str;
         }
 
-        inline bool operator==(const char* str, const token& tok) noexcept
+        inline bool operator==(const char* str, const cxtoken& tok) noexcept
         {
             return str == tok.value();
         }
 
-        inline bool operator!=(const token& tok, const char* str) noexcept
+        inline bool operator!=(const cxtoken& tok, const char* str) noexcept
         {
             return !(tok == str);
         }
 
-        inline bool operator!=(const char* str, const token& tok) noexcept
+        inline bool operator!=(const char* str, const cxtoken& tok) noexcept
         {
             return !(str == tok);
         }
 
-        using token_iterator = std::vector<token>::const_iterator;
+        using cxtoken_iterator = std::vector<cxtoken>::const_iterator;
 
-        class tokenizer
+        class cxtokenizer
         {
         public:
-            explicit tokenizer(const CXTranslationUnit& tu, const CXFile& file,
-                               const CXCursor& cur);
+            explicit cxtokenizer(const CXTranslationUnit& tu, const CXFile& file,
+                                 const CXCursor& cur);
 
-            token_iterator begin() const noexcept
+            cxtoken_iterator begin() const noexcept
             {
                 return tokens_.begin();
             }
 
-            token_iterator end() const noexcept
+            cxtoken_iterator end() const noexcept
             {
                 return tokens_.end();
             }
@@ -88,14 +88,14 @@ namespace cppast
             }
 
         private:
-            std::vector<token> tokens_;
-            bool               unmunch_;
+            std::vector<cxtoken> tokens_;
+            bool                 unmunch_;
         };
 
-        class token_stream
+        class cxtoken_stream
         {
         public:
-            explicit token_stream(const tokenizer& tokenizer, const CXCursor& cur)
+            explicit cxtoken_stream(const cxtokenizer& tokenizer, const CXCursor& cur)
             : cursor_(cur),
               begin_(tokenizer.begin()),
               cur_(begin_),
@@ -104,7 +104,7 @@ namespace cppast
             {
             }
 
-            const token& peek() const noexcept
+            const cxtoken& peek() const noexcept
             {
                 if (done())
                     return *std::prev(end_);
@@ -123,7 +123,7 @@ namespace cppast
                     --cur_;
             }
 
-            const token& get() noexcept
+            const cxtoken& get() noexcept
             {
                 auto& result = peek();
                 bump();
@@ -140,22 +140,22 @@ namespace cppast
                 return cursor_;
             }
 
-            token_iterator begin() const noexcept
+            cxtoken_iterator begin() const noexcept
             {
                 return begin_;
             }
 
-            token_iterator cur() const noexcept
+            cxtoken_iterator cur() const noexcept
             {
                 return cur_;
             }
 
-            token_iterator end() const noexcept
+            cxtoken_iterator end() const noexcept
             {
                 return end_;
             }
 
-            void set_cur(token_iterator iter) noexcept
+            void set_cur(cxtoken_iterator iter) noexcept
             {
                 cur_ = iter;
             }
@@ -166,41 +166,41 @@ namespace cppast
             }
 
         private:
-            CXCursor       cursor_;
-            token_iterator begin_, cur_, end_;
-            bool           unmunch_;
+            CXCursor         cursor_;
+            cxtoken_iterator begin_, cur_, end_;
+            bool             unmunch_;
         };
 
         // skips the next token
         // asserts that it has the given string
-        void skip(token_stream& stream, const char* str);
+        void skip(cxtoken_stream& stream, const char* str);
 
         // skips the next token if it has the given string
         // if multi_token == true, str can consist of multiple tokens optionally separated by whitespace
-        bool skip_if(token_stream& stream, const char* str, bool multi_token = false);
+        bool skip_if(cxtoken_stream& stream, const char* str, bool multi_token = false);
 
         // returns the location of the closing bracket
         // the current token must be (,[,{ or <
         // note: < might not work in the arguments of a template specialization
-        token_iterator find_closing_bracket(token_stream stream);
+        cxtoken_iterator find_closing_bracket(cxtoken_stream stream);
 
         // skips brackets
         // the current token must be (,[,{ or <
         // note: < might not work in the arguments of a template specialization
-        void skip_brackets(token_stream& stream);
+        void skip_brackets(cxtoken_stream& stream);
 
         // skips an attribute
-        bool skip_attribute(token_stream& stream);
+        bool skip_attribute(cxtoken_stream& stream);
 
         // converts a token range to a string
-        cpp_token_string to_string(token_stream& stream, token_iterator end);
+        cpp_token_string to_string(cxtoken_stream& stream, cxtoken_iterator end);
 
         // appends token to scope, if it is still valid
         // else clears it
         // note: does not consume the token if it is not valid,
         // returns false in that case
-        bool append_scope(token_stream& stream, std::string& scope);
+        bool append_scope(cxtoken_stream& stream, std::string& scope);
     }
 } // namespace cppast::detail
 
-#endif // CPPAST_TOKENIZER_HPP_INCLUDED
+#endif // CPPAST_CXTOKENIZER_HPP_INCLUDED

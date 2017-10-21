@@ -17,8 +17,8 @@ std::unique_ptr<cpp_entity> detail::try_parse_cpp_language_linkage(const parse_c
     DEBUG_ASSERT(cur.kind == CXCursor_UnexposedDecl,
                  detail::assert_handler{}); // not exposed currently
 
-    detail::tokenizer    tokenizer(context.tu, context.file, cur);
-    detail::token_stream stream(tokenizer, cur);
+    detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+    detail::cxtoken_stream stream(tokenizer, cur);
 
     // extern <name> ...
     if (!detail::skip_if(stream, "extern"))

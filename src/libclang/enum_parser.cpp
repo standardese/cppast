@@ -20,8 +20,8 @@ namespace
         DEBUG_ASSERT(cur.kind == CXCursor_EnumConstantDecl, detail::parse_error_handler{}, cur,
                      "unexpected child cursor of enum");
 
-        detail::tokenizer    tokenizer(context.tu, context.file, cur);
-        detail::token_stream stream(tokenizer, cur);
+        detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+        detail::cxtoken_stream stream(tokenizer, cur);
 
         // <identifier> [<attribute>],
         // or: <identifier> [<attribute>] = <expression>,
@@ -47,9 +47,9 @@ namespace
     cpp_enum::builder make_enum_builder(const detail::parse_context& context, const CXCursor& cur,
                                         type_safe::optional<cpp_entity_ref>& semantic_parent)
     {
-        auto                 name = detail::get_cursor_name(cur);
-        detail::tokenizer    tokenizer(context.tu, context.file, cur);
-        detail::token_stream stream(tokenizer, cur);
+        auto                   name = detail::get_cursor_name(cur);
+        detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+        detail::cxtoken_stream stream(tokenizer, cur);
 
         // [<attribute>] enum [class] [<attribute>] name [: type] {
         detail::skip_attribute(stream);
