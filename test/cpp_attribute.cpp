@@ -68,6 +68,8 @@ alignas(type) int var;
                                      if (e.name() == "a" || e.name() == "b")
                                      {
                                          REQUIRE(attributes.size() == 2u);
+                                         REQUIRE(has_attribute(e, "attribute1"));
+                                         REQUIRE(has_attribute(e, "attribute2"));
                                          check_attribute(attr, "attribute1", type_safe::nullopt,
                                                          false);
                                          check_attribute(attributes[1u], "attribute2",
@@ -77,7 +79,10 @@ alignas(type) int var;
                                          check_attribute(attr, "variadic", type_safe::nullopt,
                                                          true);
                                      else if (e.name() == "d")
+                                     {
+                                         REQUIRE(has_attribute(e, "ns::attribute"));
                                          check_attribute(attr, "attribute", "ns", false);
+                                     }
                                      else if (e.name() == "e")
                                          check_attribute(attr, "attribute", type_safe::nullopt,
                                                          false, R"(arg1,arg2,+(){},42,"Hello!")");
@@ -89,8 +94,11 @@ alignas(type) int var;
                                                          type_safe::nullopt, false);
                                      }
                                      else if (e.name() == "g")
+                                     {
+                                         REQUIRE(has_attribute(e, cpp_attribute_kind::deprecated));
                                          check_attribute(attr, "deprecated", type_safe::nullopt,
                                                          false, "", cpp_attribute_kind::deprecated);
+                                     }
                                      else if (e.name() == "h")
                                          check_attribute(attr, "maybe_unused", type_safe::nullopt,
                                                          false, "",

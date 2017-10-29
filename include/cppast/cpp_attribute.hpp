@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <type_safe/optional.hpp>
+#include <type_safe/optional_ref.hpp>
 
 #include <cppast/cpp_token.hpp>
 
@@ -30,35 +31,6 @@ namespace cppast
         unknown, //< An unknown attribute.
     };
 
-    namespace detail
-    {
-        inline const char* get_attribute_name(cpp_attribute_kind kind)
-        {
-            switch (kind)
-            {
-            case cpp_attribute_kind::alignas_:
-                return "alignas";
-            case cpp_attribute_kind::carries_dependency:
-                return "carries_dependency";
-            case cpp_attribute_kind::deprecated:
-                return "deprecated";
-            case cpp_attribute_kind::fallthrough:
-                return "fallthrough";
-            case cpp_attribute_kind::maybe_unused:
-                return "maybe_unused";
-            case cpp_attribute_kind::nodiscard:
-                return "nodiscard";
-            case cpp_attribute_kind::noreturn:
-                return "noreturn";
-
-            case cpp_attribute_kind::unknown:
-                return "unknown";
-            }
-
-            return "<error>";
-        }
-    } // namespace detail
-
     /// A C++ attribute, including `alignas` specifiers.
     ///
     /// It consists of a name, an optional namespace scope and optional arguments.
@@ -72,12 +44,7 @@ namespace cppast
     {
     public:
         /// \effects Creates a known attribute, potentially with arguments.
-        cpp_attribute(cpp_attribute_kind kind, type_safe::optional<cpp_token_string> arguments)
-        : cpp_attribute(type_safe::nullopt, detail::get_attribute_name(kind), std::move(arguments),
-                        false)
-        {
-            kind_ = kind;
-        }
+        cpp_attribute(cpp_attribute_kind kind, type_safe::optional<cpp_token_string> arguments);
 
         /// \effects Creates an unknown attribute giving it the optional scope, names, arguments and whether it is variadic.
         cpp_attribute(type_safe::optional<std::string> scope, std::string name,
@@ -129,6 +96,28 @@ namespace cppast
 
     /// A list of C++ attributes.
     using cpp_attribute_list = std::vector<cpp_attribute>;
+
+    /// Checks whether an attribute is given.
+    /// \returns `true` if the given attribute list (1-2) / entity (3-4) contain
+    /// an attribute of the given name (1+3) / kind (2+4).
+    /// `false` otherwise.
+    /// \group has_attribute
+    type_safe::optional_ref<const cpp_attribute> has_attribute(const cpp_attribute_list& attributes,
+                                                               const std::string&        name);
+
+    /// \group has_attribute
+    type_safe::optional_ref<const cpp_attribute> has_attribute(const cpp_attribute_list& attributes,
+                                                               cpp_attribute_kind        kind);
+
+    class cpp_entity;
+
+    /// \group has_attribute
+    type_safe::optional_ref<const cpp_attribute> has_attribute(const cpp_entity&  e,
+                                                               const std::string& name);
+
+    /// \group has_attribute
+    type_safe::optional_ref<const cpp_attribute> has_attribute(const cpp_entity&  e,
+                                                               cpp_attribute_kind kind);
 } // namespace cppast
 
 #endif // CPPAST_CPP_ATTRIBUTE_HPP_INCLUDED

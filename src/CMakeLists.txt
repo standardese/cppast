@@ -51,6 +51,7 @@ set(header
 set(source
         code_generator.cpp
         cpp_alias_template.cpp
+        cpp_attribute.cpp
         cpp_class.cpp
         cpp_class_template.cpp
         cpp_entity.cpp
@@ -79,6 +80,8 @@ set(source
         visitor.cpp)
 set(libclang_source
         libclang/class_parser.cpp
+        libclang/cxtokenizer.cpp
+        libclang/cxtokenizer.hpp
         libclang/debug_helper.cpp
         libclang/debug_helper.hpp
         libclang/enum_parser.cpp
@@ -96,8 +99,6 @@ set(libclang_source
         libclang/preprocessor.hpp
         libclang/raii_wrapper.hpp
         libclang/template_parser.cpp
-    libclang/cxtokenizer.cpp
-    libclang/cxtokenizer.hpp
         libclang/type_parser.cpp
         libclang/variable_parser.cpp)
 
