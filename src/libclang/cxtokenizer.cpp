@@ -101,22 +101,50 @@ namespace
         auto end    = clang_getRangeEnd(extent);
 
         auto kind = clang_getCursorKind(cur);
-        if ((cursor_is_function(kind) || cursor_is_function(clang_getTemplateCursorKind(cur))
-             || kind == CXCursor_VarDecl || kind == CXCursor_FieldDecl || kind == CXCursor_ParmDecl
-             || kind == CXCursor_NonTypeTemplateParameter)
-            && token_after_is(tu, file, cur, begin, "]", -2)
-            && token_after_is(tu, file, cur, begin, "]", -3))
+        if (cursor_is_function(kind) || cursor_is_function(clang_getTemplateCursorKind(cur))
+            || kind == CXCursor_VarDecl || kind == CXCursor_FieldDecl || kind == CXCursor_ParmDecl
+            || kind == CXCursor_NonTypeTemplateParameter)
         {
-            while (!token_after_is(tu, file, cur, begin, "[", -1)
-                   && !token_after_is(tu, file, cur, begin, "[", -2))
-                begin = get_next_location(tu, file, begin, -1);
+            if (token_after_is(tu, file, cur, begin, "]", -2)
+                && token_after_is(tu, file, cur, begin, "]", -3))
+            {
+                while (!token_after_is(tu, file, cur, begin, "[", -1)
+                       && !token_after_is(tu, file, cur, begin, "[", -2))
+                    begin = get_next_location(tu, file, begin, -1);
 
-            begin = get_next_location(tu, file, begin, -3);
-            DEBUG_ASSERT(token_after_is(tu, file, cur, begin, "[")
-                             && token_after_is(tu, file, cur, get_next_location(tu, file, begin),
-                                               "["),
-                         detail::parse_error_handler{}, cur,
-                         "error in pre-function attribute parsing");
+                begin = get_next_location(tu, file, begin, -3);
+                DEBUG_ASSERT(token_after_is(tu, file, cur, begin, "[")
+                                 && token_after_is(tu, file, cur,
+                                                   get_next_location(tu, file, begin), "["),
+                             detail::parse_error_handler{}, cur,
+                             "error in pre-function attribute parsing");
+            }
+            else if (token_after_is(tu, file, cur, begin, ")", -2))
+            {
+                // maybe alignas specifier
+                auto save_begin = begin;
+
+                auto paren_count = 1;
+                begin            = get_next_location(tu, file, begin, -1);
+                for (auto last_begin = begin; paren_count != 0; last_begin = begin)
+                {
+                    begin = get_next_location(tu, file, begin, -1);
+                    if (token_after_is(tu, file, cur, begin, "(", -1))
+                        --paren_count;
+                    else if (token_after_is(tu, file, cur, begin, ")", -1))
+                        ++paren_count;
+
+                    DEBUG_ASSERT(!clang_equalLocations(last_begin, begin),
+                                 detail::parse_error_handler{}, cur,
+                                 "infinite loop in alignas parsing");
+                }
+                begin = get_next_location(tu, file, begin, -(int(std::strlen("alignas")) + 1));
+
+                if (token_after_is(tu, file, cur, begin, "alignas"))
+                    begin = get_next_location(tu, file, begin, -1);
+                else
+                    begin = save_begin;
+            }
         }
 
         if (cursor_is_function(kind) || cursor_is_function(clang_getTemplateCursorKind(cur)))
@@ -431,6 +459,19 @@ namespace
             return cpp_attribute_kind::unknown;
     }
 
+    cpp_token_string parse_attribute_arguments(detail::cxtoken_stream& stream)
+    {
+        auto end = find_closing_bracket(stream);
+        skip(stream, "(");
+
+        auto arguments = detail::to_string(stream, end);
+
+        stream.set_cur(end);
+        skip(stream, ")");
+
+        return arguments;
+    }
+
     cpp_attribute parse_attribute_token(detail::cxtoken_stream&          stream,
                                         type_safe::optional<std::string> scope)
     {
@@ -455,15 +496,7 @@ namespace
         // parse arguments
         type_safe::optional<cpp_token_string> arguments;
         if (stream.peek() == "(")
-        {
-            auto end = find_closing_bracket(stream);
-            skip(stream, "(");
-
-            arguments = detail::to_string(stream, end);
-
-            stream.set_cur(end);
-            skip(stream, ")");
-        }
+            arguments = parse_attribute_arguments(stream);
 
         // parse variadic token
         auto is_variadic = skip_if(stream, "...");
@@ -498,6 +531,14 @@ namespace
             //               ^
             skip(stream, "]");
             return true;
+        }
+        else if (skip_if(stream, "alignas"))
+        {
+            // alignas specifier
+            // alignas(<some arguments>)
+            //        ^
+            auto arguments = parse_attribute_arguments(stream);
+            result.push_back(cpp_attribute(cpp_attribute_kind::alignas_, std::move(arguments)));
         }
         else if (skip_if(stream, "__attribute__"))
         {

@@ -5,6 +5,7 @@
 #include <cppast/cpp_attribute.hpp>
 
 #include <cppast/cpp_function.hpp>
+#include <cppast/cpp_variable.hpp>
 
 #include "test_parser.hpp"
 
@@ -34,6 +35,10 @@ TEST_CASE("cpp_attribute")
 [[maybe_unused]] void h();
 [[nodiscard]] int i();
 [[noreturn]] void j();
+
+// alignas
+struct alignas(8) type {};
+alignas(type) int var;
 )";
 
     auto file = parse({}, "cpp_attribute.cpp", code);
@@ -99,6 +104,28 @@ TEST_CASE("cpp_attribute")
                                  },
                                  false);
     REQUIRE(count == 9);
+
+    count = test_visit<cpp_class>(*file,
+                                  [&](const cpp_entity& e) {
+                                      auto& attributes = e.attributes();
+                                      REQUIRE(attributes.size() == 1u);
+                                      auto& attr = attributes.front();
+                                      check_attribute(attr, "alignas", type_safe::nullopt, false,
+                                                      "8", cpp_attribute_kind::alignas_);
+                                  },
+                                  false);
+    REQUIRE(count == 1u);
+
+    count = test_visit<cpp_variable>(*file,
+                                     [&](const cpp_entity& e) {
+                                         auto& attributes = e.attributes();
+                                         REQUIRE(attributes.size() == 1u);
+                                         auto& attr = attributes.front();
+                                         check_attribute(attr, "alignas", type_safe::nullopt, false,
+                                                         "type", cpp_attribute_kind::alignas_);
+                                     },
+                                     false);
+    REQUIRE(count == 1u);
 }
 
 TEST_CASE("cpp_attribute matching")
