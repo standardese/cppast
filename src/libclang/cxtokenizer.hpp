@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include <cppast/cpp_attribute.hpp>
 #include <cppast/cpp_token.hpp>
 
 #include "raii_wrapper.hpp"
@@ -189,8 +190,8 @@ namespace cppast
         // note: < might not work in the arguments of a template specialization
         void skip_brackets(cxtoken_stream& stream);
 
-        // skips an attribute
-        bool skip_attribute(cxtoken_stream& stream);
+        // parses attributes
+        cpp_attribute_list parse_attributes(cxtoken_stream& stream);
 
         // converts a token range to a string
         cpp_token_string to_string(cxtoken_stream& stream, cxtoken_iterator end);

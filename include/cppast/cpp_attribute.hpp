@@ -17,6 +17,8 @@ namespace cppast
     /// The known C++ attributes.
     enum class cpp_attribute_kind
     {
+        // update get_attribute_kind() in tokenizer, when updating this
+
         alignas_,
         carries_dependency,
         deprecated,
@@ -52,6 +54,8 @@ namespace cppast
             case cpp_attribute_kind::unknown:
                 return "unknown";
             }
+
+            return "<error>";
         }
     } // namespace detail
 

@@ -85,7 +85,9 @@ namespace
 
         auto name = detail::get_cursor_name(cur);
         auto type = clang_getCursorType(cur);
-        auto def  = detail::parse_default_value(context, cur, name.c_str());
+
+        cpp_attribute_list attributes;
+        auto def = detail::parse_default_value(attributes, context, cur, name.c_str());
 
         detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
         detail::cxtoken_stream stream(tokenizer, cur);
@@ -108,10 +110,13 @@ namespace
                 break;
         }
 
-        return cpp_non_type_template_parameter::build(*context.idx, detail::get_entity_id(cur),
-                                                      name.c_str(),
-                                                      detail::parse_type(context, cur, type),
-                                                      is_variadic, std::move(def));
+        auto result =
+            cpp_non_type_template_parameter::build(*context.idx, detail::get_entity_id(cur),
+                                                   name.c_str(),
+                                                   detail::parse_type(context, cur, type),
+                                                   is_variadic, std::move(def));
+        result->add_attribute(attributes);
+        return result;
     }
 
     std::unique_ptr<cpp_template_template_parameter> parse_template_parameter(
@@ -196,6 +201,17 @@ namespace
                 builder.add_parameter(parse_template_parameter(context, child));
         });
     }
+
+    void handle_comment_attributes(cpp_entity& templ_entity, cpp_entity& non_template)
+    {
+        // steal comment
+        auto comment = type_safe::copy(non_template.comment());
+        non_template.set_comment(type_safe::nullopt);
+        templ_entity.set_comment(std::move(comment));
+
+        // copy attributes over
+        templ_entity.add_attribute(non_template.attributes());
+    }
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_alias_template(const detail::parse_context& context,
@@ -210,6 +226,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_alias_template(const detail::parse
     if (!builder)
         return nullptr;
     context.comments.match(builder.value().get(), cur);
+    builder.value().get().add_attribute(builder.value().get().begin()->attributes());
     parse_parameters(builder.value(), context, cur);
     return builder.value().finish(*context.idx, detail::get_entity_id(cur),
                                   false); // not a definition
@@ -245,15 +262,12 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_function_template(
 
     if (!func)
         return nullptr;
-
-    // steal comment
-    auto comment = type_safe::copy(func->comment());
-    func->set_comment(type_safe::nullopt);
+    auto func_ptr = func.get();
 
     cpp_function_template::builder builder(
         std::unique_ptr<cpp_function_base>(static_cast<cpp_function_base*>(func.release())));
-    builder.get().set_comment(std::move(comment));
     parse_parameters(builder, context, cur);
+    handle_comment_attributes(builder.get(), *func_ptr);
     return builder.finish(*context.idx, detail::get_entity_id(cur),
                           builder.get().function().is_definition());
 }
@@ -315,16 +329,13 @@ std::unique_ptr<cpp_entity> detail::try_parse_cpp_function_template_specializati
     }
     if (!func)
         return nullptr;
-
-    // steal comment
-    auto comment = type_safe::copy(func->comment());
-    func->set_comment(type_safe::nullopt);
+    auto func_ptr = func.get();
 
     cpp_function_template_specialization::builder
         builder(std::unique_ptr<cpp_function_base>(static_cast<cpp_function_base*>(func.release())),
                 cpp_template_ref(detail::get_entity_id(templ), ""));
-    builder.get().set_comment(std::move(comment));
     parse_arguments(builder, context, cur);
+    handle_comment_attributes(builder.get(), *func_ptr);
     return builder.finish(*context.idx, detail::get_entity_id(cur),
                           builder.get().function().is_definition());
 }
@@ -337,14 +348,11 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class_template(const detail::parse
     auto c = detail::parse_cpp_class(context, cur, clang_getNullCursor());
     if (!c)
         return nullptr;
-
-    // steal comment
-    auto comment = type_safe::copy(c->comment());
-    c->set_comment(type_safe::nullopt);
+    auto c_ptr = c.get();
 
     cpp_class_template::builder builder(
         std::unique_ptr<cpp_class>(static_cast<cpp_class*>(c.release())));
-    builder.get().set_comment(std::move(comment));
+    handle_comment_attributes(builder.get(), *c_ptr);
     parse_parameters(builder, context, cur);
     return builder.finish(*context.idx, detail::get_entity_id(cur),
                           builder.get().class_().is_definition());
@@ -377,15 +385,12 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class_template_specialization(
     auto c       = detail::parse_cpp_class(context, cur, clang_getNullCursor());
     if (!c)
         return nullptr;
-
-    // steal comment
-    auto comment = type_safe::copy(c->comment());
-    c->set_comment(type_safe::nullopt);
+    auto c_ptr = c.get();
 
     cpp_class_template_specialization::builder
         builder(std::unique_ptr<cpp_class>(static_cast<cpp_class*>(c.release())),
                 cpp_template_ref(detail::get_entity_id(primary), ""));
-    builder.get().set_comment(std::move(comment));
+    handle_comment_attributes(builder.get(), *c_ptr);
     parse_parameters(builder, context, cur);
     parse_arguments(builder, context, cur);
     return builder.finish(*context.idx, detail::get_entity_id(cur),

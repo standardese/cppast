@@ -136,6 +136,12 @@ namespace cppast
             attributes_.push_back(std::move(attr));
         }
 
+        /// \effects Adds multiple arguments for that entity.
+        void add_attribute(const cpp_attribute_list& list) noexcept
+        {
+            attributes_.insert(attributes_.end(), list.begin(), list.end());
+        }
+
         /// \returns The specified user data.
         void* user_data() const noexcept
         {

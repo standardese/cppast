@@ -25,8 +25,8 @@ namespace
 
         // <identifier> [<attribute>],
         // or: <identifier> [<attribute>] = <expression>,
-        auto& name = stream.get().value();
-        detail::skip_attribute(stream);
+        auto& name       = stream.get().value();
+        auto  attributes = detail::parse_attributes(stream);
 
         std::unique_ptr<cpp_expression> value;
         if (detail::skip_if(stream, "="))
@@ -40,8 +40,10 @@ namespace
             });
         }
 
-        return cpp_enum_value::build(*context.idx, detail::get_entity_id(cur), name.c_str(),
-                                     std::move(value));
+        auto result = cpp_enum_value::build(*context.idx, detail::get_entity_id(cur), name.c_str(),
+                                            std::move(value));
+        result->add_attribute(attributes);
+        return result;
     }
 
     cpp_enum::builder make_enum_builder(const detail::parse_context& context, const CXCursor& cur,
@@ -51,11 +53,11 @@ namespace
         detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
         detail::cxtoken_stream stream(tokenizer, cur);
 
-        // [<attribute>] enum [class] [<attribute>] name [: type] {
-        detail::skip_attribute(stream);
+        // enum [class/struct] [<attribute>] name [: type] {
         detail::skip(stream, "enum");
-        auto scoped = detail::skip_if(stream, "class");
-        detail::skip_attribute(stream);
+        auto scoped     = detail::skip_if(stream, "class") || detail::skip_if(stream, "struct");
+        auto attributes = detail::parse_attributes(stream);
+
         std::string scope;
         while (!detail::skip_if(stream, name.c_str()))
             if (!detail::append_scope(stream, scope))
@@ -70,7 +72,9 @@ namespace
         auto type       = detail::parse_type(context, cur, clang_getEnumDeclIntegerType(cur));
         auto type_given = detail::skip_if(stream, ":");
 
-        return cpp_enum::builder(name.c_str(), scoped, std::move(type), type_given);
+        auto result = cpp_enum::builder(name.c_str(), scoped, std::move(type), type_given);
+        result.get().add_attribute(attributes);
+        return result;
     }
 }
 

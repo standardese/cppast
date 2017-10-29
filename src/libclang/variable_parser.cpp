@@ -11,7 +11,8 @@
 
 using namespace cppast;
 
-std::unique_ptr<cpp_expression> detail::parse_default_value(const detail::parse_context& context,
+std::unique_ptr<cpp_expression> detail::parse_default_value(cpp_attribute_list&          attributes,
+                                                            const detail::parse_context& context,
                                                             const CXCursor& cur, const char* name)
 {
     detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
@@ -36,7 +37,13 @@ std::unique_ptr<cpp_expression> detail::parse_default_value(const detail::parse_
             break;
         }
         else
-            stream.bump();
+        {
+            auto cur_attributes = detail::parse_attributes(stream);
+            if (cur_attributes.empty())
+                stream.bump();
+            else
+                attributes.insert(attributes.end(), cur_attributes.begin(), cur_attributes.end());
+        }
     }
     if (has_default)
         return parse_raw_expression(context, stream, stream.end(),
@@ -65,10 +72,12 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_variable(const detail::parse_conte
         else if (token.value() == "constexpr")
             is_constexpr = true;
 
+    cpp_attribute_list attributes;
+    auto               default_value = parse_default_value(attributes, context, cur, name.c_str());
+
     std::unique_ptr<cpp_variable> result;
     if (clang_isCursorDefinition(cur))
     {
-        auto default_value = parse_default_value(context, cur, name.c_str());
         result =
             cpp_variable::build(*context.idx, get_entity_id(cur), name.c_str(), std::move(type),
                                 std::move(default_value), storage_class, is_constexpr);
@@ -77,6 +86,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_variable(const detail::parse_conte
         result = cpp_variable::build_declaration(get_entity_id(cur), name.c_str(), std::move(type),
                                                  storage_class, is_constexpr);
     context.comments.match(*result, cur);
+    result->add_attribute(attributes);
     return std::move(result);
 }
 
@@ -88,6 +98,9 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_variable(const detail::pars
     auto name       = get_cursor_name(cur);
     auto type       = parse_type(context, cur, clang_getCursorType(cur));
     auto is_mutable = clang_CXXField_isMutable(cur) != 0u;
+
+    cpp_attribute_list attributes;
+    auto               default_value = parse_default_value(attributes, context, cur, name.c_str());
 
     std::unique_ptr<cpp_member_variable_base> result;
     if (clang_Cursor_isBitField(cur))
@@ -102,10 +115,10 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_variable(const detail::pars
     }
     else
     {
-        auto default_value = parse_default_value(context, cur, name.c_str());
         result = cpp_member_variable::build(*context.idx, get_entity_id(cur), name.c_str(),
                                             std::move(type), std::move(default_value), is_mutable);
     }
+    result->add_attribute(attributes);
     context.comments.match(*result, cur);
     return std::move(result);
 }
