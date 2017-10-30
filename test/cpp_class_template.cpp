@@ -92,6 +92,12 @@ class a<T*> {};
 /// };
 template <typename T>
 struct b<0, T> {};
+
+// extern template for good measure
+// currently not really supported but parsing must not fail
+/// template<>
+/// class a<int>;
+extern template class a<int>;
 )";
 
     cpp_entity_index idx;
@@ -263,5 +269,5 @@ struct b<0, T> {};
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 4u);
+    REQUIRE(count == 5u);
 }

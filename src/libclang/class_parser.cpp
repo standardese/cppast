@@ -24,6 +24,10 @@ namespace
 
         detail::skip_if(stream, "friend");
 
+        if (detail::skip_if(stream, "extern"))
+            // extern template
+            detail::skip(stream, "template");
+
         switch (kind)
         {
         case CXCursor_ClassDecl:
