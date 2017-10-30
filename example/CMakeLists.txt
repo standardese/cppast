@@ -3,7 +3,7 @@
 # found in the top-level directory of this distribution.
 
 function(_cppast_example name)
-    add_executable(cppast_example_${name} ${name}.cpp)
+    add_executable(cppast_example_${name} ${name}.cpp example_parser.hpp)
     target_link_libraries(cppast_example_${name} PUBLIC cppast)
 endfunction()
 
