@@ -15,6 +15,7 @@ option(CPPAST_ENABLE_ASSERTIONS "whether or not to enable internal assertions fo
 option(CPPAST_ENABLE_PRECONDITION_CHECKS "whether or not to enable precondition checks" ON)
 
 option(CPPAST_BUILD_TEST "whether or not to build the tests" ON)
+option(CPPAST_BUILD_EXAMPLE "whether or not to build the examples" ON)
 option(CPPAST_BUILD_TOOL "whether or not to build the tool" ON)
 option(BUILD_TESTING "build test" OFF) # The ctest variable for building tests
 
@@ -22,6 +23,12 @@ if(${CPPAST_BUILD_TEST} OR ${BUILD_TESTING} OR (CMAKE_CURRENT_SOURCE_DIR STREQUA
     set(build_test ON)
 else()
     set(build_test OFF)
+endif()
+
+if(${CPPAST_BUILD_EXAMPLE} OR (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
+    set(build_example ON)
+else()
+    set(build_example OFF)
 endif()
 
 if(${CPPAST_BUILD_TOOL} OR (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
@@ -42,6 +49,9 @@ add_subdirectory(src)
 
 if(${build_test})
     add_subdirectory(test)
+endif()
+if(${build_example})
+    add_subdirectory(example)
 endif()
 if(${build_tool})
     add_subdirectory(tool)
