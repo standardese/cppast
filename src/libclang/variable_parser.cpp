@@ -38,11 +38,8 @@ std::unique_ptr<cpp_expression> detail::parse_default_value(cpp_attribute_list& 
         }
         else
         {
-            auto cur_attributes = detail::parse_attributes(stream);
-            if (cur_attributes.empty())
-                stream.bump();
-            else
-                attributes.insert(attributes.end(), cur_attributes.begin(), cur_attributes.end());
+            auto cur_attributes = detail::parse_attributes(stream, true);
+            attributes.insert(attributes.end(), cur_attributes.begin(), cur_attributes.end());
         }
     }
     if (has_default)

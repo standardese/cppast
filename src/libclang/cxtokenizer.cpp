@@ -561,12 +561,16 @@ namespace
     }
 }
 
-cpp_attribute_list detail::parse_attributes(detail::cxtoken_stream& stream)
+cpp_attribute_list detail::parse_attributes(detail::cxtoken_stream& stream, bool skip_anway)
 {
     cpp_attribute_list result;
+
     while (parse_attribute_impl(result, stream))
-    {
-    }
+        skip_anway = false;
+
+    if (skip_anway)
+        stream.bump();
+
     return result;
 }
 

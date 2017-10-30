@@ -191,7 +191,8 @@ namespace cppast
         void skip_brackets(cxtoken_stream& stream);
 
         // parses attributes
-        cpp_attribute_list parse_attributes(cxtoken_stream& stream);
+        // if skip_anyway is true it will bump even if no attributes have been parsed
+        cpp_attribute_list parse_attributes(cxtoken_stream& stream, bool skip_anyway = false);
 
         // converts a token range to a string
         cpp_token_string to_string(cxtoken_stream& stream, cxtoken_iterator end);

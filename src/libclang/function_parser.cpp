@@ -281,12 +281,9 @@ namespace
                 result.is_explicit = true;
             else
             {
-                auto attributes = detail::parse_attributes(stream);
-                if (attributes.empty())
-                    stream.bump();
-                else
-                    result.attributes.insert(result.attributes.end(), attributes.begin(),
-                                             attributes.end());
+                auto attributes = detail::parse_attributes(stream, true);
+                result.attributes.insert(result.attributes.end(), attributes.begin(),
+                                         attributes.end());
             }
         }
         DEBUG_ASSERT(!stream.done(), detail::parse_error_handler{}, stream.cursor(),
@@ -296,8 +293,7 @@ namespace
         }
 
         auto attributes = detail::parse_attributes(stream);
-        if (!attributes.empty())
-            result.attributes.insert(result.attributes.end(), attributes.begin(), attributes.end());
+        result.attributes.insert(result.attributes.end(), attributes.begin(), attributes.end());
 
         return result;
     }
