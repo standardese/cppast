@@ -187,6 +187,8 @@ namespace cppast
                     [&](const std::string&) { return config; });
     }
 
+    /// Parses all files included by `file`.
+    /// \effects For each [cppast::cpp_include_directive]() in file it will parse the included file.
     template <class FileParser>
     void resolve_includes(FileParser& parser, const cpp_file& file,
                           typename FileParser::config config)

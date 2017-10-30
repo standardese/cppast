@@ -330,6 +330,8 @@ struct libclang_parser::impl
     }
 };
 
+libclang_parser::libclang_parser() : libclang_parser(default_logger()) {}
+
 libclang_parser::libclang_parser(type_safe::object_ref<const diagnostic_logger> logger)
 : parser(logger), pimpl_(new impl)
 {
