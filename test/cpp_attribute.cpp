@@ -45,8 +45,7 @@ alignas(type) int var;
 
     auto check_attribute = [](const cpp_attribute& attr, const char* name,
                               type_safe::optional<std::string> scope, bool variadic,
-                              const char*        args = "",
-                              cpp_attribute_kind kind = cpp_attribute_kind::unknown) {
+                              const char* args, cpp_attribute_kind kind) {
         REQUIRE(attr.kind() == kind);
         REQUIRE(attr.name() == name);
         REQUIRE(attr.scope() == scope);
@@ -71,27 +70,32 @@ alignas(type) int var;
                                          REQUIRE(has_attribute(e, "attribute1"));
                                          REQUIRE(has_attribute(e, "attribute2"));
                                          check_attribute(attr, "attribute1", type_safe::nullopt,
-                                                         false);
+                                                         false, "", cpp_attribute_kind::unknown);
                                          check_attribute(attributes[1u], "attribute2",
-                                                         type_safe::nullopt, false);
+                                                         type_safe::nullopt, false, "",
+                                                         cpp_attribute_kind::unknown);
                                      }
                                      else if (e.name() == "c")
-                                         check_attribute(attr, "variadic", type_safe::nullopt,
-                                                         true);
+                                         check_attribute(attr, "variadic", type_safe::nullopt, true,
+                                                         "", cpp_attribute_kind::unknown);
                                      else if (e.name() == "d")
                                      {
                                          REQUIRE(has_attribute(e, "ns::attribute"));
-                                         check_attribute(attr, "attribute", "ns", false);
+                                         check_attribute(attr, "attribute", "ns", false, "",
+                                                         cpp_attribute_kind::unknown);
                                      }
                                      else if (e.name() == "e")
                                          check_attribute(attr, "attribute", type_safe::nullopt,
-                                                         false, R"(arg1,arg2,+(){},42,"Hello!")");
+                                                         false, R"(arg1,arg2,+(){},42,"Hello!")",
+                                                         cpp_attribute_kind::unknown);
                                      else if (e.name() == "f")
                                      {
                                          REQUIRE(attributes.size() == 2u);
-                                         check_attribute(attr, "attribute", "ns", false, "+,-,0 4");
+                                         check_attribute(attr, "attribute", "ns", false, "+,-,0 4",
+                                                         cpp_attribute_kind::unknown);
                                          check_attribute(attributes[1u], "other_attribute",
-                                                         type_safe::nullopt, false);
+                                                         type_safe::nullopt, false, "",
+                                                         cpp_attribute_kind::unknown);
                                      }
                                      else if (e.name() == "g")
                                      {

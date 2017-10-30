@@ -769,5 +769,5 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_type_alias(const detail::parse_con
         result->add_attribute(detail::parse_attributes(stream));
     }
 
-    return result;
+    return std::move(result);
 }

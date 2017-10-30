@@ -116,7 +116,7 @@ namespace
                                                    detail::parse_type(context, cur, type),
                                                    is_variadic, std::move(def));
         result->add_attribute(attributes);
-        return result;
+        return std::move(result);
     }
 
     std::unique_ptr<cpp_template_template_parameter> parse_template_parameter(
