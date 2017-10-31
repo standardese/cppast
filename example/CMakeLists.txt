@@ -9,3 +9,4 @@ endfunction()
 
 _cppast_example(ast_printer)
 _cppast_example(documentation_generator)
+_cppast_example(enum_to_string)
