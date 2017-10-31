@@ -8,3 +8,4 @@ function(_cppast_example name)
 endfunction()
 
 _cppast_example(ast_printer)
+_cppast_example(documentation_generator)
