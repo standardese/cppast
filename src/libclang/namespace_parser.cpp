@@ -25,7 +25,7 @@ namespace
             is_inline = true;
 
         skip(stream, "namespace");
-        skip_attribute(stream);
+        auto attributes = parse_attributes(stream);
 
         // <identifier> {
         // or when anonymous: {
@@ -33,9 +33,15 @@ namespace
             return cpp_namespace::builder("", is_inline);
 
         auto& name = stream.get().value();
-        skip_attribute(stream);
+
+        auto other_attributes = parse_attributes(stream);
+        attributes.insert(attributes.end(), other_attributes.begin(), other_attributes.end());
+
         skip(stream, "{");
-        return cpp_namespace::builder(name.c_str(), is_inline);
+
+        auto result = cpp_namespace::builder(name.c_str(), is_inline);
+        result.get().add_attribute(attributes);
+        return result;
     }
 }
 

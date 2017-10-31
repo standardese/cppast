@@ -144,17 +144,19 @@ namespace cppast
             }
 
             /// \effects Builds a [cppast::cpp_base_class]() and adds it.
-            void base_class(std::string name, std::unique_ptr<cpp_type> type,
-                            cpp_access_specifier_kind access, bool is_virtual)
+            cpp_base_class& base_class(std::string name, std::unique_ptr<cpp_type> type,
+                                       cpp_access_specifier_kind access, bool is_virtual)
             {
-                add_base_class(
+                return add_base_class(
                     cpp_base_class::build(std::move(name), std::move(type), access, is_virtual));
             }
 
             /// \effects Adds a new base class.
-            void add_base_class(std::unique_ptr<cpp_base_class> base) noexcept
+            cpp_base_class& add_base_class(std::unique_ptr<cpp_base_class> base) noexcept
             {
+                auto bptr = base.get();
                 class_->bases_.push_back(*class_, std::move(base));
+                return *bptr;
             }
 
             /// \effects Builds a [cppast::cpp_access_specifier]() and adds it.

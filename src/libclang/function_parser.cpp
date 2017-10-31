@@ -18,14 +18,18 @@ namespace
         auto name = detail::get_cursor_name(cur);
         auto type = detail::parse_type(context, cur, clang_getCursorType(cur));
 
-        auto default_value = detail::parse_default_value(context, cur, name.c_str());
+        cpp_attribute_list attributes;
+        auto default_value = detail::parse_default_value(attributes, context, cur, name.c_str());
 
+        std::unique_ptr<cpp_function_parameter> result;
         if (name.empty())
-            return cpp_function_parameter::build(std::move(type), std::move(default_value));
+            result = cpp_function_parameter::build(std::move(type), std::move(default_value));
         else
-            return cpp_function_parameter::build(*context.idx, detail::get_entity_id(cur),
-                                                 name.c_str(), std::move(type),
-                                                 std::move(default_value));
+            result = cpp_function_parameter::build(*context.idx, detail::get_entity_id(cur),
+                                                   name.c_str(), std::move(type),
+                                                   std::move(default_value));
+        result->add_attribute(attributes);
+        return result;
     }
 
     template <class Builder>
@@ -212,10 +216,11 @@ namespace
     // just the tokens occurring in the prefix
     struct prefix_info
     {
-        bool is_constexpr = false;
-        bool is_virtual   = false;
-        bool is_explicit  = false;
-        bool is_friend    = false;
+        cpp_attribute_list attributes;
+        bool               is_constexpr = false;
+        bool               is_virtual   = false;
+        bool               is_explicit  = false;
+        bool               is_friend    = false;
     };
 
     bool prefix_end(detail::cxtoken_stream& stream, const char* name, bool is_ctor)
@@ -275,7 +280,11 @@ namespace
             else if (detail::skip_if(stream, "explicit"))
                 result.is_explicit = true;
             else
-                stream.bump();
+            {
+                auto attributes = detail::parse_attributes(stream, true);
+                result.attributes.insert(result.attributes.end(), attributes.begin(),
+                                         attributes.end());
+            }
         }
         DEBUG_ASSERT(!stream.done(), detail::parse_error_handler{}, stream.cursor(),
                      "unable to find end of function prefix");
@@ -283,12 +292,16 @@ namespace
         { // function name can be enclosed in parentheses
         }
 
+        auto attributes = detail::parse_attributes(stream);
+        result.attributes.insert(result.attributes.end(), attributes.begin(), attributes.end());
+
         return result;
     }
 
     // just the tokens occurring in the suffix
     struct suffix_info
     {
+        cpp_attribute_list              attributes;
         std::unique_ptr<cpp_expression> noexcept_condition;
         cpp_function_body_kind          body_kind;
         cpp_cv                          cv_qualifier  = cpp_cv_none;
@@ -392,12 +405,13 @@ namespace
         suffix_info result(stream.cursor());
 
         // syntax: <attribute> <cv> <ref> <exception>
-        detail::skip_attribute(stream);
+        result.attributes = detail::parse_attributes(stream);
         if (allow_qualifier)
         {
             result.cv_qualifier  = parse_cv(stream);
             result.ref_qualifier = parse_ref(stream);
         }
+
         if (detail::skip_if(stream, "throw"))
             // just because I can
             detail::skip_brackets(stream);
@@ -414,14 +428,17 @@ namespace
         // check for trailing return type
         if (detail::skip_if(stream, "->"))
         {
-            //detail::print_tokens(context.tu, context.file, stream.cursor());
             // this is rather tricky to skip
             // so loop over all tokens and see if matching keytokens occur
             // note that this isn't quite correct
             // use a heuristic to skip brackets, which should be good enough
             while (!stream.done())
             {
-                if (stream.peek() == "(" || stream.peek() == "[" || stream.peek() == "<")
+                auto attributes = detail::parse_attributes(stream);
+                if (!attributes.empty())
+                    result.attributes.insert(result.attributes.end(), attributes.begin(),
+                                             attributes.end());
+                else if (stream.peek() == "(" || stream.peek() == "[" || stream.peek() == "<")
                     detail::skip_brackets(stream);
                 else if (stream.peek() == "{")
                     // begin of definition
@@ -472,6 +489,11 @@ namespace
                     result.virtual_keywords.value() |= cpp_virtual_flags::override;
             }
 
+            auto attributes = detail::parse_attributes(stream);
+            if (!attributes.empty())
+                result.attributes.insert(result.attributes.end(), attributes.begin(),
+                                         attributes.end());
+
             if (detail::skip_if(stream, "="))
                 parse_body(stream, result, allow_virtual);
             else if (detail::skip_if(stream, "{") || detail::skip_if(stream, ":")
@@ -499,6 +521,7 @@ namespace
                                       detail::parse_type(context, cur,
                                                          clang_getCursorResultType(cur)));
         context.comments.match(builder.get(), cur);
+        builder.get().add_attribute(prefix.attributes);
 
         add_parameters(context, builder, cur);
         if (clang_Cursor_isVariadic(cur))
@@ -512,6 +535,7 @@ namespace
         skip_parameters(stream);
 
         auto suffix = parse_suffix_info(stream, context, false, false);
+        builder.get().add_attribute(suffix.attributes);
         if (suffix.noexcept_condition)
             builder.noexcept_condition(std::move(suffix.noexcept_condition));
 
@@ -617,6 +641,7 @@ namespace
         auto allow_qualifiers = set_qualifier(0, builder, cpp_cv_none, cpp_ref_none);
 
         auto suffix = parse_suffix_info(stream, context, allow_qualifiers, true);
+        builder.get().add_attribute(suffix.attributes);
         set_qualifier(0, builder, suffix.cv_qualifier, suffix.ref_qualifier);
         if (suffix.noexcept_condition)
             builder.noexcept_condition(move(suffix.noexcept_condition));
@@ -651,6 +676,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
                                          detail::parse_type(context, cur,
                                                             clang_getCursorResultType(cur)));
     context.comments.match(builder.get(), cur);
+    builder.get().add_attribute(prefix.attributes);
     add_parameters(context, builder, cur);
     if (clang_Cursor_isVariadic(cur))
         builder.is_variadic();
@@ -674,6 +700,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
     detail::cxtoken_stream stream(tokenizer, cur);
 
     auto prefix = parse_prefix_info(stream, "operator", false);
+
     // heuristic to find arguments tokens
     // skip forward, skipping inside brackets
     auto type_start = stream.cur();
@@ -715,6 +742,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
     cpp_conversion_op::builder builder("operator " + type_spelling,
                                        detail::parse_type(context, cur, type));
     context.comments.match(builder.get(), cur);
+    builder.get().add_attribute(prefix.attributes);
     if (prefix.is_explicit)
         builder.is_explicit();
     else if (prefix.is_constexpr)
@@ -745,6 +773,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
     cpp_constructor::builder builder(name.c_str());
     context.comments.match(builder.get(), cur);
     add_parameters(context, builder, cur);
+    builder.get().add_attribute(prefix.attributes);
+
     if (clang_Cursor_isVariadic(cur))
         builder.is_variadic();
     if (prefix.is_constexpr)
@@ -755,6 +785,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
     skip_parameters(stream);
 
     auto suffix = parse_suffix_info(stream, context, false, false);
+    builder.get().add_attribute(suffix.attributes);
     if (suffix.noexcept_condition)
         builder.noexcept_condition(std::move(suffix.noexcept_condition));
 
@@ -780,6 +811,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_destructor(const detail::parse_con
     auto                    name = std::string("~") + stream.get().c_str();
     cpp_destructor::builder builder(std::move(name));
     context.comments.match(builder.get(), cur);
+    builder.get().add_attribute(prefix_info.attributes);
 
     detail::skip(stream, "(");
     detail::skip(stream, ")");

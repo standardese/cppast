@@ -11,6 +11,7 @@ endif()
 set(tests
         code_generator.cpp
         cpp_alias_template.cpp
+        cpp_attribute.cpp
         cpp_class.cpp
         cpp_class_template.cpp
         cpp_enum.cpp

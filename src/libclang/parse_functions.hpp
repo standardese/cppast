@@ -66,7 +66,8 @@ namespace cppast
         };
 
         // parse default value of variable, function parameter...
-        std::unique_ptr<cpp_expression> parse_default_value(const parse_context& context,
+        std::unique_ptr<cpp_expression> parse_default_value(cpp_attribute_list&  attributes,
+                                                            const parse_context& context,
                                                             const CXCursor& cur, const char* name);
 
         std::unique_ptr<cpp_type> parse_type(const parse_context& context, const CXCursor& cur,

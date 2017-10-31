@@ -12,18 +12,32 @@ using namespace cppast;
 
 namespace
 {
-    cpp_class_kind parse_class_kind(const CXCursor& cur)
+    cpp_class_kind parse_class_kind(detail::cxtoken_stream& stream)
     {
-        auto kind = clang_getTemplateCursorKind(cur);
+        auto kind = clang_getTemplateCursorKind(stream.cursor());
         if (kind == CXCursor_NoDeclFound)
-            kind = clang_getCursorKind(cur);
+            kind = clang_getCursorKind(stream.cursor());
+
+        if (detail::skip_if(stream, "template"))
+            // skip template parameters
+            detail::skip_brackets(stream);
+
+        detail::skip_if(stream, "friend");
+
+        if (detail::skip_if(stream, "extern"))
+            // extern template
+            detail::skip(stream, "template");
+
         switch (kind)
         {
         case CXCursor_ClassDecl:
+            detail::skip(stream, "class");
             return cpp_class_kind::class_t;
         case CXCursor_StructDecl:
+            detail::skip(stream, "struct");
             return cpp_class_kind::struct_t;
         case CXCursor_UnionDecl:
+            detail::skip(stream, "union");
             return cpp_class_kind::union_t;
         default:
             break;
@@ -32,11 +46,18 @@ namespace
         return cpp_class_kind::class_t;
     }
 
-    cpp_class::builder make_class_builder(const CXCursor& cur)
+    cpp_class::builder make_class_builder(const detail::parse_context& context, const CXCursor& cur)
     {
-        auto kind = parse_class_kind(cur);
-        auto name = detail::get_cursor_name(cur);
-        return cpp_class::builder(name.c_str(), kind);
+        detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+        detail::cxtoken_stream stream(tokenizer, cur);
+
+        auto kind       = parse_class_kind(stream);
+        auto attributes = detail::parse_attributes(stream);
+        auto name       = detail::get_cursor_name(cur);
+
+        auto result = cpp_class::builder(name.c_str(), kind);
+        result.get().add_attribute(attributes);
+        return result;
     }
 
     cpp_access_specifier_kind convert_access(const CXCursor& cur)
@@ -76,15 +97,16 @@ namespace
 
         // [<attribute>] [virtual] [<access>] <name>
         // can't use spelling to get the name
-        detail::skip_attribute(stream);
+        auto attributes = detail::parse_attributes(stream);
         if (is_virtual)
             detail::skip(stream, "virtual");
         detail::skip_if(stream, to_string(access));
 
         auto name = detail::to_string(stream, stream.end()).as_string();
 
-        auto type = detail::parse_type(context, class_cur, clang_getCursorType(cur));
-        builder.base_class(std::move(name), std::move(type), access, is_virtual);
+        auto  type = detail::parse_type(context, class_cur, clang_getCursorType(cur));
+        auto& base = builder.base_class(std::move(name), std::move(type), access, is_virtual);
+        base.add_attribute(attributes);
     }
 }
 
@@ -100,7 +122,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class(const detail::parse_context&
     auto is_friend = false;
 #endif
 
-    auto                                builder = make_class_builder(cur);
+    auto                                builder = make_class_builder(context, cur);
     type_safe::optional<cpp_entity_ref> semantic_parent;
     if (!is_friend)
     {

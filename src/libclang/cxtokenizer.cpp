@@ -73,11 +73,16 @@ namespace
     };
 
     bool token_after_is(const CXTranslationUnit& tu, const CXFile& file, const CXCursor& cur,
-                        const CXSourceLocation& loc, const char* token_str)
+                        const CXSourceLocation& loc, const char* token_str, int inc = 1)
     {
-        auto loc_after = get_next_location(tu, file, loc);
+        auto loc_after = get_next_location(tu, file, loc, inc);
+        if (!clang_Location_isFromMainFile(loc_after))
+            return false;
 
-        simple_tokenizer tokenizer(tu, clang_getRange(loc, loc_after), cur);
+        simple_tokenizer tokenizer(tu,
+                                   inc > 0 ? clang_getRange(loc, loc_after) :
+                                             clang_getRange(loc_after, loc),
+                                   cur);
         detail::cxstring spelling(clang_getTokenSpelling(tu, tokenizer[0u]));
         return spelling == token_str;
     }
@@ -96,10 +101,55 @@ namespace
         auto end    = clang_getRangeEnd(extent);
 
         auto kind = clang_getCursorKind(cur);
+        if (cursor_is_function(kind) || cursor_is_function(clang_getTemplateCursorKind(cur))
+            || kind == CXCursor_VarDecl || kind == CXCursor_FieldDecl || kind == CXCursor_ParmDecl
+            || kind == CXCursor_NonTypeTemplateParameter)
+        {
+            if (token_after_is(tu, file, cur, begin, "]", -2)
+                && token_after_is(tu, file, cur, begin, "]", -3))
+            {
+                while (!token_after_is(tu, file, cur, begin, "[", -1)
+                       && !token_after_is(tu, file, cur, begin, "[", -2))
+                    begin = get_next_location(tu, file, begin, -1);
+
+                begin = get_next_location(tu, file, begin, -3);
+                DEBUG_ASSERT(token_after_is(tu, file, cur, begin, "[")
+                                 && token_after_is(tu, file, cur,
+                                                   get_next_location(tu, file, begin), "["),
+                             detail::parse_error_handler{}, cur,
+                             "error in pre-function attribute parsing");
+            }
+            else if (token_after_is(tu, file, cur, begin, ")", -2))
+            {
+                // maybe alignas specifier
+                auto save_begin = begin;
+
+                auto paren_count = 1;
+                begin            = get_next_location(tu, file, begin, -1);
+                for (auto last_begin = begin; paren_count != 0; last_begin = begin)
+                {
+                    begin = get_next_location(tu, file, begin, -1);
+                    if (token_after_is(tu, file, cur, begin, "(", -1))
+                        --paren_count;
+                    else if (token_after_is(tu, file, cur, begin, ")", -1))
+                        ++paren_count;
+
+                    DEBUG_ASSERT(!clang_equalLocations(last_begin, begin),
+                                 detail::parse_error_handler{}, cur,
+                                 "infinite loop in alignas parsing");
+                }
+                begin = get_next_location(tu, file, begin, -(int(std::strlen("alignas")) + 1));
+
+                if (token_after_is(tu, file, cur, begin, "alignas"))
+                    begin = get_next_location(tu, file, begin, -1);
+                else
+                    begin = save_begin;
+            }
+        }
+
         if (cursor_is_function(kind) || cursor_is_function(clang_getTemplateCursorKind(cur)))
         {
             auto is_definition = false;
-
             // if a function we need to remove the body
             // it does not need to be parsed
             detail::visit_children(cur, [&](const CXCursor& child) {
@@ -214,6 +264,13 @@ namespace
         else if (kind == CXCursor_EnumDecl && !token_after_is(tu, file, cur, end, ";"))
         {
             while (!token_after_is(tu, file, cur, end, ";"))
+                end = get_next_location(tu, file, end);
+        }
+        else if (kind == CXCursor_EnumConstantDecl && !token_after_is(tu, file, cur, end, ",")
+                 && !token_after_is(tu, file, cur, end, ";"))
+        {
+            while (!token_after_is(tu, file, cur, end, ",")
+                   && !token_after_is(tu, file, cur, end, ";"))
                 end = get_next_location(tu, file, end);
         }
         else if (kind == CXCursor_FieldDecl || kind == CXCursor_ParmDecl
@@ -368,18 +425,120 @@ void detail::skip_brackets(detail::cxtoken_stream& stream)
 
 namespace
 {
-    bool skip_attribute_impl(detail::cxtoken_stream& stream)
+    type_safe::optional<std::string> parse_attribute_using(detail::cxtoken_stream& stream)
+    {
+        // using identifier :
+        if (skip_if(stream, "using"))
+        {
+            DEBUG_ASSERT(stream.peek().kind() == CXToken_Identifier, detail::parse_error_handler{},
+                         stream.cursor(), "expected identifier");
+            auto scope = stream.get().value().std_str();
+            skip(stream, ":");
+
+            return scope;
+        }
+        else
+            return type_safe::nullopt;
+    }
+
+    cpp_attribute_kind get_attribute_kind(const std::string& name)
+    {
+        if (name == "carries_dependency")
+            return cpp_attribute_kind::carries_dependency;
+        else if (name == "deprecated")
+            return cpp_attribute_kind::deprecated;
+        else if (name == "fallthrough")
+            return cpp_attribute_kind::fallthrough;
+        else if (name == "maybe_unused")
+            return cpp_attribute_kind::maybe_unused;
+        else if (name == "nodiscard")
+            return cpp_attribute_kind::nodiscard;
+        else if (name == "noreturn")
+            return cpp_attribute_kind::noreturn;
+        else
+            return cpp_attribute_kind::unknown;
+    }
+
+    cpp_token_string parse_attribute_arguments(detail::cxtoken_stream& stream)
+    {
+        auto end = find_closing_bracket(stream);
+        skip(stream, "(");
+
+        auto arguments = detail::to_string(stream, end);
+
+        stream.set_cur(end);
+        skip(stream, ")");
+
+        return arguments;
+    }
+
+    cpp_attribute parse_attribute_token(detail::cxtoken_stream&          stream,
+                                        type_safe::optional<std::string> scope)
+    {
+        // (identifier ::)_opt identifier ( '(' some tokens ')' )_opt ..._opt
+
+        // parse name
+        DEBUG_ASSERT(stream.peek().kind() == CXToken_Identifier, detail::parse_error_handler{},
+                     stream.cursor(), "expected identifier");
+        auto name = stream.get().value().std_str();
+        if (skip_if(stream, "::"))
+        {
+            // name was actually a scope, so parse name again
+            DEBUG_ASSERT(!scope, detail::parse_error_handler{}, stream.cursor(),
+                         "attribute using + scope not allowed");
+            scope = std::move(name);
+
+            DEBUG_ASSERT(stream.peek().kind() == CXToken_Identifier, detail::parse_error_handler{},
+                         stream.cursor(), "expected identifier");
+            name = stream.get().value().std_str();
+        }
+
+        // parse arguments
+        type_safe::optional<cpp_token_string> arguments;
+        if (stream.peek() == "(")
+            arguments = parse_attribute_arguments(stream);
+
+        // parse variadic token
+        auto is_variadic = skip_if(stream, "...");
+
+        // get kind
+        auto kind = get_attribute_kind(name);
+        if (!scope && kind != cpp_attribute_kind::unknown)
+            return cpp_attribute(kind, std::move(arguments));
+        else
+            return cpp_attribute(std::move(scope), std::move(name), std::move(arguments),
+                                 is_variadic);
+    }
+
+    bool parse_attribute_impl(cpp_attribute_list& result, detail::cxtoken_stream& stream)
     {
         if (skip_if(stream, "[") && stream.peek() == "[")
         {
             // C++11 attribute
             // [[<attribute>]]
             //  ^
-            skip_brackets(stream);
+            skip(stream, "[");
+
+            auto scope = parse_attribute_using(stream);
+            while (!skip_if(stream, "]"))
+            {
+                auto attribute = parse_attribute_token(stream, scope);
+                result.push_back(std::move(attribute));
+                detail::skip_if(stream, ",");
+            }
+
             // [[<attribute>]]
             //               ^
             skip(stream, "]");
             return true;
+        }
+        else if (skip_if(stream, "alignas"))
+        {
+            // alignas specifier
+            // alignas(<some arguments>)
+            //        ^
+            auto arguments = parse_attribute_arguments(stream);
+            result.push_back(cpp_attribute(cpp_attribute_kind::alignas_, std::move(arguments)));
         }
         else if (skip_if(stream, "__attribute__"))
         {
@@ -402,12 +561,17 @@ namespace
     }
 }
 
-bool detail::skip_attribute(detail::cxtoken_stream& stream)
+cpp_attribute_list detail::parse_attributes(detail::cxtoken_stream& stream, bool skip_anway)
 {
-    auto any = false;
-    while (skip_attribute_impl(stream))
-        any = true;
-    return any;
+    cpp_attribute_list result;
+
+    while (parse_attribute_impl(result, stream))
+        skip_anway = false;
+
+    if (skip_anway)
+        stream.bump();
+
+    return result;
 }
 
 namespace

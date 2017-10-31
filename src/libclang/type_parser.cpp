@@ -749,13 +749,25 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_type_alias(const detail::parse_con
     auto type = parse_type(context, clang_Cursor_isNull(template_cur) ? cur : template_cur,
                            clang_getTypedefDeclUnderlyingType(cur));
 
+    std::unique_ptr<cpp_type_alias> result;
     if (!clang_Cursor_isNull(template_cur))
-        return cpp_type_alias::build(name.c_str(), std::move(type));
+        result = cpp_type_alias::build(name.c_str(), std::move(type));
     else
     {
-        auto result =
+        result =
             cpp_type_alias::build(*context.idx, get_entity_id(cur), name.c_str(), std::move(type));
         context.comments.match(*result, cur);
-        return std::move(result);
     }
+
+    // look for attributes
+    detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+    detail::cxtoken_stream stream(tokenizer, cur);
+    if (detail::skip_if(stream, "using"))
+    {
+        // syntax: using <identifier> attributes
+        detail::skip(stream, name.c_str());
+        result->add_attribute(detail::parse_attributes(stream));
+    }
+
+    return std::move(result);
 }

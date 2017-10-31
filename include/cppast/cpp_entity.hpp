@@ -11,6 +11,7 @@
 #include <type_safe/optional_ref.hpp>
 
 #include <cppast/detail/intrusive_list.hpp>
+#include <cppast/cpp_attribute.hpp>
 #include <cppast/cpp_token.hpp>
 
 namespace cppast
@@ -123,6 +124,24 @@ namespace cppast
             comment_ = comment.value_or("");
         }
 
+        /// \returns The list of attributes that are specified for that entity.
+        const cpp_attribute_list& attributes() const noexcept
+        {
+            return attributes_;
+        }
+
+        /// \effects Adds an attribute for that entity.
+        void add_attribute(cpp_attribute attr) noexcept
+        {
+            attributes_.push_back(std::move(attr));
+        }
+
+        /// \effects Adds multiple arguments for that entity.
+        void add_attribute(const cpp_attribute_list& list) noexcept
+        {
+            attributes_.insert(attributes_.end(), list.begin(), list.end());
+        }
+
         /// \returns The specified user data.
         void* user_data() const noexcept
         {
@@ -162,6 +181,7 @@ namespace cppast
 
         std::string                               name_;
         std::string                               comment_;
+        cpp_attribute_list                        attributes_;
         type_safe::optional_ref<const cpp_entity> parent_;
         mutable std::atomic<void*>                user_data_;
 
