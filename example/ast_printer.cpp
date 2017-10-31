@@ -24,8 +24,6 @@ void print_ast(const cppast::cpp_file& file)
         }
         else // if (info.event == cppast::visitor_info::leaf_entity) // a non-container entity
             std::cout << prefix << "'" << e.name() << "' - " << cppast::to_string(e.kind()) << '\n';
-
-        return true; // continue with visit
     });
 }
 
