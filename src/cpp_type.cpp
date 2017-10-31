@@ -76,6 +76,39 @@ const char* cppast::to_string(cpp_builtin_type_kind kind) noexcept
     return "__ups";
 }
 
+const cpp_type& cppast::remove_cv(const cpp_type& type) noexcept
+{
+    if (type.kind() == cpp_type_kind::cv_qualified_t)
+    {
+        auto& cv = static_cast<const cpp_cv_qualified_type&>(type);
+        return cv.type();
+    }
+
+    return type;
+}
+
+const cpp_type& cppast::remove_const(const cpp_type& type) noexcept
+{
+    if (type.kind() == cpp_type_kind::cv_qualified_t)
+    {
+        auto& cv = static_cast<const cpp_cv_qualified_type&>(type);
+        if (is_const(cv.cv_qualifier()))
+            return cv.type();
+    }
+    return type;
+}
+
+const cpp_type& cppast::remove_volatile(const cpp_type& type) noexcept
+{
+    if (type.kind() == cpp_type_kind::cv_qualified_t)
+    {
+        auto& cv = static_cast<const cpp_cv_qualified_type&>(type);
+        if (is_volatile(cv.cv_qualifier()))
+            return cv.type();
+    }
+    return type;
+}
+
 bool detail::cpp_type_ref_predicate::operator()(const cpp_entity& e)
 {
     switch (e.kind())
@@ -559,13 +592,9 @@ std::string detail::to_string(const cpp_type& type)
         }
 
     private:
-        void do_indent() override
-        {
-        }
+        void do_indent() override {}
 
-        void do_unindent() override
-        {
-        }
+        void do_unindent() override {}
 
         void do_write_token_seq(string_view tokens) override
         {

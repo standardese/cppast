@@ -13,7 +13,7 @@
 // parses all files in that directory
 // and invokes the callback for each of them
 template <typename Callback>
-int example_main(int argc, char* argv[], const cppast::cpp_entity_index& index, Callback cb)
+int example_main(int argc, char* argv[], const cppast::cpp_entity_index& index, Callback cb) try
 {
     if (argc != 2)
     {
@@ -46,6 +46,11 @@ int example_main(int argc, char* argv[], const cppast::cpp_entity_index& index, 
     }
 
     return 0;
+}
+catch (std::exception& ex)
+{
+    std::cerr << ex.what() << '\n';
+    return 1;
 }
 
 #endif // CPPAST_EXAMPLE_PARSER_HPP_INCLUDED

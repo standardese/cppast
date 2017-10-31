@@ -16,8 +16,9 @@ void generate_to_string(const cppast::cpp_file& file)
 {
     cppast::visit(file,
                   [](const cppast::cpp_entity& e) {
-                      // only visit enums that have the attribute set
+                      // only visit enum definitions that have the attribute set
                       return (e.kind() == cppast::cpp_entity_kind::enum_t
+                              && cppast::is_definition(e)
                               && cppast::has_attribute(e, "generate::to_string"))
                              // or all namespaces
                              || e.kind() == cppast::cpp_entity_kind::namespace_t;
