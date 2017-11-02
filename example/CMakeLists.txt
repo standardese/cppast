@@ -8,6 +8,7 @@ function(_cppast_example name)
 endfunction()
 
 _cppast_example(ast_printer)
+_cppast_example(comparison)
 _cppast_example(documentation_generator)
 _cppast_example(enum_to_string)
 _cppast_example(serialization)

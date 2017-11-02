@@ -30,7 +30,8 @@ void generate_to_string(const cppast::cpp_file& file)
                           auto& enum_ = static_cast<const cppast::cpp_enum&>(e);
 
                           // write function header
-                          std::cout << "const char* to_string(const " << enum_.name() << "& e) {\n";
+                          std::cout << "inline const char* to_string(const " << enum_.name()
+                                    << "& e) {\n";
 
                           // generate switch
                           std::cout << "  switch (e) {\n";

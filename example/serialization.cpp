@@ -77,13 +77,14 @@ void generate_serialize(const cppast::cpp_file& file)
                       {
                           auto& class_ = static_cast<const cppast::cpp_class&>(e);
 
-                          std::cout << "void serialize(const foo::serializer& s, const "
+                          std::cout << "inline void serialize(const foo::serializer& s, const "
                                     << class_.name() << "& obj) {\n";
 
                           // serialize base classes
                           for (auto& base : class_.bases())
-                              std::cout << " serialize(s, static_cast<const " << base.name()
-                                        << "&>(obj));\n";
+                              if (!cppast::has_attribute(base, "generate::transient"))
+                                  std::cout << " serialize(s, static_cast<const " << base.name()
+                                            << "&>(obj));\n";
 
                           // serialize member variables
                           for (auto& member : class_)

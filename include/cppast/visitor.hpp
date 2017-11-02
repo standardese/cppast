@@ -182,6 +182,7 @@ namespace cppast
                 else
                     return continue_visit;
             }
+            return continue_visit;
         });
     }
 
