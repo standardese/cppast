@@ -90,7 +90,7 @@ void generate_comparison(const cppast::cpp_file& file)
                           {
                               if (has_token(attribute.arguments().value(), "=="))
                                   generate_op_equal(std::cout, class_);
-                              else if (has_token(attribute.arguments().value(), "!="))
+                              if (has_token(attribute.arguments().value(), "!="))
                                   generate_op_non_equal(std::cout, class_);
                           }
                           else
