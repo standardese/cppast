@@ -581,7 +581,7 @@ void detail::write_type(code_generator::output& output, const cpp_type& type, st
     write_type_suffix(output, type);
 }
 
-std::string detail::to_string(const cpp_type& type)
+std::string cppast::to_string(const cpp_type& type)
 {
     class to_string_generator : public code_generator
     {

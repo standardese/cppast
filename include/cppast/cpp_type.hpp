@@ -436,6 +436,9 @@ namespace cppast
         cpp_reference             ref_;
     };
 
+    /// \returns The type as a string representation.
+    std::string to_string(const cpp_type& type);
+
     /// \exclude
     namespace detail
     {
@@ -453,9 +456,6 @@ namespace cppast
         // write prefix, variadic, name, suffix
         void write_type(code_generator::output& output, const cpp_type& type, std::string name,
                         bool is_variadic = false);
-
-        // simple to_string() for types
-        std::string to_string(const cpp_type& type);
     } // namespace detail
 } // namespace cppast
 
