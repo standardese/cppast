@@ -266,12 +266,12 @@ namespace
             while (!token_after_is(tu, file, cur, end, ";"))
                 end = get_next_location(tu, file, end);
         }
-        else if (kind == CXCursor_EnumConstantDecl && !token_after_is(tu, file, cur, end, ",")
-                 && !token_after_is(tu, file, cur, end, ";"))
+        else if (kind == CXCursor_EnumConstantDecl && !token_after_is(tu, file, cur, end, ","))
         {
-            while (!token_after_is(tu, file, cur, end, ",")
-                   && !token_after_is(tu, file, cur, end, ";"))
-                end = get_next_location(tu, file, end);
+            // need to support attributes
+            // just give up and extend the range to the range of the entire enum...
+            auto parent = clang_getCursorLexicalParent(cur);
+            end         = clang_getRangeEnd(clang_getCursorExtent(parent));
         }
         else if (kind == CXCursor_FieldDecl || kind == CXCursor_ParmDecl
                  || kind == CXCursor_NonTypeTemplateParameter
