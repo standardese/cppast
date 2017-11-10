@@ -39,7 +39,14 @@ void generate_to_string(const cppast::cpp_file& file)
                           {
                               std::cout << "  case " << enum_.name() << "::" << enumerator.name()
                                         << ":\n";
-                              std::cout << "    return \"" << enumerator.name() << "\";\n";
+
+                              if (auto attr =
+                                      cppast::has_attribute(enumerator, "generate::to_string"))
+                                  std::cout << "    return "
+                                            << attr.value().arguments().value().as_string()
+                                            << ";\n";
+                              else
+                                  std::cout << "    return \"" << enumerator.name() << "\";\n";
                           }
                           std::cout << "  }\n";
 
