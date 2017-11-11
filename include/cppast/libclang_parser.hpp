@@ -164,7 +164,12 @@ namespace cppast
     public:
         using config = libclang_compile_config;
 
+        /// \effects Creates a parser using the default logger.
+        libclang_parser();
+
+        /// \effects Creates a parser that will log error messages using the specified logger.
         explicit libclang_parser(type_safe::object_ref<const diagnostic_logger> logger);
+
         ~libclang_parser() noexcept override;
 
     private:

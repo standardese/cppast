@@ -19,9 +19,9 @@ TEST_CASE("visitor_filtered")
     )";
 
     cpp_entity_index idx;
-    auto             file           = parse(idx, "cpp_class.cpp", code);
-    unsigned         filtered_count = 0;
-    auto visitor_callback           = [&](const cpp_entity&, cppast::visitor_info info) {
+    auto             file             = parse(idx, "cpp_class.cpp", code);
+    unsigned         filtered_count   = 0;
+    auto             visitor_callback = [&](const cpp_entity&, cppast::visitor_info info) {
         if (info.event != cppast::visitor_info::container_entity_exit)
             ++filtered_count;
         return true;
@@ -79,6 +79,26 @@ TEST_CASE("visitor_filtered")
         {
             filtered_count = 0;
             cppast::visit(*file, blacklist<cpp_entity_kind::enum_t, cpp_entity_kind::class_t>(),
+                          visitor_callback);
+            REQUIRE(filtered_count == all_node_count - enum_count - class_count);
+        }
+    }
+    SECTION("blacklist_and_children")
+    {
+        SECTION("only one kind blacklisted")
+        {
+            filtered_count = 0;
+            cppast::visit(*file, blacklist_and_children<cpp_entity_kind::file_t>(),
+                          visitor_callback);
+            REQUIRE(filtered_count == 0);
+        }
+
+        SECTION("many kinds blacklisted")
+        {
+            filtered_count = 0;
+            cppast::visit(*file,
+                          blacklist_and_children<cpp_entity_kind::enum_t,
+                                                 cpp_entity_kind::class_t>(),
                           visitor_callback);
             REQUIRE(filtered_count == all_node_count - enum_count - class_count);
         }

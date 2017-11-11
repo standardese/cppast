@@ -4,5 +4,4 @@
 
 add_executable(cppast_tool main.cpp)
 target_link_libraries(cppast_tool PUBLIC cppast cxxopts)
-set_target_properties(cppast_tool PROPERTIES CXX_STANDARD 11
-                                             OUTPUT_NAME cppast)
+set_target_properties(cppast_tool PROPERTIES CXX_STANDARD 11 OUTPUT_NAME cppast)

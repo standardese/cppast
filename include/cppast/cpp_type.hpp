@@ -74,17 +74,13 @@ namespace cppast
         }
 
     protected:
-        cpp_type() noexcept : user_data_(nullptr)
-        {
-        }
+        cpp_type() noexcept : user_data_(nullptr) {}
 
     private:
         /// \returns The [cppast::cpp_type_kind]().
         virtual cpp_type_kind do_get_kind() const noexcept = 0;
 
-        void on_insert(const cpp_type&)
-        {
-        }
+        void on_insert(const cpp_type&) {}
 
         mutable std::atomic<void*> user_data_;
 
@@ -112,9 +108,7 @@ namespace cppast
         }
 
     private:
-        cpp_unexposed_type(std::string name) : name_(std::move(name))
-        {
-        }
+        cpp_unexposed_type(std::string name) : name_(std::move(name)) {}
 
         cpp_type_kind do_get_kind() const noexcept override
         {
@@ -180,9 +174,7 @@ namespace cppast
         }
 
     private:
-        cpp_builtin_type(cpp_builtin_type_kind kind) : kind_(kind)
-        {
-        }
+        cpp_builtin_type(cpp_builtin_type_kind kind) : kind_(kind) {}
 
         cpp_type_kind do_get_kind() const noexcept override
         {
@@ -224,9 +216,7 @@ namespace cppast
         }
 
     private:
-        cpp_user_defined_type(cpp_type_ref entity) : entity_(std::move(entity))
-        {
-        }
+        cpp_user_defined_type(cpp_type_ref entity) : entity_(std::move(entity)) {}
 
         cpp_type_kind do_get_kind() const noexcept override
         {
@@ -361,6 +351,15 @@ namespace cppast
         cpp_cv                    cv_;
     };
 
+    /// \returns The type without top-level const/volatile qualifiers.
+    const cpp_type& remove_cv(const cpp_type& type) noexcept;
+
+    /// \returns The type without top-level const qualifiers.
+    const cpp_type& remove_const(const cpp_type& type) noexcept;
+
+    /// \returns The type without top-level volatile qualifiers.
+    const cpp_type& remove_volatile(const cpp_type& type) noexcept;
+
     /// A pointer to a [cppast::cpp_type]().
     class cpp_pointer_type final : public cpp_type
     {
@@ -378,9 +377,7 @@ namespace cppast
         }
 
     private:
-        cpp_pointer_type(std::unique_ptr<cpp_type> pointee) : pointee_(std::move(pointee))
-        {
-        }
+        cpp_pointer_type(std::unique_ptr<cpp_type> pointee) : pointee_(std::move(pointee)) {}
 
         cpp_type_kind do_get_kind() const noexcept override
         {
@@ -439,6 +436,9 @@ namespace cppast
         cpp_reference             ref_;
     };
 
+    /// \returns The type as a string representation.
+    std::string to_string(const cpp_type& type);
+
     /// \exclude
     namespace detail
     {
@@ -456,9 +456,6 @@ namespace cppast
         // write prefix, variadic, name, suffix
         void write_type(code_generator::output& output, const cpp_type& type, std::string name,
                         bool is_variadic = false);
-
-        // simple to_string() for types
-        std::string to_string(const cpp_type& type);
     } // namespace detail
 } // namespace cppast
 

@@ -39,7 +39,7 @@ std::string cpp_function_base::do_get_signature() const
 {
     std::string result = "(";
     for (auto& param : parameters())
-        result += detail::to_string(param.type()) + ',';
+        result += to_string(param.type()) + ',';
     if (is_variadic())
         result += "...";
 

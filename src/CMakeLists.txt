@@ -103,6 +103,7 @@ set(libclang_source
         libclang/variable_parser.cpp)
 
 add_library(cppast ${detail_header} ${header} ${source} ${libclang_source})
+set_target_properties(cppast PROPERTIES CXX_STANDARD 11)
 target_include_directories(cppast PUBLIC ../include)
 target_link_libraries(cppast PUBLIC type_safe _cppast_tiny_process _cppast_libclang)
 target_compile_definitions(cppast PUBLIC
@@ -115,4 +116,3 @@ endif()
 if(CPPAST_ENABLE_PRECONDITION_CHECKS)
     target_compile_definitions(cppast PUBLIC CPPAST_ENABLE_PRECONDITION_CHECKS)
 endif()
-set_target_properties(cppast PROPERTIES CXX_STANDARD 11)
