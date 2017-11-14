@@ -4,6 +4,8 @@
 
 /// \file
 /// Generate equality comparisons.
+///
+/// Given an input file, it will generate comparison operators for each class that has the [[generate::comparison]] attribute.
 
 #include <algorithm>
 #include <iostream>
@@ -14,6 +16,7 @@
 
 #include "example_parser.hpp"
 
+// whether or not the token string contains the given token
 bool has_token(const cppast::cpp_token_string& str, const char* token)
 {
     auto iter = std::find_if(str.begin(), str.end(),
@@ -21,6 +24,7 @@ bool has_token(const cppast::cpp_token_string& str, const char* token)
     return iter != str.end();
 }
 
+// generates equality operator for a class
 void generate_op_equal(std::ostream& out, const cppast::cpp_class& c)
 {
     out << "inline bool operator==(const " << c.name() << "& lhs, const " << c.name()
@@ -29,9 +33,11 @@ void generate_op_equal(std::ostream& out, const cppast::cpp_class& c)
 
     auto first = true;
 
+    // compare bases
     for (auto& base : c.bases())
     {
         if (cppast::has_attribute(base, "generate::transient"))
+            // if they are not marked not to be compared
             continue;
 
         if (first)
@@ -42,6 +48,7 @@ void generate_op_equal(std::ostream& out, const cppast::cpp_class& c)
             << "&>(rhs)\n";
     }
 
+    // compare members
     for (auto& member : c)
         if (member.kind() == cppast::cpp_entity_kind::member_variable_t
             && !cppast::has_attribute(member, "generate::transient"))
@@ -59,14 +66,17 @@ void generate_op_equal(std::ostream& out, const cppast::cpp_class& c)
     out << "}\n\n";
 }
 
+// generate non equality operator for a class
 void generate_op_non_equal(std::ostream& out, const cppast::cpp_class& c)
 {
+    // just forwards
     out << "inline bool operator!=(const " << c.name() << "& lhs, const " << c.name()
         << "& rhs) {\n";
     out << "  return !(lhs == rhs);\n";
     out << "}\n\n";
 }
 
+// generate comparison operators for all classes in the file
 void generate_comparison(const cppast::cpp_file& file)
 {
     cppast::visit(file,
@@ -82,10 +92,12 @@ void generate_comparison(const cppast::cpp_file& file)
                   [](const cppast::cpp_entity& e, const cppast::visitor_info& info) {
                       if (e.kind() == cppast::cpp_entity_kind::class_t && !info.is_old_entity())
                       {
+                          // it is a new class
                           auto& class_ = static_cast<const cppast::cpp_class&>(e);
                           auto& attribute =
                               cppast::has_attribute(e, "generate::comparison").value();
 
+                          // generate requested operators
                           if (attribute.arguments())
                           {
                               if (has_token(attribute.arguments().value(), "=="))

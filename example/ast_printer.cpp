@@ -4,6 +4,8 @@
 
 /// \file
 /// This is a very primitive version of the cppast tool.
+///
+/// Given an input file it will print the AST.
 
 #include <cppast/visitor.hpp> // visit()
 

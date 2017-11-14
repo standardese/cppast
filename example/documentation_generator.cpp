@@ -4,6 +4,8 @@
 
 /// \file
 /// A primitive documentation generator.
+///
+/// Given an input file, it will print its documentation including documentation comments.
 
 #include <cppast/code_generator.hpp> // code_generator, generate_code()
 #include <cppast/visitor.hpp>        // visit()

@@ -4,6 +4,8 @@
 
 /// \file
 /// Serialization code generation.
+///
+/// Given an input file, it will generate a serialize() function for each class marked with [[generate::serialize]].
 
 #include <iostream>
 
@@ -20,15 +22,18 @@ bool is_c_string(const cppast::cpp_type& type)
     if (type.kind() != cppast::cpp_type_kind::pointer_t)
         return false;
 
+    // get the pointee
     auto& pointee = cppast::remove_cv(static_cast<const cppast::cpp_pointer_type&>(type).pointee());
     if (pointee.kind() != cppast::cpp_type_kind::builtin_t)
         return false;
 
+    // check the builtin type kind
     auto builtin = static_cast<const cppast::cpp_builtin_type&>(pointee).builtin_type_kind();
     return builtin == cppast::cpp_char || builtin == cppast::cpp_char16
            || builtin == cppast::cpp_char32 || builtin == cppast::cpp_wchar;
 }
 
+// generate a serialization call for a member
 void generate_serialize_member(std::ostream& out, const cppast::cpp_member_variable& member)
 {
     auto& type = cppast::remove_cv(member.type());
@@ -60,6 +65,7 @@ void generate_serialize_member(std::ostream& out, const cppast::cpp_member_varia
         throw std::invalid_argument("cannot serialize member " + member.name());
 }
 
+// generate serialization function
 void generate_serialize(const cppast::cpp_file& file)
 {
     cppast::visit(file,

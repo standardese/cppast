@@ -4,6 +4,8 @@
 
 /// \file
 /// Generates enum `to_string()` code.
+///
+/// Given an input file, it will generate a to_string() function for all enums marked with [[generate::to_string]].
 
 #include <iostream>
 
@@ -40,6 +42,7 @@ void generate_to_string(const cppast::cpp_file& file)
                               std::cout << "  case " << enum_.name() << "::" << enumerator.name()
                                         << ":\n";
 
+                              // attribute can be used to override the string
                               if (auto attr =
                                       cppast::has_attribute(enumerator, "generate::to_string"))
                                   std::cout << "    return "
