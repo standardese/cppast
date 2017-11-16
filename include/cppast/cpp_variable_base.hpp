@@ -26,7 +26,7 @@ namespace cppast
         /// \returns A [ts::optional_ref]() to the [cppast::cpp_expression]() that is the default value.
         type_safe::optional_ref<const cpp_expression> default_value() const noexcept
         {
-            return type_safe::ref(*default_);
+            return type_safe::opt_ref(default_.get());
         }
 
     protected:
