@@ -201,7 +201,8 @@ namespace
             if (cur_line_ != line)
             {
                 *result_ += "#line " + std::to_string(line) + "\n";
-                cur_line_ = line;
+                cur_line_   = line;
+                cur_column_ = 0;
             }
         }
 
@@ -212,8 +213,13 @@ namespace
             for (auto c : str)
             {
                 *result_ += c;
+                ++cur_column_;
+
                 if (c == '\n')
+                {
                     ++cur_line_;
+                    cur_column_ = 0;
+                }
             }
         }
 
@@ -222,8 +228,13 @@ namespace
             if (write_ == true)
             {
                 result_->push_back(*ptr_);
+                ++cur_column_;
+
                 if (*ptr_ == '\n')
+                {
                     ++cur_line_;
+                    cur_column_ = 0;
+                }
             }
             ++ptr_;
         }
@@ -247,10 +258,15 @@ namespace
 
         void skip_with_linecount() noexcept
         {
-            if (*ptr_ == '\n' && write_ == true)
+            if (write_ == true)
             {
-                result_->push_back('\n');
-                ++cur_line_;
+                ++cur_column_;
+                if (*ptr_ == '\n')
+                {
+                    result_->push_back('\n');
+                    ++cur_line_;
+                    cur_column_ = 0;
+                }
             }
 
             ++ptr_;
@@ -281,6 +297,11 @@ namespace
             return cur_line_;
         }
 
+        unsigned cur_column() const noexcept
+        {
+            return cur_column_;
+        }
+
         bool was_newl() const noexcept
         {
             return result_->empty() || result_->back() == '\n';
@@ -288,7 +309,7 @@ namespace
 
     private:
         ts::object_ref<std::string> result_;
-        unsigned                    cur_line_;
+        unsigned                    cur_line_, cur_column_;
         const char*                 ptr_;
         ts::flag                    write_;
     };
@@ -398,9 +419,14 @@ namespace
         detail::pp_doc_comment result;
         result.kind = detail::pp_doc_comment::c;
 
+        auto indent = p.cur_column() + 3;
+
         if (starts_with(p, " "))
+        {
             // skip one whitespace at most
             p.skip();
+            ++indent;
+        }
 
         while (!starts_with(p, "*/"))
         {
@@ -415,8 +441,16 @@ namespace
                 result.comment += '\n';
 
                 // skip indentation
-                while (starts_with(p, " "))
+                for (auto i = 0u; i < indent && starts_with(p, " "); ++i)
                     p.skip();
+
+                auto extra_indent = 0u;
+                while (starts_with(p, " "))
+                {
+                    ++extra_indent;
+                    p.skip();
+                }
+
                 // skip continuation star, if any
                 if (starts_with(p, "*") && !starts_with(p, "*/"))
                 {
@@ -424,6 +458,11 @@ namespace
                     if (starts_with(p, " "))
                         // skip one whitespace at most
                         p.skip();
+                }
+                else
+                {
+                    // insert extra indent again
+                    result.comment += std::string(extra_indent, ' ');
                 }
             }
             else

@@ -186,6 +186,52 @@ lines
     REQUIRE((file->unmatched_comments().size() == 6u + 1u));
 }
 
+TEST_CASE("comment content")
+{
+    auto code = R"(
+/// simple comment
+
+///no space
+
+/// multi
+/// line
+/// comment
+
+/** C comment */
+/**C comment no space*/
+
+/** Multiline
+C
+comment */
+
+    /** Multiline
+        C
+         comment
+          with
+           indent */
+
+    /** Multiline
+            * C
+            * comment
+            * with
+            * indent
+            * star */
+)";
+
+    auto file     = parse({}, "comment-content.cpp", code);
+    auto comments = file->unmatched_comments();
+    REQUIRE((comments.size() == 8u));
+
+    REQUIRE(comments[0u].content == "simple comment");
+    REQUIRE(comments[1u].content == "no space");
+    REQUIRE(comments[2u].content == "multi\nline\ncomment");
+    REQUIRE(comments[3u].content == "C comment");
+    REQUIRE(comments[4u].content == "C comment no space");
+    REQUIRE(comments[5u].content == "Multiline\nC\ncomment");
+    REQUIRE(comments[6u].content == "Multiline\nC\n comment\n  with\n   indent");
+    REQUIRE(comments[7u].content == "Multiline\nC\ncomment\nwith\nindent\nstar");
+}
+
 TEST_CASE("comment matching")
 {
     auto code = R"(
