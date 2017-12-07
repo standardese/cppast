@@ -6,7 +6,7 @@
 
 Library interface to the C++ AST &mdash; parse source files, synthesize entities, get documentation comments and generate code.
 
-*Note: This is currently just a first prototype and everything is unstable for now. If your code can't be parsed, please file an issue.*
+[![Patreon](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://patreon.com/foonathan)
 
 ## Motivation
 
@@ -24,6 +24,7 @@ See [this blog post](http://foonathan.net/blog/2017/04/20/cppast.html) for more 
 * Exposes (almost) all C++ entities: Supports everything from functions to classes, templates to friend declarations, macros to enums;
 * Exposes full information about C++ types;
 * Supports and exposes documentation comments in various formats with smart entity matching;
+* Supports C++11 attributes (including user-defined ones);
 * AST hierarchy completely decoupled from parser: This allows synthesizing AST entities and multiple parsing backends;
 * Parser based on libclang: While libclang does have its limitations and/or bugs, the implemented parser uses various workarounds/hacks to provide a parser that breaks only in rare edge cases you won't notice. See [issues tagged with `libclang-parser` for a list](https://github.com/foonathan/cppast/issues?q=is%3Aissue+is%3Aopen+label%3Alibclang-parser);
 * Simple yet customizable code generation interface.
@@ -33,7 +34,6 @@ See [this blog post](http://foonathan.net/blog/2017/04/20/cppast.html) for more 
 * Support modification of parsed entities: they're currently all immutable, need to find a decent way of implementing that
 * Full support for expressions: currently only literal expressions are exposed;
 * Support for statements: currently function bodies aren't parsed at all;
-* Support for attributes: currently they're ignored;
 * Support for member specialization: members of a template can be specialized separately, this is not supported.
 
 ## Example
