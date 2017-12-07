@@ -24,7 +24,9 @@ using struct_=int;
 struct_ var2;
 
 struct foo{
-  int a;
+  using my_int=int;
+
+  my_int a;
 
   auto func(int)->int(*(*)(int))[42];
 
@@ -66,7 +68,9 @@ struct_ var2;
 
 struct foo
 {
-  int a;
+  using my_int = int;
+
+  my_int a;
 
   auto func(int) -> int(*(*)(int))[42];
 
