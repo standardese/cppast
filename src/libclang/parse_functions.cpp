@@ -85,13 +85,17 @@ void detail::comment_context::match(cpp_entity& e, const CXCursor& cur) const
     match(e, line);
 }
 
-void detail::comment_context::match(cpp_entity& e, unsigned line) const
+void detail::comment_context::match(cpp_entity& e, unsigned line, bool skip_comments) const
 {
     // find comment
+    auto save = cur_;
     while (cur_ != end_ && cur_->line + 1 < line)
         ++cur_;
     if (cur_ != end_ && cur_->matches(e, line))
         e.set_comment(std::move(cur_++->comment));
+
+    if (!skip_comments)
+        cur_ = save;
 }
 
 namespace

@@ -279,6 +279,10 @@ g(h)
  i */
 using i = int;
 
+/// cstddef
+/// cstddef
+#include <cstddef>
+
 /// j
 /// j
 template <typename T/**/>
@@ -300,7 +304,15 @@ void j();
         return true;
     });
 
+    auto add = 0u;
     for (auto& comment : file->unmatched_comments())
-        REQUIRE(comment.content == "u");
-    REQUIRE((file->unmatched_comments().size() == 3u));
+    {
+        if (comment.content == "cstddef\ncstddef")
+            // happens if include parsing is not supported
+            // error is still going to be detected because if it is supported, the entity will be matched above
+            add = 1u;
+        else
+            REQUIRE(comment.content == "u");
+    }
+    REQUIRE((file->unmatched_comments().size() == 3u + add));
 }

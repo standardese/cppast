@@ -489,7 +489,9 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
                 auto include =
                     cpp_include_directive::build(std::move(include_iter->file), include_iter->kind,
                                                  detail::get_cursor_name(cur).c_str());
-                context.comments.match(*include, include_iter->line);
+                context.comments.match(*include, include_iter->line,
+                                       false); // must not skip comments,
+                                               // includes are not reported in order
                 builder.add_child(std::move(include));
 
                 ++include_iter;

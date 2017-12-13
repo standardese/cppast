@@ -48,7 +48,7 @@ namespace cppast
             // must be called for entities that want an associated comment
             // must be called *BEFORE* the children are added
             void match(cpp_entity& e, const CXCursor& cur) const;
-            void match(cpp_entity& e, unsigned line) const;
+            void match(cpp_entity& e, unsigned line, bool skip_comments = true) const;
 
         private:
             mutable pp_doc_comment* cur_;
