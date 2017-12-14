@@ -235,6 +235,16 @@ namespace cppast
         cpp_class_kind                         kind_;
         bool                                   final_;
     };
+
+    /// \returns The type the base class refers to.
+    /// It is either a class or some form of typedef.
+    type_safe::optional_ref<const cpp_entity> get_class_or_typedef(const cpp_entity_index& index,
+                                                                   const cpp_base_class&   base);
+
+    /// \returns The type the base class refers to.
+    /// Typedefs are unwrapped.
+    type_safe::optional_ref<const cpp_class> get_class(const cpp_entity_index& index,
+                                                       const cpp_base_class&   base);
 } // namespace cppast
 
 #endif // CPPAST_CPP_CLASS_HPP_INCLUDED
