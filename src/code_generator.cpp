@@ -88,6 +88,8 @@ namespace
             if (!need_sep)
                 // file empty, write newl
                 output << newl;
+            else
+                output.container_end();
         }
         return static_cast<bool>(output);
     }
@@ -173,6 +175,7 @@ namespace
             output.indent();
 
             write_container(output, ns, newl, cur_access);
+            output.container_end();
 
             output.unindent();
             output << punctuation("}") << newl;
@@ -284,6 +287,8 @@ namespace
                                                 cur_access);
                 if (need_sep)
                     output << newl;
+
+                output.container_end();
 
                 output.unindent();
                 output << punctuation("};") << newl;
@@ -425,6 +430,8 @@ namespace
                         need_sep = generate_code_impl(generator, member, last_access);
                     }
                 }
+
+                output.container_end();
 
                 output.unindent();
                 output << punctuation("};") << newl;

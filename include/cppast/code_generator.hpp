@@ -230,6 +230,12 @@ namespace cppast
                 return gen_;
             }
 
+            /// \effects Calls `on_container_end()`.
+            void container_end() const noexcept
+            {
+                gen_->on_container_end(*this, *e_);
+            }
+
             /// \effects Call `do_indent()` followed by `do_write_newline()` (if `print_newline` is `true`).
             void indent(bool print_newline = true) const noexcept
             {
@@ -394,6 +400,15 @@ namespace cppast
         /// \effects Will be invoked after all code of an entity has been generated.
         /// The base class version has no effect.
         virtual void on_end(const output& out, const cpp_entity& e)
+        {
+            (void)out;
+            (void)e;
+        }
+
+        /// \effects Will be invoked after all children of a container have been generated.
+        /// It can be used to inject additional children.
+        /// The base class version has no effect.
+        virtual void on_container_end(const output& out, const cpp_entity& e)
         {
             (void)out;
             (void)e;
