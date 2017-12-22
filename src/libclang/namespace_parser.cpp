@@ -24,7 +24,9 @@ namespace
         if (skip_if(stream, "inline"))
             is_inline = true;
 
-        // C++17 nested namespace declarations
+        // C++17 nested namespace declarations get one cursor per nested name.
+        // The first cursor starts with the `namespace` keyword, and the
+        // following start with the `::` separator. Either way, it is skipped.
         if (!detail::skip_if(stream, "namespace"))
           skip(stream, "::");
 
@@ -40,7 +42,8 @@ namespace
         auto other_attributes = parse_attributes(stream);
         attributes.insert(attributes.end(), other_attributes.begin(), other_attributes.end());
 
-        // C++17 nested namespace declarations
+        // If the next token is not `::`, there are no more nested namespace
+        // names, and we expect to see an opening brace.
         if (!detail::skip_if(stream, "::"))
           skip(stream, "{");
 
