@@ -167,7 +167,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class(const detail::parse_context&
                        == CXCursor_UnexposedAttr) // I have no idea what this is, but happens on Windows
                 // other children due to templates and stuff
                 return;
-            else if (auto entity = parse_entity(context, child))
+            else if (auto entity = parse_entity(context, &builder.get(), child))
                 builder.add_child(std::move(entity));
         });
     }

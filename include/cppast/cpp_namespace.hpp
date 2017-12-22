@@ -23,9 +23,9 @@ namespace cppast
         class builder
         {
         public:
-            /// \effects Sets the namespace name and whether it is inline.
-            explicit builder(std::string name, bool is_inline)
-            : namespace_(new cpp_namespace(std::move(name), is_inline))
+            /// \effects Sets the namespace name and whether it is inline and nested.
+            explicit builder(std::string name, bool is_inline, bool is_nested)
+            : namespace_(new cpp_namespace(std::move(name), is_inline, is_nested))
             {
             }
 
@@ -60,6 +60,12 @@ namespace cppast
             return inline_;
         }
 
+        /// \returns Whether or not the namespace is part of a C++17 nested namespace.
+        bool is_nested() const noexcept
+        {
+            return nested_;
+        }
+
         /// \returns Whether or not the namespace is anonymous.
         bool is_anonymous() const noexcept
         {
@@ -67,8 +73,8 @@ namespace cppast
         }
 
     private:
-        cpp_namespace(std::string name, bool is_inline)
-        : cpp_entity(std::move(name)), inline_(is_inline)
+        cpp_namespace(std::string name, bool is_inline, bool is_nested)
+        : cpp_entity(std::move(name)), inline_(is_inline), nested_(is_nested)
         {
         }
 
@@ -80,6 +86,7 @@ namespace cppast
         }
 
         bool inline_;
+        bool nested_;
     };
 
     /// \exclude
@@ -184,9 +191,7 @@ namespace cppast
         }
 
     private:
-        cpp_using_declaration(cpp_entity_ref target) : cpp_entity(""), target_(std::move(target))
-        {
-        }
+        cpp_using_declaration(cpp_entity_ref target) : cpp_entity(""), target_(std::move(target)) {}
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 

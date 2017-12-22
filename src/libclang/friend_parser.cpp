@@ -54,7 +54,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_friend(const detail::parse_context
                 // for some reason libclang gives a type ref here
                 // we actually need a class decl cursor, so parse the referenced one
                 // this might be a definition, so give friend information to the parser
-                entity  = parse_entity(context, referenced, cur);
+                entity  = parse_entity(context, nullptr, referenced, cur);
                 comment = type_safe::copy(entity->comment()).value_or("");
             }
         }
@@ -74,7 +74,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_friend(const detail::parse_context
         }
         else if (clang_isDeclaration(kind))
         {
-            entity = parse_entity(context, child, cur);
+            entity = parse_entity(context, nullptr, child, cur);
             if (entity)
             {
                 // steal comment

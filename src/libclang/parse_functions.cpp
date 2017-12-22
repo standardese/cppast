@@ -112,8 +112,8 @@ namespace
 }
 
 std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& context,
-                                                 const CXCursor&              cur,
-                                                 const CXCursor&              parent_cur) try
+                                                 cpp_entity* parent, const CXCursor& cur,
+                                                 const CXCursor& parent_cur) try
 {
     if (context.logger->is_verbose())
     {
@@ -138,7 +138,8 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         break;
 
     case CXCursor_Namespace:
-        return parse_cpp_namespace(context, cur);
+        DEBUG_ASSERT(parent, detail::assert_handler{});
+        return parse_cpp_namespace(context, *parent, cur);
     case CXCursor_NamespaceAlias:
         return parse_cpp_namespace_alias(context, cur);
     case CXCursor_UsingDirective:

@@ -112,7 +112,7 @@ namespace cppast
             const parse_context& context, const CXCursor& cur);
 
         std::unique_ptr<cpp_entity> parse_cpp_namespace(const parse_context& context,
-                                                        const CXCursor&      cur);
+                                                        cpp_entity& parent, const CXCursor& cur);
         std::unique_ptr<cpp_entity> parse_cpp_namespace_alias(const parse_context& context,
                                                               const CXCursor&      cur);
         std::unique_ptr<cpp_entity> parse_cpp_using_directive(const parse_context& context,
@@ -162,9 +162,10 @@ namespace cppast
         std::unique_ptr<cpp_entity> parse_cpp_static_assert(const parse_context& context,
                                                             const CXCursor&      cur);
 
+        // parent: used for nested namespace, doesn't matter otherwise
         // parent_cur: used when parsing templates or friends
         std::unique_ptr<cpp_entity> parse_entity(
-            const parse_context& context, const CXCursor& cur,
+            const parse_context& context, cpp_entity* parent, const CXCursor& cur,
             const CXCursor& parent_cur = clang_getNullCursor());
     }
 } // namespace cppast::detail
