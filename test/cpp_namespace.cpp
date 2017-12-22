@@ -33,6 +33,16 @@ namespace c
 /// namespace {
 /// }
 namespace {}
+
+/// namespace e{
+///   namespace f{
+///   }
+/// }
+namespace e::f {}
+
+/// \entity e::f
+/// namespace f{
+/// }
 )";
 
     auto file  = parse({}, "cpp_namespace.cpp", code);
@@ -66,6 +76,19 @@ namespace {}
         else if (ns.name() == "")
         {
             REQUIRE(ns.is_anonymous());
+            REQUIRE(!ns.is_inline());
+            REQUIRE(no_children == 0u);
+        }
+        else if (ns.name() == "e")
+        {
+            REQUIRE(!ns.is_anonymous());
+            REQUIRE(!ns.is_inline());
+            REQUIRE(no_children == 1u);
+        }
+        else if (ns.name() == "f")
+        {
+            REQUIRE(!ns.is_anonymous());
+            check_parent(ns, "e", "e::f");
             REQUIRE(!ns.is_inline());
             REQUIRE(no_children == 0u);
         }

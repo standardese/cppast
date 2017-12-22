@@ -18,13 +18,18 @@ namespace
     {
         detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
         detail::cxtoken_stream stream(tokenizer, cur);
-        // [inline] namespace [<attribute>] <identifier> {
+        // [inline] namespace|:: [<attribute>] <identifier> [{]
 
         auto is_inline = false;
         if (skip_if(stream, "inline"))
             is_inline = true;
 
-        skip(stream, "namespace");
+        // C++17 nested namespace declarations get one cursor per nested name.
+        // The first cursor starts with the `namespace` keyword, and the
+        // following start with the `::` separator. Either way, it is skipped.
+        if (!detail::skip_if(stream, "namespace"))
+          skip(stream, "::");
+
         auto attributes = parse_attributes(stream);
 
         // <identifier> {
@@ -37,7 +42,10 @@ namespace
         auto other_attributes = parse_attributes(stream);
         attributes.insert(attributes.end(), other_attributes.begin(), other_attributes.end());
 
-        skip(stream, "{");
+        // If the next token is not `::`, there are no more nested namespace
+        // names, and we expect to see an opening brace.
+        if (!detail::skip_if(stream, "::"))
+          skip(stream, "{");
 
         auto result = cpp_namespace::builder(name.c_str(), is_inline);
         result.get().add_attribute(attributes);
