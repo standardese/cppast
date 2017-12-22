@@ -34,15 +34,9 @@ namespace c
 /// }
 namespace {}
 
-/// namespace e{
-///   namespace f{
-///   }
-/// }
-namespace e::f {}
-
-/// \entity e::f
 /// namespace f{
 /// }
+namespace e::f {}
 )";
 
     auto file  = parse({}, "cpp_namespace.cpp", code);
@@ -84,6 +78,7 @@ namespace e::f {}
             REQUIRE(!ns.is_anonymous());
             REQUIRE(!ns.is_inline());
             REQUIRE(no_children == 1u);
+            return false; // don't have a comment
         }
         else if (ns.name() == "f")
         {
@@ -94,8 +89,10 @@ namespace e::f {}
         }
         else
             REQUIRE(false);
+
+        return true;
     });
-    REQUIRE(count == 5u);
+    REQUIRE(count == 7u);
 }
 
 TEST_CASE("cpp_namespace_alias")
@@ -126,7 +123,7 @@ namespace f = outer::c;
 )";
 
     cpp_entity_index idx;
-    auto check_alias = [&](const cpp_namespace_alias& alias, const char* target_name,
+    auto             check_alias = [&](const cpp_namespace_alias& alias, const char* target_name,
                            const char* target_full_name, unsigned no) {
         auto& target = alias.target();
         REQUIRE(target.name() == target_name);

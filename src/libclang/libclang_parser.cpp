@@ -504,7 +504,7 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
                  macro_iter != preprocessed.macros.end() && macro_iter->line <= line; ++macro_iter)
                 builder.add_child(std::move(macro_iter->macro));
 
-            auto entity = detail::parse_entity(context, cur);
+            auto entity = detail::parse_entity(context, &builder.get(), cur);
             if (entity)
                 builder.add_child(std::move(entity));
         }

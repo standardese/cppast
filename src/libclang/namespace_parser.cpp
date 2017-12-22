@@ -27,15 +27,19 @@ namespace
         // C++17 nested namespace declarations get one cursor per nested name.
         // The first cursor starts with the `namespace` keyword, and the
         // following start with the `::` separator. Either way, it is skipped.
+        auto is_nested = false;
         if (!detail::skip_if(stream, "namespace"))
-          skip(stream, "::");
+        {
+            is_nested = true;
+            skip(stream, "::");
+        }
 
         auto attributes = parse_attributes(stream);
 
         // <identifier> {
         // or when anonymous: {
         if (detail::skip_if(stream, "{"))
-            return cpp_namespace::builder("", is_inline);
+            return cpp_namespace::builder("", is_inline, false);
 
         auto& name = stream.get().value();
 
@@ -45,23 +49,32 @@ namespace
         // If the next token is not `::`, there are no more nested namespace
         // names, and we expect to see an opening brace.
         if (!detail::skip_if(stream, "::"))
-          skip(stream, "{");
+            skip(stream, "{");
 
-        auto result = cpp_namespace::builder(name.c_str(), is_inline);
+        auto result = cpp_namespace::builder(name.c_str(), is_inline, is_nested);
         result.get().add_attribute(attributes);
         return result;
     }
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_namespace(const detail::parse_context& context,
-                                                        const CXCursor&              cur)
+                                                        cpp_entity& parent, const CXCursor& cur)
 {
     DEBUG_ASSERT(cur.kind == CXCursor_Namespace, detail::assert_handler{});
 
     auto builder = make_ns_builder(context, cur);
-    context.comments.match(builder.get(), cur);
+    if (builder.get().is_nested())
+    {
+        // steal comment from parent
+        DEBUG_ASSERT(parent.kind() == cpp_namespace::kind(), detail::assert_handler{});
+        builder.get().set_comment(type_safe::copy(parent.comment()));
+        parent.set_comment(type_safe::nullopt);
+    }
+    else
+        context.comments.match(builder.get(), cur);
+
     detail::visit_children(cur, [&](const CXCursor& cur) {
-        auto entity = parse_entity(context, cur);
+        auto entity = parse_entity(context, &builder.get(), cur);
         if (entity)
             builder.add_child(std::move(entity));
     });

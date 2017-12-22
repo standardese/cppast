@@ -35,7 +35,7 @@ namespace
         DEBUG_ASSERT(!clang_Cursor_isNull(result), detail::parse_error_handler{}, cur,
                      "missing child of template");
 
-        auto entity = detail::parse_entity(context, result, cur);
+        auto entity = detail::parse_entity(context, nullptr, result, cur);
         if (!entity)
             return type_safe::nullopt;
         DEBUG_ASSERT(p(entity->kind()), detail::parse_error_handler{}, cur,
