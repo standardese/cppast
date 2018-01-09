@@ -275,8 +275,14 @@ namespace cppast
             template <typename T, class Predicate>
             const output& operator<<(const basic_cpp_entity_ref<T, Predicate>& ref) const
             {
-                gen_->do_write_reference(ref.id(), ref.name());
+                was_excluded_ = !gen_->do_write_reference(ref.id(), ref.name());
                 return *this;
+            }
+
+            /// \returns Whether or not the last reference was excluded.
+            bool was_reference_excluded() const
+            {
+                return was_excluded_;
             }
 
             /// \effects Calls `do_write_punctuation()`.
@@ -353,6 +359,7 @@ namespace cppast
             type_safe::object_ref<code_generator>   gen_;
             type_safe::object_ref<const cpp_entity> e_;
             generation_options                      options_;
+            mutable bool                            was_excluded_ = false;
         };
 
     protected:
@@ -427,6 +434,7 @@ namespace cppast
 
         /// \effects Writes the specified special token.
         /// The base class version simply forwards to `do_write_token_seq()`.
+        /// \returns `do_write_reference()` returns `false`, if the reference was excluded.
         /// \notes This is useful for syntax highlighting, for example.
         /// \group write
         virtual void do_write_keyword(string_view keyword)
@@ -439,11 +447,12 @@ namespace cppast
             do_write_token_seq(identifier);
         }
         /// \group write
-        virtual void do_write_reference(type_safe::array_ref<const cpp_entity_id> id,
+        virtual bool do_write_reference(type_safe::array_ref<const cpp_entity_id> id,
                                         string_view                               name)
         {
             (void)id;
             do_write_token_seq(name);
+            return true;
         }
         /// \group write
         virtual void do_write_punctuation(string_view punct)

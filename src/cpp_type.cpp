@@ -481,6 +481,9 @@ namespace
                                       const cpp_template_instantiation_type& type)
     {
         output << type.primary_template();
+        if (output.was_reference_excluded())
+            return;
+
         if (type.arguments_exposed())
             detail::write_template_arguments(output, type.arguments());
         else
