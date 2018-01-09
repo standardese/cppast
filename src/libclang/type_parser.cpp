@@ -445,7 +445,14 @@ namespace
         auto decl  = clang_getTypeDeclaration(type);
         auto count = clang_Type_getNumTemplateArguments(clang_getCursorType(decl));
         if (count > 0 || is_direct_templated(decl))
-            return decl;
+        {
+            auto specialized = clang_getSpecializedCursorTemplate(decl);
+            if (clang_Cursor_isNull(specialized))
+                // is already a template
+                return decl;
+            else
+                return specialized;
+        }
         else
         {
             // look if the templ_name matches a template template parameter
