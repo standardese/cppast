@@ -694,8 +694,11 @@ namespace
         if (!in_main_file)
             return type_safe::nullopt;
 
-        return detail::pp_include{cpp_file_ref(cpp_entity_id(filename), filename), include_kind,
-                                  p.cur_line()};
+        if (filename.size() > 2u && filename[0] == '.'
+            && (filename[1] == '/' || filename[1] == '\\'))
+            filename = filename.substr(2);
+
+        return detail::pp_include{std::move(filename), include_kind, p.cur_line()};
     }
 
     bool bump_pragma(position& p)
@@ -777,8 +780,7 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                 logger.log("preprocessor",
                            format_diagnostic(severity::debug,
                                              source_location::make_file(path, p.cur_line()),
-                                             "parsing include '", include.value().file.name(),
-                                             "'"));
+                                             "parsing include '", include.value().file_name, "'"));
 
             result.includes.push_back(std::move(include.value()));
         }

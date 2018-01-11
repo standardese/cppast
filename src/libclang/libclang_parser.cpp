@@ -116,9 +116,15 @@ namespace
         return file.size() > 2 && file[1] == ':';
     }
 
+    bool is_absolute(const std::string& file)
+    {
+        return !file.empty()
+               && (has_drive_prefix(file) || file.front() == '/' || file.front() == '\\');
+    }
+
     std::string get_full_path(const detail::cxstring& dir, const std::string& file)
     {
-        if (has_drive_prefix(file) || file.front() == '/' || file.front() == '\\')
+        if (is_absolute(file))
             // absolute file
             return file;
         else if (dir[dir.length() - 1] != '/' && dir[dir.length() - 1] != '\\')
@@ -466,7 +472,7 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
     auto tu   = get_cxunit(logger(), pimpl_->index, config, path.c_str(), preprocessed.source);
     auto file = clang_getFile(tu.get(), path.c_str());
 
-    cpp_file::builder builder(path);
+    cpp_file::builder builder(detail::cxstring(clang_getFileName(file)).std_str());
     auto              macro_iter   = preprocessed.macros.begin();
     auto              include_iter = preprocessed.includes.begin();
 
@@ -486,9 +492,22 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
                                  && get_line_no(cur) >= include_iter->line,
                              detail::assert_handler{});
 
+                // create an include directive
+                auto full_path = detail::get_cursor_name(cur);
+                // if we got an absolute file path for the current file,
+                // also use an absolute file path for the id
+                // otherwise just use the file name as written in the source file
+                // note: this is a hack around lack of `fs::canonical()`
+                cpp_entity_id id("");
+                if (is_absolute(builder.get().name()))
+                    id = cpp_entity_id(full_path.c_str());
+                else
+                    id = cpp_entity_id(include_iter->file_name.c_str());
+
                 auto include =
-                    cpp_include_directive::build(std::move(include_iter->file), include_iter->kind,
-                                                 detail::get_cursor_name(cur).c_str());
+                    cpp_include_directive::build(cpp_file_ref(id,
+                                                              std::move(include_iter->file_name)),
+                                                 include_iter->kind, full_path.std_str());
                 context.comments.match(*include, include_iter->line,
                                        false); // must not skip comments,
                                                // includes are not reported in order
