@@ -97,6 +97,10 @@ endfunction()
 # find libclang using the config tool
 # sets: LLVM_VERSION, LIBCLANG_INCLUDE_DIR, LIBCLANG_SYSTEM_INCLUDE_DIR, LIBCLANG_LIBRARY and CLANG_BINARY
 function(_cppast_find_libclang config_tool min_version force)
+    if (NOT EXISTS "${LLVM_CONFIG_BINARY}")
+        message(FATAL_ERROR "LLVM config binary not found at ${LLVM_CONFIG_BINARY}")
+    endif()
+
     # check version
     execute_process(COMMAND ${LLVM_CONFIG_BINARY} --version
                     OUTPUT_VARIABLE llvm_version OUTPUT_STRIP_TRAILING_WHITESPACE)

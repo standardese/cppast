@@ -3,40 +3,49 @@ language: cpp
 matrix:
   include:
     - os: linux
+      dist: trusty
+      sudo: false
       compiler: gcc
       addons:
         apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
-      env: TOOLSET=g++-5 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=3.9.1
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-3.9']
+          packages: ['g++-5', 'llvm-3.9', 'clang-3.9', 'libclang-3.9-dev']
+      env: TOOLSET=g++-5 LLVM_VERSION=3.9 LLVM_CONFIG_BINARY=/usr/bin/llvm-config-3.9
 
     - os: linux
+      dist: trusty
+      sudo: false
       compiler: gcc
       addons:
         apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5', 'lcov']
-      env: TOOLSET=g++-5 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=4.0.0 CPPAST_TEST_GCOV=ON
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-4.0']
+          packages: ['g++-5', 'lcov', 'llvm-4.0', 'clang-4.0', 'libclang-4.0-dev']
+      env: TOOLSET=g++-5 CPPAST_TEST_GCOV=ON LLVM_VERSION=4.0 LLVM_CONFIG_BINARY=/usr/bin/llvm-config-4.0
 
     - os: linux
+      dist: trusty
+      sudo: false
       compiler: clang
       addons:
         apt:
-          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.9']
-          packages: ['g++-4.9', 'g++-5', 'clang-3.9']
-      env: TOOLSET=clang++-3.9 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=3.9.1
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-3.9']
+          packages: ['g++-4.9', 'g++-5', 'llvm-3.9', 'clang-3.9', 'libclang-3.9-dev']
+      env: TOOLSET=clang++-3.9 LLVM_VERSION=3.9 LLVM_CONFIG_BINARY=/usr/bin/llvm-config-3.9
 
     - os: linux
+      dist: trusty
+      sudo: false
       compiler: clang
       addons:
         apt:
-          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.9']
-          packages: ['g++-4.9', 'g++-5', 'clang-3.9']
-      env: TOOLSET=clang++-3.9 LLVM_DOWNLOAD_OS_NAME=x86_64-linux-gnu-ubuntu-14.04 LLVM_VERSION=4.0.0
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-4.0']
+          packages: ['g++-4.9', 'g++-5', 'llvm-4.0', 'clang-4.0', 'libclang-4.0-dev']
+      env: TOOLSET=clang++-4.0 LLVM_VERSION=4.0 LLVM_CONFIG_BINARY=/usr/bin/llvm-config-4.0
 
     - os: osx
+      osx_image: xcode9.2
       compiler: clang
-      env: TOOLSET=clang++ LLVM_DOWNLOAD_OS_NAME=x86_64-apple-darwin LLVM_VERSION=4.0.0
+      env: TOOLSET=clang++ LLVM_VERSION=4.0 LLVM_CONFIG_BINARY=/usr/local/opt/llvm/bin/llvm-config
 
 install:
   - cd ../
@@ -50,6 +59,7 @@ install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then wget --no-check-certificate https://cmake.org/files/v3.3/cmake-3.3.0-Darwin-x86_64.tar.gz; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then tar -xzf cmake-3.3.0-Darwin-x86_64.tar.gz && ls && ls cmake-3.3.0-Darwin-x86_64; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export CMAKE=$TRAVIS_BUILD_DIR/../cmake-3.3.0-Darwin-x86_64/CMake.app/Contents/bin/cmake; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install --with-clang llvm; fi
 
   - export CXX=$TOOLSET
   - $CXX --version
@@ -59,9 +69,9 @@ install:
 
 script:
   - mkdir build/ && cd build/
-  - $CMAKE -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-Werror -pedantic -Wall -Wextra -Wconversion -Wsign-conversion -Wno-parentheses -Wno-assume" -DLLVM_DOWNLOAD_OS_NAME=$LLVM_DOWNLOAD_OS_NAME -DLLVM_PREFERRED_VERSION=$LLVM_VERSION ../ -DCPPAST_TEST_GCOV=$CPPAST_TEST_GCOV
+  - $CMAKE -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-Werror -pedantic -Wall -Wextra -Wconversion -Wsign-conversion -Wno-parentheses -Wno-assume" ../ -DCPPAST_TEST_GCOV=$CPPAST_TEST_GCOV -DLLVM_CONFIG_BINARY=$LLVM_CONFIG_BINARY
   - $CMAKE --build .
-  - if [[ "$LLVM_VERSION" == "4.0.0" ]]; then ./test/cppast_test \*; else ./test/cppast_test; fi
+  - if [[ "$LLVM_VERSION" == "4.0" ]]; then ./test/cppast_test \*; else ./test/cppast_test; fi
 
 after_script:
   - if [[ "$CPPAST_TEST_GCOV" == "ON" ]]; then $CMAKE --build . --target cppast_coverage && cd ../ && coveralls --no-gcov --lcov-file build/cppast_coverage.info.cleaned; fi
