@@ -202,7 +202,8 @@ TEST_CASE("comment content")
 
 /** Multiline
 C
-comment */
+  comment
+with indent */
 
     /** Multiline
         C
@@ -227,7 +228,7 @@ comment */
     REQUIRE(comments[2u].content == "multi\nline\ncomment");
     REQUIRE(comments[3u].content == "C comment");
     REQUIRE(comments[4u].content == "C comment no space");
-    REQUIRE(comments[5u].content == "Multiline\nC\ncomment");
+    REQUIRE(comments[5u].content == "Multiline\nC\n  comment\nwith indent");
     REQUIRE(comments[6u].content == "Multiline\nC\n comment\n  with\n   indent");
     REQUIRE(comments[7u].content == "Multiline\nC\ncomment\nwith\nindent\nstar");
 }

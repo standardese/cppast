@@ -192,7 +192,7 @@ namespace
     {
     public:
         position(ts::object_ref<std::string> result, const char* ptr) noexcept
-        : result_(result), cur_line_(1u), ptr_(ptr), write_(true)
+        : result_(result), cur_line_(1u), cur_column_(0u), ptr_(ptr), write_(true)
         {
         }
 
@@ -436,13 +436,20 @@ namespace
                 while (!result.comment.empty() && result.comment.back() == ' ')
                     result.comment.pop_back();
 
-                // skip newline
-                p.skip_with_linecount();
-                result.comment += '\n';
+                // skip newline(s)
+                while (starts_with(p, "\n"))
+                {
+                    p.skip_with_linecount();
+                    result.comment += '\n';
+                }
 
                 // skip indentation
+                auto actual_indent = 0u;
                 for (auto i = 0u; i < indent && starts_with(p, " "); ++i)
+                {
+                    ++actual_indent;
                     p.skip();
+                }
 
                 auto extra_indent = 0u;
                 while (starts_with(p, " "))
@@ -463,6 +470,8 @@ namespace
                 {
                     // insert extra indent again
                     result.comment += std::string(extra_indent, ' ');
+                    // use minimum indent in the future
+                    indent = std::min(actual_indent, indent);
                 }
             }
             else
