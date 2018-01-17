@@ -119,7 +119,12 @@ function(_cppast_find_libclang config_tool min_version force)
         execute_process(COMMAND ${config_tool} --includedir
                         OUTPUT_VARIABLE llvm_include_dir OUTPUT_STRIP_TRAILING_WHITESPACE)
         find_path(LIBCLANG_INCLUDE_DIR "clang-c/Index.h" "${llvm_include_dir}" NO_DEFAULT_PATH)
-        message(STATUS "Found libclang header files at ${LIBCLANG_INCLUDE_DIR}")
+
+        if(NOT LIBCLANG_INCLUDE_DIR)
+            message(FATAL_ERROR "libclang header files not found")
+        else()
+            message(STATUS "Found libclang header files at ${LIBCLANG_INCLUDE_DIR}")
+        endif()
     endif()
 
     # find libclang library in llvm_library_dir
@@ -130,7 +135,12 @@ function(_cppast_find_libclang config_tool min_version force)
         execute_process(COMMAND ${config_tool} --libdir
                         OUTPUT_VARIABLE llvm_library_dir OUTPUT_STRIP_TRAILING_WHITESPACE)
         find_library(LIBCLANG_LIBRARY "clang" "${llvm_library_dir}" NO_DEFAULT_PATH)
-        message(STATUS "Found libclang library at ${LIBCLANG_LIBRARY}")
+
+        if(NOT LIBCLANG_LIBRARY)
+            message(FATAL_ERROR "libclang library not found")
+        else()
+            message(STATUS "Found libclang library at ${LIBCLANG_LIBRARY}")
+        endif()
     endif()
 
     # find system header files in llvm_library_dir
@@ -139,7 +149,12 @@ function(_cppast_find_libclang config_tool min_version force)
     endif()
     if(NOT LIBCLANG_SYSTEM_INCLUDE_DIR)
         find_path(LIBCLANG_SYSTEM_INCLUDE_DIR "stddef.h" "${llvm_library_dir}/clang/${llvm_version}/include" NO_DEFAULT_PATH)
-        message(STATUS "Found libclang system header files at ${LIBCLANG_SYSTEM_INCLUDE_DIR}")
+
+        if(NOT LIBCLANG_SYSTEM_INCLUDE_DIR)
+            message(FATAL_ERROR "libclang system header files not found")
+        else()
+            message(STATUS "Found libclang system header files at ${LIBCLANG_SYSTEM_INCLUDE_DIR}")
+        endif()
     endif()
 
     # find clang binary in llvm_binary_dir
@@ -150,7 +165,12 @@ function(_cppast_find_libclang config_tool min_version force)
         execute_process(COMMAND ${config_tool} --bindir
                         OUTPUT_VARIABLE llvm_binary_dir OUTPUT_STRIP_TRAILING_WHITESPACE)
         find_program(CLANG_BINARY "clang" "${llvm_binary_dir}" NO_DEFAULT_PATH)
-        message(STATUS "Found clang binary at ${CLANG_BINARY}")
+
+        if(NOT CLANG_BINARY)
+            message(FATAL_ERROR "clang binary not found")
+        else()
+            message(STATUS "Found clang binary at ${CLANG_BINARY}")
+        endif()
     endif()
 endfunction()
 
