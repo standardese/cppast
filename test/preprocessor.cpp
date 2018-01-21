@@ -6,7 +6,7 @@
 
 using namespace cppast;
 
-TEST_CASE("preprocessor_parses_escaped_character")
+TEST_CASE("preprocessor_parses_escaped_character", "[!hide][clang4]")
 {
     write_file("ppec.hpp", R"(
 )");
