@@ -34,8 +34,6 @@ set(tests
         preprocessor.cpp
         visitor.cpp)
 
-    message(${CMAKE_CURRENT_LIST_DIR})
-
 add_executable(cppast_test test.cpp test_parser.hpp ${tests})
 target_include_directories(cppast_test PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(cppast_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../src)
