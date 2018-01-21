@@ -2,19 +2,9 @@
 #include <fstream>
 
 #include "libclang/preprocessor.hpp"
-
 #include "test_parser.hpp"
 
 using namespace cppast;
-
-/*libclang_compilation_database get_database(const char* json)
-{
-    std::ofstream file("compile_commands.json");
-    file << json;
-    file.close();
-
-    return libclang_compilation_database(".");
-}*/
 
 TEST_CASE("preprocessor_parses_escaped_character")
 {
