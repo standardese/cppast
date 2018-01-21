@@ -740,11 +740,7 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
         if (next && next > p.ptr())
             p.bump(std::size_t(next - p.ptr() - 1)); // subtract one to get before that character
 
-        if (starts_with(p, "\\\"")) // starts with \"
-            p.bump(2u);
-        else if (starts_with(p, "\\'")) // starts with \'
-            p.bump(2u);
-        else if (in_char == false && starts_with(p, "\"")) // starts with "
+        if (in_char == false && starts_with(p, "\"")) // starts with "
         {
             p.bump();
             in_string.toggle();
@@ -756,6 +752,10 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
         }
         else if (in_string == true || in_char == true)
             p.bump();
+        else if (starts_with(p, "\\\"")) // starts with \"
+            p.bump(2u);
+        else if (starts_with(p, "\\'")) // starts with \'
+            p.bump(2u);
         else if (auto macro = parse_macro(p, result, file_depth == 0u))
         {
             if (logger.is_verbose())
