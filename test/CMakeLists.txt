@@ -31,10 +31,12 @@ set(tests
         integration.cpp
         libclang_parser.cpp
         parser.cpp
+        preprocessor.cpp
         visitor.cpp)
 
 add_executable(cppast_test test.cpp test_parser.hpp ${tests})
 target_include_directories(cppast_test PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(cppast_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../src)
 target_link_libraries(cppast_test PUBLIC cppast)
 set_target_properties(cppast_test PROPERTIES CXX_STANDARD 11)
 
