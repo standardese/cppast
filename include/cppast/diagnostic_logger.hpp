@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2018 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -18,9 +18,7 @@ namespace cppast
     {
     public:
         /// \effects Creates it either as verbose or not.
-        explicit diagnostic_logger(bool is_verbose = false) noexcept : verbose_(is_verbose)
-        {
-        }
+        explicit diagnostic_logger(bool is_verbose = false) noexcept : verbose_(is_verbose) {}
 
         diagnostic_logger(const diagnostic_logger&) = delete;
         diagnostic_logger& operator=(const diagnostic_logger&) = delete;

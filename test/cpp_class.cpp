@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2018 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -95,8 +95,8 @@ struct g
 )";
 
     cpp_entity_index idx;
-    auto             file = parse(idx, "cpp_class.cpp", code);
-    auto count            = test_visit<cpp_class>(*file, [&](const cpp_class& c) {
+    auto             file  = parse(idx, "cpp_class.cpp", code);
+    auto             count = test_visit<cpp_class>(*file, [&](const cpp_class& c) {
         if (c.name() == "a" || c.name() == "base")
         {
             REQUIRE(c.class_kind() == cpp_class_kind::struct_t);
@@ -217,18 +217,18 @@ struct g
                     REQUIRE(base.access_specifier() == cpp_private);
                     REQUIRE(!base.is_virtual());
 
-                    REQUIRE(
-                        equal_types(idx, base.type(), *cpp_user_defined_type::build(
-                                                          cpp_type_ref(cpp_entity_id(""), "a"))));
+                    REQUIRE(equal_types(idx, base.type(),
+                                        *cpp_user_defined_type::build(
+                                            cpp_type_ref(cpp_entity_id(""), "a"))));
                 }
                 else if (base.name() == "d")
                 {
                     REQUIRE(base.access_specifier() == cpp_private);
                     REQUIRE(!base.is_virtual());
 
-                    REQUIRE(
-                        equal_types(idx, base.type(), *cpp_user_defined_type::build(
-                                                          cpp_type_ref(cpp_entity_id(""), "d"))));
+                    REQUIRE(equal_types(idx, base.type(),
+                                        *cpp_user_defined_type::build(
+                                            cpp_type_ref(cpp_entity_id(""), "d"))));
                 }
                 else
                     REQUIRE(false);
@@ -261,9 +261,9 @@ struct g
                     REQUIRE(base.access_specifier() == cpp_protected);
                     REQUIRE(base.is_virtual());
 
-                    REQUIRE(
-                        equal_types(idx, base.type(), *cpp_user_defined_type::build(
-                                                          cpp_type_ref(cpp_entity_id(""), "e"))));
+                    REQUIRE(equal_types(idx, base.type(),
+                                        *cpp_user_defined_type::build(
+                                            cpp_type_ref(cpp_entity_id(""), "e"))));
                 }
                 else
                     REQUIRE(false);
@@ -301,4 +301,3 @@ struct g
     });
     REQUIRE(count == 12u);
 }
-

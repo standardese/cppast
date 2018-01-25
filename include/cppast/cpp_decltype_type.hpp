@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2018 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -27,9 +27,7 @@ namespace cppast
         }
 
     private:
-        cpp_decltype_type(std::unique_ptr<cpp_expression> expr) : expr_(std::move(expr))
-        {
-        }
+        cpp_decltype_type(std::unique_ptr<cpp_expression> expr) : expr_(std::move(expr)) {}
 
         cpp_type_kind do_get_kind() const noexcept override
         {

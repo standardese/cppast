@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2018 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -24,9 +24,7 @@ namespace cppast
             static_assert(std::is_pointer<T>::value, "");
 
         public:
-            raii_wrapper() noexcept : obj_(nullptr)
-            {
-            }
+            raii_wrapper() noexcept : obj_(nullptr) {}
 
             explicit raii_wrapper(T obj) noexcept : obj_(obj)
             {
@@ -90,9 +88,7 @@ namespace cppast
         class cxstring
         {
         public:
-            explicit cxstring(CXString str) noexcept : str_(string(str))
-            {
-            }
+            explicit cxstring(CXString str) noexcept : str_(string(str)) {}
 
             cxstring(cxstring&& other) noexcept : str_(other.str_)
             {

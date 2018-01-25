@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2018 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -67,9 +67,7 @@ namespace cppast
             using difference_type   = std::ptrdiff_t;
             using iterator_category = std::forward_iterator_tag;
 
-            intrusive_list_iterator() noexcept : cur_(nullptr)
-            {
-            }
+            intrusive_list_iterator() noexcept : cur_(nullptr) {}
 
             reference operator*() const noexcept
             {
@@ -107,9 +105,7 @@ namespace cppast
             }
 
         private:
-            intrusive_list_iterator(T* ptr) : cur_(ptr)
-            {
-            }
+            intrusive_list_iterator(T* ptr) : cur_(ptr) {}
 
             T* cur_;
 
@@ -124,17 +120,15 @@ namespace cppast
             intrusive_list() = default;
 
             //=== modifiers ===//
-            template <
-                typename Dummy = T,
-                typename = typename std::enable_if<std::is_same<Dummy, cpp_file>::value>::type>
+            template <typename Dummy = T, typename = typename std::enable_if<
+                                              std::is_same<Dummy, cpp_file>::value>::type>
             void push_back(std::unique_ptr<T> obj) noexcept
             {
                 push_back_impl(std::move(obj));
             }
 
-            template <
-                typename U,
-                typename = typename std::enable_if<!std::is_same<T, cpp_file>::value, U>::type>
+            template <typename U, typename = typename std::enable_if<
+                                      !std::is_same<T, cpp_file>::value, U>::type>
             void push_back(const U& parent, std::unique_ptr<T> obj) noexcept
             {
                 push_back_impl(std::move(obj));

@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2018 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -67,9 +67,8 @@ using h = g<T, a>;
         }
         else if (alias.name() == "b")
         {
-            check_template_parameters(alias,
-                                      {{cpp_entity_kind::non_type_template_parameter_t, "I"},
-                                       {cpp_entity_kind::template_type_parameter_t, "T"}});
+            check_template_parameters(alias, {{cpp_entity_kind::non_type_template_parameter_t, "I"},
+                                              {cpp_entity_kind::template_type_parameter_t, "T"}});
             REQUIRE(equal_types(idx, alias.type_alias().underlying_type(),
                                 *cpp_template_parameter_type::build(
                                     cpp_template_type_parameter_ref(cpp_entity_id(""), "T"))));

@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2018 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -39,13 +39,9 @@ namespace cppast
     struct cpp_entity_id : type_safe::strong_typedef<cpp_entity_id, std::size_t>,
                            type_safe::strong_typedef_op::equality_comparison<cpp_entity_id>
     {
-        explicit cpp_entity_id(const std::string& str) : cpp_entity_id(str.c_str())
-        {
-        }
+        explicit cpp_entity_id(const std::string& str) : cpp_entity_id(str.c_str()) {}
 
-        explicit cpp_entity_id(const char* str) : strong_typedef(detail::id_hash(str))
-        {
-        }
+        explicit cpp_entity_id(const char* str) : strong_typedef(detail::id_hash(str)) {}
     };
 
     inline namespace literals
@@ -138,7 +134,7 @@ namespace cppast
             }
         };
 
-        mutable std::mutex mutex_;
+        mutable std::mutex                                     mutex_;
         mutable std::unordered_map<cpp_entity_id, value, hash> map_;
         mutable std::unordered_map<cpp_entity_id,
                                    std::vector<type_safe::object_ref<const cpp_namespace>>, hash>

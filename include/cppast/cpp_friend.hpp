@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2018 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -57,9 +57,7 @@ namespace cppast
             add_child(std::move(e));
         }
 
-        cpp_friend(std::unique_ptr<cpp_type> type) : cpp_entity(""), type_(std::move(type))
-        {
-        }
+        cpp_friend(std::unique_ptr<cpp_type> type) : cpp_entity(""), type_(std::move(type)) {}
 
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 

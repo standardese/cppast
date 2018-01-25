@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2018 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -13,26 +13,16 @@ TEST_CASE("parse_files")
     class null_compile_config : public compile_config
     {
     public:
-        null_compile_config() : compile_config({})
-        {
-        }
+        null_compile_config() : compile_config({}) {}
 
     private:
-        void do_set_flags(cpp_standard, compile_flags) override
-        {
-        }
+        void do_set_flags(cpp_standard, compile_flags) override {}
 
-        void do_add_include_dir(std::string) override
-        {
-        }
+        void do_add_include_dir(std::string) override {}
 
-        void do_add_macro_definition(std::string, std::string) override
-        {
-        }
+        void do_add_macro_definition(std::string, std::string) override {}
 
-        void do_remove_macro_definition(std::string) override
-        {
-        }
+        void do_remove_macro_definition(std::string) override {}
 
         const char* do_get_name() const noexcept override
         {
@@ -45,9 +35,7 @@ TEST_CASE("parse_files")
     public:
         using config = null_compile_config;
 
-        null_parser() : parser(type_safe::ref(logger_))
-        {
-        }
+        null_parser() : parser(type_safe::ref(logger_)) {}
 
     private:
         std::unique_ptr<cpp_file> do_parse(const cpp_entity_index& idx, std::string path,

@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2018 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -100,9 +100,7 @@ namespace cppast
         }
 
     protected:
-        compile_config(std::vector<std::string> def_flags) : flags_(std::move(def_flags))
-        {
-        }
+        compile_config(std::vector<std::string> def_flags) : flags_(std::move(def_flags)) {}
 
         compile_config(const compile_config&) = default;
         compile_config& operator=(const compile_config&) = default;

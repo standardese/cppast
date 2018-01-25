@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2018 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -109,7 +109,7 @@ namespace cppast
         }
 
         type_safe::variant<cpp_entity_id, std::vector<cpp_entity_id>> target_;
-        std::string name_;
+        std::string                                                   name_;
     };
 
     /// \exclude

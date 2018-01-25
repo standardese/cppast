@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2018 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -275,9 +275,8 @@ namespace cppast
         /// \notes This constructor only participates in overload resolution if `T` is dervied from [cppast::cpp_expression]().
         /// \param 1
         /// \exclude
-        template <
-            typename T,
-            typename = typename std::enable_if<std::is_base_of<cpp_expression, T>::value>::type>
+        template <typename T, typename = typename std::enable_if<
+                                  std::is_base_of<cpp_expression, T>::value>::type>
         cpp_template_argument(std::unique_ptr<T> expr)
         : arg_(std::unique_ptr<cpp_expression>(std::move(expr)))
         {
@@ -285,9 +284,7 @@ namespace cppast
 
         /// \effects Initializes it passing a template as argument.
         /// This corresponds to a [cppast::cpp_template_template_parameter]().
-        cpp_template_argument(cpp_template_ref templ) : arg_(std::move(templ))
-        {
-        }
+        cpp_template_argument(cpp_template_ref templ) : arg_(std::move(templ)) {}
 
         type_safe::optional_ref<const cpp_type> type() const noexcept
         {
