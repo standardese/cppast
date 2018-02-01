@@ -221,17 +221,20 @@ namespace cppast
     /// Parses all files included by `file`.
     /// \effects For each [cppast::cpp_include_directive]() in file it will parse the included file.
     template <class FileParser>
-    void resolve_includes(FileParser& parser, const cpp_file& file,
-                          typename FileParser::config config)
+    std::size_t resolve_includes(FileParser& parser, const cpp_file& file,
+                                 typename FileParser::config config)
     {
+        auto count = 0u;
         for (auto& entity : file)
         {
             if (entity.kind() == cpp_include_directive::kind())
             {
                 auto& include = static_cast<const cpp_include_directive&>(entity);
                 parser.parse(include.full_path(), config);
+                ++count;
             }
         }
+        return count;
     }
 } // namespace cppast
 

@@ -42,6 +42,12 @@ bool detail::libclang_compile_config_access::write_preprocessed(
     return config.write_preprocessed_;
 }
 
+bool detail::libclang_compile_config_access::fast_preprocessing(
+    const libclang_compile_config& config)
+{
+    return config.fast_preprocessing_;
+}
+
 libclang_compilation_database::libclang_compilation_database(const std::string& build_directory)
 {
     static_assert(std::is_same<database, CXCompilationDatabase>::value, "forgot to update type");
@@ -81,7 +87,8 @@ namespace
     }
 }
 
-libclang_compile_config::libclang_compile_config() : compile_config({}), write_preprocessed_(false)
+libclang_compile_config::libclang_compile_config()
+: compile_config({}), write_preprocessed_(false), fast_preprocessing_(false)
 {
     // set given clang binary
     auto ptr   = CPPAST_CLANG_VERSION_STRING;
@@ -302,7 +309,7 @@ void libclang_compile_config::do_add_macro_definition(std::string name, std::str
     auto str = "-D" + std::move(name);
     if (!definition.empty())
     {
-        str += "=";
+        str += "=\"";
         for (auto c : definition)
         {
             if (c == '"')
@@ -310,6 +317,7 @@ void libclang_compile_config::do_add_macro_definition(std::string name, std::str
             else
                 str += c;
         }
+        str += "\"";
     }
     add_flag(std::move(str));
 }
