@@ -123,7 +123,7 @@ TEST_CASE("cppast", "[!hide][integration]")
     cpp_entity_index                    idx;
     simple_file_parser<libclang_parser> parser(type_safe::ref(idx), default_logger());
 
-    libclang_compilation_database database("../");
+    libclang_compilation_database database(CPPAST_COMPILE_COMMANDS);
     libclang_compile_config       config(database, CPPAST_INTEGRATION_FILE);
     config.fast_preprocessing(true);
     parse_files(parser, files, config);
