@@ -25,6 +25,8 @@ namespace cppast
             static const std::vector<std::string>& flags(const libclang_compile_config& config);
 
             static bool write_preprocessed(const libclang_compile_config& config);
+
+            static bool fast_preprocessing(const libclang_compile_config& config);
         };
 
         void for_each_file(const libclang_compilation_database& database, void* user_data,
@@ -128,6 +130,18 @@ namespace cppast
             write_preprocessed_ = b;
         }
 
+        /// \effects Sets whether or not the fast preprocessor is enabled.
+        /// Default value is `false`.
+        /// \notes The fast preprocessor gets a list of all macros that are defined in the translation unit,
+        /// then preprocesses it without resolving includes but manually defining the list of macros to ensure correctness.
+        /// Later stages will use the includes again.
+        /// This hack breaks if you define the same macro multiple times in the file being parsed (headers don't matter)
+        /// or you rely on the order of macro directives.
+        void fast_preprocessing(bool b) noexcept
+        {
+            fast_preprocessing_ = b;
+        }
+
     private:
         void do_set_flags(cpp_standard standard, compile_flags flags) override;
 
@@ -144,7 +158,8 @@ namespace cppast
 
         std::string clang_binary_;
         int         clang_version_;
-        bool        write_preprocessed_;
+        bool        write_preprocessed_ : 1;
+        bool        fast_preprocessing_ : 1;
 
         friend detail::libclang_compile_config_access;
     };

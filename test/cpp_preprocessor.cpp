@@ -81,7 +81,8 @@ namespace ns2
 TEST_CASE("cpp_include_directive", "[!hide][clang4]")
 {
     write_file("cpp_include_directive-header.hpp", R"(
-#define FOO
+#define FOO a\
+b
 )");
 
     auto header_a = R"(
@@ -114,7 +115,7 @@ TEST_CASE("cpp_include_directive", "[!hide][clang4]")
                 REQUIRE(include.target().name() == include.name());
                 REQUIRE(include.include_kind() == cppast::cpp_include_kind::local);
                 REQUIRE(include.target().get(idx).empty());
-                REQUIRE(include.full_path() == "./cpp_include_directive-header.hpp");
+                REQUIRE(include.full_path() == "cpp_include_directive-header.hpp");
             }
             else
                 REQUIRE(false);
@@ -128,7 +129,7 @@ TEST_CASE("cpp_include_directive", "[!hide][clang4]")
             REQUIRE(include.include_kind() == cppast::cpp_include_kind::local);
             REQUIRE(
                 equal_ref(idx, include.target(), cpp_file_ref(cpp_entity_id(""), "header_a.hpp")));
-            REQUIRE(include.full_path() == "./header_a.hpp");
+            REQUIRE(include.full_path() == "header_a.hpp");
         }
         else
             REQUIRE(false);
@@ -146,7 +147,7 @@ TEST_CASE("preprocessor line numbers")
 
 #include <string>
 
-int foo;
+int var;
 
 /// 11
 

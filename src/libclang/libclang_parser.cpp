@@ -42,6 +42,12 @@ bool detail::libclang_compile_config_access::write_preprocessed(
     return config.write_preprocessed_;
 }
 
+bool detail::libclang_compile_config_access::fast_preprocessing(
+    const libclang_compile_config& config)
+{
+    return config.fast_preprocessing_;
+}
+
 libclang_compilation_database::libclang_compilation_database(const std::string& build_directory)
 {
     static_assert(std::is_same<database, CXCompilationDatabase>::value, "forgot to update type");
@@ -81,7 +87,8 @@ namespace
     }
 }
 
-libclang_compile_config::libclang_compile_config() : compile_config({}), write_preprocessed_(false)
+libclang_compile_config::libclang_compile_config()
+: compile_config({}), write_preprocessed_(false), fast_preprocessing_(false)
 {
     // set given clang binary
     auto ptr   = CPPAST_CLANG_VERSION_STRING;
@@ -231,8 +238,15 @@ libclang_compile_config::libclang_compile_config(const libclang_compilation_data
             if (flag == "-I")
                 add_flag(std::move(flag) + get_full_path(dir, args));
             else if (flag == "-D" || flag == "-U")
+            {
                 // preprocessor options
-                add_flag(std::move(flag) + std::move(args));
+                for (auto c : args)
+                    if (c == '"')
+                        flag += "\\\"";
+                    else
+                        flag += c;
+                add_flag(std::move(flag));
+            }
             else if (flag == "-std")
                 // standard
                 add_flag(std::move(flag) + "=" + std::move(args));
@@ -294,7 +308,17 @@ void libclang_compile_config::do_add_macro_definition(std::string name, std::str
 {
     auto str = "-D" + std::move(name);
     if (!definition.empty())
-        str += "=" + std::move(definition);
+    {
+        str += "=\"";
+        for (auto c : definition)
+        {
+            if (c == '"')
+                str += "\\\"";
+            else
+                str += c;
+        }
+        str += "\"";
+    }
     add_flag(std::move(str));
 }
 
@@ -516,7 +540,8 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
                 ++include_iter;
             }
         }
-        else if (clang_getCursorKind(cur) != CXCursor_MacroDefinition)
+        else if (clang_getCursorKind(cur) != CXCursor_MacroDefinition
+                 && clang_getCursorKind(cur) != CXCursor_MacroExpansion)
         {
             // add macro if needed
             for (auto line = get_line_no(cur);
@@ -545,7 +570,7 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
 }
 catch (detail::parse_error& ex)
 {
-    logger().log("libclang parser", ex.get_diagnostic());
+    logger().log("libclang parser", ex.get_diagnostic(path));
     set_error();
     return nullptr;
 }

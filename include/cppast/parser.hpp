@@ -11,6 +11,7 @@
 #include <cppast/cpp_file.hpp>
 #include <cppast/cpp_preprocessor.hpp>
 #include <cppast/diagnostic_logger.hpp>
+#include <cppast/diagnostic.hpp>
 
 namespace cppast
 {
@@ -54,17 +55,17 @@ namespace cppast
             error_ = false;
         }
 
+        /// \returns A reference to the logger used.
+        const diagnostic_logger& logger() const noexcept
+        {
+            return *logger_;
+        }
+
     protected:
         /// \effects Creates it giving it a reference to the logger it uses.
         explicit parser(type_safe::object_ref<const diagnostic_logger> logger)
         : logger_(logger), error_(false)
         {
-        }
-
-        /// \returns A reference to the logger used.
-        const diagnostic_logger& logger() const noexcept
-        {
-            return *logger_;
         }
 
         /// \effects Sets the error state.
@@ -111,6 +112,9 @@ namespace cppast
         /// \returns The parsed file or an empty optional, if a fatal error occurred.
         type_safe::optional_ref<const cpp_file> parse(std::string path, const config& c)
         {
+            parser_.logger().log("simple file parser",
+                                 diagnostic{"parsing file '" + path + "'", source_location(),
+                                            severity::info});
             auto file = parser_.parse(*idx_, std::move(path), c);
             auto ptr  = file.get();
             if (file)
@@ -149,6 +153,33 @@ namespace cppast
         type_safe::object_ref<const cpp_entity_index> idx_;
     };
 
+    namespace detail
+    {
+        struct std_begin
+        {
+        };
+        struct adl_begin : std_begin
+        {
+        };
+        struct member_begin : adl_begin
+        {
+        };
+
+        template <class Range>
+        auto get_value_type_impl(member_begin, Range&& r)
+            -> decltype(std::forward<Range>(r).begin());
+
+        template <class Range>
+        auto get_value_type_impl(adl_begin, Range&& r) -> decltype(begin(std::forward<Range>(r)));
+
+        template <class Range>
+        auto get_value_type_impl(std_begin, Range&& r)
+            -> decltype(std::begin(std::forward<Range>(r)));
+
+        template <class Range>
+        using value_type = decltype(*get_value_type_impl(member_begin{}, std::declval<Range>()));
+    } // namespace detail
+
     /// Parses multiple files using a given `FileParser`.
     ///
     /// \effects Will call the `parse()` function for each path specified in the `file_names`,
@@ -166,7 +197,7 @@ namespace cppast
     template <class FileParser, class Range, class Configuration>
     auto parse_files(FileParser& parser, Range&& file_names, const Configuration& get_config) ->
         typename std::enable_if<std::is_same<typename std::decay<decltype(get_config(
-                                                 *std::forward<Range>(file_names).begin()))>::type,
+                                                 std::declval<detail::value_type<Range>>()))>::type,
                                              typename FileParser::config>::value>::type
     {
         for (auto&& file : std::forward<Range>(file_names))
@@ -190,17 +221,20 @@ namespace cppast
     /// Parses all files included by `file`.
     /// \effects For each [cppast::cpp_include_directive]() in file it will parse the included file.
     template <class FileParser>
-    void resolve_includes(FileParser& parser, const cpp_file& file,
-                          typename FileParser::config config)
+    std::size_t resolve_includes(FileParser& parser, const cpp_file& file,
+                                 typename FileParser::config config)
     {
+        auto count = 0u;
         for (auto& entity : file)
         {
             if (entity.kind() == cpp_include_directive::kind())
             {
                 auto& include = static_cast<const cpp_include_directive&>(entity);
                 parser.parse(include.full_path(), config);
+                ++count;
             }
         }
+        return count;
     }
 } // namespace cppast
 

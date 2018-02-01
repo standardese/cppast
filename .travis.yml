@@ -69,7 +69,7 @@ install:
 
 script:
   - mkdir build/ && cd build/
-  - $CMAKE -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-Werror -pedantic -Wall -Wextra -Wconversion -Wsign-conversion -Wno-parentheses -Wno-assume" ../ -DCPPAST_TEST_GCOV=$CPPAST_TEST_GCOV -DLLVM_CONFIG_BINARY=$LLVM_CONFIG_BINARY
+  - $CMAKE -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-Werror -pedantic -Wall -Wextra -Wconversion -Wsign-conversion -Wno-parentheses -Wno-assume" ../ -DCPPAST_TEST_GCOV=$CPPAST_TEST_GCOV -DLLVM_CONFIG_BINARY=$LLVM_CONFIG_BINARY
   - $CMAKE --build .
   - if [[ "$LLVM_VERSION" == "4.0" ]]; then ./test/cppast_test \*; else ./test/cppast_test; fi
 

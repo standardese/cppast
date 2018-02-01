@@ -8,4 +8,4 @@ build_script:
   - cmd: cmake --build . -- /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
 
 test_script:
-  - cmd: test\Debug\cppast_test.exe *
+  - cmd: test\Debug\cppast_test.exe * ~cppast

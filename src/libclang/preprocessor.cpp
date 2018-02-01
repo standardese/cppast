@@ -5,72 +5,32 @@
 #include "preprocessor.hpp"
 
 #include <algorithm>
-#include <cstddef>
-#include <cstring>
+#include <atomic>
 #include <cctype>
-
+#include <cstdio>
+#include <cstring>
 #include <process.hpp>
+#include <fstream>
 
-#include <type_safe/flag.hpp>
-#include <type_safe/optional.hpp>
-#include <type_safe/reference.hpp>
-
-#include <cppast/cpp_entity_kind.hpp>
 #include <cppast/diagnostic.hpp>
 
 #include "parse_error.hpp"
 
 using namespace cppast;
-namespace ts = type_safe;
+namespace tpl = TinyProcessLib;
+namespace ts  = type_safe;
+
+bool detail::pp_doc_comment::matches(const cpp_entity&, unsigned e_line)
+{
+    if (kind == detail::pp_doc_comment::end_of_line)
+        return line == e_line;
+    else
+        return line + 1u == e_line;
+}
 
 namespace
 {
-    std::string quote(std::string str)
-    {
-        return '"' + std::move(str) + '"';
-    }
-
-    bool support_include(const libclang_compile_config& c)
-    {
-        return detail::libclang_compile_config_access::clang_version(c) >= 40000;
-    }
-
-    // build the command that runs the preprocessor
-    std::string get_command(const libclang_compile_config& c, const char* full_path)
-    {
-        // -x c++: force C++ as input language
-        // -I.: add current working directory to include search path
-        // -E: print preprocessor output
-        // -C: keep comments
-        // -dD: print macro definitions as well
-        auto flags = std::string("-x c++ -I. -E -C -dD");
-        if (support_include(c))
-            // -Xclang -dI: print include directives as well (clang >= 4.0.0)
-            flags += " -Xclang -dI";
-        // -fno-caret-diagnostics: don't show the source extract in diagnostics
-        // -fno-show-column: don't show the column number
-        // -fdiagnostics-format msvc: use easier to parse MSVC format
-        flags += " -fno-caret-diagnostics -fno-show-column -fdiagnostics-format=msvc";
-        // -Wno-*: hide wrong warnings if header file is directly parsed
-        flags += " -Wno-pragma-once-outside-header -Wno-pragma-system-header-outside-header "
-                 "-Wno-include-next-outside-header";
-
-        std::string cmd(detail::libclang_compile_config_access::clang_binary(c) + " "
-                        + std::move(flags) + " ");
-
-        // add other flags
-        for (auto& flag : detail::libclang_compile_config_access::flags(c))
-        {
-            cmd += flag;
-            cmd += ' ';
-        }
-
-        // add path to file being processed
-        cmd += quote(full_path);
-
-        return cmd;
-    }
-
+    //=== diagnostic parsing ===//
     source_location parse_source_location(const char*& ptr)
     {
         // format: <filename>(<line>):
@@ -145,49 +105,250 @@ namespace
         logger.log("preprocessor", diagnostic{std::move(message), std::move(loc), sev});
     }
 
-    // gets the full preprocessor output
-    std::string get_full_preprocess_output(const libclang_compile_config& c, const char* full_path,
-                                           const diagnostic_logger& logger)
+    // parses missing header file diagnostic and returns the file name,
+    // if it is a missing header file diagnostic
+    ts::optional<std::string> parse_missing_file(const std::string& cur_file,
+                                                 const std::string& msg)
     {
-        namespace tpl = TinyProcessLib;
+        auto ptr = msg.c_str();
 
-        std::string preprocessed, diagnostic;
+        auto loc = parse_source_location(ptr);
+        if (loc.file != cur_file)
+            return type_safe::nullopt;
 
-        auto         cmd = get_command(c, full_path);
+        while (*ptr == ' ')
+            ++ptr;
+
+        parse_severity(ptr);
+        while (*ptr == ' ')
+            ++ptr;
+
+        // format 'file-name' file not found
+        if (*ptr != '\'')
+            return ts::nullopt;
+        ++ptr;
+
+        std::string filename;
+        while (*ptr != '\'')
+            filename += *ptr++;
+        ++ptr;
+
+        if (std::strcmp(ptr, " file not found") == 0)
+            return std::move(filename);
+        else
+            throw libclang_error("preprocessor: unexpected diagnostic '" + msg + "'");
+    }
+
+    //=== external preprocessor invocation ==//
+    // quote a string
+    std::string quote(std::string str)
+    {
+        return '"' + std::move(str) + '"';
+    }
+
+    std::string diagnostics_flags()
+    {
+        std::string flags;
+
+        // -fno-caret-diagnostics: don't show the source extract in diagnostics
+        // -fno-show-column: don't show the column number
+        // -fdiagnostics-format msvc: use easier to parse MSVC format
+        flags += " -fno-caret-diagnostics -fno-show-column -fdiagnostics-format=msvc";
+        // -Wno-*: hide wrong warnings if header file is directly parsed/duplicate macro handling
+        flags += " -Wno-macro-redefined -Wno-pragma-once-outside-header "
+                 "-Wno-pragma-system-header-outside-header "
+                 "-Wno-include-next-outside-header";
+
+        return flags;
+    }
+
+    // get the command that returns all macros defined in the TU
+    std::string get_macro_command(const libclang_compile_config& c, const char* full_path)
+    {
+        // -x c++: force C++ as input language
+        // -I.: add current working directory to include search path
+        // -E: print preprocessor output
+        // -dM: print macro definitions instead of preprocessed file
+        auto flags = std::string("-x c++ -I. -E -dM");
+        flags += diagnostics_flags();
+
+        std::string cmd(detail::libclang_compile_config_access::clang_binary(c) + " "
+                        + std::move(flags) + " ");
+        // other flags
+        for (auto& flag : detail::libclang_compile_config_access::flags(c))
+        {
+            cmd += flag;
+            cmd += ' ';
+        }
+
+        return cmd + quote(full_path);
+    }
+
+    // get the command that preprocess a translation unit given the macros
+    std::string get_preprocess_command(const libclang_compile_config& c, const char* full_path,
+                                       const char* macro_file_path)
+    {
+        // -x c++: force C++ as input language
+        // -E: print preprocessor output
+        // -CC: keep comments, even in macro
+        // -dD: keep macros
+        // -no*: disable default include search paths
+        auto flags = std::string("-x c++ -E -CC -dD -nostdinc -nostdinc++");
+        if (detail::libclang_compile_config_access::clang_version(c) >= 40000)
+            // -Xclang -dI: print include directives as well (clang >= 4.0.0)
+            flags += " -Xclang -dI";
+        flags += diagnostics_flags();
+
+        if (macro_file_path)
+        {
+            // include file that defines all macros
+            flags += " -include ";
+            flags += macro_file_path;
+        }
+
+        std::string cmd(detail::libclang_compile_config_access::clang_binary(c) + " "
+                        + std::move(flags) + " ");
+
+        // other flags, as long as they don't add include directories (if we're doing the single file optimization)
+        for (const auto& flag : detail::libclang_compile_config_access::flags(c))
+        {
+            DEBUG_ASSERT(flag.size() > 2u && flag[0] == '-', detail::assert_handler{},
+                         "that's an odd flag");
+            if (macro_file_path && (flag[0] != '-' || flag[1] != 'I'))
+            {
+                cmd += flag;
+                cmd += ' ';
+            }
+        }
+
+        return cmd + quote(full_path);
+    }
+
+    std::string get_macro_file_name()
+    {
+        static std::atomic<unsigned> counter(0u);
+        return "standardese-macro-file-" + std::to_string(++counter) + ".delete-me";
+    }
+
+    std::string write_macro_file(const libclang_compile_config& c, const char* full_path,
+                                 const diagnostic_logger& logger)
+    {
+        std::string diagnostic;
+        auto        diagnostic_logger = [&](const char* str, std::size_t n) {
+            diagnostic.reserve(diagnostic.size() + n);
+            for (auto end = str + n; str != end; ++str)
+                if (*str == '\r')
+                    continue;
+                else if (*str == '\n')
+                {
+                    // consume current diagnostic
+                    log_diagnostic(logger, diagnostic);
+                    diagnostic.clear();
+                }
+                else
+                    diagnostic.push_back(*str);
+        };
+
+        auto          file = get_macro_file_name();
+        std::ofstream stream(file);
+
+        auto         cmd = get_macro_command(c, full_path);
         tpl::Process process(cmd, "",
                              [&](const char* str, std::size_t n) {
-                                 preprocessed.reserve(preprocessed.size() + n);
-                                 for (auto end = str + n; str != end; ++str)
-                                     if (*str == '\t')
-                                         preprocessed += "  "; // just two spaces because why not
-                                     else if (*str != '\r')
-                                         preprocessed.push_back(*str);
+                                 stream.write(str, std::streamsize(n));
                              },
-                             [&](const char* str, std::size_t n) {
-                                 diagnostic.reserve(diagnostic.size() + n);
-                                 for (auto end = str + n; str != end; ++str)
-                                     if (*str == '\r')
-                                         continue;
-                                     else if (*str == '\n')
-                                     {
-                                         // consume current diagnostic
-                                         log_diagnostic(logger, diagnostic);
-                                         diagnostic.clear();
-                                     }
-                                     else
-                                         diagnostic.push_back(*str);
-                             });
+                             diagnostic_logger);
 
         auto exit_code = process.get_exit_status();
         DEBUG_ASSERT(diagnostic.empty(), detail::assert_handler{});
         if (exit_code != 0)
-            throw libclang_error("preprocessor: command '" + cmd
+            throw libclang_error("preprocessor (macro): command '" + cmd
                                  + "' exited with non-zero exit code (" + std::to_string(exit_code)
                                  + ")");
-
-        return preprocessed;
+        return file;
     }
 
+    struct clang_preprocess_result
+    {
+        std::string              file;
+        std::vector<std::string> included_files; // needed for pre-clang 4.0.0
+    };
+
+    clang_preprocess_result clang_preprocess_impl(const libclang_compile_config& c,
+                                                  const char* full_path, const char* macro_path)
+    {
+        clang_preprocess_result result;
+
+        std::string diagnostic;
+        auto        diagnostic_handler = [&](const char* str, std::size_t n) {
+            diagnostic.reserve(diagnostic.size() + n);
+            for (auto end = str + n; str != end; ++str)
+                if (*str == '\r')
+                    continue;
+                else if (*str == '\n')
+                {
+                    // handle current diagnostic
+                    auto file = parse_missing_file(full_path, diagnostic);
+                    if (file)
+                        // save for clang without -dI flag
+                        result.included_files.push_back(file.value());
+
+                    diagnostic.clear();
+                }
+                else
+                    diagnostic.push_back(*str);
+        };
+
+        auto         cmd = get_preprocess_command(c, full_path, macro_path);
+        tpl::Process process(cmd, "",
+                             [&](const char* str, std::size_t n) {
+                                 result.file.reserve(result.file.size() + n);
+                                 for (auto ptr = str; ptr != str + n; ++ptr)
+                                     if (*ptr == '\t')
+                                         result.file += "  "; // convert to two spaces
+                                     else if (*ptr != '\r')
+                                         result.file += *ptr;
+                             },
+                             diagnostic_handler);
+        // wait for process end
+        process.get_exit_status();
+
+        return result;
+    }
+
+    clang_preprocess_result clang_preprocess(const libclang_compile_config& c,
+                                             const char* full_path, const diagnostic_logger& logger)
+    {
+        auto fast_preprocessing = detail::libclang_compile_config_access::fast_preprocessing(c);
+
+        auto macro_file = fast_preprocessing ? write_macro_file(c, full_path, logger) : "";
+
+        clang_preprocess_result result;
+        try
+        {
+            result = clang_preprocess_impl(c, full_path,
+                                           fast_preprocessing ? macro_file.c_str() : nullptr);
+        }
+        catch (...)
+        {
+            if (fast_preprocessing)
+            {
+                auto err = std::remove(macro_file.c_str());
+                DEBUG_ASSERT(err == 0, detail::assert_handler{});
+            }
+            throw;
+        }
+
+        if (fast_preprocessing)
+        {
+            auto err = std::remove(macro_file.c_str());
+            DEBUG_ASSERT(err == 0, detail::assert_handler{});
+        }
+
+        return result;
+    }
+
+    //==== parsing ===//
     class position
     {
     public:
@@ -282,6 +443,11 @@ namespace
             write_.try_reset();
         }
 
+        bool write_enabled() const noexcept
+        {
+            return write_ == true;
+        }
+
         explicit operator bool() const noexcept
         {
             return *ptr_ != '\0';
@@ -331,87 +497,13 @@ namespace
         p.skip(std::strlen(str));
     }
 
-    void skip_spaces(position& p, bool bump = false)
+    void bump_spaces(position& p, bool bump = false)
     {
         while (starts_with(p, " "))
             if (bump)
                 p.bump();
             else
                 p.skip();
-    }
-
-    struct linemarker
-    {
-        std::string file;
-        unsigned    line;
-        enum
-        {
-            line_directive, // no change in file
-            enter_new,      // open a new file
-            enter_old,      // return to an old file
-        } flag         = line_directive;
-        bool is_system = false;
-    };
-
-    ts::optional<linemarker> parse_linemarker(position& p)
-    {
-        // format (at new line): # <line> "<filename>" <flags>
-        // flag 1: enter_new
-        // flag 2: enter_old
-        // flag 3: system file
-        // flag 4: ignored
-        if (!p.was_newl() || !starts_with(p, "#"))
-            return ts::nullopt;
-        p.skip();
-        DEBUG_ASSERT(!starts_with(p, "define") && !starts_with(p, "undef")
-                         && !starts_with(p, "pragma"),
-                     detail::assert_handler{}, "handle macros first");
-
-        linemarker result;
-
-        std::string line;
-        for (skip_spaces(p); std::isdigit(*p.ptr()); p.skip())
-            line += *p.ptr();
-        result.line = unsigned(std::stoi(line));
-
-        skip_spaces(p);
-        DEBUG_ASSERT(*p.ptr() == '"', detail::assert_handler{});
-        p.skip();
-
-        std::string file_name;
-        for (; !starts_with(p, "\""); p.skip())
-            file_name += *p.ptr();
-        p.skip();
-        result.file = std::move(file_name);
-
-        for (; !starts_with(p, "\n"); p.skip())
-        {
-            skip_spaces(p);
-
-            switch (*p.ptr())
-            {
-            case '1':
-                DEBUG_ASSERT(result.flag == linemarker::line_directive, detail::assert_handler{});
-                result.flag = linemarker::enter_new;
-                break;
-            case '2':
-                DEBUG_ASSERT(result.flag == linemarker::line_directive, detail::assert_handler{});
-                result.flag = linemarker::enter_old;
-                break;
-            case '3':
-                result.is_system = true;
-                break;
-            case '4':
-                break; // ignored
-
-            default:
-                DEBUG_UNREACHABLE(detail::assert_handler{}, "invalid line marker");
-                break;
-            }
-        }
-        skip(p, "\n");
-
-        return result;
     }
 
     detail::pp_doc_comment parse_c_doc_comment(position& p)
@@ -493,7 +585,7 @@ namespace
         return result;
     }
 
-    bool skip_c_comment(position& p, detail::preprocessor_output& output, bool in_main_file)
+    bool skip_c_comment(position& p, detail::preprocessor_output& output)
     {
         if (!starts_with(p, "/*"))
             return false;
@@ -502,7 +594,7 @@ namespace
         if (starts_with(p, "*/"))
             // empty comment
             p.skip(2u);
-        else if (in_main_file && (starts_with(p, "*") || starts_with(p, "!")))
+        else if (starts_with(p, "*") || starts_with(p, "!"))
         {
             // doc comment
             p.skip();
@@ -561,20 +653,20 @@ namespace
         }
     }
 
-    bool skip_cpp_comment(position& p, detail::preprocessor_output& output, bool in_main_file)
+    bool skip_cpp_comment(position& p, detail::preprocessor_output& output)
     {
         if (!starts_with(p, "//"))
             return false;
         p.skip(2u);
 
-        if (in_main_file && (starts_with(p, "/") || starts_with(p, "!")))
+        if (starts_with(p, "/") || starts_with(p, "!"))
         {
             // C++ style doc comment
             p.skip();
             auto comment = parse_cpp_doc_comment(p, false);
             merge_or_add(output, std::move(comment));
         }
-        else if (in_main_file && starts_with(p, "<"))
+        else if (starts_with(p, "<"))
         {
             // end of line doc comment
             p.skip();
@@ -591,8 +683,7 @@ namespace
     }
 
     std::unique_ptr<cpp_macro_definition> parse_macro(position&                    p,
-                                                      detail::preprocessor_output& output,
-                                                      bool                         in_main_file)
+                                                      detail::preprocessor_output& output)
     {
         // format (at new line): #define <name> [replacement]
         // or: #define <name>(<args>) [replacement]
@@ -602,7 +693,7 @@ namespace
         // read line here for comment matching
         auto cur_line = p.cur_line();
         p.bump(std::strlen("#define"));
-        skip_spaces(p, true);
+        bump_spaces(p, true);
 
         std::string name;
         while (!starts_with(p, "(") && !starts_with(p, " ") && !starts_with(p, "\n"))
@@ -623,7 +714,7 @@ namespace
 
         std::string rep;
         auto        in_c_comment = false;
-        for (skip_spaces(p, true); in_c_comment || !starts_with(p, "\n"); p.bump())
+        for (bump_spaces(p, true); in_c_comment || !starts_with(p, "\n"); p.bump())
         {
             if (starts_with(p, "/*"))
                 in_c_comment = true;
@@ -633,7 +724,7 @@ namespace
         }
         // don't skip newline
 
-        if (!in_main_file)
+        if (!p.write_enabled())
             return nullptr;
 
         auto result = cpp_macro_definition::build(std::move(name), std::move(args), std::move(rep));
@@ -655,24 +746,24 @@ namespace
         p.bump(std::strlen("#undef"));
 
         std::string result;
-        for (skip_spaces(p, true); !starts_with(p, "\n"); p.bump())
+        for (bump_spaces(p, true); !starts_with(p, "\n"); p.bump())
             result += *p.ptr();
         // don't skip newline
 
         return result;
     }
 
-    type_safe::optional<detail::pp_include> parse_include(position& p, bool in_main_file)
+    type_safe::optional<detail::pp_include> parse_include(position& p)
     {
         // format (at new line, literal <>): #include <filename>
         // or: #include "filename"
-        // note: don't write include back
+        // note: write include back
         if (!p.was_newl() || !starts_with(p, "#include"))
             return type_safe::nullopt;
-        p.skip(std::strlen("#include"));
+        p.bump(std::strlen("#include"));
         if (starts_with(p, "_next"))
-            p.skip(std::strlen("_next"));
-        skip_spaces(p);
+            p.bump(std::strlen("_next"));
+        bump_spaces(p);
 
         auto include_kind = cpp_include_kind::system;
         auto end_str      = "";
@@ -688,20 +779,17 @@ namespace
         }
         else
             DEBUG_UNREACHABLE(detail::assert_handler{});
-        p.skip();
+        p.bump();
 
         std::string filename;
-        for (; !starts_with(p, "\"") && !starts_with(p, ">"); p.skip())
+        for (; !starts_with(p, "\"") && !starts_with(p, ">"); p.bump())
             filename += *p.ptr();
         DEBUG_ASSERT(starts_with(p, end_str, std::strlen(end_str)), detail::assert_handler{},
                      "bad termination");
-        p.skip();
+        p.bump();
         skip(p, " /* clang -E -dI */");
         DEBUG_ASSERT(starts_with(p, "\n"), detail::assert_handler{});
         // don't skip newline
-
-        if (!in_main_file)
-            return type_safe::nullopt;
 
         if (filename.size() > 2u && filename[0] == '.'
             && (filename[1] == '/' || filename[1] == '\\'))
@@ -722,6 +810,80 @@ namespace
 
         return true;
     }
+
+    struct linemarker
+    {
+        std::string file;
+        unsigned    line;
+        enum
+        {
+            line_directive, // no change in file
+            enter_new,      // open a new file
+            enter_old,      // return to an old file
+        } flag         = line_directive;
+        bool is_system = false;
+    };
+
+    ts::optional<linemarker> parse_linemarker(position& p)
+    {
+        // format (at new line): # <line> "<filename>" <flags>
+        // flag 1: enter_new
+        // flag 2: enter_old
+        // flag 3: system file
+        // flag 4: ignored
+        if (!p.was_newl() || !starts_with(p, "#"))
+            return ts::nullopt;
+        p.skip();
+        DEBUG_ASSERT(!starts_with(p, "define") && !starts_with(p, "undef")
+                         && !starts_with(p, "pragma"),
+                     detail::assert_handler{}, "handle macros first");
+
+        linemarker result;
+
+        std::string line;
+        for (bump_spaces(p); std::isdigit(*p.ptr()); p.skip())
+            line += *p.ptr();
+        result.line = unsigned(std::stoi(line));
+
+        bump_spaces(p);
+        DEBUG_ASSERT(*p.ptr() == '"', detail::assert_handler{});
+        p.skip();
+
+        std::string file_name;
+        for (; !starts_with(p, "\""); p.skip())
+            file_name += *p.ptr();
+        p.skip();
+        result.file = std::move(file_name);
+
+        for (; !starts_with(p, "\n"); p.skip())
+        {
+            bump_spaces(p);
+
+            switch (*p.ptr())
+            {
+            case '1':
+                DEBUG_ASSERT(result.flag == linemarker::line_directive, detail::assert_handler{});
+                result.flag = linemarker::enter_new;
+                break;
+            case '2':
+                DEBUG_ASSERT(result.flag == linemarker::line_directive, detail::assert_handler{});
+                result.flag = linemarker::enter_old;
+                break;
+            case '3':
+                result.is_system = true;
+                break;
+            case '4':
+                break; // ignored
+
+            default:
+                DEBUG_UNREACHABLE(detail::assert_handler{}, "invalid line marker");
+                break;
+            }
+        }
+        p.skip();
+
+        return result;
+    }
 }
 
 detail::preprocessor_output detail::preprocess(const libclang_compile_config& config,
@@ -729,11 +891,10 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
 {
     detail::preprocessor_output result;
 
-    auto output = get_full_preprocess_output(config, path, logger);
+    auto preprocessed = clang_preprocess(config, path, logger);
 
-    position    p(ts::ref(result.source), output.c_str());
-    std::size_t file_depth = 0u;
-    ts::flag    in_string(false), in_char(false);
+    position p(ts::ref(result.source), preprocessed.file.c_str());
+    ts::flag in_string(false), in_char(false), first_line(true);
     while (p)
     {
         auto next = std::strpbrk(p.ptr(), R"(\"'#/)"); // look for \, ", ', # or /
@@ -741,6 +902,8 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
             p.bump(std::size_t(next - p.ptr() - 1)); // subtract one to get before that character
 
         if (starts_with(p, R"(\\)")) // starts with two backslashes
+            p.bump(2u);
+        else if (starts_with(p, "\\\"")) // starts with \"
             p.bump(2u);
         else if (starts_with(p, R"(\")")) // starts with \"
             p.bump(2u);
@@ -758,7 +921,7 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
         }
         else if (in_string == true || in_char == true)
             p.bump();
-        else if (auto macro = parse_macro(p, result, file_depth == 0u))
+        else if (auto macro = parse_macro(p, result))
         {
             if (logger.is_verbose())
                 logger.log("preprocessor",
@@ -770,7 +933,7 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
         }
         else if (auto undef = parse_undef(p))
         {
-            if (file_depth == 0u)
+            if (p.write_enabled())
             {
                 if (logger.is_verbose())
                     logger.log("preprocessor",
@@ -785,68 +948,71 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                                     result.macros.end());
             }
         }
-        else if (auto include = parse_include(p, file_depth == 0u))
+        else if (auto include = parse_include(p))
         {
-            if (logger.is_verbose())
-                logger.log("preprocessor",
-                           format_diagnostic(severity::debug,
-                                             source_location::make_file(path, p.cur_line()),
-                                             "parsing include '", include.value().file_name, "'"));
+            if (p.write_enabled())
+            {
+                if (logger.is_verbose())
+                    logger.log("preprocessor",
+                               format_diagnostic(severity::debug,
+                                                 source_location::make_file(path, p.cur_line()),
+                                                 "parsing include '", include.value().file_name,
+                                                 "'"));
 
-            result.includes.push_back(std::move(include.value()));
+                result.includes.push_back(std::move(include.value()));
+            }
         }
         else if (bump_pragma(p))
             continue;
         else if (auto lm = parse_linemarker(p))
         {
-            switch (lm.value().flag)
-            {
-            case linemarker::line_directive:
-                if (file_depth == 0u)
-                    p.set_line(lm.value().line);
-                break;
-
-            case linemarker::enter_new:
-                if (file_depth == 0u && lm.value().file.front() != '<')
-                {
-                    // this file is directly included by the given file
-                    // and it is not a fake file like builtin or command line
-
-                    // write include with full path
-                    p.write_str("#include \"" + lm.value().file + "\"\n");
-                    // note: don't build include here, do it when an #include is encountered
-                }
-
-                ++file_depth;
+            if (lm.value().flag == linemarker::enter_new)
                 p.disable_write();
-                break;
-
-            case linemarker::enter_old:
-                --file_depth;
-                if (file_depth == 0u)
-                {
-                    DEBUG_ASSERT(lm.value().file == path, detail::assert_handler{});
-                    p.set_line(lm.value().line);
+            else if (lm.value().flag == linemarker::enter_old)
+            {
+                if (lm.value().file == path)
                     p.enable_write();
+            }
+            else if (lm.value().flag == linemarker::line_directive && p.write_enabled())
+            {
+                if (first_line.try_reset() && lm.value().file == path && lm.value().line == 1u)
+                {
+                    // this is the first line marker
+                    // just skip all builtin macro stuff until we reach the file again
+                    auto closing_line_marker = std::string("# 1 \"") + path + "\" 2\n";
+
+                    auto ptr = std::strstr(p.ptr(), closing_line_marker.c_str());
+                    DEBUG_ASSERT(ptr, detail::assert_handler{});
+                    p.skip(std::size_t(ptr - p.ptr()));
+                    p.skip(closing_line_marker.size());
                 }
-                break;
+                else if (lm.value().line + 1 == p.cur_line())
+                {
+                    // this is a linemarker after a -dI injected include directive
+                    // it simply adds the newline we already did
+                }
+                else
+                {
+                    DEBUG_ASSERT(lm.value().line >= p.cur_line(), detail::assert_handler{});
+                    while (p.cur_line() < lm.value().line)
+                        p.write_str("\n");
+                }
             }
         }
-        else if (skip_c_comment(p, result, file_depth == 0u))
+        else if (skip_c_comment(p, result))
             continue;
-        else if (skip_cpp_comment(p, result, file_depth == 0u))
+        else if (skip_cpp_comment(p, result))
             continue;
         else
             p.bump();
     }
 
-    return result;
-}
+    if (result.includes.empty())
+    {
+        // add headers from diagnostics w/o line information
+        for (auto name : preprocessed.included_files)
+            result.includes.push_back(pp_include{name, cpp_include_kind::local, 1u});
+    }
 
-bool detail::pp_doc_comment::matches(const cpp_entity&, unsigned e_line)
-{
-    if (kind == detail::pp_doc_comment::end_of_line)
-        return line == e_line;
-    else
-        return line + 1u == e_line;
+    return result;
 }

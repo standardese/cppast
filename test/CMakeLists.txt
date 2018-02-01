@@ -34,10 +34,19 @@ set(tests
         preprocessor.cpp
         visitor.cpp)
 
+# generate list of source files for the self parsing test
+get_target_property(files cppast SOURCES)
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/cppast_files.hpp "// list of cppast source file includes\n")
+foreach(file ${files})
+    file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/cppast_files.hpp "\"${CMAKE_CURRENT_SOURCE_DIR}/../src/${file}\",\n")
+endforeach()
+
 add_executable(cppast_test test.cpp test_parser.hpp ${tests})
 target_include_directories(cppast_test PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(cppast_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../src)
 target_link_libraries(cppast_test PUBLIC cppast)
+target_compile_definitions(cppast_test PUBLIC CPPAST_INTEGRATION_FILE="${CMAKE_CURRENT_SOURCE_DIR}/integration.cpp"
+                                              CPPAST_COMPILE_COMMANDS="${CMAKE_BINARY_DIR}")
 set_target_properties(cppast_test PROPERTIES CXX_STANDARD 11)
 
 enable_testing()

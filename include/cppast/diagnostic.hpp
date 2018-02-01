@@ -47,6 +47,12 @@ namespace cppast
             return {type_safe::nullopt, type_safe::nullopt, type_safe::nullopt, type_safe::nullopt};
         }
 
+        /// \returns A source location where entity and file name is available.
+        static source_location make_entity(std::string entity, std::string file)
+        {
+            return {std::move(entity), std::move(file), type_safe::nullopt, type_safe::nullopt};
+        }
+
         /// \returns A possible string representation of the source location.
         /// \notes It will include a separator, but no trailing whitespace.
         std::string to_string() const
@@ -80,6 +86,7 @@ namespace cppast
     enum class severity
     {
         debug,    //< A debug diagnostic that is just for debugging purposes.
+        info,     //< An informational message.
         warning,  //< A warning that doesn't impact AST generation.
         error,    //< A non-critical error that does impact AST generation but not critically.
         critical, //< A critical error where AST generation isn't possible.
@@ -93,6 +100,8 @@ namespace cppast
         {
         case severity::debug:
             return "debug";
+        case severity::info:
+            return "info";
         case severity::warning:
             return "warning";
         case severity::error:

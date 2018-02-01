@@ -256,8 +256,13 @@ int main(int argc, char* argv[]) try
             {
                 auto equal = macro.find('=');
                 auto name  = macro.substr(0, equal);
-                auto def   = equal == std::string::npos ? macro.substr(equal + 1u) : "";
-                config.define_macro(std::move(name), std::move(def));
+                if (equal == std::string::npos)
+                    config.define_macro(std::move(name), "");
+                else
+                {
+                    auto def = macro.substr(equal + 1u);
+                    config.define_macro(std::move(name), std::move(def));
+                }
             }
         if (options.count("macro_undefinition"))
             for (auto& name : options["macro_undefinition"].as<std::vector<std::string>>())
