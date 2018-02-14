@@ -19,20 +19,20 @@ option(CPPAST_BUILD_EXAMPLE "whether or not to build the examples" ON)
 option(CPPAST_BUILD_TOOL "whether or not to build the tool" ON)
 option(BUILD_TESTING "build test" OFF) # The ctest variable for building tests
 
-if(${CPPAST_BUILD_TEST} OR ${BUILD_TESTING} OR (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
+if((${CPPAST_BUILD_TEST} OR ${BUILD_TESTING}) AND (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
     set(build_test ON)
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # for the self integration test
 else()
     set(build_test OFF)
 endif()
 
-if(${CPPAST_BUILD_EXAMPLE} OR (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
+if(${CPPAST_BUILD_EXAMPLE} AND (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
     set(build_example ON)
 else()
     set(build_example OFF)
 endif()
 
-if(${CPPAST_BUILD_TOOL} OR (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
+if(${CPPAST_BUILD_TOOL} AND (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
     set(build_tool ON)
 else()
     set(build_tool OFF)
