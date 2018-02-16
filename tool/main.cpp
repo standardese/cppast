@@ -209,7 +209,8 @@ int main(int argc, char* argv[]) try
          cxxopts::value<std::vector<std::string>>())
         ("gnu_extensions", "enable GNU extensions (equivalent to -std=gnu++XX)")
         ("msvc_extensions", "enable MSVC extensions (equivalent to -fms-extensions)")
-        ("msvc_compatibility", "enable MSVC compatibility (equivalent to -fms-compatibility)");
+        ("msvc_compatibility", "enable MSVC compatibility (equivalent to -fms-compatibility)")
+        ("fast_preprocessing", "enable fast preprocessing, be careful, this breaks if you e.g. redefine macros in the same file!");
     // clang-format on
     options.parse_positional("file");
     options.parse(argc, argv);
@@ -247,6 +248,9 @@ int main(int argc, char* argv[]) try
 
         if (options.count("verbose"))
             config.write_preprocessed(true);
+
+        if (options.count("fast_preprocessing"))
+            config.fast_preprocessing(true);
 
         if (options.count("include_directory"))
             for (auto& include : options["include_directory"].as<std::vector<std::string>>())
