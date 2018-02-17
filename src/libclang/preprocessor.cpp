@@ -230,7 +230,114 @@ namespace
         return "standardese-macro-file-" + std::to_string(++counter) + ".delete-me";
     }
 
-    std::string write_macro_file(const libclang_compile_config& c, const char* full_path,
+    template <std::size_t N>
+    void bump_until(std::istreambuf_iterator<char>& iter, const char (&str)[N])
+    {
+        auto ptr = &str[0];
+        while (ptr != &str[N - 1])
+        {
+            if (iter == std::istreambuf_iterator<char>{})
+                // end of file
+                break;
+            else if (*iter != *ptr)
+            {
+                // try again
+                ptr = &str[0];
+                if (*iter == *ptr)
+                    ++ptr; // it was the first character again
+            }
+            else
+                // okay, move forward
+                ++ptr;
+
+            ++iter;
+        }
+    }
+
+    template <typename Iter>
+    void skip_whitespace(Iter& begin, Iter end)
+    {
+        while (begin != end && (*begin == ' ' || *begin == '\t'))
+            ++begin;
+    }
+
+    template <typename Iter>
+    std::string get_line(Iter& begin, Iter end)
+    {
+        std::string line;
+        while (begin != end && *begin != '\n')
+            line += *begin++;
+        ++begin; // newline
+        return line;
+    }
+
+    type_safe::optional<std::string> get_include_guard_macro(const std::string& full_path)
+    {
+        std::ifstream file(full_path);
+
+        auto iter = std::istreambuf_iterator<char>(file);
+        while (iter != std::istreambuf_iterator<char>{})
+        {
+            if (*iter == '/')
+            {
+                ++iter;
+                if (*iter == '/')
+                    // C++ style comment, bump until \n
+                    bump_until(iter, "\n");
+                else if (*iter == '*')
+                    // C style comment
+                    bump_until(iter, "*/");
+            }
+            else if (*iter == ' ' || *iter == '\t' || *iter == '\n')
+                ++iter; // empty
+            else if (*iter == '#')
+            {
+                // preprocessor line
+                auto if_line = get_line(iter, {});
+                if (if_line.compare(0, 3, "#if") != 0)
+                    // not something starting with #if
+                    break;
+
+                skip_whitespace(iter, {});
+
+                auto macro_line = get_line(iter, {});
+                if (macro_line.compare(0, 7, "#define") != 0)
+                    // not a corresponding define
+                    break;
+
+                auto macro_name_begin = std::next(macro_line.begin(), 7);
+                // skip whitespace after define
+                skip_whitespace(macro_name_begin, macro_line.end());
+
+                auto macro_name_end = macro_name_begin;
+                // skip over identifier
+                while (macro_name_end != macro_line.end()
+                       && (*macro_name_end == '_' || std::isalnum(*macro_name_end)))
+                    ++macro_name_end;
+
+                auto trailing_ws = macro_line.rbegin();
+                skip_whitespace(trailing_ws, macro_line.rend());
+                if (macro_name_end != trailing_ws.base())
+                    // anything else after macro
+                    break;
+
+                std::string macro_name(macro_name_begin, macro_name_end);
+                if (if_line.find(macro_name) == std::string::npos)
+                    // macro name doesn't occur in if line
+                    break;
+                else
+                    return macro_name;
+            }
+            else
+                // line is neither empty, comment, nor preprocessor
+                break;
+        }
+
+        // assume no include guard followed a bad line
+        return type_safe::nullopt;
+    }
+
+    std::string write_macro_file(const libclang_compile_config& c, const std::string& full_path,
                                  const diagnostic_logger& logger)
     {
         std::string diagnostic;
@@ -252,12 +359,16 @@ namespace
         auto          file = get_macro_file_name();
         std::ofstream stream(file);
 
-        auto         cmd = get_macro_command(c, full_path);
+        auto         cmd = get_macro_command(c, full_path.c_str());
         tpl::Process process(cmd, "",
                              [&](const char* str, std::size_t n) {
                                  stream.write(str, std::streamsize(n));
                              },
                              diagnostic_logger);
+
+        if (auto include_guard = get_include_guard_macro(full_path))
+            // undefine include guard
+            stream << "#undef " << include_guard.value();
 
         auto exit_code = process.get_exit_status();
         DEBUG_ASSERT(diagnostic.empty(), detail::assert_handler{});
@@ -275,7 +386,8 @@ namespace
     };
 
     clang_preprocess_result clang_preprocess_impl(const libclang_compile_config& c,
-                                                  const char* full_path, const char* macro_path)
+                                                  const std::string&             full_path,
+                                                  const char*                    macro_path)
     {
         clang_preprocess_result result;
 
@@ -299,7 +411,7 @@ namespace
                     diagnostic.push_back(*str);
         };
 
-        auto         cmd = get_preprocess_command(c, full_path, macro_path);
+        auto         cmd = get_preprocess_command(c, full_path.c_str(), macro_path);
         tpl::Process process(cmd, "",
                              [&](const char* str, std::size_t n) {
                                  result.file.reserve(result.file.size() + n);
