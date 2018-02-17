@@ -185,6 +185,7 @@ namespace
     }
 
     // get the command that preprocess a translation unit given the macros
+    // macro_file_path == nullptr <=> don't do fast preprocessing
     std::string get_preprocess_command(const libclang_compile_config& c, const char* full_path,
                                        const char* macro_file_path)
     {
@@ -192,11 +193,16 @@ namespace
         // -E: print preprocessor output
         // -CC: keep comments, even in macro
         // -dD: keep macros
-        // -no*: disable default include search paths
-        auto flags = std::string("-x c++ -E -CC -dD -nostdinc -nostdinc++");
+        auto flags = std::string("-x c++ -E -CC -dD");
+
+        if (macro_file_path)
+            // -no*: disable default include search paths
+            flags += " -nostdinc -nostdinc++";
+
         if (detail::libclang_compile_config_access::clang_version(c) >= 40000)
             // -Xclang -dI: print include directives as well (clang >= 4.0.0)
             flags += " -Xclang -dI";
+
         flags += diagnostics_flags();
 
         if (macro_file_path)
@@ -209,13 +215,14 @@ namespace
         std::string cmd(detail::libclang_compile_config_access::clang_binary(c) + " "
                         + std::move(flags) + " ");
 
-        // other flags, as long as they don't add include directories (if we're doing the single file optimization)
+        // other flags
         for (const auto& flag : detail::libclang_compile_config_access::flags(c))
         {
             DEBUG_ASSERT(flag.size() > 2u && flag[0] == '-', detail::assert_handler{},
                          "that's an odd flag");
-            if (macro_file_path && (flag[0] != '-' || flag[1] != 'I'))
+            if (!macro_file_path || flag[1] != 'I')
             {
+                // only add this flag if it is not an include or we're not doing fast preprocessing
                 cmd += flag;
                 cmd += ' ';
             }
@@ -431,6 +438,10 @@ namespace
     clang_preprocess_result clang_preprocess(const libclang_compile_config& c,
                                              const char* full_path, const diagnostic_logger& logger)
     {
+        // if we're fast preprocessing we only preprocess the main file, not includes
+        // this is done by disabling all include search paths when doing the preprocessing
+        // to allow macros a separate preprocessing with the -dM flag is done that extracts all macros
+        // they are then manually defined before
         auto fast_preprocessing = detail::libclang_compile_config_access::fast_preprocessing(c);
 
         auto macro_file = fast_preprocessing ? write_macro_file(c, full_path, logger) : "";
@@ -706,7 +717,7 @@ namespace
         if (starts_with(p, "*/"))
             // empty comment
             p.skip(2u);
-        else if (starts_with(p, "*") || starts_with(p, "!"))
+        else if (p.write_enabled() && (starts_with(p, "*") || starts_with(p, "!")))
         {
             // doc comment
             p.skip();
@@ -771,14 +782,14 @@ namespace
             return false;
         p.skip(2u);
 
-        if (starts_with(p, "/") || starts_with(p, "!"))
+        if (p.write_enabled() && (starts_with(p, "/") || starts_with(p, "!")))
         {
             // C++ style doc comment
             p.skip();
             auto comment = parse_cpp_doc_comment(p, false);
             merge_or_add(output, std::move(comment));
         }
-        else if (starts_with(p, "<"))
+        else if (p.write_enabled() && starts_with(p, "<"))
         {
             // end of line doc comment
             p.skip();
@@ -902,6 +913,9 @@ namespace
         skip(p, " /* clang -E -dI */");
         DEBUG_ASSERT(starts_with(p, "\n"), detail::assert_handler{});
         // don't skip newline
+
+        if (!p.write_enabled())
+            return type_safe::nullopt;
 
         if (filename.size() > 2u && filename[0] == '.'
             && (filename[1] == '/' || filename[1] == '\\'))
@@ -1083,7 +1097,10 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
             else if (lm.value().flag == linemarker::enter_old)
             {
                 if (lm.value().file == path)
+                {
                     p.enable_write();
+                    p.set_line(lm.value().line);
+                }
             }
             else if (lm.value().flag == linemarker::line_directive && p.write_enabled())
             {
