@@ -393,13 +393,15 @@ namespace
     };
 
     clang_preprocess_result clang_preprocess_impl(const libclang_compile_config& c,
+                                                  const diagnostic_logger&       logger,
                                                   const std::string&             full_path,
                                                   const char*                    macro_path)
     {
         clang_preprocess_result result;
 
         std::string diagnostic;
-        auto        diagnostic_handler = [&](const char* str, std::size_t n) {
+        auto        expect_bad_exit_code = false;
+        auto        diagnostic_handler   = [&](const char* str, std::size_t n) {
             diagnostic.reserve(diagnostic.size() + n);
             for (auto end = str + n; str != end; ++str)
                 if (*str == '\r')
@@ -407,10 +409,19 @@ namespace
                 else if (*str == '\n')
                 {
                     // handle current diagnostic
-                    auto file = parse_missing_file(full_path, diagnostic);
-                    if (file)
-                        // save for clang without -dI flag
-                        result.included_files.push_back(file.value());
+                    if (macro_path)
+                    {
+                        // hide diagnostics
+
+                        auto file = parse_missing_file(full_path, diagnostic);
+                        if (file)
+                            // save for clang without -dI flag
+                            result.included_files.push_back(file.value());
+
+                        expect_bad_exit_code = true;
+                    }
+                    else
+                        log_diagnostic(logger, diagnostic);
 
                     diagnostic.clear();
                 }
@@ -430,7 +441,12 @@ namespace
                              },
                              diagnostic_handler);
         // wait for process end
-        process.get_exit_status();
+        auto exit_code = process.get_exit_status();
+        DEBUG_ASSERT(diagnostic.empty(), detail::assert_handler{});
+        if (exit_code != 0 && !expect_bad_exit_code)
+            throw libclang_error("preprocessor: command '" + cmd
+                                 + "' exited with non-zero exit code (" + std::to_string(exit_code)
+                                 + ")");
 
         return result;
     }
@@ -438,6 +454,10 @@ namespace
     clang_preprocess_result clang_preprocess(const libclang_compile_config& c,
                                              const char* full_path, const diagnostic_logger& logger)
     {
+        if (!std::ifstream(full_path))
+            throw libclang_error("preprocessor: file '" + std::string(full_path)
+                                 + "' doesn't exist");
+
         // if we're fast preprocessing we only preprocess the main file, not includes
         // this is done by disabling all include search paths when doing the preprocessing
         // to allow macros a separate preprocessing with the -dM flag is done that extracts all macros
@@ -449,7 +469,7 @@ namespace
         clang_preprocess_result result;
         try
         {
-            result = clang_preprocess_impl(c, full_path,
+            result = clang_preprocess_impl(c, logger, full_path,
                                            fast_preprocessing ? macro_file.c_str() : nullptr);
         }
         catch (...)

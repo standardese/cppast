@@ -77,9 +77,16 @@ struct foo {};
     config.set_flags(cpp_standard::cpp_latest);
     config.fast_preprocessing(true);
 
-    auto result = detail::preprocess(config, file_name, default_logger().get());
-    REQUIRE(result.macros.size() == 1u);
-    REQUIRE(result.macros[0].macro->name() == "INCLUDE_GUARD");
+    try
+    {
+        auto result = detail::preprocess(config, file_name, default_logger().get());
+        REQUIRE(result.macros.size() == 1u);
+        REQUIRE(result.macros[0].macro->name() == "INCLUDE_GUARD");
+    }
+    catch (libclang_error& ex)
+    {
+        FAIL(ex.what());
+    }
 }
 
 TEST_CASE("preprocessor line numbers")
