@@ -30,6 +30,15 @@ TEST_CASE("preprocessor escaped character", "[!hide][clang4]")
     libclang_compile_config config;
     config.set_flags(cpp_standard::cpp_latest);
 
+    SECTION("fast")
+    {
+        config.fast_preprocessing(true);
+    }
+    SECTION("normal")
+    {
+        config.fast_preprocessing(false);
+    }
+
     auto preprocessed = detail::preprocess(config, "ppec.cpp", default_logger().get());
     REQUIRE(preprocessed.includes.size() == 1);
     REQUIRE(preprocessed.includes[0].file_name == "ppec.hpp");
@@ -37,6 +46,16 @@ TEST_CASE("preprocessor escaped character", "[!hide][clang4]")
 
 TEST_CASE("preprocessing use external macro")
 {
+    bool fast_preprocessing = false;
+    SECTION("fast_preprocessing")
+    {
+        fast_preprocessing = true;
+    }
+    SECTION("normal")
+    {
+        fast_preprocessing = false;
+    }
+
     auto file = parse({}, "preprocessing_external_macro.cpp", R"(
 #include <cmath>
 #ifdef _GLIBCXX_RELEASE
@@ -46,7 +65,7 @@ TEST_CASE("preprocessing use external macro")
 auto result = NAN;
 
 #endif
-)");
+)", fast_preprocessing);
 
     test_visit<cpp_variable>(*file, [&](const cpp_variable&) {});
 }
@@ -91,6 +110,16 @@ struct foo {};
 
 TEST_CASE("preprocessor line numbers")
 {
+    bool fast_preprocessing = false;
+    SECTION("fast_preprocessing")
+    {
+        fast_preprocessing = true;
+    }
+    SECTION("normal")
+    {
+        fast_preprocessing = false;
+    }
+
     auto code = R"(/// 1
 
 #include <iostream>
@@ -130,7 +159,7 @@ lines
 /// 37
 )";
 
-    auto file = parse({}, "preprocessor_line_numbers.cpp", code);
+    auto file = parse({}, "preprocessor_line_numbers.cpp", code, fast_preprocessing);
     for (auto& comment : file->unmatched_comments())
     {
         if (comment.content[0] != '\n')
@@ -188,6 +217,16 @@ with indent */
 
 TEST_CASE("comment matching")
 {
+    bool fast_preprocessing = false;
+    SECTION("fast_preprocessing")
+    {
+        fast_preprocessing = true;
+    }
+    SECTION("normal")
+    {
+        fast_preprocessing = false;
+    }
+
     auto code = R"(
 /// u
 
@@ -243,7 +282,7 @@ template <typename T/**/>
 void j();
 )";
 
-    auto file = parse({}, "comment-matching.cpp", code);
+    auto file = parse({}, "comment-matching.cpp", code, fast_preprocessing);
     visit(*file, [&](const cpp_entity& e, visitor_info) {
         if (e.kind() == cpp_entity_kind::file_t)
             return true;

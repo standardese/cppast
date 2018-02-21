@@ -115,7 +115,7 @@ b
                 REQUIRE(include.target().name() == include.name());
                 REQUIRE(include.include_kind() == cppast::cpp_include_kind::local);
                 REQUIRE(include.target().get(idx).empty());
-                REQUIRE(include.full_path() == "cpp_include_directive-header.hpp");
+                REQUIRE(include.full_path() == "./cpp_include_directive-header.hpp");
             }
             else
                 REQUIRE(false);
@@ -129,7 +129,7 @@ b
             REQUIRE(include.include_kind() == cppast::cpp_include_kind::local);
             REQUIRE(
                 equal_ref(idx, include.target(), cpp_file_ref(cpp_entity_id(""), "header_a.hpp")));
-            REQUIRE(include.full_path() == "header_a.hpp");
+            REQUIRE(include.full_path() == "./header_a.hpp");
         }
         else
             REQUIRE(false);

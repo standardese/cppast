@@ -9,8 +9,10 @@
 #include <cctype>
 #include <cstdio>
 #include <cstring>
-#include <process.hpp>
 #include <fstream>
+#include <unordered_map>
+
+#include <process.hpp>
 
 #include <cppast/diagnostic.hpp>
 
@@ -941,7 +943,7 @@ namespace
             && (filename[1] == '/' || filename[1] == '\\'))
             filename = filename.substr(2);
 
-        return detail::pp_include{std::move(filename), include_kind, p.cur_line()};
+        return detail::pp_include{std::move(filename), "", include_kind, p.cur_line()};
     }
 
     bool bump_pragma(position& p)
@@ -1035,7 +1037,8 @@ namespace
 detail::preprocessor_output detail::preprocess(const libclang_compile_config& config,
                                                const char* path, const diagnostic_logger& logger)
 {
-    detail::preprocessor_output result;
+    detail::preprocessor_output                  result;
+    std::unordered_map<std::string, std::string> indirect_includes;
 
     auto preprocessed = clang_preprocess(config, path, logger);
 
@@ -1113,7 +1116,31 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
         else if (auto lm = parse_linemarker(p))
         {
             if (lm.value().flag == linemarker::enter_new)
+            {
+                if (p.write_enabled())
+                {
+                    // this is a direct include, update the full path of the last include
+                    DEBUG_ASSERT(!result.includes.empty()
+                                     && result.includes.back().full_path.empty()
+                                     && lm.value().file.find(result.includes.back().file_name)
+                                            != std::string::npos,
+                                 detail::assert_handler{});
+                    result.includes.back().full_path = lm.value().file;
+                }
+                else
+                {
+                    // this is an indirect include, remember it to get full path for indirect includes
+                    auto& full_path = lm.value().file;
+
+                    auto last_dir = full_path.find_last_of("/\\");
+                    auto file_name =
+                        last_dir == std::string::npos ? full_path : full_path.substr(last_dir + 1u);
+
+                    indirect_includes.emplace(std::move(file_name), full_path);
+                }
+
                 p.disable_write();
+            }
             else if (lm.value().flag == linemarker::enter_old)
             {
                 if (lm.value().file == path)
@@ -1159,8 +1186,33 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
     if (result.includes.empty())
     {
         // add headers from diagnostics w/o line information
+        // only needed for older clangs
         for (auto name : preprocessed.included_files)
-            result.includes.push_back(pp_include{name, cpp_include_kind::local, 1u});
+            result.includes.push_back(pp_include{name, "", cpp_include_kind::local, 1u});
+    }
+
+    // get full path for indirect includes
+    // doesn't work if fast preprocessing
+    if (!detail::libclang_compile_config_access::fast_preprocessing(config))
+    {
+        for (auto& include : result.includes)
+            if (include.full_path.empty())
+            {
+                auto last_sep = include.file_name.find_last_of("/\\");
+
+                auto iter = indirect_includes.find(last_sep == std::string::npos ?
+                                                       include.file_name :
+                                                       include.file_name.substr(last_sep + 1u));
+                if (iter != indirect_includes.end())
+                    include.full_path = iter->second;
+                else
+                    logger.log("preprocessor",
+                               format_diagnostic(severity::warning,
+                                                 source_location::make_file(path, include.line),
+                                                 "unable to retrieve full path for include '",
+                                                 include.file_name,
+                                                 "' (please file a bug report)"));
+            }
     }
 
     return result;

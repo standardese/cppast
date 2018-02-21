@@ -137,6 +137,8 @@ namespace cppast
         /// Later stages will use the includes again.
         /// This hack breaks if you define the same macro multiple times in the file being parsed (headers don't matter)
         /// or you rely on the order of macro directives.
+        /// \notes If this option is `true`, the full file name of include directives is not available,
+        /// just the name as written in the source code.
         void fast_preprocessing(bool b) noexcept
         {
             fast_preprocessing_ = b;
