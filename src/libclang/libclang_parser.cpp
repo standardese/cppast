@@ -516,8 +516,9 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
                                  && get_line_no(cur) >= include_iter->line,
                              detail::assert_handler{});
 
-                // create an include directive
-                auto full_path = detail::get_cursor_name(cur);
+                auto full_path = include_iter->full_path.empty() ? include_iter->file_name :
+                                                                   include_iter->full_path;
+
                 // if we got an absolute file path for the current file,
                 // also use an absolute file path for the id
                 // otherwise just use the file name as written in the source file
@@ -531,7 +532,7 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
                 auto include =
                     cpp_include_directive::build(cpp_file_ref(id,
                                                               std::move(include_iter->file_name)),
-                                                 include_iter->kind, full_path.std_str());
+                                                 include_iter->kind, std::move(full_path));
                 context.comments.match(*include, include_iter->line,
                                        false); // must not skip comments,
                                                // includes are not reported in order

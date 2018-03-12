@@ -20,7 +20,7 @@ namespace cppast
 
         struct pp_include
         {
-            std::string      file_name;
+            std::string      file_name, full_path;
             cpp_include_kind kind;
             unsigned         line;
         };

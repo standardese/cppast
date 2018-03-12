@@ -24,12 +24,14 @@ inline void write_file(const char* name, const char* code)
 }
 
 inline std::unique_ptr<cppast::cpp_file> parse_file(const cppast::cpp_entity_index& idx,
-                                                    const char*                     name)
+                                                    const char*                     name,
+                                                    bool fast_preprocessing = false)
 {
     using namespace cppast;
 
     libclang_compile_config config;
     config.set_flags(cpp_standard::cpp_latest);
+    config.fast_preprocessing(fast_preprocessing);
 
     libclang_parser p(default_logger());
 
@@ -40,10 +42,11 @@ inline std::unique_ptr<cppast::cpp_file> parse_file(const cppast::cpp_entity_ind
 }
 
 inline std::unique_ptr<cppast::cpp_file> parse(const cppast::cpp_entity_index& idx,
-                                               const char* name, const char* code)
+                                               const char* name, const char* code,
+                                               bool fast_preprocessing = false)
 {
     write_file(name, code);
-    return parse_file(idx, name);
+    return parse_file(idx, name, fast_preprocessing);
 }
 
 class test_generator : public cppast::code_generator
