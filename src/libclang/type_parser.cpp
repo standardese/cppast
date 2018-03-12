@@ -583,6 +583,9 @@ namespace
         case CXType_OCLQueue:
         case CXType_OCLReserveID:
 #endif
+#if CINDEX_VERSION_MINOR > 43
+        case CXType_Float16:
+#endif
             context.logger->log("libclang parser",
                                 format_diagnostic(severity::warning, detail::make_location(type),
                                                   "unexpected type of kind '",
