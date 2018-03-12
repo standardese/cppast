@@ -1042,6 +1042,13 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
 
     auto preprocessed = clang_preprocess(config, path, logger);
 
+    if (detail::libclang_compile_config_access::clang_version(config) < 40000)
+    {
+        // add headers from diagnostics w/o line information
+        for (auto name : preprocessed.included_files)
+            result.includes.push_back(pp_include{name, "", cpp_include_kind::local, 1u});
+    }
+
     position p(ts::ref(result.source), preprocessed.file.c_str());
     ts::flag in_string(false), in_char(false), first_line(true);
     while (p)
@@ -1120,12 +1127,16 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                 if (p.write_enabled())
                 {
                     // this is a direct include, update the full path of the last include
-                    DEBUG_ASSERT(!result.includes.empty()
-                                     && result.includes.back().full_path.empty()
-                                     && lm.value().file.find(result.includes.back().file_name)
-                                            != std::string::npos,
-                                 detail::assert_handler{});
-                    result.includes.back().full_path = lm.value().file;
+                    // note: path can be empty if pre clang 4 and not fast preprocessing
+                    // in this case we can't get the full path at all
+                    if (!result.includes.empty())
+                    {
+                        DEBUG_ASSERT(result.includes.back().full_path.empty()
+                                         && lm.value().file.find(result.includes.back().file_name)
+                                                != std::string::npos,
+                                     detail::assert_handler{});
+                        result.includes.back().full_path = lm.value().file;
+                    }
                 }
                 else
                 {
@@ -1181,14 +1192,6 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
             continue;
         else
             p.bump();
-    }
-
-    if (result.includes.empty())
-    {
-        // add headers from diagnostics w/o line information
-        // only needed for older clangs
-        for (auto name : preprocessed.included_files)
-            result.includes.push_back(pp_include{name, "", cpp_include_kind::local, 1u});
     }
 
     // get full path for indirect includes
