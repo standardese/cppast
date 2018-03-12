@@ -243,6 +243,11 @@ namespace
         {
             // variadic tokens in unnamed parameter not included
             end = get_next_location(tu, file, end, 3);
+            if (token_after_is(tu, file, cur, end, "."))
+                // extra whitespace, so bump again
+                // this should all go away once I redid the whole token thing...
+                end = get_next_location(tu, file, end, 1);
+
             DEBUG_ASSERT(token_after_is(tu, file, cur, end, ">")
                              || token_after_is(tu, file, cur, end, ","),
                          detail::parse_error_handler{}, cur,
