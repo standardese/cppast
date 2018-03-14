@@ -40,12 +40,9 @@ namespace
     class simple_tokenizer
     {
     public:
-        explicit simple_tokenizer(const CXTranslationUnit& tu, const CXSourceRange& range,
-                                  const CXCursor& cur)
-        : tu_(tu)
+        explicit simple_tokenizer(const CXTranslationUnit& tu, const CXSourceRange& range) : tu_(tu)
         {
             clang_tokenize(tu, range, &tokens_, &no_);
-            DEBUG_ASSERT(no_ >= 1u, detail::parse_error_handler{}, cur, "no tokens available");
         }
 
         ~simple_tokenizer()
@@ -72,17 +69,15 @@ namespace
         unsigned          no_;
     };
 
-    bool token_after_is(const CXTranslationUnit& tu, const CXFile& file, const CXCursor& cur,
-                        const CXSourceLocation& loc, const char* token_str, int inc = 1)
+    bool token_after_is(const CXTranslationUnit& tu, const CXFile& file,
+                        const CXSourceLocation& loc, const char* token_str, int inc)
     {
         auto loc_after = get_next_location(tu, file, loc, inc);
         if (!clang_Location_isFromMainFile(loc_after))
             return false;
 
-        simple_tokenizer tokenizer(tu,
-                                   inc > 0 ? clang_getRange(loc, loc_after) :
-                                             clang_getRange(loc_after, loc),
-                                   cur);
+        simple_tokenizer tokenizer(tu, inc > 0 ? clang_getRange(loc, loc_after) :
+                                                 clang_getRange(loc_after, loc));
         detail::cxstring spelling(clang_getTokenSpelling(tu, tokenizer[0u]));
         return spelling == token_str;
     }
@@ -105,21 +100,21 @@ namespace
             || kind == CXCursor_VarDecl || kind == CXCursor_FieldDecl || kind == CXCursor_ParmDecl
             || kind == CXCursor_NonTypeTemplateParameter)
         {
-            if (token_after_is(tu, file, cur, begin, "]", -2)
-                && token_after_is(tu, file, cur, begin, "]", -3))
+            if (token_after_is(tu, file, begin, "]", -2)
+                && token_after_is(tu, file, begin, "]", -3))
             {
-                while (!token_after_is(tu, file, cur, begin, "[", -1)
-                       && !token_after_is(tu, file, cur, begin, "[", -2))
+                while (!token_after_is(tu, file, begin, "[", -1)
+                       && !token_after_is(tu, file, begin, "[", -2))
                     begin = get_next_location(tu, file, begin, -1);
 
                 begin = get_next_location(tu, file, begin, -3);
-                DEBUG_ASSERT(token_after_is(tu, file, cur, begin, "[")
-                                 && token_after_is(tu, file, cur,
-                                                   get_next_location(tu, file, begin), "["),
+                DEBUG_ASSERT(token_after_is(tu, file, begin, "[", 0)
+                                 && token_after_is(tu, file, get_next_location(tu, file, begin),
+                                                   "[", 0),
                              detail::parse_error_handler{}, cur,
                              "error in pre-function attribute parsing");
             }
-            else if (token_after_is(tu, file, cur, begin, ")", -2))
+            else if (token_after_is(tu, file, begin, ")", -2))
             {
                 // maybe alignas specifier
                 auto save_begin = begin;
@@ -129,9 +124,9 @@ namespace
                 for (auto last_begin = begin; paren_count != 0; last_begin = begin)
                 {
                     begin = get_next_location(tu, file, begin, -1);
-                    if (token_after_is(tu, file, cur, begin, "(", -1))
+                    if (token_after_is(tu, file, begin, "(", -1))
                         --paren_count;
-                    else if (token_after_is(tu, file, cur, begin, ")", -1))
+                    else if (token_after_is(tu, file, begin, ")", -1))
                         ++paren_count;
 
                     DEBUG_ASSERT(!clang_equalLocations(last_begin, begin),
@@ -140,7 +135,7 @@ namespace
                 }
                 begin = get_next_location(tu, file, begin, -(int(std::strlen("alignas")) + 1));
 
-                if (token_after_is(tu, file, cur, begin, "alignas"))
+                if (token_after_is(tu, file, begin, "alignas", 0))
                     begin = get_next_location(tu, file, begin, -1);
                 else
                     begin = save_begin;
@@ -166,30 +161,30 @@ namespace
             if (!is_definition)
             {
                 // i have no idea why this is necessary
-                is_definition = token_after_is(tu, file, cur, end, "{")
-                                || token_after_is(tu, file, cur, end, "try")
-                                || token_after_is(tu, file, cur, end, ":");
+                is_definition = token_after_is(tu, file, end, "{", 0)
+                                || token_after_is(tu, file, end, "try", 0)
+                                || token_after_is(tu, file, end, ":", 0);
                 if (is_definition)
                     // need to extend range here to include the token
                     end = get_next_location(tu, file, end);
             }
 
-            if (!is_definition && !token_after_is(tu, file, cur, end, ";"))
+            if (!is_definition && !token_after_is(tu, file, end, ";", 0))
             {
                 // we do not have a body, but it is not a declaration either
                 do
                 {
                     end = get_next_location(tu, file, end);
-                } while (!token_after_is(tu, file, cur, end, ";"));
+                } while (!token_after_is(tu, file, end, ";", 0));
             }
             else if (kind == CXCursor_CXXMethod)
                 // necessary for some reason
                 begin = get_next_location(tu, file, begin, -1);
-            else if (kind == CXCursor_Destructor && token_after_is(tu, file, cur, end, ")"))
+            else if (kind == CXCursor_Destructor && token_after_is(tu, file, end, ")", 0))
                 // necessary for some other reason
                 end = get_next_location(tu, file, end);
         }
-        else if (kind == CXCursor_TemplateTypeParameter && token_after_is(tu, file, cur, end, "("))
+        else if (kind == CXCursor_TemplateTypeParameter && token_after_is(tu, file, end, "(", 0))
         {
             // if you have decltype as default argument for a type template parameter
             // libclang doesn't include the parameters
@@ -197,9 +192,9 @@ namespace
             auto prev = end;
             for (auto paren_count = 1; paren_count != 0; next = get_next_location(tu, file, next))
             {
-                if (token_after_is(tu, file, cur, next, "("))
+                if (token_after_is(tu, file, next, "(", 0))
                     ++paren_count;
-                else if (token_after_is(tu, file, cur, next, ")"))
+                else if (token_after_is(tu, file, next, ")", 0))
                     --paren_count;
                 prev = next;
             }
@@ -210,7 +205,7 @@ namespace
 #endif
         }
         else if (kind == CXCursor_TemplateTemplateParameter
-                 && token_after_is(tu, file, cur, end, "<"))
+                 && token_after_is(tu, file, end, "<", 0))
         {
             // if you have a template template parameter in a template template parameter,
             // the tokens are all messed up, only contain the `template`
@@ -220,18 +215,18 @@ namespace
             auto next = get_next_location(tu, file, end, 2);
             for (auto angle_count = 1; angle_count != 0; next = get_next_location(tu, file, next))
             {
-                if (token_after_is(tu, file, cur, next, ">"))
+                if (token_after_is(tu, file, next, ">", 0))
                     --angle_count;
-                else if (token_after_is(tu, file, cur, next, ">>"))
+                else if (token_after_is(tu, file, next, ">>", 0))
                     angle_count -= 2;
-                else if (token_after_is(tu, file, cur, next, "<"))
+                else if (token_after_is(tu, file, next, "<", 0))
                     ++angle_count;
             }
 
             // second: skip until end of parameter
             // no need to handle default, so look for '>' or ','
-            while (!token_after_is(tu, file, cur, next, ">")
-                   && !token_after_is(tu, file, cur, next, ","))
+            while (!token_after_is(tu, file, next, ">", 0)
+                   && !token_after_is(tu, file, next, ",", 0))
                 next = get_next_location(tu, file, next);
             // now we found the proper end of the token
             end = get_next_location(tu, file, next, -1);
@@ -239,39 +234,39 @@ namespace
         else if ((kind == CXCursor_TemplateTypeParameter
                   || kind == CXCursor_NonTypeTemplateParameter
                   || kind == CXCursor_TemplateTemplateParameter)
-                 && token_after_is(tu, file, cur, end, "..."))
+                 && token_after_is(tu, file, end, "...", 0))
         {
             // variadic tokens in unnamed parameter not included
             end = get_next_location(tu, file, end, 3);
-            if (token_after_is(tu, file, cur, end, "."))
+            if (token_after_is(tu, file, end, ".", 0))
                 // extra whitespace, so bump again
                 // this should all go away once I redid the whole token thing...
                 end = get_next_location(tu, file, end, 1);
 
-            DEBUG_ASSERT(token_after_is(tu, file, cur, end, ">")
-                             || token_after_is(tu, file, cur, end, ","),
+            DEBUG_ASSERT(token_after_is(tu, file, end, ">", 0)
+                             || token_after_is(tu, file, end, ",", 0),
                          detail::parse_error_handler{}, cur,
                          "unexpected token in variadic parameter workaround");
         }
         else if ((kind == CXCursor_TemplateTypeParameter
                   || kind == CXCursor_NonTypeTemplateParameter
                   || kind == CXCursor_TemplateTemplateParameter)
-                 && !token_after_is(tu, file, cur, end, ">")
-                 && !token_after_is(tu, file, cur, end, ","))
+                 && !token_after_is(tu, file, end, ">", 0)
+                 && !token_after_is(tu, file, end, ",", 0))
         {
-            DEBUG_ASSERT(token_after_is(tu, file, cur, get_next_location(tu, file, end, -2), ">>"),
+            DEBUG_ASSERT(token_after_is(tu, file, get_next_location(tu, file, end, -2), ">>", 0),
                          detail::parse_error_handler{}, cur,
                          "unexpected token in maximal munch workaround");
             unmunch = true;
             // need to shrink range anyway
             end = get_next_location(tu, file, end, -1);
         }
-        else if (kind == CXCursor_EnumDecl && !token_after_is(tu, file, cur, end, ";"))
+        else if (kind == CXCursor_EnumDecl && !token_after_is(tu, file, end, ";", 0))
         {
-            while (!token_after_is(tu, file, cur, end, ";"))
+            while (!token_after_is(tu, file, end, ";", 0))
                 end = get_next_location(tu, file, end);
         }
-        else if (kind == CXCursor_EnumConstantDecl && !token_after_is(tu, file, cur, end, ","))
+        else if (kind == CXCursor_EnumConstantDecl && !token_after_is(tu, file, end, ",", 0))
         {
             // need to support attributes
             // just give up and extend the range to the range of the entire enum...
@@ -291,7 +286,7 @@ namespace
         else if (kind == CXCursor_UnexposedDecl)
         {
             // include semicolon, if necessary
-            if (token_after_is(tu, file, cur, end, ";"))
+            if (token_after_is(tu, file, end, ";", 0))
                 end = get_next_location(tu, file, end);
         }
 
@@ -304,7 +299,7 @@ detail::cxtokenizer::cxtokenizer(const CXTranslationUnit& tu, const CXFile& file
 {
     auto extent = get_extent(tu, file, cur, unmunch_);
 
-    simple_tokenizer tokenizer(tu, extent, cur);
+    simple_tokenizer tokenizer(tu, extent);
     tokens_.reserve(tokenizer.size());
     for (auto i = 0u; i != tokenizer.size(); ++i)
         tokens_.emplace_back(tu, tokenizer[i]);
