@@ -78,6 +78,9 @@ namespace
 
         simple_tokenizer tokenizer(tu, inc > 0 ? clang_getRange(loc, loc_after) :
                                                  clang_getRange(loc_after, loc));
+        if (tokenizer.size() == 0u)
+            return false;
+
         detail::cxstring spelling(clang_getTokenSpelling(tu, tokenizer[0u]));
         return spelling == token_str;
     }

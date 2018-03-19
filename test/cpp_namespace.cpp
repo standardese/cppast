@@ -37,6 +37,9 @@ namespace {}
 /// namespace f{
 /// }
 namespace e::f {}
+
+// unnecessary semicolon at end of file
+;
 )";
 
     auto file  = parse({}, "cpp_namespace.cpp", code);

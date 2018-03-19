@@ -212,18 +212,15 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
 
     if (!clang_isAttribute(clang_getCursorKind(cur)))
     {
-        auto msg = detail::format("unhandled cursor of kind '",
-                                  detail::get_cursor_kind_spelling(cur).c_str(), "'");
-        context.logger->log("libclang parser",
-                            format_diagnostic(severity::warning, detail::make_location(cur),
-                                              "unhandled cursor of kind '",
-                                              detail::get_cursor_kind_spelling(cur).c_str(), "'"));
-
         // build unexposed entity
-        auto                   name = detail::get_cursor_name(cur);
         detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
         detail::cxtoken_stream stream(tokenizer, cur);
         auto                   spelling = detail::to_string(stream, stream.end());
+        if (spelling.begin() + 1 == spelling.end() && spelling.front().spelling == ";")
+            // unnecessary semicolon
+            return nullptr;
+
+        auto name = detail::get_cursor_name(cur);
 
         std::unique_ptr<cppast::cpp_entity> entity;
         if (name.empty())
@@ -233,6 +230,14 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
                                                  name.c_str(), std::move(spelling));
 
         context.comments.match(*entity, cur);
+
+        auto msg = detail::format("unhandled cursor of kind '",
+                                  detail::get_cursor_kind_spelling(cur).c_str(), "'");
+        context.logger->log("libclang parser",
+                            format_diagnostic(severity::warning, detail::make_location(cur),
+                                              "unhandled cursor of kind '",
+                                              detail::get_cursor_kind_spelling(cur).c_str(), "'"));
+
         return entity;
     }
     else
