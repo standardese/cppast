@@ -16,8 +16,8 @@ TEST_CASE("cpp_member_function")
 template <typename T>
 struct foo
 {
-    /// void a();
-    void a();
+    /// void a(int array[]);
+    void a(int array[]); // throw in an array argument for good measure
     /// void b()noexcept;
     void b() noexcept;
 
@@ -41,9 +41,9 @@ struct foo
     void j() = delete;
 };
 
-/// void foo<T>::a();
+/// void foo<T>::a(int array[]);
 template <typename T>
-void foo<T>::a() {}
+void foo<T>::a(int array[]) {}
 
 struct bar : foo<int>
 {
@@ -74,7 +74,7 @@ struct bar : foo<int>
                 REQUIRE(func.is_definition());
             REQUIRE(func.cv_qualifier() == cpp_cv_none);
             REQUIRE(func.ref_qualifier() == cpp_ref_none);
-            REQUIRE(func.signature() == "()");
+            REQUIRE(func.signature() == "(int[])");
         }
         else if (func.name() == "b")
         {

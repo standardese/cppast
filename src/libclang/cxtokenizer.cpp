@@ -276,8 +276,10 @@ namespace
             auto parent = clang_getCursorLexicalParent(cur);
             end         = clang_getRangeEnd(clang_getCursorExtent(parent));
         }
-        else if (kind == CXCursor_FieldDecl || kind == CXCursor_ParmDecl
-                 || kind == CXCursor_NonTypeTemplateParameter
+        else if (kind == CXCursor_ParmDecl && !token_after_is(tu, file, end, "]", -1))
+            // need to shrink range by one
+            end = get_next_location(tu, file, end, -1);
+        else if (kind == CXCursor_FieldDecl || kind == CXCursor_NonTypeTemplateParameter
                  || kind == CXCursor_TemplateTemplateParameter
 #if CINDEX_VERSION_MINOR < 37
                  || clang_isExpression(kind) || kind == CXCursor_CXXBaseSpecifier
