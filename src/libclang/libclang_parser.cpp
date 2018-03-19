@@ -48,6 +48,12 @@ bool detail::libclang_compile_config_access::fast_preprocessing(
     return config.fast_preprocessing_;
 }
 
+bool detail::libclang_compile_config_access::remove_comments_in_macro(
+    const libclang_compile_config& config)
+{
+    return config.remove_comments_in_macro_;
+}
+
 libclang_compilation_database::libclang_compilation_database(const std::string& build_directory)
 {
     static_assert(std::is_same<database, CXCompilationDatabase>::value, "forgot to update type");
@@ -88,7 +94,10 @@ namespace
 }
 
 libclang_compile_config::libclang_compile_config()
-: compile_config({}), write_preprocessed_(false), fast_preprocessing_(false)
+: compile_config({}),
+  write_preprocessed_(false),
+  fast_preprocessing_(false),
+  remove_comments_in_macro_(false)
 {
     // set given clang binary
     auto ptr   = CPPAST_CLANG_VERSION_STRING;

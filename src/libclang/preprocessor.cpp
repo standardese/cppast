@@ -200,9 +200,15 @@ namespace
     {
         // -x c++: force C++ as input language
         // -E: print preprocessor output
-        // -CC: keep comments, even in macro
         // -dD: keep macros
-        auto flags = std::string("-x c++ -E -CC -dD");
+        auto flags = std::string("-x c++ -E -dD");
+
+        // -CC: keep comments, even in macro
+        // -C: keep comments, but not in macro
+        if (!detail::libclang_compile_config_access::remove_comments_in_macro(c))
+            flags += " -CC";
+        else
+            flags += " -C";
 
         if (macro_file_path)
             // -no*: disable default include search paths
