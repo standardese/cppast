@@ -91,7 +91,7 @@ namespace
         }
         return result;
     }
-}
+} // namespace
 
 libclang_compile_config::libclang_compile_config()
 : compile_config({}),
@@ -150,7 +150,7 @@ namespace
             // relative w/o separator
             return dir.std_str() + file;
     }
-}
+} // namespace
 
 void detail::for_each_file(const libclang_compilation_database& database, void* user_data,
                            void (*callback)(void*, std::string))
@@ -226,7 +226,7 @@ namespace
             // else skip argument
         }
     }
-}
+} // namespace
 
 libclang_compile_config::libclang_compile_config(const libclang_compilation_database& database,
                                                  const std::string&                   file)
@@ -303,7 +303,12 @@ void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags 
     }
 
     if (flags & compile_flag::ms_compatibility)
+    {
         add_flag("-fms-compatibility");
+        // see https://github.com/foonathan/cppast/issues/46
+        define_macro("_DEBUG_FUNCTIONAL_MACHINERY", "");
+    }
+
     if (flags & compile_flag::ms_extensions)
         add_flag("-fms-extensions");
 }
@@ -484,7 +489,7 @@ namespace
         clang_getPresumedLocation(loc, nullptr, &line, nullptr);
         return line;
     }
-}
+} // namespace
 
 std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx, std::string path,
                                                     const compile_config& c) const try
