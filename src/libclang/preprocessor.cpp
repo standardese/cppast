@@ -88,8 +88,7 @@ namespace
     }
 
     // parse and log diagnostic
-    // returns true if a diagnostic was logged due to a bug, but it is otherwise harmless
-    bool log_diagnostic(const diagnostic_logger& logger, const std::string& msg)
+    void log_diagnostic(const diagnostic_logger& logger, const std::string& msg)
     {
         auto ptr = msg.c_str();
 
@@ -105,13 +104,7 @@ namespace
         while (*ptr && *ptr != '\n')
             message.push_back(*ptr++);
 
-        // see https://github.com/foonathan/cppast/issues/46
-        auto harmless_diag =
-            message.find("invalid filename for #line directive") != std::string::npos;
-
         logger.log("preprocessor", diagnostic{std::move(message), std::move(loc), sev});
-
-        return harmless_diag;
     }
 
     // parses missing header file diagnostic and returns the file name,
@@ -362,8 +355,6 @@ namespace
     std::string write_macro_file(const libclang_compile_config& c, const std::string& full_path,
                                  const diagnostic_logger& logger)
     {
-        auto expect_bad_exit_code = false;
-
         std::string diagnostic;
         auto        diagnostic_logger = [&](const char* str, std::size_t n) {
             diagnostic.reserve(diagnostic.size() + n);
@@ -373,7 +364,7 @@ namespace
                 else if (*str == '\n')
                 {
                     // consume current diagnostic
-                    expect_bad_exit_code |= log_diagnostic(logger, diagnostic);
+                    log_diagnostic(logger, diagnostic);
                     diagnostic.clear();
                 }
                 else
@@ -396,7 +387,7 @@ namespace
 
         auto exit_code = process.get_exit_status();
         DEBUG_ASSERT(diagnostic.empty(), detail::assert_handler{});
-        if (exit_code != 0 && !expect_bad_exit_code)
+        if (exit_code != 0)
             throw libclang_error("preprocessor (macro): command '" + cmd
                                  + "' exited with non-zero exit code (" + std::to_string(exit_code)
                                  + ")");
@@ -438,7 +429,7 @@ namespace
                         expect_bad_exit_code = true;
                     }
                     else
-                        expect_bad_exit_code |= log_diagnostic(logger, diagnostic);
+                        log_diagnostic(logger, diagnostic);
 
                     diagnostic.clear();
                 }
