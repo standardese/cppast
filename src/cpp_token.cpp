@@ -216,7 +216,7 @@ namespace
         for (; is_digit(*ptr) || *ptr == '\''; ++ptr)
             if (*ptr != '\'')
                 result += *ptr;
-        DEBUG_ASSERT(result.back() != '\'', detail::assert_handler{});
+        DEBUG_ASSERT(result.empty() || result.back() != '\'', detail::assert_handler{});
         return result;
     }
 
@@ -569,7 +569,7 @@ namespace
 
         return type_safe::nullopt;
     }
-}
+} // namespace
 
 cpp_token_string cpp_token_string::tokenize(std::string str)
 {
@@ -605,7 +605,7 @@ namespace
     {
         return std::isalnum(c) || c == '_';
     }
-}
+} // namespace
 
 std::string cpp_token_string::as_string() const
 {
