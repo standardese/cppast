@@ -545,12 +545,23 @@ namespace
             auto arguments = parse_attribute_arguments(stream);
             result.push_back(cpp_attribute(cpp_attribute_kind::alignas_, std::move(arguments)));
         }
-        else if (skip_if(stream, "__attribute__"))
+        else if (skip_if(stream, "__attribute__") && stream.peek() == "(")
         {
             // GCC/clang attributes
-            // __attribute__(<attribute>)
-            //              ^
-            skip_brackets(stream);
+            // __attribute__((<attribute>))
+            //              ^^
+            skip(stream, "(");
+            skip(stream, "(");
+
+            auto scope = parse_attribute_using(stream);
+            while (!skip_if(stream, ")"))
+            {
+                auto attribute = parse_attribute_token(stream, scope);
+                result.push_back(std::move(attribute));
+                detail::skip_if(stream, ",");
+            }
+
+            skip(stream, ")");
             return true;
         }
         else if (skip_if(stream, "__declspec"))
@@ -558,7 +569,15 @@ namespace
             // MSVC declspec
             // __declspec(<attribute>)
             //           ^
-            skip_brackets(stream);
+            skip(stream, "(");
+            auto scope = parse_attribute_using(stream);
+            while (!skip_if(stream, ")"))
+            {
+                auto attribute = parse_attribute_token(stream, scope);
+                result.push_back(std::move(attribute));
+                detail::skip_if(stream, ",");
+            }
+
             return true;
         }
 
