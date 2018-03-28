@@ -39,6 +39,9 @@ TEST_CASE("cpp_attribute")
 // alignas
 struct alignas(8) type {};
 alignas(type) int var;
+
+// keyword attributes
+[[const]] int k();
 )";
 
     auto file = parse({}, "cpp_attribute.cpp", code);
@@ -113,9 +116,12 @@ alignas(type) int var;
                                      else if (e.name() == "j")
                                          check_attribute(attr, "noreturn", type_safe::nullopt,
                                                          false, "", cpp_attribute_kind::noreturn);
+                                     else if (e.name() == "k")
+                                         check_attribute(attr, "const", type_safe::nullopt, false,
+                                                         "", cpp_attribute_kind::unknown);
                                  },
                                  false);
-    REQUIRE(count == 9);
+    REQUIRE(count == 10);
 
     count = test_visit<cpp_class>(*file,
                                   [&](const cpp_entity& e) {
