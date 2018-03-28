@@ -53,15 +53,26 @@ endif()
 # install libclang
 #
 
-# downloads and extracts LLVM using the given version and OS name
+function(name_without_extension FILENAME NAME)
+    set(known_extensions "\\.tar\\.xz" "\\.tar\\.gz" "\\.tar" "\\.zip")
+
+    set(name_we "${FILENAME}")
+
+    foreach(ext ${known_extensions})
+        string(REGEX REPLACE "(.*)${ext}" "\\1" name_we "${name_we}")
+    endforeach()
+    set(${NAME} "${name_we}" PARENT_SCOPE)
+endfunction()
+
+# downloads and extracts LLVM using the given URL, filename, and extension
 # sets: LLVM_DOWNLOAD_DIR
-function(_cppast_download_llvm version os)
-    set(folder "clang+llvm-${version}-${os}") # name of downloaded folder
+function(_cppast_download_llvm url)
+    get_filename_component(file "${url}" NAME)
+    name_without_extension(${file} folder)
 
     if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${folder})
-        set(url http://releases.llvm.org/${version}/${folder}.tar.xz) # download URL
         message(STATUS "Downloading LLVM from ${url}")
-        file(DOWNLOAD ${url} ${CMAKE_CURRENT_BINARY_DIR}/${folder}.tar.xz SHOW_PROGRESS
+        file(DOWNLOAD ${url} ${CMAKE_CURRENT_BINARY_DIR}/${file} SHOW_PROGRESS
             STATUS status
             LOG log)
 
@@ -71,11 +82,18 @@ function(_cppast_download_llvm version os)
             message(FATAL_ERROR "error downloading llvm: ${status_string}" "${log}")
         endif()
 
-        execute_process(COMMAND ${CMAKE_COMMAND} -E tar xJf ${folder}.tar.xz
+        execute_process(COMMAND ${CMAKE_COMMAND} -E tar xJf ${file}
                         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     endif()
 
     set(LLVM_DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}/${folder} PARENT_SCOPE)
+endfunction()
+
+# downloads and extracts LLVM using the given version and OS name
+# sets: LLVM_DOWNLOAD_DIR
+function(_cppast_download_llvm_from_llvm_releases version os)
+    _cppast_download_llvm("http://releases.llvm.org/${version}/clang+llvm-${version}-${os}.tar.xz")
+    set(LLVM_DOWNLOAD_DIR ${LLVM_DOWNLOAD_DIR} PARENT_SCOPE)
 endfunction()
 
 # finds the llvm-config binary
@@ -175,7 +193,10 @@ function(_cppast_find_libclang config_tool min_version force)
 endfunction()
 
 set(llvm_min_version 3.9.1)
-set(LLVM_PREFERRED_VERSION 4.0.0 CACHE STRING "the preferred LLVM version")
+
+if(NOT DEFINED LLVM_PREFERRED_VERSION)
+    set(LLVM_PREFERRED_VERSION 4.0.0 CACHE STRING "the preferred LLVM version")
+endif()
 
 if(DEFINED LLVM_VERSION_EXPLICIT)
     if(LLVM_VERSION_EXPLICIT VERSION_LESS llvm_min_version)
@@ -185,7 +206,9 @@ if(DEFINED LLVM_VERSION_EXPLICIT)
     message(STATUS "Using manually specified LLVM version ${LLVM_VERSION}")
 elseif(NOT LLVM_CONFIG_BINARY)
     if(DEFINED LLVM_DOWNLOAD_OS_NAME)
-        _cppast_download_llvm(${LLVM_PREFERRED_VERSION} ${LLVM_DOWNLOAD_OS_NAME})
+        _cppast_download_llvm_from_llvm_releases(${LLVM_PREFERRED_VERSION} ${LLVM_DOWNLOAD_OS_NAME})
+    elseif(DEFINED LLVM_DOWNLOAD_URL)
+        _cppast_download_llvm(${LLVM_DOWNLOAD_URL})
     endif()
     _cppast_find_llvm_config()
     _cppast_find_libclang(${LLVM_CONFIG_BINARY} ${llvm_min_version} 1) # override here
