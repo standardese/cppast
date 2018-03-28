@@ -297,7 +297,7 @@ namespace
 
         return clang_getRange(begin, end);
     }
-}
+} // namespace
 
 detail::cxtokenizer::cxtokenizer(const CXTranslationUnit& tu, const CXFile& file,
                                  const CXCursor& cur)
@@ -335,7 +335,7 @@ namespace
             ++str;
         return true;
     }
-}
+} // namespace
 
 bool detail::skip_if(detail::cxtoken_stream& stream, const char* str, bool multi_token)
 {
@@ -369,7 +369,7 @@ namespace
             return next_kind == CXToken_Literal;
         return false;
     }
-}
+} // namespace
 
 detail::cxtoken_iterator detail::find_closing_bracket(detail::cxtoken_stream stream)
 {
@@ -483,8 +483,9 @@ namespace
         // (identifier ::)_opt identifier ( '(' some tokens ')' )_opt ..._opt
 
         // parse name
-        DEBUG_ASSERT(stream.peek().kind() == CXToken_Identifier, detail::parse_error_handler{},
-                     stream.cursor(), "expected identifier");
+        DEBUG_ASSERT(stream.peek().kind() == CXToken_Identifier
+                         || stream.peek().kind() == CXToken_Keyword,
+                     detail::parse_error_handler{}, stream.cursor(), "expected identifier");
         auto name = stream.get().value().std_str();
         if (skip_if(stream, "::"))
         {
@@ -493,8 +494,9 @@ namespace
                          "attribute using + scope not allowed");
             scope = std::move(name);
 
-            DEBUG_ASSERT(stream.peek().kind() == CXToken_Identifier, detail::parse_error_handler{},
-                         stream.cursor(), "expected identifier");
+            DEBUG_ASSERT(stream.peek().kind() == CXToken_Identifier
+                             || stream.peek().kind() == CXToken_Keyword,
+                         detail::parse_error_handler{}, stream.cursor(), "expected identifier");
             name = stream.get().value().std_str();
         }
 
@@ -545,12 +547,23 @@ namespace
             auto arguments = parse_attribute_arguments(stream);
             result.push_back(cpp_attribute(cpp_attribute_kind::alignas_, std::move(arguments)));
         }
-        else if (skip_if(stream, "__attribute__"))
+        else if (skip_if(stream, "__attribute__") && stream.peek() == "(")
         {
             // GCC/clang attributes
-            // __attribute__(<attribute>)
-            //              ^
-            skip_brackets(stream);
+            // __attribute__((<attribute>))
+            //              ^^
+            skip(stream, "(");
+            skip(stream, "(");
+
+            auto scope = parse_attribute_using(stream);
+            while (!skip_if(stream, ")"))
+            {
+                auto attribute = parse_attribute_token(stream, scope);
+                result.push_back(std::move(attribute));
+                detail::skip_if(stream, ",");
+            }
+
+            skip(stream, ")");
             return true;
         }
         else if (skip_if(stream, "__declspec"))
@@ -558,13 +571,21 @@ namespace
             // MSVC declspec
             // __declspec(<attribute>)
             //           ^
-            skip_brackets(stream);
+            skip(stream, "(");
+            auto scope = parse_attribute_using(stream);
+            while (!skip_if(stream, ")"))
+            {
+                auto attribute = parse_attribute_token(stream, scope);
+                result.push_back(std::move(attribute));
+                detail::skip_if(stream, ",");
+            }
+
             return true;
         }
 
         return false;
     }
-}
+} // namespace
 
 cpp_attribute_list detail::parse_attributes(detail::cxtoken_stream& stream, bool skip_anway)
 {
@@ -612,7 +633,7 @@ namespace
         DEBUG_UNREACHABLE(detail::assert_handler{});
         return cpp_token_kind::punctuation;
     }
-}
+} // namespace
 
 cpp_token_string detail::to_string(cxtoken_stream& stream, cxtoken_iterator end)
 {
