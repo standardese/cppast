@@ -414,8 +414,7 @@ namespace
         return type_safe::nullopt;
     }
 
-    void print_diagnostics(const diagnostic_logger& logger, const char* path,
-                           const CXTranslationUnit& tu)
+    void print_diagnostics(const diagnostic_logger& logger, const CXTranslationUnit& tu)
     {
         auto no = clang_getNumDiagnostics(tu);
         for (auto i = 0u; i != no; ++i)
@@ -425,10 +424,11 @@ namespace
             if (sev)
             {
                 auto     diag_loc = clang_getDiagnosticLocation(diag);
+                CXString diag_file;
                 unsigned line;
-                clang_getPresumedLocation(diag_loc, nullptr, &line, nullptr);
+                clang_getPresumedLocation(diag_loc, &diag_file, &line, nullptr);
 
-                auto loc  = source_location::make_file(path, line);
+                auto loc  = source_location::make_file(detail::cxstring(diag_file).c_str(), line);
                 auto text = detail::cxstring(clang_getDiagnosticSpelling(diag));
                 if (text != "too many errors emitted, stopping now")
                     logger.log("libclang", diagnostic{text.c_str(), loc, sev.value()});
@@ -476,7 +476,7 @@ namespace
                 throw libclang_error("clang_parseTranslationUnit: AST deserialization error");
             }
         }
-        print_diagnostics(logger, path, tu);
+        print_diagnostics(logger, tu);
 
         return detail::cxtranslation_unit(tu);
     }
