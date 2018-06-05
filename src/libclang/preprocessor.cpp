@@ -231,7 +231,7 @@ namespace
             if (!macro_file_path || flag[1] != 'I')
             {
                 // only add this flag if it is not an include or we're not doing fast preprocessing
-                cmd += flag;
+                cmd += quote(flag);
                 cmd += ' ';
             }
         }
@@ -1038,7 +1038,7 @@ namespace
 
         return result;
     }
-}
+} // namespace
 
 detail::preprocessor_output detail::preprocess(const libclang_compile_config& config,
                                                const char* path, const diagnostic_logger& logger)
