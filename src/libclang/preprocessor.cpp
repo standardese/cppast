@@ -227,7 +227,7 @@ namespace
         for (const auto& flag : detail::libclang_compile_config_access::flags(c))
         {
             DEBUG_ASSERT(flag.size() > 2u && flag[0] == '-', detail::assert_handler{},
-                         "that's an odd flag");
+                         ("\"" + flag + "\" that's an odd flag").c_str());
             if (!macro_file_path || flag[1] != 'I')
             {
                 // only add this flag if it is not an include or we're not doing fast preprocessing
