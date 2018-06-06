@@ -226,7 +226,7 @@ namespace
         // other flags
         for (const auto& flag : detail::libclang_compile_config_access::flags(c))
         {
-            DEBUG_ASSERT(flag.size() > 2u && flag[0] == '-', detail::assert_handler{},
+            DEBUG_ASSERT(flag.size() >= 2u && flag[0] == '-', detail::assert_handler{},
                          ("\"" + flag + "\" that's an odd flag").c_str());
             if (!macro_file_path || flag[1] != 'I')
             {
