@@ -99,7 +99,7 @@ namespace
     {
         code_generator::output output(type_safe::ref(generator), type_safe::ref(param), cur_access);
         if (output)
-            output << preprocessor_token(param.name());
+            output << identifier(param.name());
         return static_cast<bool>(output);
     }
 
