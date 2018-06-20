@@ -8,6 +8,16 @@
 
 using namespace cppast;
 
+cpp_entity_kind cpp_macro_parameter::kind() noexcept
+{
+    return cpp_entity_kind::macro_parameter_t;
+}
+
+cpp_entity_kind cpp_macro_parameter::do_get_entity_kind() const noexcept
+{
+    return kind();
+}
+
 cpp_entity_kind cpp_macro_definition::kind() noexcept
 {
     return cpp_entity_kind::macro_definition_t;

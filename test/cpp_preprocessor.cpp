@@ -40,12 +40,28 @@ namespace ns2
         if (args)
         {
             REQUIRE(macro.is_function_like());
-            REQUIRE(macro.parameters().value() == args);
+
+            std::string params;
+            for (auto& param : macro.parameters())
+            {
+                if (!params.empty())
+                    params += ",";
+                params += param.name();
+            }
+            if (macro.is_variadic())
+            {
+                if (!params.empty())
+                    params += ",";
+                params += "...";
+            }
+
+            REQUIRE(params == args);
         }
         else
         {
             REQUIRE(!macro.is_function_like());
-            REQUIRE(!macro.parameters().has_value());
+            REQUIRE(!macro.is_variadic());
+            REQUIRE(macro.parameters().empty());
         }
     };
 

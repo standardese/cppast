@@ -59,7 +59,7 @@ namespace
         return cb(functor, container,
                   {visitor_info::container_entity_exit, cur_access, last_child});
     }
-}
+} // namespace
 
 bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* functor,
                    cpp_access_specifier_kind cur_access, bool last_child)
@@ -91,6 +91,7 @@ bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* fun
         return handle_container<cpp_class_template_specialization>(e, cb, functor, cur_access,
                                                                    last_child);
 
+    case cpp_entity_kind::macro_parameter_t:
     case cpp_entity_kind::macro_definition_t:
     case cpp_entity_kind::include_directive_t:
     case cpp_entity_kind::namespace_alias_t:

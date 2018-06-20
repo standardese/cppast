@@ -94,6 +94,15 @@ namespace
         return static_cast<bool>(output);
     }
 
+    bool generate_macro_parameter(code_generator& generator, const cpp_macro_parameter& param,
+                                  cpp_access_specifier_kind cur_access)
+    {
+        code_generator::output output(type_safe::ref(generator), type_safe::ref(param), cur_access);
+        if (output)
+            output << preprocessor_token(param.name());
+        return static_cast<bool>(output);
+    }
+
     bool generate_macro_definition(code_generator& generator, const cpp_macro_definition& def,
                                    cpp_access_specifier_kind cur_access)
     {
@@ -102,9 +111,17 @@ namespace
         {
             output << preprocessor_token("#define") << whitespace << identifier(def.name());
             if (def.is_function_like())
-                output << preprocessor_token("(") << bracket_ws
-                       << preprocessor_token(def.parameters().value()) << bracket_ws
-                       << preprocessor_token(")");
+            {
+                output << preprocessor_token("(") << bracket_ws;
+                auto need_sep = write_container(output, def.parameters(), comma, cpp_public);
+                if (def.is_variadic())
+                {
+                    if (need_sep)
+                        output << comma;
+                    output << preprocessor_token("...");
+                }
+                output << bracket_ws << preprocessor_token(")");
+            }
             if (!def.replacement().empty() && !output.options().is_set(code_generator::declaration))
                 output << whitespace << preprocessor_token(def.replacement()) << newl;
             else
@@ -1059,6 +1076,7 @@ namespace
 
             CPPAST_DETAIL_HANDLE(file)
 
+            CPPAST_DETAIL_HANDLE(macro_parameter)
             CPPAST_DETAIL_HANDLE(macro_definition)
             CPPAST_DETAIL_HANDLE(include_directive)
 
@@ -1116,7 +1134,7 @@ namespace
 
         return false;
     }
-}
+} // namespace
 
 bool code_generator::generate_code(const cpp_entity& entity)
 {

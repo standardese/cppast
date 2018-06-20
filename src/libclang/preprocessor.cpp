@@ -833,6 +833,34 @@ namespace
         return true;
     }
 
+    std::unique_ptr<cpp_macro_definition> build(std::string name, ts::optional<std::string> args,
+                                                std::string rep)
+    {
+        if (!args)
+            return cpp_macro_definition::build_object_like(std::move(name), std::move(rep));
+
+        cpp_macro_definition::function_like_builder builder{std::move(name)};
+        builder.replacement(std::move(rep));
+
+        auto cur_ptr   = args.value().c_str();
+        auto cur_param = cur_ptr;
+        while (*cur_ptr)
+        {
+            while (*cur_ptr && *cur_ptr != ',')
+                ++cur_ptr;
+
+            if (*cur_param == '.')
+                builder.is_variadic();
+            else
+                builder.parameter(std::string(cur_param, cur_ptr));
+
+            if (*cur_ptr)
+                cur_param = ++cur_ptr;
+        }
+
+        return builder.finish();
+    }
+
     std::unique_ptr<cpp_macro_definition> parse_macro(position&                    p,
                                                       detail::preprocessor_output& output)
     {
@@ -878,7 +906,7 @@ namespace
         if (!p.write_enabled())
             return nullptr;
 
-        auto result = cpp_macro_definition::build(std::move(name), std::move(args), std::move(rep));
+        auto result = build(std::move(name), std::move(args), std::move(rep));
         // match comment directly
         if (!output.comments.empty() && output.comments.back().matches(*result, cur_line))
         {

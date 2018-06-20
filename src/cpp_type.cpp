@@ -119,6 +119,7 @@ bool detail::cpp_type_ref_predicate::operator()(const cpp_entity& e)
         return true;
 
     case cpp_entity_kind::file_t:
+    case cpp_entity_kind::macro_parameter_t:
     case cpp_entity_kind::macro_definition_t:
     case cpp_entity_kind::include_directive_t:
     case cpp_entity_kind::language_linkage_t:
@@ -203,7 +204,7 @@ namespace
         DEBUG_UNREACHABLE(detail::assert_handler{});
         return false;
     }
-}
+} // namespace
 
 bool detail::is_complex_type(const cpp_type& type) noexcept
 {
@@ -500,7 +501,7 @@ namespace
     {
         output << token_seq(type.name());
     }
-}
+} // namespace
 
 void detail::write_type_prefix(code_generator::output& output, const cpp_type& type)
 {

@@ -14,6 +14,7 @@ namespace cppast
     {
         file_t,
 
+        macro_parameter_t,
         macro_definition_t,
         include_directive_t,
 

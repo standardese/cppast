@@ -12,22 +12,88 @@
 
 namespace cppast
 {
+    /// A [cppast::cpp_entity]() modelling a macro parameter.
+    class cpp_macro_parameter final : public cpp_entity
+    {
+    public:
+        static cpp_entity_kind kind() noexcept;
+
+        /// \returns A newly built macro parameter.
+        /// \notes It is not meant to be registered in the [cppast::cpp_entity_index]() as no other [cppast::cpp_entity]() can refer to it.
+        static std::unique_ptr<cpp_macro_parameter> build(std::string name)
+        {
+            return std::unique_ptr<cpp_macro_parameter>(new cpp_macro_parameter(std::move(name)));
+        }
+
+    private:
+        cpp_macro_parameter(std::string name) : cpp_entity(std::move(name)) {}
+
+        cpp_entity_kind do_get_entity_kind() const noexcept override;
+    };
+
     /// A [cppast::cpp_entity]() modelling a macro definition.
     class cpp_macro_definition final : public cpp_entity
     {
     public:
         static cpp_entity_kind kind() noexcept;
 
-        /// \returns A newly built macro definition.
+        /// \returns A newly built object like macro.
         /// \notes It is not meant to be registered in the [cppast::cpp_entity_index](),
         /// as no other [cppast::cpp_entity]() can refer to it.
-        static std::unique_ptr<cpp_macro_definition> build(
-            std::string name, type_safe::optional<std::string> parameters, std::string replacement)
+        static std::unique_ptr<cpp_macro_definition> build_object_like(std::string name,
+                                                                       std::string replacement)
         {
-            return std::unique_ptr<cpp_macro_definition>(
-                new cpp_macro_definition(std::move(name), std::move(parameters),
-                                         std::move(replacement)));
+            std::unique_ptr<cpp_macro_definition> result{new cpp_macro_definition(std::move(name))};
+            result->replacement_ = std::move(replacement);
+            return result;
         }
+
+        /// Builds a function like macro.
+        class function_like_builder
+        {
+        public:
+            /// \effects Sets the name of the function like macro.
+            function_like_builder(std::string name)
+            : result_(new cpp_macro_definition(std::move(name)))
+            {
+                result_->kind_ = function_like;
+            }
+
+            /// \effects Sets the replacement text.
+            void replacement(std::string replacement)
+            {
+                result_->replacement_ = std::move(replacement);
+            }
+
+            /// \effects Marks the macro as variadic.
+            void is_variadic()
+            {
+                result_->kind_ = variadic_function;
+            }
+
+            /// \effects Adds a parameter.
+            /// \group param
+            void parameter(std::unique_ptr<cpp_macro_parameter> param)
+            {
+                result_->parameters_.push_back(*result_, std::move(param));
+            }
+            /// \group param
+            void parameter(std::string name)
+            {
+                parameter(cpp_macro_parameter::build(std::move(name)));
+            }
+
+            /// \returns The finished macro.
+            /// \notes It is not meant to be registered in the [cppast::cpp_entity_index](),
+            /// as no other [cppast::cpp_entity]() can refer to it.
+            std::unique_ptr<cpp_macro_definition> finish()
+            {
+                return std::move(result_);
+            }
+
+        private:
+            std::unique_ptr<cpp_macro_definition> result_;
+        };
 
         /// \returns The replacement text of the macro.
         const std::string& replacement() const noexcept
@@ -35,32 +101,47 @@ namespace cppast
             return replacement_;
         }
 
+        /// \returns Whether or not it is an object like macro.
+        bool is_object_like() const noexcept
+        {
+            return kind_ == object_like;
+        }
+
         /// \returns Whether or not it is a function like macro.
         bool is_function_like() const noexcept
         {
-            return parameters_.has_value();
+            return kind_ != object_like;
         }
 
-        /// \returns The parameters of the macro, as the string spelled out in the source code.
-        /// \notes It has none if it is not a function like macro.
-        const type_safe::optional<std::string>& parameters() const noexcept
+        /// \returns Whether or not it is a variadic macro.
+        bool is_variadic() const noexcept
         {
-            return parameters_;
+            return kind_ == variadic_function;
+        }
+
+        /// \returns The parameters of the macro.
+        /// \notes It has none if it is not a function like macro.
+        detail::iteratable_intrusive_list<cpp_macro_parameter> parameters() const noexcept
+        {
+            return type_safe::ref(parameters_);
         }
 
     private:
         cpp_entity_kind do_get_entity_kind() const noexcept override;
 
-        cpp_macro_definition(std::string name, type_safe::optional<std::string> parameters,
-                             std::string replacement)
-        : cpp_entity(std::move(name)),
-          parameters_(std::move(parameters)),
-          replacement_(std::move(replacement))
-        {
-        }
+        cpp_macro_definition(std::string name) : cpp_entity(std::move(name)), kind_(object_like) {}
 
-        type_safe::optional<std::string> parameters_;
-        std::string                      replacement_;
+        detail::intrusive_list<cpp_macro_parameter> parameters_;
+        std::string                                 replacement_;
+
+        enum : char
+        {
+            object_like,
+            function_like,
+            variadic_function,
+        } kind_;
+
+        friend function_like_builder;
     };
 
     /// The kind of [cppast::cpp_include_directive]().

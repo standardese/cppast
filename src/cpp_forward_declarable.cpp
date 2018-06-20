@@ -38,6 +38,7 @@ namespace
             return get_declarable(*static_cast<const cpp_template&>(e).begin());
 
         case cpp_entity_kind::file_t:
+        case cpp_entity_kind::macro_parameter_t:
         case cpp_entity_kind::macro_definition_t:
         case cpp_entity_kind::include_directive_t:
         case cpp_entity_kind::language_linkage_t:
@@ -81,7 +82,7 @@ namespace
         // else lookup definition
         return idx.lookup_definition(declarable.value().definition().value());
     }
-}
+} // namespace
 
 bool cppast::is_definition(const cpp_entity& e) noexcept
 {
