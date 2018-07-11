@@ -45,7 +45,7 @@ matrix:
     - os: osx
       osx_image: xcode9.2
       compiler: clang
-      env: TOOLSET=clang++ LLVM_VERSION=4.0 LLVM_CONFIG_BINARY=/usr/local/opt/llvm/bin/llvm-config
+      env: TOOLSET=clang++ LLVM_VERSION=4.0
 
 install:
   - cd ../
@@ -59,7 +59,10 @@ install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then wget --no-check-certificate https://cmake.org/files/v3.3/cmake-3.3.0-Darwin-x86_64.tar.gz; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then tar -xzf cmake-3.3.0-Darwin-x86_64.tar.gz && ls && ls cmake-3.3.0-Darwin-x86_64; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export CMAKE=$TRAVIS_BUILD_DIR/../cmake-3.3.0-Darwin-x86_64/CMake.app/Contents/bin/cmake; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install --with-clang llvm; fi
+
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then wget --no-check-certificate http://releases.llvm.org/4.0.1/clang+llvm-4.0.1-x86_64-apple-darwin.tar.xz; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then tar -xzf clang+llvm-4.0.1-x86_64-apple-darwin.tar.xz; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export LLVM_CONFIG_BINARY="$TRAVIS_BUILD_DIR/../clang+llvm-4.0.1-x86_64-apple-macosx10.9.0/bin/llvm-config"; fi
 
   - export CXX=$TOOLSET
   - $CXX --version
