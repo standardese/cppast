@@ -14,9 +14,9 @@ endif()
 option(CPPAST_ENABLE_ASSERTIONS "whether or not to enable internal assertions for the cppast library" ${default_assertions})
 option(CPPAST_ENABLE_PRECONDITION_CHECKS "whether or not to enable precondition checks" ON)
 
-option(CPPAST_BUILD_TEST "whether or not to build the tests" ON)
-option(CPPAST_BUILD_EXAMPLE "whether or not to build the examples" ON)
-option(CPPAST_BUILD_TOOL "whether or not to build the tool" ON)
+option(CPPAST_BUILD_TEST "whether or not to build the tests" OFF)
+option(CPPAST_BUILD_EXAMPLE "whether or not to build the examples" OFF)
+option(CPPAST_BUILD_TOOL "whether or not to build the tool" OFF)
 option(BUILD_TESTING "build test" OFF) # The ctest variable for building tests
 
 if((${CPPAST_BUILD_TEST} OR ${BUILD_TESTING}) OR (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
