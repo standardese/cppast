@@ -122,6 +122,10 @@ function(_cppast_find_libclang config_tool min_version force)
     # check version
     execute_process(COMMAND ${LLVM_CONFIG_BINARY} --version
                     OUTPUT_VARIABLE llvm_version OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    # Ignore git tags in the version string, get the semver number only
+    string(REGEX REPLACE "([0-9]).([0-9]).([0-9])(.*)" "\\1.\\2.\\3" llvm_version "${llvm_version}")
+
     if(llvm_version VERSION_LESS min_version)
         message(FATAL_ERROR "Outdated LLVM version ${llvm_version}, minimal supported is ${min_version}")
     else()
