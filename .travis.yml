@@ -19,7 +19,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-4.0']
-          packages: ['g++-5-multilib', 'gcc-5-multilib', 'lcov', 'llvm-4.0', 'clang-4.0', 'libclang-4.0-dev']
+          packages: ['g++-5-multilib', 'gcc-5-multilib', 'linux-libc-dev:i386', 'lcov', 'llvm-4.0', 'clang-4.0', 'libclang-4.0-dev']
       env: TOOLSET=g++-5 m32=-m32 CPPAST_TEST_GCOV=ON LLVM_VERSION=4.0 LLVM_CONFIG_BINARY=/usr/bin/llvm-config-4.0
 
     - os: linux
