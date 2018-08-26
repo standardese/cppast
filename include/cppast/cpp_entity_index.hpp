@@ -23,20 +23,22 @@ namespace cppast
     /// \exclude
     namespace detail
     {
-        constexpr std::size_t fnv_basis = 14695981039346656037ull;
-        constexpr std::size_t fnv_prime = 1099511628211ull;
+        using hash_t = unsigned long long;
+
+        constexpr hash_t fnv_basis = 14695981039346656037ull;
+        constexpr hash_t fnv_prime = 1099511628211ull;
 
         // FNV-1a 64 bit hash
-        constexpr std::size_t id_hash(const char* str, std::size_t hash = fnv_basis)
+        constexpr hash_t id_hash(const char* str, hash_t hash = fnv_basis)
         {
-            return *str ? id_hash(str + 1, (hash ^ std::size_t(*str)) * fnv_prime) : hash;
+            return *str ? id_hash(str + 1, (hash ^ hash_t(*str)) * fnv_prime) : hash;
         }
     } // namespace detail
 
     /// A [ts::strong_typedef]() representing the unique id of a [cppast::cpp_entity]().
     ///
     /// It is comparable for equality.
-    struct cpp_entity_id : type_safe::strong_typedef<cpp_entity_id, std::size_t>,
+    struct cpp_entity_id : type_safe::strong_typedef<cpp_entity_id, detail::hash_t>,
                            type_safe::strong_typedef_op::equality_comparison<cpp_entity_id>
     {
         explicit cpp_entity_id(const std::string& str) : cpp_entity_id(str.c_str()) {}
@@ -117,9 +119,9 @@ namespace cppast
     private:
         struct hash
         {
-            std::size_t operator()(const cpp_entity_id& id) const noexcept
+            detail::hash_t operator()(const cpp_entity_id& id) const noexcept
             {
-                return static_cast<std::size_t>(id);
+                return static_cast<detail::hash_t>(id);
             }
         };
 
