@@ -19,6 +19,16 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-4.0']
+          packages: ['g++-5-multilib', 'gcc-5-multilib', 'lcov', 'llvm-4.0', 'clang-4.0', 'libclang-4.0-dev']
+      env: TOOLSET=g++-5 m32=-m32 CPPAST_TEST_GCOV=ON LLVM_VERSION=4.0 LLVM_CONFIG_BINARY=/usr/bin/llvm-config-4.0
+
+    - os: linux
+      dist: trusty
+      sudo: false
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-4.0']
           packages: ['g++-5', 'lcov', 'llvm-4.0', 'clang-4.0', 'libclang-4.0-dev']
       env: TOOLSET=g++-5 CPPAST_TEST_GCOV=ON LLVM_VERSION=4.0 LLVM_CONFIG_BINARY=/usr/bin/llvm-config-4.0
 
@@ -72,7 +82,7 @@ install:
 
 script:
   - mkdir build/ && cd build/
-  - $CMAKE -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-Werror -pedantic -Wall -Wextra -Wconversion -Wsign-conversion -Wno-parentheses -Wno-assume" ../ -DCPPAST_TEST_GCOV=$CPPAST_TEST_GCOV -DLLVM_CONFIG_BINARY=$LLVM_CONFIG_BINARY
+  - $CMAKE -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-Werror -pedantic -Wall -Wextra -Wconversion -Wsign-conversion -Wno-parentheses -Wno-assume $m32" ../ -DCPPAST_TEST_GCOV=$CPPAST_TEST_GCOV -DLLVM_CONFIG_BINARY=$LLVM_CONFIG_BINARY
   - $CMAKE --build .
   - if [[ "$LLVM_VERSION" == "4.0" ]]; then ./test/cppast_test \*; else ./test/cppast_test; fi
 
