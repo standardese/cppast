@@ -123,7 +123,7 @@ function(_cppast_find_libclang config_tool min_version force)
     execute_process(COMMAND ${LLVM_CONFIG_BINARY} --version
                     OUTPUT_VARIABLE llvm_version OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-    # Ignore git tags in the version string, get the semver number only
+    # ignore git tags in the version string, get the semver number only
     string(REGEX REPLACE "([0-9]).([0-9]).([0-9])(.*)" "\\1.\\2.\\3" llvm_version "${llvm_version}")
 
     if(llvm_version VERSION_LESS min_version)
@@ -160,8 +160,20 @@ function(_cppast_find_libclang config_tool min_version force)
 
         if(NOT LIBCLANG_LIBRARY)
             message(FATAL_ERROR "libclang library not found")
-        else()
-            message(STATUS "Found libclang library at ${LIBCLANG_LIBRARY}")
+        endif()
+        message(STATUS "Found libclang library at ${LIBCLANG_LIBRARY}")
+
+        get_filename_component(ext ${LIBCLANG_LIBRARY} EXT)
+        if(UNIX AND ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU") AND "${ext}" STREQUAL ".a")
+            message(STATUS "libclang will be linked statically; linking might take a long time")
+
+            # glob all libraries and put them inside a group,
+            # as the correct order cannot be determined apparently
+            file(GLOB clang_libraries "${llvm_library_dir}/lib*.a")
+            string(REPLACE ";" " " clang_libraries "${clang_libraries}")
+            set(clang_libraries "-Wl,--start-group ${clang_libraries} -Wl,--end-group")
+
+            set(LIBCLANG_LIBRARY "${clang_libraries}" CACHE INTERNAL "")
         endif()
     endif()
 
