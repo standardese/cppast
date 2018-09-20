@@ -10,53 +10,51 @@
 
 namespace cppast
 {
-    /// A [cppast::cpp_entity]() modelling a language linkage.
-    class cpp_language_linkage final : public cpp_entity,
-                                       public cpp_entity_container<cpp_language_linkage, cpp_entity>
+/// A [cppast::cpp_entity]() modelling a language linkage.
+class cpp_language_linkage final : public cpp_entity,
+                                   public cpp_entity_container<cpp_language_linkage, cpp_entity>
+{
+public:
+    static cpp_entity_kind kind() noexcept;
+
+    /// Builds a [cppast::cpp_language_linkage]().
+    class builder
     {
     public:
-        static cpp_entity_kind kind() noexcept;
+        /// \effects Sets the name, that is the kind of language linkage.
+        explicit builder(std::string name) : linkage_(new cpp_language_linkage(std::move(name))) {}
 
-        /// Builds a [cppast::cpp_language_linkage]().
-        class builder
+        /// \effects Adds an entity to the language linkage.
+        void add_child(std::unique_ptr<cpp_entity> child)
         {
-        public:
-            /// \effects Sets the name, that is the kind of language linkage.
-            explicit builder(std::string name) : linkage_(new cpp_language_linkage(std::move(name)))
-            {
-            }
+            linkage_->add_child(std::move(child));
+        }
 
-            /// \effects Adds an entity to the language linkage.
-            void add_child(std::unique_ptr<cpp_entity> child)
-            {
-                linkage_->add_child(std::move(child));
-            }
+        /// \returns The not yet finished language linkage.
+        cpp_language_linkage& get() const noexcept
+        {
+            return *linkage_;
+        }
 
-            /// \returns The not yet finished language linkage.
-            cpp_language_linkage& get() const noexcept
-            {
-                return *linkage_;
-            }
-
-            /// \returns The finalized language linkage.
-            /// \notes It is not registered on purpose as nothing can refer to it.
-            std::unique_ptr<cpp_language_linkage> finish()
-            {
-                return std::move(linkage_);
-            }
-
-        private:
-            std::unique_ptr<cpp_language_linkage> linkage_;
-        };
-
-        /// \returns `true` if the linkage is a block, `false` otherwise.
-        bool is_block() const noexcept;
+        /// \returns The finalized language linkage.
+        /// \notes It is not registered on purpose as nothing can refer to it.
+        std::unique_ptr<cpp_language_linkage> finish()
+        {
+            return std::move(linkage_);
+        }
 
     private:
-        using cpp_entity::cpp_entity;
-
-        cpp_entity_kind do_get_entity_kind() const noexcept override;
+        std::unique_ptr<cpp_language_linkage> linkage_;
     };
+
+    /// \returns `true` if the linkage is a block, `false` otherwise.
+    bool is_block() const noexcept;
+
+private:
+    using cpp_entity::cpp_entity;
+
+    cpp_entity_kind do_get_entity_kind() const noexcept override;
+};
 } // namespace cppast
 
 #endif // CPPAST_CPP_LANGUAGE_LINKAGE_HPP_INCLUDED

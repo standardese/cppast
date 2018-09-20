@@ -10,8 +10,8 @@
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_function_type.hpp>
-#include <cppast/cpp_type_alias.hpp>
 #include <cppast/cpp_template.hpp>
+#include <cppast/cpp_type_alias.hpp>
 
 using namespace cppast;
 
@@ -174,36 +174,36 @@ std::unique_ptr<cpp_dependent_type> cpp_dependent_type::build(
 
 namespace
 {
-    // is directly a complex type
-    // is_complex_type also checks for children
-    bool is_direct_complex(const cpp_type& type) noexcept
+// is directly a complex type
+// is_complex_type also checks for children
+bool is_direct_complex(const cpp_type& type) noexcept
+{
+    switch (type.kind())
     {
-        switch (type.kind())
-        {
-        case cpp_type_kind::builtin_t:
-        case cpp_type_kind::user_defined_t:
-        case cpp_type_kind::auto_t:
-        case cpp_type_kind::decltype_t:
-        case cpp_type_kind::decltype_auto_t:
-        case cpp_type_kind::cv_qualified_t:
-        case cpp_type_kind::pointer_t:
-        case cpp_type_kind::reference_t:
-        case cpp_type_kind::template_parameter_t:
-        case cpp_type_kind::template_instantiation_t:
-        case cpp_type_kind::dependent_t:
-        case cpp_type_kind::unexposed_t:
-            return false;
-
-        case cpp_type_kind::array_t:
-        case cpp_type_kind::function_t:
-        case cpp_type_kind::member_function_t:
-        case cpp_type_kind::member_object_t:
-            return true;
-        }
-
-        DEBUG_UNREACHABLE(detail::assert_handler{});
+    case cpp_type_kind::builtin_t:
+    case cpp_type_kind::user_defined_t:
+    case cpp_type_kind::auto_t:
+    case cpp_type_kind::decltype_t:
+    case cpp_type_kind::decltype_auto_t:
+    case cpp_type_kind::cv_qualified_t:
+    case cpp_type_kind::pointer_t:
+    case cpp_type_kind::reference_t:
+    case cpp_type_kind::template_parameter_t:
+    case cpp_type_kind::template_instantiation_t:
+    case cpp_type_kind::dependent_t:
+    case cpp_type_kind::unexposed_t:
         return false;
+
+    case cpp_type_kind::array_t:
+    case cpp_type_kind::function_t:
+    case cpp_type_kind::member_function_t:
+    case cpp_type_kind::member_object_t:
+        return true;
     }
+
+    DEBUG_UNREACHABLE(detail::assert_handler{});
+    return false;
+}
 } // namespace
 
 bool detail::is_complex_type(const cpp_type& type) noexcept
@@ -226,281 +226,278 @@ bool detail::is_complex_type(const cpp_type& type) noexcept
 
 namespace
 {
-    void comma(const code_generator::output& output)
-    {
-        output << punctuation(",");
-        if (output.formatting().is_set(formatting_flags::comma_ws))
-            output << whitespace;
-    }
+void comma(const code_generator::output& output)
+{
+    output << punctuation(",");
+    if (output.formatting().is_set(formatting_flags::comma_ws))
+        output << whitespace;
+}
 
-    void bracket_ws(const code_generator::output& output)
-    {
-        if (output.formatting().is_set(formatting_flags::bracket_ws))
-            output << whitespace;
-    }
+void bracket_ws(const code_generator::output& output)
+{
+    if (output.formatting().is_set(formatting_flags::bracket_ws))
+        output << whitespace;
+}
 
-    void operator_ws(const code_generator::output& output)
-    {
-        if (output.formatting().is_set(formatting_flags::operator_ws))
-            output << whitespace;
-    }
+void operator_ws(const code_generator::output& output)
+{
+    if (output.formatting().is_set(formatting_flags::operator_ws))
+        output << whitespace;
+}
 
-    void write_builtin(code_generator::output& output, const cpp_builtin_type& type)
-    {
-        output << keyword(to_string(type.builtin_type_kind()));
-    }
+void write_builtin(code_generator::output& output, const cpp_builtin_type& type)
+{
+    output << keyword(to_string(type.builtin_type_kind()));
+}
 
-    void write_user_defined(code_generator::output& output, const cpp_user_defined_type& type)
-    {
-        output << type.entity();
-    }
+void write_user_defined(code_generator::output& output, const cpp_user_defined_type& type)
+{
+    output << type.entity();
+}
 
-    void write_auto(code_generator::output& output, const cpp_auto_type&)
-    {
-        output << keyword("auto");
-    }
+void write_auto(code_generator::output& output, const cpp_auto_type&)
+{
+    output << keyword("auto");
+}
 
-    void write_decltype(code_generator::output& output, const cpp_decltype_type& type)
-    {
-        output << keyword("decltype") << punctuation("(") << bracket_ws;
-        detail::write_expression(output, type.expression());
-        output << bracket_ws << punctuation(")");
-    }
+void write_decltype(code_generator::output& output, const cpp_decltype_type& type)
+{
+    output << keyword("decltype") << punctuation("(") << bracket_ws;
+    detail::write_expression(output, type.expression());
+    output << bracket_ws << punctuation(")");
+}
 
-    void write_decltype_auto(code_generator::output& output, const cpp_decltype_auto_type&)
-    {
-        output << keyword("decltype") << punctuation("(") << bracket_ws << keyword("auto")
-               << bracket_ws << punctuation(")");
-    }
+void write_decltype_auto(code_generator::output& output, const cpp_decltype_auto_type&)
+{
+    output << keyword("decltype") << punctuation("(") << bracket_ws << keyword("auto") << bracket_ws
+           << punctuation(")");
+}
 
-    void write_cv_qualified_prefix(code_generator::output&      output,
-                                   const cpp_cv_qualified_type& type)
-    {
-        detail::write_type_prefix(output, type.type());
+void write_cv_qualified_prefix(code_generator::output& output, const cpp_cv_qualified_type& type)
+{
+    detail::write_type_prefix(output, type.type());
 
-        if (is_direct_complex(type.type()))
-            output << punctuation("(") << bracket_ws;
-
-        if (is_const(type.cv_qualifier()))
-            output << whitespace << keyword("const");
-        if (is_volatile(type.cv_qualifier()))
-            output << whitespace << keyword("volatile");
-    }
-
-    void write_cv_qualified_suffix(code_generator::output&      output,
-                                   const cpp_cv_qualified_type& type)
-    {
-        if (is_direct_complex(type.type()))
-            output << bracket_ws << punctuation(")");
-        detail::write_type_suffix(output, type.type());
-    }
-
-    bool pointer_requires_paren(const cpp_pointer_type& type)
-    {
-        auto kind = type.pointee().kind();
-        return kind == cpp_type_kind::function_t || kind == cpp_type_kind::array_t;
-    }
-
-    void write_pointer_prefix(code_generator::output& output, const cpp_pointer_type& type)
-    {
-        detail::write_type_prefix(output, type.pointee());
-
-        if (pointer_requires_paren(type))
-            output << punctuation("(") << bracket_ws;
-        else if (output.formatting().is_set(formatting_flags::ptr_ref_var))
-            output << whitespace;
-
-        output << punctuation("*");
-    }
-
-    void write_pointer_suffix(code_generator::output& output, const cpp_pointer_type& type)
-    {
-        if (pointer_requires_paren(type))
-            output << bracket_ws << punctuation(")");
-        detail::write_type_suffix(output, type.pointee());
-    }
-
-    void write_reference_prefix(code_generator::output& output, const cpp_reference_type& type)
-    {
-        detail::write_type_prefix(output, type.referee());
-
-        if (is_direct_complex(type.referee()))
-            output << punctuation("(") << bracket_ws;
-        else if (output.formatting().is_set(formatting_flags::ptr_ref_var))
-            output << whitespace;
-
-        if (type.reference_kind() == cpp_ref_lvalue)
-            output << punctuation("&");
-        else if (type.reference_kind() == cpp_ref_rvalue)
-            output << punctuation("&&");
-        else
-            DEBUG_UNREACHABLE(detail::assert_handler{});
-    }
-
-    void write_reference_suffix(code_generator::output& output, const cpp_reference_type& type)
-    {
-        if (is_direct_complex(type.referee()))
-            output << bracket_ws << punctuation(")");
-        detail::write_type_suffix(output, type.referee());
-    }
-
-    void write_array_prefix(code_generator::output& output, const cpp_array_type& type)
-    {
-        detail::write_type_prefix(output, type.value_type());
-    }
-
-    void write_array_suffix(code_generator::output& output, const cpp_array_type& type)
-    {
-        output << punctuation("[");
-        if (type.size())
-        {
-            output << bracket_ws;
-            detail::write_expression(output, type.size().value());
-            output << bracket_ws;
-        }
-        output << punctuation("]");
-        detail::write_type_suffix(output, type.value_type());
-    }
-
-    void write_function_prefix(code_generator::output& output, const cpp_function_type& type)
-    {
-        detail::write_type_prefix(output, type.return_type());
-    }
-
-    template <typename T>
-    void write_parameters(code_generator::output& output, const T& type)
-    {
+    if (is_direct_complex(type.type()))
         output << punctuation("(") << bracket_ws;
 
-        auto need_sep = false;
-        for (auto& param : type.parameter_types())
-        {
-            if (need_sep)
-                output << comma;
-            else
-                need_sep = true;
-            detail::write_type_prefix(output, param);
-            detail::write_type_suffix(output, param);
-        }
-        if (type.is_variadic())
-        {
-            if (need_sep)
-                output << comma;
-            output << punctuation("...");
-        }
+    if (is_const(type.cv_qualifier()))
+        output << whitespace << keyword("const");
+    if (is_volatile(type.cv_qualifier()))
+        output << whitespace << keyword("volatile");
+}
 
+void write_cv_qualified_suffix(code_generator::output& output, const cpp_cv_qualified_type& type)
+{
+    if (is_direct_complex(type.type()))
         output << bracket_ws << punctuation(")");
-    }
+    detail::write_type_suffix(output, type.type());
+}
 
-    void write_function_suffix(code_generator::output& output, const cpp_function_type& type)
-    {
-        write_parameters(output, type);
+bool pointer_requires_paren(const cpp_pointer_type& type)
+{
+    auto kind = type.pointee().kind();
+    return kind == cpp_type_kind::function_t || kind == cpp_type_kind::array_t;
+}
 
-        detail::write_type_suffix(output, type.return_type());
-    }
+void write_pointer_prefix(code_generator::output& output, const cpp_pointer_type& type)
+{
+    detail::write_type_prefix(output, type.pointee());
 
-    const cpp_type& strip_class_type(const cpp_type& type, cpp_cv* cv, cpp_reference* ref)
-    {
-        if (type.kind() == cpp_type_kind::cv_qualified_t)
-        {
-            auto& cv_qual = static_cast<const cpp_cv_qualified_type&>(type);
-            if (cv)
-                *cv = cv_qual.cv_qualifier();
-            return strip_class_type(cv_qual.type(), cv, ref);
-        }
-        else if (type.kind() == cpp_type_kind::reference_t)
-        {
-            auto& ref_type = static_cast<const cpp_reference_type&>(type);
-            if (ref)
-                *ref = ref_type.reference_kind();
-            return strip_class_type(ref_type.referee(), cv, ref);
-        }
-        else
-        {
-            DEBUG_ASSERT(!detail::is_complex_type(type), detail::assert_handler{});
-            return type;
-        }
-    }
-
-    void write_member_function_prefix(code_generator::output&         output,
-                                      const cpp_member_function_type& type)
-    {
-        detail::write_type_prefix(output, type.return_type());
-
+    if (pointer_requires_paren(type))
         output << punctuation("(") << bracket_ws;
-        detail::write_type_prefix(output, strip_class_type(type.class_type(), nullptr, nullptr));
-        output << punctuation("::");
-    }
+    else if (output.formatting().is_set(formatting_flags::ptr_ref_var))
+        output << whitespace;
 
-    void write_member_function_suffix(code_generator::output&         output,
-                                      const cpp_member_function_type& type)
-    {
+    output << punctuation("*");
+}
+
+void write_pointer_suffix(code_generator::output& output, const cpp_pointer_type& type)
+{
+    if (pointer_requires_paren(type))
         output << bracket_ws << punctuation(")");
-        write_parameters(output, type);
+    detail::write_type_suffix(output, type.pointee());
+}
 
-        auto cv  = cpp_cv_none;
-        auto ref = cpp_ref_none;
-        strip_class_type(type.class_type(), &cv, &ref);
+void write_reference_prefix(code_generator::output& output, const cpp_reference_type& type)
+{
+    detail::write_type_prefix(output, type.referee());
 
-        if (cv == cpp_cv_const_volatile)
-            output << keyword("const") << whitespace << keyword("volatile");
-        else if (is_const(cv))
-            output << keyword("const");
-        else if (is_volatile(cv))
-            output << keyword("volatile");
-
-        if (ref == cpp_ref_lvalue)
-            output << operator_ws << punctuation("&") << operator_ws;
-        else if (ref == cpp_ref_rvalue)
-            output << operator_ws << punctuation("&&") << operator_ws;
-
-        detail::write_type_suffix(output, type.return_type());
-    }
-
-    void write_member_object_prefix(code_generator::output&       output,
-                                    const cpp_member_object_type& type)
-    {
-        detail::write_type_prefix(output, type.object_type());
+    if (is_direct_complex(type.referee()))
         output << punctuation("(") << bracket_ws;
-        DEBUG_ASSERT(!detail::is_complex_type(type.class_type()), detail::assert_handler{});
-        detail::write_type_prefix(output, type.class_type());
-        output << punctuation("::");
-    }
+    else if (output.formatting().is_set(formatting_flags::ptr_ref_var))
+        output << whitespace;
 
-    void write_member_object_suffix(code_generator::output& output, const cpp_member_object_type&)
-    {
+    if (type.reference_kind() == cpp_ref_lvalue)
+        output << punctuation("&");
+    else if (type.reference_kind() == cpp_ref_rvalue)
+        output << punctuation("&&");
+    else
+        DEBUG_UNREACHABLE(detail::assert_handler{});
+}
+
+void write_reference_suffix(code_generator::output& output, const cpp_reference_type& type)
+{
+    if (is_direct_complex(type.referee()))
         output << bracket_ws << punctuation(")");
-    }
+    detail::write_type_suffix(output, type.referee());
+}
 
-    void write_template_parameter(code_generator::output&            output,
-                                  const cpp_template_parameter_type& type)
+void write_array_prefix(code_generator::output& output, const cpp_array_type& type)
+{
+    detail::write_type_prefix(output, type.value_type());
+}
+
+void write_array_suffix(code_generator::output& output, const cpp_array_type& type)
+{
+    output << punctuation("[");
+    if (type.size())
     {
-        output << type.entity();
+        output << bracket_ws;
+        detail::write_expression(output, type.size().value());
+        output << bracket_ws;
     }
+    output << punctuation("]");
+    detail::write_type_suffix(output, type.value_type());
+}
 
-    void write_template_instantiation(code_generator::output&                output,
-                                      const cpp_template_instantiation_type& type)
+void write_function_prefix(code_generator::output& output, const cpp_function_type& type)
+{
+    detail::write_type_prefix(output, type.return_type());
+}
+
+template <typename T>
+void write_parameters(code_generator::output& output, const T& type)
+{
+    output << punctuation("(") << bracket_ws;
+
+    auto need_sep = false;
+    for (auto& param : type.parameter_types())
     {
-        output << type.primary_template();
-        if (output.was_reference_excluded())
-            return;
-
-        if (type.arguments_exposed())
-            detail::write_template_arguments(output, type.arguments());
+        if (need_sep)
+            output << comma;
         else
-            output << punctuation("<") << bracket_ws << token_seq(type.unexposed_arguments())
-                   << bracket_ws << punctuation(">");
+            need_sep = true;
+        detail::write_type_prefix(output, param);
+        detail::write_type_suffix(output, param);
+    }
+    if (type.is_variadic())
+    {
+        if (need_sep)
+            output << comma;
+        output << punctuation("...");
     }
 
-    void write_dependent(code_generator::output& output, const cpp_dependent_type& type)
-    {
-        output << token_seq(type.name());
-    }
+    output << bracket_ws << punctuation(")");
+}
 
-    void write_unexposed(code_generator::output& output, const cpp_unexposed_type& type)
+void write_function_suffix(code_generator::output& output, const cpp_function_type& type)
+{
+    write_parameters(output, type);
+
+    detail::write_type_suffix(output, type.return_type());
+}
+
+const cpp_type& strip_class_type(const cpp_type& type, cpp_cv* cv, cpp_reference* ref)
+{
+    if (type.kind() == cpp_type_kind::cv_qualified_t)
     {
-        output << token_seq(type.name());
+        auto& cv_qual = static_cast<const cpp_cv_qualified_type&>(type);
+        if (cv)
+            *cv = cv_qual.cv_qualifier();
+        return strip_class_type(cv_qual.type(), cv, ref);
     }
+    else if (type.kind() == cpp_type_kind::reference_t)
+    {
+        auto& ref_type = static_cast<const cpp_reference_type&>(type);
+        if (ref)
+            *ref = ref_type.reference_kind();
+        return strip_class_type(ref_type.referee(), cv, ref);
+    }
+    else
+    {
+        DEBUG_ASSERT(!detail::is_complex_type(type), detail::assert_handler{});
+        return type;
+    }
+}
+
+void write_member_function_prefix(code_generator::output&         output,
+                                  const cpp_member_function_type& type)
+{
+    detail::write_type_prefix(output, type.return_type());
+
+    output << punctuation("(") << bracket_ws;
+    detail::write_type_prefix(output, strip_class_type(type.class_type(), nullptr, nullptr));
+    output << punctuation("::");
+}
+
+void write_member_function_suffix(code_generator::output&         output,
+                                  const cpp_member_function_type& type)
+{
+    output << bracket_ws << punctuation(")");
+    write_parameters(output, type);
+
+    auto cv  = cpp_cv_none;
+    auto ref = cpp_ref_none;
+    strip_class_type(type.class_type(), &cv, &ref);
+
+    if (cv == cpp_cv_const_volatile)
+        output << keyword("const") << whitespace << keyword("volatile");
+    else if (is_const(cv))
+        output << keyword("const");
+    else if (is_volatile(cv))
+        output << keyword("volatile");
+
+    if (ref == cpp_ref_lvalue)
+        output << operator_ws << punctuation("&") << operator_ws;
+    else if (ref == cpp_ref_rvalue)
+        output << operator_ws << punctuation("&&") << operator_ws;
+
+    detail::write_type_suffix(output, type.return_type());
+}
+
+void write_member_object_prefix(code_generator::output& output, const cpp_member_object_type& type)
+{
+    detail::write_type_prefix(output, type.object_type());
+    output << punctuation("(") << bracket_ws;
+    DEBUG_ASSERT(!detail::is_complex_type(type.class_type()), detail::assert_handler{});
+    detail::write_type_prefix(output, type.class_type());
+    output << punctuation("::");
+}
+
+void write_member_object_suffix(code_generator::output& output, const cpp_member_object_type&)
+{
+    output << bracket_ws << punctuation(")");
+}
+
+void write_template_parameter(code_generator::output&            output,
+                              const cpp_template_parameter_type& type)
+{
+    output << type.entity();
+}
+
+void write_template_instantiation(code_generator::output&                output,
+                                  const cpp_template_instantiation_type& type)
+{
+    output << type.primary_template();
+    if (output.was_reference_excluded())
+        return;
+
+    if (type.arguments_exposed())
+        detail::write_template_arguments(output, type.arguments());
+    else
+        output << punctuation("<") << bracket_ws << token_seq(type.unexposed_arguments())
+               << bracket_ws << punctuation(">");
+}
+
+void write_dependent(code_generator::output& output, const cpp_dependent_type& type)
+{
+    output << token_seq(type.name());
+}
+
+void write_unexposed(code_generator::output& output, const cpp_unexposed_type& type)
+{
+    output << token_seq(type.name());
+}
 } // namespace
 
 void detail::write_type_prefix(code_generator::output& output, const cpp_type& type)

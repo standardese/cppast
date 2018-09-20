@@ -5,7 +5,8 @@
 /// \file
 /// Serialization code generation.
 ///
-/// Given an input file, it will generate a serialize() function for each class marked with [[generate::serialize]].
+/// Given an input file, it will generate a serialize() function for each class marked with
+/// [[generate::serialize]].
 
 #include <iostream>
 

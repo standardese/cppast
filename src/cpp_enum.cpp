@@ -17,8 +17,8 @@ std::unique_ptr<cpp_enum_value> cpp_enum_value::build(const cpp_entity_index& id
                                                       std::string                     name,
                                                       std::unique_ptr<cpp_expression> value)
 {
-    auto result =
-        std::unique_ptr<cpp_enum_value>(new cpp_enum_value(std::move(name), std::move(value)));
+    auto result
+        = std::unique_ptr<cpp_enum_value>(new cpp_enum_value(std::move(name), std::move(value)));
     idx.register_definition(std::move(id), type_safe::ref(*result));
     return result;
 }

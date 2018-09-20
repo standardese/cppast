@@ -10,12 +10,12 @@
 
 #include <clang-c/CXCompilationDatabase.h>
 
+#include "cxtokenizer.hpp"
 #include "libclang_visitor.hpp"
-#include "raii_wrapper.hpp"
 #include "parse_error.hpp"
 #include "parse_functions.hpp"
 #include "preprocessor.hpp"
-#include "cxtokenizer.hpp"
+#include "raii_wrapper.hpp"
 
 using namespace cppast;
 
@@ -81,22 +81,20 @@ bool libclang_compilation_database::has_config(const char* file_name) const
 
 namespace
 {
-    int parse_number(const char*& str)
+int parse_number(const char*& str)
+{
+    auto result = 0;
+    for (; *str && *str != '.'; ++str)
     {
-        auto result = 0;
-        for (; *str && *str != '.'; ++str)
-        {
-            result *= 10;
-            result += int(*str - '0');
-        }
-        return result;
+        result *= 10;
+        result += int(*str - '0');
     }
+    return result;
+}
 } // namespace
 
 libclang_compile_config::libclang_compile_config()
-: compile_config({}),
-  write_preprocessed_(false),
-  fast_preprocessing_(false),
+: compile_config({}), write_preprocessed_(false), fast_preprocessing_(false),
   remove_comments_in_macro_(false)
 {
     // set given clang binary
@@ -117,39 +115,38 @@ libclang_compile_config::libclang_compile_config()
 
 namespace
 {
-    struct cxcompile_commands_deleter
+struct cxcompile_commands_deleter
+{
+    void operator()(CXCompileCommands cmds)
     {
-        void operator()(CXCompileCommands cmds)
-        {
-            clang_CompileCommands_dispose(cmds);
-        }
-    };
-
-    using cxcompile_commands = detail::raii_wrapper<CXCompileCommands, cxcompile_commands_deleter>;
-
-    bool has_drive_prefix(const std::string& file)
-    {
-        return file.size() > 2 && file[1] == ':';
+        clang_CompileCommands_dispose(cmds);
     }
+};
 
-    bool is_absolute(const std::string& file)
-    {
-        return !file.empty()
-               && (has_drive_prefix(file) || file.front() == '/' || file.front() == '\\');
-    }
+using cxcompile_commands = detail::raii_wrapper<CXCompileCommands, cxcompile_commands_deleter>;
 
-    std::string get_full_path(const detail::cxstring& dir, const std::string& file)
-    {
-        if (is_absolute(file))
-            // absolute file
-            return file;
-        else if (dir[dir.length() - 1] != '/' && dir[dir.length() - 1] != '\\')
-            // relative needing separator
-            return dir.std_str() + '/' + file;
-        else
-            // relative w/o separator
-            return dir.std_str() + file;
-    }
+bool has_drive_prefix(const std::string& file)
+{
+    return file.size() > 2 && file[1] == ':';
+}
+
+bool is_absolute(const std::string& file)
+{
+    return !file.empty() && (has_drive_prefix(file) || file.front() == '/' || file.front() == '\\');
+}
+
+std::string get_full_path(const detail::cxstring& dir, const std::string& file)
+{
+    if (is_absolute(file))
+        // absolute file
+        return file;
+    else if (dir[dir.length() - 1] != '/' && dir[dir.length() - 1] != '\\')
+        // relative needing separator
+        return dir.std_str() + '/' + file;
+    else
+        // relative w/o separator
+        return dir.std_str() + file;
+}
 } // namespace
 
 void detail::for_each_file(const libclang_compilation_database& database, void* user_data,
@@ -170,70 +167,70 @@ void detail::for_each_file(const libclang_compilation_database& database, void* 
 
 namespace
 {
-    bool is_flag(const detail::cxstring& str)
-    {
-        return str.length() > 1u && str[0] == '-';
-    }
+bool is_flag(const detail::cxstring& str)
+{
+    return str.length() > 1u && str[0] == '-';
+}
 
-    const char* find_flag_arg_sep(const std::string& last_flag)
-    {
-        if (last_flag[1] == 'D')
-            // no  separator, equal is part of the arg
-            return nullptr;
-        return std::strchr(last_flag.c_str(), '=');
-    }
+const char* find_flag_arg_sep(const std::string& last_flag)
+{
+    if (last_flag[1] == 'D')
+        // no  separator, equal is part of the arg
+        return nullptr;
+    return std::strchr(last_flag.c_str(), '=');
+}
 
-    template <typename Func>
-    void parse_flags(CXCompileCommand cmd, Func callback)
+template <typename Func>
+void parse_flags(CXCompileCommand cmd, Func callback)
+{
+    auto        no_args = clang_CompileCommand_getNumArgs(cmd);
+    std::string last_flag;
+    for (auto i = 1u /* 0 is compiler executable */; i != no_args; ++i)
     {
-        auto        no_args = clang_CompileCommand_getNumArgs(cmd);
-        std::string last_flag;
-        for (auto i = 1u /* 0 is compiler executable */; i != no_args; ++i)
+        detail::cxstring str(clang_CompileCommand_getArg(cmd, i));
+        if (is_flag(str))
         {
-            detail::cxstring str(clang_CompileCommand_getArg(cmd, i));
-            if (is_flag(str))
+            if (!last_flag.empty())
             {
-                if (!last_flag.empty())
+                // process last flag
+                std::string args;
+                if (auto ptr = find_flag_arg_sep(last_flag))
                 {
-                    // process last flag
-                    std::string args;
-                    if (auto ptr = find_flag_arg_sep(last_flag))
-                    {
-                        auto pos = std::size_t(ptr - last_flag.c_str());
-                        ++ptr;
-                        while (*ptr)
-                            args += *ptr++;
-                        last_flag.erase(pos);
-                    }
-                    else if (last_flag.size() > 2u)
-                    {
-                        // assume two character flag
-                        args = last_flag.substr(2u);
-                        last_flag.erase(2u);
-                    }
-
-                    callback(std::move(last_flag), std::move(args));
+                    auto pos = std::size_t(ptr - last_flag.c_str());
+                    ++ptr;
+                    while (*ptr)
+                        args += *ptr++;
+                    last_flag.erase(pos);
+                }
+                else if (last_flag.size() > 2u)
+                {
+                    // assume two character flag
+                    args = last_flag.substr(2u);
+                    last_flag.erase(2u);
                 }
 
-                last_flag = str.std_str();
+                callback(std::move(last_flag), std::move(args));
             }
-            else if (!last_flag.empty())
-            {
-                // we have flags + args
-                callback(std::move(last_flag), str.std_str());
-                last_flag.clear();
-            }
-            // else skip argument
+
+            last_flag = str.std_str();
         }
+        else if (!last_flag.empty())
+        {
+            // we have flags + args
+            callback(std::move(last_flag), str.std_str());
+            last_flag.clear();
+        }
+        // else skip argument
     }
+}
 } // namespace
 
 libclang_compile_config::libclang_compile_config(const libclang_compilation_database& database,
                                                  const std::string&                   file)
 : libclang_compile_config()
 {
-    auto cxcommands =
-        clang_CompilationDatabase_getCompileCommands(database.database_, file.c_str());
+    auto cxcommands
+        = clang_CompilationDatabase_getCompileCommands(database.database_, file.c_str());
     if (cxcommands == nullptr)
         throw libclang_error(detail::format("no compile commands specified for file '", file, "'"));
     cxcompile_commands commands(cxcommands);
@@ -353,8 +350,8 @@ type_safe::optional<libclang_compile_config> cppast::find_config_for(
 
     if (database.has_config(file_name))
         return libclang_compile_config(database, std::move(file_name));
-    static const char* extensions[] = {".h",   ".hpp", ".cpp", ".h++", ".c++", ".hxx",
-                                       ".cxx", ".hh",  ".cc",  ".H",   ".C"};
+    static const char* extensions[]
+        = {".h", ".hpp", ".cpp", ".h++", ".c++", ".hxx", ".cxx", ".hh", ".cc", ".H", ".C"};
     for (auto ext : extensions)
     {
         auto name = file_name + ext;
@@ -370,125 +367,122 @@ struct libclang_parser::impl
     detail::cxindex index;
 
     impl() : index(clang_createIndex(0, 0)) // no diagnostic, other one is irrelevant
-    {
-    }
+    {}
 };
 
 libclang_parser::libclang_parser() : libclang_parser(default_logger()) {}
 
 libclang_parser::libclang_parser(type_safe::object_ref<const diagnostic_logger> logger)
 : parser(logger), pimpl_(new impl)
-{
-}
+{}
 
 libclang_parser::~libclang_parser() noexcept {}
 
 namespace
 {
-    std::vector<const char*> get_arguments(const libclang_compile_config& config)
+std::vector<const char*> get_arguments(const libclang_compile_config& config)
+{
+    std::vector<const char*> args
+        = {"-x", "c++", "-I."}; // force C++ and enable current directory for include search
+    for (auto& flag : detail::libclang_compile_config_access::flags(config))
+        args.push_back(flag.c_str());
+    return args;
+}
+
+type_safe::optional<severity> get_severity(const CXDiagnostic& diag)
+{
+    switch (clang_getDiagnosticSeverity(diag))
     {
-        std::vector<const char*> args =
-            {"-x", "c++", "-I."}; // force C++ and enable current directory for include search
-        for (auto& flag : detail::libclang_compile_config_access::flags(config))
-            args.push_back(flag.c_str());
-        return args;
-    }
-
-    type_safe::optional<severity> get_severity(const CXDiagnostic& diag)
-    {
-        switch (clang_getDiagnosticSeverity(diag))
-        {
-        case CXDiagnostic_Ignored:
-        case CXDiagnostic_Note:
-        case CXDiagnostic_Warning:
-            // ignore those diagnostics
-            return type_safe::nullopt;
-
-        case CXDiagnostic_Error:
-            return severity::error;
-        case CXDiagnostic_Fatal:
-            return severity::critical;
-        }
-
-        DEBUG_UNREACHABLE(detail::assert_handler{});
+    case CXDiagnostic_Ignored:
+    case CXDiagnostic_Note:
+    case CXDiagnostic_Warning:
+        // ignore those diagnostics
         return type_safe::nullopt;
+
+    case CXDiagnostic_Error:
+        return severity::error;
+    case CXDiagnostic_Fatal:
+        return severity::critical;
     }
 
-    void print_diagnostics(const diagnostic_logger& logger, const CXTranslationUnit& tu)
-    {
-        auto no = clang_getNumDiagnostics(tu);
-        for (auto i = 0u; i != no; ++i)
-        {
-            auto diag = clang_getDiagnostic(tu, i);
-            auto sev  = get_severity(diag);
-            if (sev)
-            {
-                auto     diag_loc = clang_getDiagnosticLocation(diag);
-                CXString diag_file;
-                unsigned line;
-                clang_getPresumedLocation(diag_loc, &diag_file, &line, nullptr);
+    DEBUG_UNREACHABLE(detail::assert_handler{});
+    return type_safe::nullopt;
+}
 
-                auto loc  = source_location::make_file(detail::cxstring(diag_file).c_str(), line);
-                auto text = detail::cxstring(clang_getDiagnosticSpelling(diag));
-                if (text != "too many errors emitted, stopping now")
-                    logger.log("libclang", diagnostic{text.c_str(), loc, sev.value()});
-            }
+void print_diagnostics(const diagnostic_logger& logger, const CXTranslationUnit& tu)
+{
+    auto no = clang_getNumDiagnostics(tu);
+    for (auto i = 0u; i != no; ++i)
+    {
+        auto diag = clang_getDiagnostic(tu, i);
+        auto sev  = get_severity(diag);
+        if (sev)
+        {
+            auto     diag_loc = clang_getDiagnosticLocation(diag);
+            CXString diag_file;
+            unsigned line;
+            clang_getPresumedLocation(diag_loc, &diag_file, &line, nullptr);
+
+            auto loc  = source_location::make_file(detail::cxstring(diag_file).c_str(), line);
+            auto text = detail::cxstring(clang_getDiagnosticSpelling(diag));
+            if (text != "too many errors emitted, stopping now")
+                logger.log("libclang", diagnostic{text.c_str(), loc, sev.value()});
         }
     }
+}
 
-    detail::cxtranslation_unit get_cxunit(const diagnostic_logger&       logger,
-                                          const detail::cxindex&         idx,
-                                          const libclang_compile_config& config, const char* path,
-                                          const std::string& source)
+detail::cxtranslation_unit get_cxunit(const diagnostic_logger& logger, const detail::cxindex& idx,
+                                      const libclang_compile_config& config, const char* path,
+                                      const std::string& source)
+{
+    CXUnsavedFile file;
+    file.Filename = path;
+    file.Contents = source.c_str();
+    file.Length   = source.length();
+
+    auto args = get_arguments(config);
+
+    CXTranslationUnit tu;
+    auto              flags = CXTranslationUnit_Incomplete | CXTranslationUnit_KeepGoing
+                 | CXTranslationUnit_DetailedPreprocessingRecord;
+
+    auto error
+        = clang_parseTranslationUnit2(idx.get(), path, // index and path
+                                      args.data(),
+                                      static_cast<int>(args.size()), // arguments (ptr + size)
+                                      &file, 1,                      // unsaved files (ptr + size)
+                                      unsigned(flags), &tu);
+    if (error != CXError_Success)
     {
-        CXUnsavedFile file;
-        file.Filename = path;
-        file.Contents = source.c_str();
-        file.Length   = source.length();
-
-        auto args = get_arguments(config);
-
-        CXTranslationUnit tu;
-        auto              flags = CXTranslationUnit_Incomplete | CXTranslationUnit_KeepGoing
-                     | CXTranslationUnit_DetailedPreprocessingRecord;
-
-        auto error =
-            clang_parseTranslationUnit2(idx.get(), path, // index and path
-                                        args.data(),
-                                        static_cast<int>(args.size()), // arguments (ptr + size)
-                                        &file, 1,                      // unsaved files (ptr + size)
-                                        unsigned(flags), &tu);
-        if (error != CXError_Success)
+        switch (error)
         {
-            switch (error)
-            {
-            case CXError_Success:
-                DEBUG_UNREACHABLE(detail::assert_handler{});
-                break;
+        case CXError_Success:
+            DEBUG_UNREACHABLE(detail::assert_handler{});
+            break;
 
-            case CXError_Failure:
-                throw libclang_error("clang_parseTranslationUnit: generic error");
-            case CXError_Crashed:
-                throw libclang_error("clang_parseTranslationUnit: libclang crashed :(");
-            case CXError_InvalidArguments:
-                throw libclang_error("clang_parseTranslationUnit: you shouldn't see this message");
-            case CXError_ASTReadError:
-                throw libclang_error("clang_parseTranslationUnit: AST deserialization error");
-            }
+        case CXError_Failure:
+            throw libclang_error("clang_parseTranslationUnit: generic error");
+        case CXError_Crashed:
+            throw libclang_error("clang_parseTranslationUnit: libclang crashed :(");
+        case CXError_InvalidArguments:
+            throw libclang_error("clang_parseTranslationUnit: you shouldn't see this message");
+        case CXError_ASTReadError:
+            throw libclang_error("clang_parseTranslationUnit: AST deserialization error");
         }
-        print_diagnostics(logger, tu);
-
-        return detail::cxtranslation_unit(tu);
     }
+    print_diagnostics(logger, tu);
 
-    unsigned get_line_no(const CXCursor& cursor)
-    {
-        auto loc = clang_getCursorLocation(cursor);
+    return detail::cxtranslation_unit(tu);
+}
 
-        unsigned line;
-        clang_getPresumedLocation(loc, nullptr, &line, nullptr);
-        return line;
-    }
+unsigned get_line_no(const CXCursor& cursor)
+{
+    auto loc = clang_getCursorLocation(cursor);
+
+    unsigned line;
+    clang_getPresumedLocation(loc, nullptr, &line, nullptr);
+    return line;
+}
 } // namespace
 
 std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx, std::string path,
@@ -530,8 +524,8 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
                                  && get_line_no(cur) >= include_iter->line,
                              detail::assert_handler{});
 
-                auto full_path = include_iter->full_path.empty() ? include_iter->file_name :
-                                                                   include_iter->full_path;
+                auto full_path = include_iter->full_path.empty() ? include_iter->file_name
+                                                                 : include_iter->full_path;
 
                 // if we got an absolute file path for the current file,
                 // also use an absolute file path for the id
@@ -543,10 +537,10 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
                 else
                     id = cpp_entity_id(include_iter->file_name.c_str());
 
-                auto include =
-                    cpp_include_directive::build(cpp_file_ref(id,
-                                                              std::move(include_iter->file_name)),
-                                                 include_iter->kind, std::move(full_path));
+                auto include
+                    = cpp_include_directive::build(cpp_file_ref(id,
+                                                                std::move(include_iter->file_name)),
+                                                   include_iter->kind, std::move(full_path));
                 context.comments.match(*include, include_iter->line,
                                        false); // must not skip comments,
                                                // includes are not reported in order

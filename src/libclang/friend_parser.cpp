@@ -4,11 +4,11 @@
 
 #include <cppast/cpp_friend.hpp>
 
-#include <cppast/cpp_template_parameter.hpp>
 #include <cppast/cpp_template.hpp>
+#include <cppast/cpp_template_parameter.hpp>
 
-#include "parse_functions.hpp"
 #include "libclang_visitor.hpp"
+#include "parse_functions.hpp"
 
 using namespace cppast;
 
@@ -45,9 +45,9 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_friend(const detail::parse_context
                 // we can't use the other branch here,
                 // as then the class name would be wrong
                 auto name = detail::get_cursor_name(referenced);
-                type =
-                    cpp_user_defined_type::build(cpp_type_ref(detail::get_entity_id(referenced),
-                                                              namespace_str + "::" + name.c_str()));
+                type      = cpp_user_defined_type::build(
+                    cpp_type_ref(detail::get_entity_id(referenced),
+                                 namespace_str + "::" + name.c_str()));
             }
             else
             {

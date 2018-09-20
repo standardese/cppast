@@ -4,10 +4,10 @@
 
 #include <cppast/cpp_class.hpp>
 
-#include <cppast/cpp_entity_index.hpp>
-#include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_alias_template.hpp>
 #include <cppast/cpp_class_template.hpp>
+#include <cppast/cpp_entity_index.hpp>
+#include <cppast/cpp_entity_kind.hpp>
 
 using namespace cppast;
 
@@ -103,70 +103,69 @@ cpp_entity_kind cpp_class::do_get_entity_kind() const noexcept
 
 namespace
 {
-    cpp_entity_ref get_type_ref(const cpp_type& type)
+cpp_entity_ref get_type_ref(const cpp_type& type)
+{
+    if (type.kind() == cpp_type_kind::user_defined_t)
     {
-        if (type.kind() == cpp_type_kind::user_defined_t)
-        {
-            auto& ref = static_cast<const cpp_user_defined_type&>(type).entity();
-            return cpp_entity_ref(ref.id()[0u], ref.name());
-        }
-        else if (type.kind() == cpp_type_kind::template_instantiation_t)
-        {
-            auto& ref =
-                static_cast<const cpp_template_instantiation_type&>(type).primary_template();
-            return cpp_entity_ref(ref.id()[0u], ref.name());
-        }
-
-        DEBUG_ASSERT(type.kind() == cpp_type_kind::template_parameter_t
-                         || type.kind() == cpp_type_kind::decltype_t
-                         || type.kind() == cpp_type_kind::decltype_auto_t
-                         || type.kind() == cpp_type_kind::unexposed_t,
-                     detail::assert_handler{});
-        return cpp_entity_ref(cpp_entity_id("<null id>"), "");
+        auto& ref = static_cast<const cpp_user_defined_type&>(type).entity();
+        return cpp_entity_ref(ref.id()[0u], ref.name());
+    }
+    else if (type.kind() == cpp_type_kind::template_instantiation_t)
+    {
+        auto& ref = static_cast<const cpp_template_instantiation_type&>(type).primary_template();
+        return cpp_entity_ref(ref.id()[0u], ref.name());
     }
 
-    type_safe::optional_ref<const cpp_entity> get_entity_impl(const cpp_entity_index& index,
-                                                              const cpp_entity_ref&   ref)
-    {
-        auto result = ref.get(index);
-        if (result.empty())
-            return nullptr;
-        DEBUG_ASSERT(result.size() == 1u, detail::assert_handler{});
+    DEBUG_ASSERT(type.kind() == cpp_type_kind::template_parameter_t
+                     || type.kind() == cpp_type_kind::decltype_t
+                     || type.kind() == cpp_type_kind::decltype_auto_t
+                     || type.kind() == cpp_type_kind::unexposed_t,
+                 detail::assert_handler{});
+    return cpp_entity_ref(cpp_entity_id("<null id>"), "");
+}
 
-        auto entity = result.front();
-        if (entity->kind() == cpp_class_template::kind())
-            return type_safe::ref(static_cast<const cpp_class_template&>(*entity).class_());
-        else if (entity->kind() == cpp_class_template_specialization::kind())
-            return type_safe::ref(
-                static_cast<const cpp_class_template_specialization&>(*entity).class_());
-        else
-            return entity;
+type_safe::optional_ref<const cpp_entity> get_entity_impl(const cpp_entity_index& index,
+                                                          const cpp_entity_ref&   ref)
+{
+    auto result = ref.get(index);
+    if (result.empty())
+        return nullptr;
+    DEBUG_ASSERT(result.size() == 1u, detail::assert_handler{});
+
+    auto entity = result.front();
+    if (entity->kind() == cpp_class_template::kind())
+        return type_safe::ref(static_cast<const cpp_class_template&>(*entity).class_());
+    else if (entity->kind() == cpp_class_template_specialization::kind())
+        return type_safe::ref(
+            static_cast<const cpp_class_template_specialization&>(*entity).class_());
+    else
+        return entity;
+}
+
+type_safe::optional_ref<const cpp_class> get_class_impl(const cpp_entity_index& index,
+                                                        const cpp_entity_ref&   ref)
+{
+    auto entity = get_entity_impl(index, ref);
+    if (!entity)
+        return nullptr;
+
+    if (entity.value().kind() == cpp_alias_template::kind())
+    {
+        auto& alias = static_cast<const cppast::cpp_alias_template&>(entity.value());
+        return get_class_impl(index, get_type_ref(alias.type_alias().underlying_type()));
     }
-
-    type_safe::optional_ref<const cpp_class> get_class_impl(const cpp_entity_index& index,
-                                                            const cpp_entity_ref&   ref)
+    else if (entity.value().kind() == cpp_type_alias::kind())
     {
-        auto entity = get_entity_impl(index, ref);
-        if (!entity)
-            return nullptr;
-
-        if (entity.value().kind() == cpp_alias_template::kind())
-        {
-            auto& alias = static_cast<const cppast::cpp_alias_template&>(entity.value());
-            return get_class_impl(index, get_type_ref(alias.type_alias().underlying_type()));
-        }
-        else if (entity.value().kind() == cpp_type_alias::kind())
-        {
-            auto& alias = static_cast<const cppast::cpp_type_alias&>(entity.value());
-            return get_class_impl(index, get_type_ref(alias.underlying_type()));
-        }
-        else
-        {
-            DEBUG_ASSERT(entity.value().kind() == cpp_class::kind(), detail::assert_handler{});
-            return type_safe::ref(static_cast<const cpp_class&>(entity.value()));
-        }
+        auto& alias = static_cast<const cppast::cpp_type_alias&>(entity.value());
+        return get_class_impl(index, get_type_ref(alias.underlying_type()));
+    }
+    else
+    {
+        DEBUG_ASSERT(entity.value().kind() == cpp_class::kind(), detail::assert_handler{});
+        return type_safe::ref(static_cast<const cpp_class&>(entity.value()));
     }
 }
+} // namespace
 
 type_safe::optional_ref<const cpp_class> cppast::get_class(const cpp_entity_index& index,
                                                            const cpp_base_class&   base)

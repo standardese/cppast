@@ -45,8 +45,8 @@ using e = void;
                                 {
                                     REQUIRE(p.kind() == cpp_entity_kind::template_type_parameter_t);
 
-                                    auto& param =
-                                        static_cast<const cpp_template_type_parameter&>(p);
+                                    auto& param
+                                        = static_cast<const cpp_template_type_parameter&>(p);
                                     if (param.name() == "A")
                                     {
                                         REQUIRE(alias.name() == "a");
@@ -132,8 +132,8 @@ using d = void;
                                     REQUIRE(p.kind()
                                             == cpp_entity_kind::non_type_template_parameter_t);
 
-                                    auto& param =
-                                        static_cast<const cpp_non_type_template_parameter&>(p);
+                                    auto& param
+                                        = static_cast<const cpp_non_type_template_parameter&>(p);
                                     if (param.name() == "A")
                                     {
                                         REQUIRE(alias.name() == "a");
@@ -227,8 +227,8 @@ using d = void;
                                     REQUIRE(p.kind()
                                             == cpp_entity_kind::template_template_parameter_t);
 
-                                    auto& param =
-                                        static_cast<const cpp_template_template_parameter&>(p);
+                                    auto& param
+                                        = static_cast<const cpp_template_template_parameter&>(p);
                                     REQUIRE(param.keyword() == cpp_template_keyword::keyword_class);
                                     if (param.name() == "A")
                                     {

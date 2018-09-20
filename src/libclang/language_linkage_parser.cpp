@@ -4,8 +4,8 @@
 
 #include "parse_functions.hpp"
 
-#include <cppast/cpp_language_linkage.hpp>
 #include <clang-c/Index.h>
+#include <cppast/cpp_language_linkage.hpp>
 
 #include "libclang_visitor.hpp"
 

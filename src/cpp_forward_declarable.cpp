@@ -15,73 +15,73 @@ using namespace cppast;
 
 namespace
 {
-    type_safe::optional_ref<const cpp_forward_declarable> get_declarable(const cpp_entity& e)
+type_safe::optional_ref<const cpp_forward_declarable> get_declarable(const cpp_entity& e)
+{
+    switch (e.kind())
     {
-        switch (e.kind())
-        {
-        case cpp_entity_kind::enum_t:
-            return type_safe::ref(static_cast<const cpp_enum&>(e));
-        case cpp_entity_kind::class_t:
-            return type_safe::ref(static_cast<const cpp_class&>(e));
-        case cpp_entity_kind::variable_t:
-            return type_safe::ref(static_cast<const cpp_variable&>(e));
-        case cpp_entity_kind::function_t:
-        case cpp_entity_kind::member_function_t:
-        case cpp_entity_kind::conversion_op_t:
-        case cpp_entity_kind::constructor_t:
-        case cpp_entity_kind::destructor_t:
-            return type_safe::ref(static_cast<const cpp_function_base&>(e));
-        case cpp_entity_kind::function_template_t:
-        case cpp_entity_kind::function_template_specialization_t:
-        case cpp_entity_kind::class_template_t:
-        case cpp_entity_kind::class_template_specialization_t:
-            return get_declarable(*static_cast<const cpp_template&>(e).begin());
+    case cpp_entity_kind::enum_t:
+        return type_safe::ref(static_cast<const cpp_enum&>(e));
+    case cpp_entity_kind::class_t:
+        return type_safe::ref(static_cast<const cpp_class&>(e));
+    case cpp_entity_kind::variable_t:
+        return type_safe::ref(static_cast<const cpp_variable&>(e));
+    case cpp_entity_kind::function_t:
+    case cpp_entity_kind::member_function_t:
+    case cpp_entity_kind::conversion_op_t:
+    case cpp_entity_kind::constructor_t:
+    case cpp_entity_kind::destructor_t:
+        return type_safe::ref(static_cast<const cpp_function_base&>(e));
+    case cpp_entity_kind::function_template_t:
+    case cpp_entity_kind::function_template_specialization_t:
+    case cpp_entity_kind::class_template_t:
+    case cpp_entity_kind::class_template_specialization_t:
+        return get_declarable(*static_cast<const cpp_template&>(e).begin());
 
-        case cpp_entity_kind::file_t:
-        case cpp_entity_kind::macro_parameter_t:
-        case cpp_entity_kind::macro_definition_t:
-        case cpp_entity_kind::include_directive_t:
-        case cpp_entity_kind::language_linkage_t:
-        case cpp_entity_kind::namespace_t:
-        case cpp_entity_kind::namespace_alias_t:
-        case cpp_entity_kind::using_directive_t:
-        case cpp_entity_kind::using_declaration_t:
-        case cpp_entity_kind::type_alias_t:
-        case cpp_entity_kind::enum_value_t:
-        case cpp_entity_kind::access_specifier_t:
-        case cpp_entity_kind::base_class_t:
-        case cpp_entity_kind::member_variable_t:
-        case cpp_entity_kind::bitfield_t:
-        case cpp_entity_kind::function_parameter_t:
-        case cpp_entity_kind::friend_t:
-        case cpp_entity_kind::template_type_parameter_t:
-        case cpp_entity_kind::non_type_template_parameter_t:
-        case cpp_entity_kind::template_template_parameter_t:
-        case cpp_entity_kind::alias_template_t:
-        case cpp_entity_kind::variable_template_t:
-        case cpp_entity_kind::static_assert_t:
-        case cpp_entity_kind::unexposed_t:
-            return nullptr;
-
-        case cpp_entity_kind::count:
-            break;
-        }
-
-        DEBUG_UNREACHABLE(detail::assert_handler{});
+    case cpp_entity_kind::file_t:
+    case cpp_entity_kind::macro_parameter_t:
+    case cpp_entity_kind::macro_definition_t:
+    case cpp_entity_kind::include_directive_t:
+    case cpp_entity_kind::language_linkage_t:
+    case cpp_entity_kind::namespace_t:
+    case cpp_entity_kind::namespace_alias_t:
+    case cpp_entity_kind::using_directive_t:
+    case cpp_entity_kind::using_declaration_t:
+    case cpp_entity_kind::type_alias_t:
+    case cpp_entity_kind::enum_value_t:
+    case cpp_entity_kind::access_specifier_t:
+    case cpp_entity_kind::base_class_t:
+    case cpp_entity_kind::member_variable_t:
+    case cpp_entity_kind::bitfield_t:
+    case cpp_entity_kind::function_parameter_t:
+    case cpp_entity_kind::friend_t:
+    case cpp_entity_kind::template_type_parameter_t:
+    case cpp_entity_kind::non_type_template_parameter_t:
+    case cpp_entity_kind::template_template_parameter_t:
+    case cpp_entity_kind::alias_template_t:
+    case cpp_entity_kind::variable_template_t:
+    case cpp_entity_kind::static_assert_t:
+    case cpp_entity_kind::unexposed_t:
         return nullptr;
+
+    case cpp_entity_kind::count:
+        break;
     }
 
-    type_safe::optional_ref<const cpp_entity> get_definition_impl(const cpp_entity_index& idx,
-                                                                  const cpp_entity&       e)
-    {
-        auto declarable = get_declarable(e);
-        if (!declarable || declarable.value().is_definition())
-            // not declarable or is a definition
-            // return reference to entity itself
-            return type_safe::ref(e);
-        // else lookup definition
-        return idx.lookup_definition(declarable.value().definition().value());
-    }
+    DEBUG_UNREACHABLE(detail::assert_handler{});
+    return nullptr;
+}
+
+type_safe::optional_ref<const cpp_entity> get_definition_impl(const cpp_entity_index& idx,
+                                                              const cpp_entity&       e)
+{
+    auto declarable = get_declarable(e);
+    if (!declarable || declarable.value().is_definition())
+        // not declarable or is a definition
+        // return reference to entity itself
+        return type_safe::ref(e);
+    // else lookup definition
+    return idx.lookup_definition(declarable.value().definition().value());
+}
 } // namespace
 
 bool cppast::is_definition(const cpp_entity& e) noexcept

@@ -226,8 +226,8 @@ int d() {}
             }
             else if (entity.value().kind() == cpp_entity_kind::function_template_specialization_t)
             {
-                auto& func =
-                    static_cast<const cpp_function_template_specialization&>(entity.value());
+                auto& func
+                    = static_cast<const cpp_function_template_specialization&>(entity.value());
                 if (func.name() == "templ_c")
                 {
                     REQUIRE(func.function().is_declaration());

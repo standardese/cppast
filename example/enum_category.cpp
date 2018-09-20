@@ -5,8 +5,9 @@
 /// \file
 /// Generates enum category functions.
 ///
-/// Given an input file, it will generate definitions for functions marked with [[generate::enum_category(name)]].
-/// The function takes an enumerator and will return true if it is marked with the same category.
+/// Given an input file, it will generate definitions for functions marked with
+/// [[generate::enum_category(name)]]. The function takes an enumerator and will return true if it
+/// is marked with the same category.
 
 #include <algorithm>
 #include <cassert>
@@ -24,10 +25,10 @@ bool is_category(const cppast::cpp_enum_value& e, const std::string& name)
     if (auto attr = cppast::has_attribute(e, "generate::enum_category"))
     {
         // ... by looking for the token
-        auto iter =
-            std::find_if(attr.value().arguments().value().begin(),
-                         attr.value().arguments().value().end(),
-                         [&](const cppast::cpp_token& tok) { return tok.spelling == name; });
+        auto iter
+            = std::find_if(attr.value().arguments().value().begin(),
+                           attr.value().arguments().value().end(),
+                           [&](const cppast::cpp_token& tok) { return tok.spelling == name; });
         return iter != attr.value().arguments().value().end();
     }
     else
@@ -42,8 +43,10 @@ const cppast::cpp_enum& get_enum(const cppast::cpp_entity_index&       index,
     // it is an enum
     assert(param_type.kind() == cppast::cpp_type_kind::user_defined_t);
     // lookup definition
-    auto& definition =
-        static_cast<const cppast::cpp_user_defined_type&>(param_type).entity().get(index)[0u].get();
+    auto& definition = static_cast<const cppast::cpp_user_defined_type&>(param_type)
+                           .entity()
+                           .get(index)[0u]
+                           .get();
 
     assert(definition.kind() == cppast::cpp_entity_kind::enum_t);
     return static_cast<const cppast::cpp_enum&>(definition);

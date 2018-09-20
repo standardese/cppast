@@ -270,15 +270,15 @@ using ns1::d;
 )";
 
     cpp_entity_index idx;
-    auto check_declaration = [&](const cpp_using_declaration& decl, const char* target_full_name,
-                                 unsigned no) {
-        auto target = decl.target();
-        REQUIRE((target.no_overloaded() == no));
-        for (auto entity : target.get(idx))
-        {
-            REQUIRE(full_name(*entity) == target_full_name);
-        }
-    };
+    auto             check_declaration
+        = [&](const cpp_using_declaration& decl, const char* target_full_name, unsigned no) {
+              auto target = decl.target();
+              REQUIRE((target.no_overloaded() == no));
+              for (auto entity : target.get(idx))
+              {
+                  REQUIRE(full_name(*entity) == target_full_name);
+              }
+          };
 
     auto file  = parse(idx, "cpp_using_declaration.cpp", code);
     auto count = test_visit<cpp_using_declaration>(*file, [&](const cpp_using_declaration& decl) {

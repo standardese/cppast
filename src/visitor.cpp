@@ -18,47 +18,46 @@ using namespace cppast;
 
 namespace
 {
-    cpp_access_specifier_kind get_initial_access(const cpp_entity& e)
-    {
-        if (e.kind() == cpp_class::kind())
-            return static_cast<const cpp_class&>(e).class_kind() == cpp_class_kind::class_t ?
-                       cpp_private :
-                       cpp_public;
-        return cpp_public;
-    }
+cpp_access_specifier_kind get_initial_access(const cpp_entity& e)
+{
+    if (e.kind() == cpp_class::kind())
+        return static_cast<const cpp_class&>(e).class_kind() == cpp_class_kind::class_t
+                   ? cpp_private
+                   : cpp_public;
+    return cpp_public;
+}
 
-    void update_access(cpp_access_specifier_kind& child_access, const cpp_entity& child)
-    {
-        if (child.kind() == cpp_access_specifier::kind())
-            child_access = static_cast<const cpp_access_specifier&>(child).access_specifier();
-    }
+void update_access(cpp_access_specifier_kind& child_access, const cpp_entity& child)
+{
+    if (child.kind() == cpp_access_specifier::kind())
+        child_access = static_cast<const cpp_access_specifier&>(child).access_specifier();
+}
 
-    template <typename T>
-    bool handle_container(const cpp_entity& e, detail::visitor_callback_t cb, void* functor,
-                          cpp_access_specifier_kind cur_access, bool last_child)
-    {
-        auto& container = static_cast<const T&>(e);
+template <typename T>
+bool handle_container(const cpp_entity& e, detail::visitor_callback_t cb, void* functor,
+                      cpp_access_specifier_kind cur_access, bool last_child)
+{
+    auto& container = static_cast<const T&>(e);
 
-        auto handle_children =
-            cb(functor, container, {visitor_info::container_entity_enter, cur_access, last_child});
-        if (handle_children)
+    auto handle_children
+        = cb(functor, container, {visitor_info::container_entity_enter, cur_access, last_child});
+    if (handle_children)
+    {
+        auto child_access = get_initial_access(e);
+        for (auto iter = container.begin(); iter != container.end();)
         {
-            auto child_access = get_initial_access(e);
-            for (auto iter = container.begin(); iter != container.end();)
-            {
-                auto& cur = *iter;
-                ++iter;
+            auto& cur = *iter;
+            ++iter;
 
-                update_access(child_access, cur);
+            update_access(child_access, cur);
 
-                if (!detail::visit(cur, cb, functor, child_access, iter == container.end()))
-                    return false;
-            }
+            if (!detail::visit(cur, cb, functor, child_access, iter == container.end()))
+                return false;
         }
-
-        return cb(functor, container,
-                  {visitor_info::container_entity_exit, cur_access, last_child});
     }
+
+    return cb(functor, container, {visitor_info::container_entity_exit, cur_access, last_child});
+}
 } // namespace
 
 bool detail::visit(const cpp_entity& e, detail::visitor_callback_t cb, void* functor,

@@ -4,17 +4,16 @@
 
 #include <cppast/cpp_entity_index.hpp>
 
-#include <cppast/detail/assert.hpp>
 #include <cppast/cpp_entity.hpp>
 #include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_file.hpp>
+#include <cppast/detail/assert.hpp>
 
 using namespace cppast;
 
 cpp_entity_index::duplicate_definition_error::duplicate_definition_error()
 : std::logic_error("duplicate registration of entity definition")
-{
-}
+{}
 
 void cpp_entity_index::register_definition(cpp_entity_id                           id,
                                            type_safe::object_ref<const cpp_entity> entity) const

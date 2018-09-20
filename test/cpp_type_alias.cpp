@@ -134,8 +134,8 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
     case cpp_type_kind::template_parameter_t:
     {
         auto& entity_parsed = static_cast<const cpp_template_parameter_type&>(parsed).entity();
-        auto& entity_synthesized =
-            static_cast<const cpp_template_parameter_type&>(synthesized).entity();
+        auto& entity_synthesized
+            = static_cast<const cpp_template_parameter_type&>(synthesized).entity();
         return equal_ref(idx, entity_parsed, entity_synthesized);
     }
     case cpp_type_kind::template_instantiation_t:
@@ -357,8 +357,8 @@ typedef decltype(0) w;
         }
         else if (alias.name() == "d")
         {
-            auto type =
-                cpp_pointer_type::build(add_cv(cpp_builtin_type::build(cpp_uint), cpp_cv_const));
+            auto type
+                = cpp_pointer_type::build(add_cv(cpp_builtin_type::build(cpp_uint), cpp_cv_const));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else if (alias.name() == "e")
@@ -375,9 +375,9 @@ typedef decltype(0) w;
         }
         else if (alias.name() == "g")
         {
-            auto type =
-                cpp_reference_type::build(add_cv(cpp_builtin_type::build(cpp_int), cpp_cv_const),
-                                          cpp_ref_rvalue);
+            auto type
+                = cpp_reference_type::build(add_cv(cpp_builtin_type::build(cpp_int), cpp_cv_const),
+                                            cpp_ref_rvalue);
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else if (alias.name() == "h")
@@ -399,21 +399,21 @@ typedef decltype(0) w;
         }
         else if (alias.name() == "k")
         {
-            auto type =
-                cpp_array_type::build(cpp_builtin_type::build(cpp_int), make_size("42", true));
+            auto type
+                = cpp_array_type::build(cpp_builtin_type::build(cpp_int), make_size("42", true));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else if (alias.name() == "l")
         {
-            auto type =
-                cpp_array_type::build(cpp_pointer_type::build(cpp_builtin_type::build(cpp_float)),
-                                      nullptr);
+            auto type
+                = cpp_array_type::build(cpp_pointer_type::build(cpp_builtin_type::build(cpp_float)),
+                                        nullptr);
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else if (alias.name() == "m")
         {
-            auto type =
-                cpp_array_type::build(cpp_builtin_type::build(cpp_char), make_size("42", true));
+            auto type
+                = cpp_array_type::build(cpp_builtin_type::build(cpp_char), make_size("42", true));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
         }
         else if (alias.name() == "n")
@@ -474,10 +474,12 @@ typedef decltype(0) w;
         }
         else if (alias.name() == "s")
         {
-            auto pointee = cpp_member_object_type::
-                build(cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "foo")),
-                      cpp_unexposed_type::build(
-                          "int")); // type not exposed directly for some reason
+            auto pointee
+                = cpp_member_object_type::build(cpp_user_defined_type::build(
+                                                    cpp_type_ref(cpp_entity_id(""), "foo")),
+                                                cpp_unexposed_type::build(
+                                                    "int")); // type not exposed directly for some
+                                                             // reason
             auto type = cpp_pointer_type::build(std::move(pointee));
 
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));

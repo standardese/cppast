@@ -4,8 +4,8 @@
 
 #include "parse_functions.hpp"
 
-#include <cppast/cpp_storage_class_specifiers.hpp>
 #include <cppast/cpp_static_assert.hpp>
+#include <cppast/cpp_storage_class_specifiers.hpp>
 
 #include "libclang_visitor.hpp"
 
@@ -100,16 +100,16 @@ void detail::comment_context::match(cpp_entity& e, unsigned line, bool skip_comm
 
 namespace
 {
-    bool is_friend(const CXCursor& parent_cur)
-    {
+bool is_friend(const CXCursor& parent_cur)
+{
 #if CPPAST_CINDEX_HAS_FRIEND
-        return clang_getCursorKind(parent_cur) == CXCursor_FriendDecl;
+    return clang_getCursorKind(parent_cur) == CXCursor_FriendDecl;
 #else
-        (void)parent_cur;
-        return false;
+    (void)parent_cur;
+    return false;
 #endif
-    }
 }
+} // namespace
 
 std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& context,
                                                  cpp_entity* parent, const CXCursor& cur,
@@ -165,25 +165,25 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
         return parse_cpp_member_variable(context, cur);
 
     case CXCursor_FunctionDecl:
-        if (auto tfunc =
-                try_parse_cpp_function_template_specialization(context, cur, is_friend(parent_cur)))
+        if (auto tfunc
+            = try_parse_cpp_function_template_specialization(context, cur, is_friend(parent_cur)))
             return tfunc;
         return parse_cpp_function(context, cur, is_friend(parent_cur));
     case CXCursor_CXXMethod:
-        if (auto tfunc =
-                try_parse_cpp_function_template_specialization(context, cur, is_friend(parent_cur)))
+        if (auto tfunc
+            = try_parse_cpp_function_template_specialization(context, cur, is_friend(parent_cur)))
             return tfunc;
         else if (auto func = try_parse_static_cpp_function(context, cur))
             return func;
         return parse_cpp_member_function(context, cur, is_friend(parent_cur));
     case CXCursor_ConversionFunction:
-        if (auto tfunc =
-                try_parse_cpp_function_template_specialization(context, cur, is_friend(parent_cur)))
+        if (auto tfunc
+            = try_parse_cpp_function_template_specialization(context, cur, is_friend(parent_cur)))
             return tfunc;
         return parse_cpp_conversion_op(context, cur, is_friend(parent_cur));
     case CXCursor_Constructor:
-        if (auto tfunc =
-                try_parse_cpp_function_template_specialization(context, cur, is_friend(parent_cur)))
+        if (auto tfunc
+            = try_parse_cpp_function_template_specialization(context, cur, is_friend(parent_cur)))
             return tfunc;
         return parse_cpp_constructor(context, cur, is_friend(parent_cur));
     case CXCursor_Destructor:

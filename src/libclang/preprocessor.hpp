@@ -10,46 +10,46 @@
 
 namespace cppast
 {
-    namespace detail
+namespace detail
+{
+    struct pp_macro
     {
-        struct pp_macro
+        std::unique_ptr<cpp_macro_definition> macro;
+        unsigned                              line;
+    };
+
+    struct pp_include
+    {
+        std::string      file_name, full_path;
+        cpp_include_kind kind;
+        unsigned         line;
+    };
+
+    struct pp_doc_comment
+    {
+        std::string comment;
+        unsigned    line;
+        enum
         {
-            std::unique_ptr<cpp_macro_definition> macro;
-            unsigned                              line;
-        };
+            c,
+            cpp,
+            end_of_line,
+        } kind;
 
-        struct pp_include
-        {
-            std::string      file_name, full_path;
-            cpp_include_kind kind;
-            unsigned         line;
-        };
+        bool matches(const cpp_entity& e, unsigned line);
+    };
 
-        struct pp_doc_comment
-        {
-            std::string comment;
-            unsigned    line;
-            enum
-            {
-                c,
-                cpp,
-                end_of_line,
-            } kind;
+    struct preprocessor_output
+    {
+        std::string                 source;
+        std::vector<pp_include>     includes;
+        std::vector<pp_macro>       macros;
+        std::vector<pp_doc_comment> comments;
+    };
 
-            bool matches(const cpp_entity& e, unsigned line);
-        };
-
-        struct preprocessor_output
-        {
-            std::string                 source;
-            std::vector<pp_include>     includes;
-            std::vector<pp_macro>       macros;
-            std::vector<pp_doc_comment> comments;
-        };
-
-        preprocessor_output preprocess(const libclang_compile_config& config, const char* path,
-                                       const diagnostic_logger& logger);
-    }
-} // namespace cppast::detail
+    preprocessor_output preprocess(const libclang_compile_config& config, const char* path,
+                                   const diagnostic_logger& logger);
+} // namespace detail
+} // namespace cppast
 
 #endif // CPPAST_PREPROCESSOR_HPP_INCLUDED

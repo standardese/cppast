@@ -28,7 +28,7 @@ detail::cxstring detail::get_type_kind_spelling(const CXType& type) noexcept
 
 namespace
 {
-    std::mutex mtx;
+std::mutex mtx;
 }
 
 void detail::print_cursor_info(const CXCursor& cur) noexcept

@@ -64,8 +64,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_variable(const detail::parse_conte
     detail::cxtokenizer tokenizer(context.tu, context.file, cur);
     for (auto& token : tokenizer)
         if (token.value() == "thread_local")
-            storage_class =
-                cpp_storage_class_specifiers(storage_class | cpp_storage_class_thread_local);
+            storage_class
+                = cpp_storage_class_specifiers(storage_class | cpp_storage_class_thread_local);
         else if (token.value() == "constexpr")
             is_constexpr = true;
 
@@ -75,9 +75,9 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_variable(const detail::parse_conte
     std::unique_ptr<cpp_variable> result;
     if (clang_isCursorDefinition(cur))
     {
-        result =
-            cpp_variable::build(*context.idx, get_entity_id(cur), name.c_str(), std::move(type),
-                                std::move(default_value), storage_class, is_constexpr);
+        result
+            = cpp_variable::build(*context.idx, get_entity_id(cur), name.c_str(), std::move(type),
+                                  std::move(default_value), storage_class, is_constexpr);
     }
     else
         result = cpp_variable::build_declaration(get_entity_id(cur), name.c_str(), std::move(type),

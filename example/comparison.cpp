@@ -5,7 +5,8 @@
 /// \file
 /// Generate equality comparisons.
 ///
-/// Given an input file, it will generate comparison operators for each class that has the [[generate::comparison]] attribute.
+/// Given an input file, it will generate comparison operators for each class that has the
+/// [[generate::comparison]] attribute.
 
 #include <algorithm>
 #include <iostream>
@@ -94,8 +95,8 @@ void generate_comparison(const cppast::cpp_file& file)
                       {
                           // it is a new class
                           auto& class_ = static_cast<const cppast::cpp_class&>(e);
-                          auto& attribute =
-                              cppast::has_attribute(e, "generate::comparison").value();
+                          auto& attribute
+                              = cppast::has_attribute(e, "generate::comparison").value();
 
                           // generate requested operators
                           if (attribute.arguments())

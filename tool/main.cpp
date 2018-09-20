@@ -6,12 +6,12 @@
 
 #include <cxxopts.hpp>
 
-#include <cppast/libclang_parser.hpp> // for libclang_parser, libclang_compile_config, cpp_entity,...
-#include <cppast/visitor.hpp>         // for visit()
-#include <cppast/code_generator.hpp>  // for generate_code()
+#include <cppast/code_generator.hpp>         // for generate_code()
 #include <cppast/cpp_entity_kind.hpp>        // for the cpp_entity_kind definition
 #include <cppast/cpp_forward_declarable.hpp> // for is_definition()
 #include <cppast/cpp_namespace.hpp>          // for cpp_namespace
+#include <cppast/libclang_parser.hpp> // for libclang_parser, libclang_compile_config, cpp_entity,...
+#include <cppast/visitor.hpp>         // for visit()
 
 // print help options
 void print_help(const cxxopts::Options& options)
@@ -239,12 +239,12 @@ int main(int argc, char* argv[]) try
             cppast::libclang_compilation_database database(
                 options["database_dir"].as<std::string>());
             if (options.count("database_file"))
-                config =
-                    cppast::libclang_compile_config(database,
-                                                    options["database_file"].as<std::string>());
+                config
+                    = cppast::libclang_compile_config(database,
+                                                      options["database_file"].as<std::string>());
             else
-                config =
-                    cppast::libclang_compile_config(database, options["file"].as<std::string>());
+                config
+                    = cppast::libclang_compile_config(database, options["file"].as<std::string>());
         }
 
         if (options.count("verbose"))

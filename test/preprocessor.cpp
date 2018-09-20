@@ -65,7 +65,8 @@ TEST_CASE("preprocessing use external macro")
 auto result = NAN;
 
 #endif
-)", fast_preprocessing);
+)",
+                      fast_preprocessing);
 
     test_visit<cpp_variable>(*file, [&](const cpp_variable&) {});
 }
@@ -302,7 +303,8 @@ void j();
     {
         if (comment.content == "cstddef\ncstddef")
             // happens if include parsing is not supported
-            // error is still going to be detected because if it is supported, the entity will be matched above
+            // error is still going to be detected because if it is supported, the entity will be
+            // matched above
             add = 1u;
         else
             REQUIRE(comment.content == "u");

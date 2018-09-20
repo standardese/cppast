@@ -34,36 +34,36 @@ namespace ns2
 )";
     const char* order[] = {"A", "B", "ns", "C", "D", "E", "ns2", "F"};
 
-    auto check_macro = [](const cpp_macro_definition& macro, const char* replacement,
-                          const char* args) {
-        REQUIRE(macro.replacement() == replacement);
-        if (args)
-        {
-            REQUIRE(macro.is_function_like());
+    auto check_macro
+        = [](const cpp_macro_definition& macro, const char* replacement, const char* args) {
+              REQUIRE(macro.replacement() == replacement);
+              if (args)
+              {
+                  REQUIRE(macro.is_function_like());
 
-            std::string params;
-            for (auto& param : macro.parameters())
-            {
-                if (!params.empty())
-                    params += ",";
-                params += param.name();
-            }
-            if (macro.is_variadic())
-            {
-                if (!params.empty())
-                    params += ",";
-                params += "...";
-            }
+                  std::string params;
+                  for (auto& param : macro.parameters())
+                  {
+                      if (!params.empty())
+                          params += ",";
+                      params += param.name();
+                  }
+                  if (macro.is_variadic())
+                  {
+                      if (!params.empty())
+                          params += ",";
+                      params += "...";
+                  }
 
-            REQUIRE(params == args);
-        }
-        else
-        {
-            REQUIRE(!macro.is_function_like());
-            REQUIRE(!macro.is_variadic());
-            REQUIRE(macro.parameters().empty());
-        }
-    };
+                  REQUIRE(params == args);
+              }
+              else
+              {
+                  REQUIRE(!macro.is_function_like());
+                  REQUIRE(!macro.is_variadic());
+                  REQUIRE(macro.parameters().empty());
+              }
+          };
 
     auto file  = parse({}, "cpp_macro_definition.cpp", code);
     auto count = test_visit<cpp_macro_definition>(*file, [&](const cpp_macro_definition& macro) {
@@ -117,25 +117,25 @@ b
     auto             file_a = parse(idx, "header_a.hpp", header_a);
     auto             file_b = parse(idx, "header_b.hpp", header_b);
 
-    auto count =
-        test_visit<cpp_include_directive>(*file_a, [&](const cpp_include_directive& include) {
-            if (include.name() == "iostream")
-            {
-                REQUIRE(include.target().name() == include.name());
-                REQUIRE(include.include_kind() == cppast::cpp_include_kind::system);
-                REQUIRE(include.target().get(idx).empty());
-                REQUIRE_THAT(include.full_path(), Catch::EndsWith("iostream"));
-            }
-            else if (include.name() == "cpp_include_directive-header.hpp")
-            {
-                REQUIRE(include.target().name() == include.name());
-                REQUIRE(include.include_kind() == cppast::cpp_include_kind::local);
-                REQUIRE(include.target().get(idx).empty());
-                REQUIRE(include.full_path() == "./cpp_include_directive-header.hpp");
-            }
-            else
-                REQUIRE(false);
-        });
+    auto count
+        = test_visit<cpp_include_directive>(*file_a, [&](const cpp_include_directive& include) {
+              if (include.name() == "iostream")
+              {
+                  REQUIRE(include.target().name() == include.name());
+                  REQUIRE(include.include_kind() == cppast::cpp_include_kind::system);
+                  REQUIRE(include.target().get(idx).empty());
+                  REQUIRE_THAT(include.full_path(), Catch::EndsWith("iostream"));
+              }
+              else if (include.name() == "cpp_include_directive-header.hpp")
+              {
+                  REQUIRE(include.target().name() == include.name());
+                  REQUIRE(include.include_kind() == cppast::cpp_include_kind::local);
+                  REQUIRE(include.target().get(idx).empty());
+                  REQUIRE(include.full_path() == "./cpp_include_directive-header.hpp");
+              }
+              else
+                  REQUIRE(false);
+          });
     REQUIRE(count == 2u);
 
     count = test_visit<cpp_include_directive>(*file_b, [&](const cpp_include_directive& include) {

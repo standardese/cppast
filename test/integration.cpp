@@ -16,53 +16,53 @@ TEST_CASE("stdlib", "[!hide][integration]")
 //#include <cstdlib> -- problem with compiler built-in stuff on OSX
 #include <csignal>
 //#include <csetjmp> -- same as above
-#include <cstdarg>
-#include <typeinfo>
-#include <typeindex>
-#include <type_traits>
 #include <bitset>
-#include <functional>
-#include <utility>
-#include <ctime>
 #include <chrono>
+#include <cstdarg>
 #include <cstddef>
+#include <ctime>
+#include <functional>
 #include <initializer_list>
 #include <tuple>
+#include <type_traits>
+#include <typeindex>
+#include <typeinfo>
+#include <utility>
 
-#include <new>
 #include <memory>
+#include <new>
 #include <scoped_allocator>
 
-#include <climits>
 #include <cfloat>
+#include <climits>
 #include <cstdint>
 //#include <cinttypes> -- missing types from C header (for some reason)
 #include <limits>
 
 //#include <exception> -- weird issue with compiler built-in stuff
-#include <stdexcept>
 #include <cassert>
-#include <system_error>
 #include <cerrno>
+#include <stdexcept>
+#include <system_error>
 
 #include <cctype>
-#include <cwctype>
 #include <cstring>
 #include <cwchar>
+#include <cwctype>
 //#include <cuchar> -- not supported on CI
 #include <string>
 
 #include <array>
-#include <vector>
 #include <deque>
-#include <list>
 #include <forward_list>
-#include <set>
+#include <list>
 #include <map>
-#include <unordered_set>
-#include <unordered_map>
-#include <stack>
 #include <queue>
+#include <set>
+#include <stack>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 #include <algorithm>
 
@@ -70,22 +70,22 @@ TEST_CASE("stdlib", "[!hide][integration]")
 
 //#include <cmath> -- non-conforming GCC extension with regards to constexpr
 //#include <complex> -- weird double include issue under MSVC
-#include <valarray>
-#include <random>
 #include <numeric>
+#include <random>
 #include <ratio>
+#include <valarray>
 //#include <cfenv> -- same issue with cinttypes
 
-#include <iosfwd>
+#include <cstdio>
+#include <fstream>
+#include <iomanip>
 #include <ios>
+#include <iosfwd>
+#include <iostream>
 #include <istream>
 #include <ostream>
-#include <iostream>
-#include <fstream>
 #include <sstream>
-#include <iomanip>
 #include <streambuf>
-#include <cstdio>
 
 #include <locale>
 //#include <clocale> -- issue on OSX
@@ -94,10 +94,10 @@ TEST_CASE("stdlib", "[!hide][integration]")
 
 //#include <atomic> -- issue on MSVC
 
-#include <thread>
-#include <mutex>
-#include <future>
 #include <condition_variable>
+#include <future>
+#include <mutex>
+#include <thread>
 )";
     write_file("stdlib.cpp", code);
 

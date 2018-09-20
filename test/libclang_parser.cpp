@@ -57,7 +57,7 @@ TEST_CASE("libclang_compile_config")
 }
 ])";
 
-#define CPPAST_DETAIL_DRIVE "C:"
+#    define CPPAST_DETAIL_DRIVE "C:"
 
 #else
     auto json = R"([
@@ -83,7 +83,7 @@ TEST_CASE("libclang_compile_config")
 }
 ])";
 
-#define CPPAST_DETAIL_DRIVE
+#    define CPPAST_DETAIL_DRIVE
 
 #endif
 
