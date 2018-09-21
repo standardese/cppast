@@ -169,11 +169,15 @@ function(_cppast_find_libclang config_tool min_version force)
 
             # glob all libraries and put them inside a group,
             # as the correct order cannot be determined apparently
-            file(GLOB clang_libraries "${llvm_library_dir}/lib*.a")
+            file(GLOB clang_libraries "${llvm_library_dir}/libclang*.a")
             string(REPLACE ";" " " clang_libraries "${clang_libraries}")
             set(clang_libraries "-Wl,--start-group ${clang_libraries} -Wl,--end-group")
 
-            set(LIBCLANG_LIBRARY "${clang_libraries}" CACHE INTERNAL "")
+            file(GLOB llvm_libraries "${llvm_library_dir}/libLLVM*.a")
+            string(REPLACE ";" " " llvm_libraries "${llvm_libraries}")
+            set(llvm_libraries "-Wl,--start-group ${llvm_libraries} -Wl,--end-group")
+
+            set(LIBCLANG_LIBRARY "${clang_libraries} ${llvm_libraries}" CACHE INTERNAL "")
         endif()
     endif()
 
