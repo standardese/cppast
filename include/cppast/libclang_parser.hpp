@@ -20,8 +20,6 @@ namespace detail
     {
         static const std::string& clang_binary(const libclang_compile_config& config);
 
-        static int clang_version(const libclang_compile_config& config);
-
         static const std::vector<std::string>& flags(const libclang_compile_config& config);
 
         static bool write_preprocessed(const libclang_compile_config& config);
@@ -119,11 +117,11 @@ public:
     libclang_compile_config& operator=(const libclang_compile_config& other) = default;
 
     /// \effects Sets the path to the location of the `clang++` binary and the version of that
-    /// binary. \notes It will be used for preprocessing.
-    void set_clang_binary(std::string binary, int major, int minor, int patch)
+    /// binary.
+    /// \notes It will be used for preprocessing.
+    void set_clang_binary(std::string binary)
     {
-        clang_binary_  = std::move(binary);
-        clang_version_ = major * 10000 + minor * 100 + patch;
+        clang_binary_ = std::move(binary);
     }
 
     /// \effects Sets whether or not the preprocessed file will be written out.
@@ -170,7 +168,6 @@ private:
     }
 
     std::string clang_binary_;
-    int         clang_version_;
     bool        write_preprocessed_ : 1;
     bool        fast_preprocessing_ : 1;
     bool        remove_comments_in_macro_ : 1;

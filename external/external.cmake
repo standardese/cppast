@@ -212,7 +212,7 @@ function(_cppast_find_libclang config_tool min_version force)
     endif()
 endfunction()
 
-set(llvm_min_version 3.9.1)
+set(llvm_min_version 4.0.0)
 
 if(NOT DEFINED LLVM_PREFERRED_VERSION)
     set(LLVM_PREFERRED_VERSION 4.0.0 CACHE STRING "the preferred LLVM version")

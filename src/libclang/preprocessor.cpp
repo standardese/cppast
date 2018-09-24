@@ -206,9 +206,8 @@ std::string get_preprocess_command(const libclang_compile_config& c, const char*
         // -no*: disable default include search paths
         flags += " -nostdinc -nostdinc++";
 
-    if (detail::libclang_compile_config_access::clang_version(c) >= 40000)
-        // -Xclang -dI: print include directives as well (clang >= 4.0.0)
-        flags += " -Xclang -dI";
+    // -Xclang -dI: print include directives as well
+    flags += " -Xclang -dI";
 
     flags += diagnostics_flags();
 
@@ -1068,13 +1067,6 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
     std::unordered_map<std::string, std::string> indirect_includes;
 
     auto preprocessed = clang_preprocess(config, path, logger);
-
-    if (detail::libclang_compile_config_access::clang_version(config) < 40000)
-    {
-        // add headers from diagnostics w/o line information
-        for (auto name : preprocessed.included_files)
-            result.includes.push_back(pp_include{name, "", cpp_include_kind::local, 1u});
-    }
 
     position p(ts::ref(result.source), preprocessed.file.c_str());
     ts::flag in_string(false), in_char(false), first_line(true);

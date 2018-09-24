@@ -12,7 +12,6 @@
 
 using namespace cppast;
 
-#if CPPAST_CINDEX_HAS_FRIEND
 std::unique_ptr<cpp_entity> detail::parse_cpp_friend(const detail::parse_context& context,
                                                      const CXCursor&              cur)
 {
@@ -107,4 +106,3 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_friend(const detail::parse_context
     context.comments.match(*result, cur);
     return result;
 }
-#endif

@@ -115,12 +115,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class(const detail::parse_context&
 {
     auto is_templated = (clang_getTemplateCursorKind(cur) != CXCursor_NoDeclFound
                          || !clang_Cursor_isNull(clang_getSpecializedCursorTemplate(cur)));
-#if CPPAST_CINDEX_HAS_FRIEND
-    auto is_friend = clang_getCursorKind(parent_cur) == CXCursor_FriendDecl;
-#else
-    (void)parent_cur;
-    auto is_friend = false;
-#endif
+    auto is_friend    = clang_getCursorKind(parent_cur) == CXCursor_FriendDecl;
 
     auto                                builder = make_class_builder(context, cur);
     type_safe::optional<cpp_entity_ref> semantic_parent;

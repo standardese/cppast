@@ -13,12 +13,6 @@
 #include "preprocessor.hpp"
 #include "raii_wrapper.hpp"
 
-#if CINDEX_VERSION_MINOR >= 36
-#    define CPPAST_CINDEX_HAS_FRIEND 1
-#else
-#    define CPPAST_CINDEX_HAS_FRIEND 0
-#endif
-
 namespace cppast
 {
 class cpp_expression;

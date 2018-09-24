@@ -199,11 +199,7 @@ CXSourceRange get_extent(const CXTranslationUnit& tu, const CXFile& file, const 
                 --paren_count;
             prev = next;
         }
-#if CINDEX_VERSION_MINOR < 37
-        end = prev;
-#else
         end = next;
-#endif
     }
     else if (kind == CXCursor_TemplateTemplateParameter && token_after_is(tu, file, end, "<", 0))
     {
@@ -272,12 +268,7 @@ CXSourceRange get_extent(const CXTranslationUnit& tu, const CXFile& file, const 
         // need to shrink range by one
         end = get_next_location(tu, file, end, -1);
     else if (kind == CXCursor_FieldDecl || kind == CXCursor_NonTypeTemplateParameter
-             || kind == CXCursor_TemplateTemplateParameter
-#if CINDEX_VERSION_MINOR < 37
-             || clang_isExpression(kind) || kind == CXCursor_CXXBaseSpecifier
-             || kind == CXCursor_TemplateTypeParameter
-#endif
-    )
+             || kind == CXCursor_TemplateTemplateParameter)
         // need to shrink range by one
         end = get_next_location(tu, file, end, -1);
     else if (kind == CXCursor_UnexposedDecl)

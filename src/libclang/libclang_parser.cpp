@@ -25,11 +25,6 @@ const std::string& detail::libclang_compile_config_access::clang_binary(
     return config.clang_binary_;
 }
 
-int detail::libclang_compile_config_access::clang_version(const libclang_compile_config& config)
-{
-    return config.clang_version_;
-}
-
 const std::vector<std::string>& detail::libclang_compile_config_access::flags(
     const libclang_compile_config& config)
 {
@@ -79,30 +74,12 @@ bool libclang_compilation_database::has_config(const char* file_name) const
     return true;
 }
 
-namespace
-{
-int parse_number(const char*& str)
-{
-    auto result = 0;
-    for (; *str && *str != '.'; ++str)
-    {
-        result *= 10;
-        result += int(*str - '0');
-    }
-    return result;
-}
-} // namespace
-
 libclang_compile_config::libclang_compile_config()
 : compile_config({}), write_preprocessed_(false), fast_preprocessing_(false),
   remove_comments_in_macro_(false)
 {
     // set given clang binary
-    auto ptr   = CPPAST_CLANG_VERSION_STRING;
-    auto major = parse_number(ptr);
-    auto minor = parse_number(ptr);
-    auto patch = parse_number(ptr);
-    set_clang_binary(CPPAST_CLANG_BINARY, major, minor, patch);
+    set_clang_binary(CPPAST_CLANG_BINARY);
 
     // set system include dir
     add_include_dir(CPPAST_LIBCLANG_SYSTEM_INCLUDE_DIR);

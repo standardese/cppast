@@ -102,12 +102,7 @@ namespace
 {
 bool is_friend(const CXCursor& parent_cur)
 {
-#if CPPAST_CINDEX_HAS_FRIEND
     return clang_getCursorKind(parent_cur) == CXCursor_FriendDecl;
-#else
-    (void)parent_cur;
-    return false;
-#endif
 }
 } // namespace
 
@@ -189,10 +184,8 @@ std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& co
     case CXCursor_Destructor:
         return parse_cpp_destructor(context, cur, is_friend(parent_cur));
 
-#if CPPAST_CINDEX_HAS_FRIEND
     case CXCursor_FriendDecl:
         return parse_cpp_friend(context, cur);
-#endif
 
     case CXCursor_TypeAliasTemplateDecl:
         return parse_cpp_alias_template(context, cur);
