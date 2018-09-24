@@ -196,9 +196,7 @@ function(_cppast_find_libclang config_tool min_version force)
     endif()
 
     # find clang binary in llvm_binary_dir
-    if(${force})
-        unset(CLANG_BINARY CACHE)
-    endif()
+    # note: never override that binary
     if(NOT CLANG_BINARY)
         execute_process(COMMAND ${config_tool} --bindir
                         OUTPUT_VARIABLE llvm_binary_dir OUTPUT_STRIP_TRAILING_WHITESPACE)
