@@ -118,11 +118,10 @@ public:
 
     /// \effects Sets the path to the location of the `clang++` binary and the version of that
     /// binary.
+    /// If the binary is not found, it will try and search for it.
+    /// \returns `true` if the binary was found exactly as specified.
     /// \notes It will be used for preprocessing.
-    void set_clang_binary(std::string binary)
-    {
-        clang_binary_ = std::move(binary);
-    }
+    bool set_clang_binary(std::string binary);
 
     /// \effects Sets whether or not the preprocessed file will be written out.
     /// Default value is `false`.

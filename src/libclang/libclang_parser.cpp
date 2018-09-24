@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <clang-c/CXCompilationDatabase.h>
+#include <process.hpp>
 
 #include "cxtokenizer.hpp"
 #include "libclang_visitor.hpp"
@@ -18,6 +19,7 @@
 #include "raii_wrapper.hpp"
 
 using namespace cppast;
+namespace tpl = TinyProcessLib;
 
 const std::string& detail::libclang_compile_config_access::clang_binary(
     const libclang_compile_config& config)
@@ -237,6 +239,40 @@ libclang_compile_config::libclang_compile_config(const libclang_compilation_data
                 // other options
                 add_flag(std::move(flag) + std::move(args));
         });
+    }
+}
+
+namespace
+{
+bool is_valid_binary(const std::string& binary)
+{
+    tpl::Process process(binary + " -v", "", [](const char*, std::size_t) {},
+                         [](const char*, std::size_t) {});
+    return process.get_exit_status() == 0;
+}
+} // namespace
+
+bool libclang_compile_config::set_clang_binary(std::string binary)
+{
+    if (is_valid_binary(binary))
+    {
+        clang_binary_ = binary;
+        return true;
+    }
+    else
+    {
+        // first search in current directory, then in PATH
+        static const char* paths[]
+            = {"./clang++",   "clang++",       "./clang++-4.0", "clang++-4.0", "./clang++-5.0",
+               "clang++-5.0", "./clang++-6.0", "clang++-6.0",   "./clang-7",   "clang-7"};
+        for (auto& p : paths)
+            if (is_valid_binary(p))
+            {
+                clang_binary_ = p;
+                return false;
+            }
+
+        throw std::invalid_argument("unable to find clang binary '" + binary + "'");
     }
 }
 
