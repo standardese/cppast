@@ -581,6 +581,14 @@ std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context, 
 #if CINDEX_VERSION_MINOR > 43
     case CXType_Float16:
 #endif
+#if CINDEX_VERSION_MINOR > 48
+    case CXType_ShortAccum:
+    case CXType_Accum:
+    case CXType_LongAccum:
+    case CXType_UShortAccum:
+    case CXType_UAccum:
+    case CXType_ULongAccum:
+#endif
         context.logger->log("libclang parser",
                             format_diagnostic(severity::warning, detail::make_location(type),
                                               "unexpected type of kind '",
