@@ -28,8 +28,8 @@ using c = void;
 template <class D = decltype(1 + 3)>
 using d = void;
 
-// maximal munch here
-template <typename E = a<void>>
+// potential maximal munch here, but ignore it
+template <typename E = a<void> >
 using e = void;
 )";
 
