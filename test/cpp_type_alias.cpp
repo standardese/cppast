@@ -474,15 +474,23 @@ typedef decltype(0) w;
         }
         else if (alias.name() == "s")
         {
+            // in old libclang version, the member type isn't exposed for some reason
             auto pointee
                 = cpp_member_object_type::build(cpp_user_defined_type::build(
                                                     cpp_type_ref(cpp_entity_id(""), "foo")),
-                                                cpp_unexposed_type::build(
-                                                    "int")); // type not exposed directly for some
-                                                             // reason
-            auto type = cpp_pointer_type::build(std::move(pointee));
+                                                cpp_unexposed_type::build("int"));
+            auto type         = cpp_pointer_type::build(std::move(pointee));
+            auto is_unexposed = equal_types(idx, alias.underlying_type(), *type);
 
-            REQUIRE(equal_types(idx, alias.underlying_type(), *type));
+            if (!is_unexposed)
+            {
+                pointee = cpp_member_object_type::build(cpp_user_defined_type::build(
+                                                            cpp_type_ref(cpp_entity_id(""), "foo")),
+                                                        cpp_builtin_type::build(cpp_int));
+                type    = cpp_pointer_type::build(std::move(pointee));
+                auto is_builtin = equal_types(idx, alias.underlying_type(), *type);
+                REQUIRE(is_builtin);
+            }
         }
         else if (alias.name() == "t")
         {
