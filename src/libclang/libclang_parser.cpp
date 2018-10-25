@@ -222,6 +222,8 @@ libclang_compile_config::libclang_compile_config(const libclang_compilation_data
         parse_flags(cmd, [&](std::string flag, std::string args) {
             if (flag == "-I")
                 add_flag(std::move(flag) + get_full_path(dir, args));
+            else if (flag == "-isystem")
+                add_flag(std::move(flag) + get_full_path(dir, args));
             else if (flag == "-D" || flag == "-U")
             {
                 // preprocessor options
