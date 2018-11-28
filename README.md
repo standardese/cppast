@@ -48,7 +48,8 @@ TODO, refer to documentation comments in header file.
 
 The library can be used as CMake subdirectory, download it and call `add_subdirectory(path/to/cppast)`, then link to the `cppast` target and enable C++11 or higher.
 
-The parser needs `libclang` and the `clang++` binary, at least version 3.9.1, but works better with 4.0.0.
+The parser needs `libclang` and the `clang++` binary, at least version 4.0.0.
+The `clang++` binary will be found in `PATH` and in the same directory as the program that is being executed.
 
 *Note: The project will drop support for older LLVM versions very soon; this minimizes the workaround code when the `libclang` API catches up.*
 
@@ -61,7 +62,10 @@ For that you need to set `LLVM_DOWNLOAD_OS_NAME`.
 This is the name of the operating system used on the [LLVM pre-built binary archive](http://releases.llvm.org/download.html#4.0.0), e.g. `x86_64-linux-gnu-ubuntu-16.10` for Ubuntu 16.10.
 
 If you don't have `llvm-config`, you need to pass the locations explictly.
-For that set the option `LLVM_VERSION_EXPLICIT` to the version you're using, `LIBCLANG_LIBRARY` to the location of the libclang library file, `LIBCLANG_INCLUDE_DIR` to the directory where the header files are located (so they can be included with `clang-c/Index.h`), `LIBCLANG_SYSTEM_INCLUDE_DIR` where the system header files are located (i.e. `stddef.h` etc, usually under `prefix/lib/clang/<version>/include`) and `CLANG_BINARY` to the full path of the `clang++` exectuable.
+For that set the option `LLVM_VERSION_EXPLICIT` to the version you're using,
+`LIBCLANG_LIBRARY` to the location of the libclang library file,
+`LIBCLANG_INCLUDE_DIR` to the directory where the header files are located (so they can be included with `clang-c/Index.h`),
+and `CLANG_BINARY` to the full path of the `clang++` exectuable.
 
 The other dependencies like [type_safe](http://type_safe.foonathan.net) are installed automatically with git submodules, if they're not installed already.
 
