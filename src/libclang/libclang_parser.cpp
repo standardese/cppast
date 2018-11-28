@@ -76,15 +76,15 @@ bool libclang_compilation_database::has_config(const char* file_name) const
     return true;
 }
 
+namespace
+{} // namespace
+
 libclang_compile_config::libclang_compile_config()
 : compile_config({}), write_preprocessed_(false), fast_preprocessing_(false),
   remove_comments_in_macro_(false)
 {
     // set given clang binary
     set_clang_binary(CPPAST_CLANG_BINARY);
-
-    // set system include dir
-    add_include_dir(CPPAST_LIBCLANG_SYSTEM_INCLUDE_DIR);
 
     // set macros to detect cppast
     define_macro("__cppast__", "libclang");
@@ -252,6 +252,37 @@ bool is_valid_binary(const std::string& binary)
                          [](const char*, std::size_t) {});
     return process.get_exit_status() == 0;
 }
+
+void add_default_include_dirs(libclang_compile_config& config)
+{
+    std::string  verbose_output;
+    tpl::Process process(detail::libclang_compile_config_access::clang_binary(config)
+                             + " -x c++ -v -",
+                         "", [](const char*, std::size_t) {},
+                         [&](const char* str, std::size_t n) { verbose_output.append(str, n); },
+                         true);
+    process.write("", 1);
+    process.close_stdin();
+    process.get_exit_status();
+
+    auto pos = verbose_output.find("#include <...>");
+    DEBUG_ASSERT(pos != std::string::npos, detail::assert_handler{});
+    while (verbose_output[pos] != '\n')
+        ++pos;
+    ++pos;
+
+    // now every line is an include path, starting with a space
+    while (verbose_output[pos] == ' ')
+    {
+        auto start = pos + 1;
+        while (verbose_output[pos] != '\n')
+            ++pos;
+        auto end = pos;
+        ++pos;
+
+        config.add_include_dir(verbose_output.substr(start, end - start));
+    }
+}
 } // namespace
 
 bool libclang_compile_config::set_clang_binary(std::string binary)
@@ -259,6 +290,7 @@ bool libclang_compile_config::set_clang_binary(std::string binary)
     if (is_valid_binary(binary))
     {
         clang_binary_ = binary;
+        add_default_include_dirs(*this);
         return true;
     }
     else
@@ -271,6 +303,7 @@ bool libclang_compile_config::set_clang_binary(std::string binary)
             if (is_valid_binary(p))
             {
                 clang_binary_ = p;
+                add_default_include_dirs(*this);
                 return false;
             }
 

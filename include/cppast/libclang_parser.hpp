@@ -120,7 +120,9 @@ public:
     /// binary.
     /// If the binary is not found, it will try and search for it.
     /// \returns `true` if the binary was found exactly as specified.
-    /// \notes It will be used for preprocessing.
+    /// \notes This binary will be used for preprocessing as well as determining the default include
+    /// directories. As such, if it is called after include directories have already been added, the
+    /// order might end up being wrong.
     bool set_clang_binary(std::string binary);
 
     /// \effects Sets whether or not the preprocessed file will be written out.

@@ -181,20 +181,6 @@ function(_cppast_find_libclang config_tool min_version force)
         endif()
     endif()
 
-    # find system header files in llvm_library_dir
-    if(${force})
-        unset(LIBCLANG_SYSTEM_INCLUDE_DIR CACHE)
-    endif()
-    if(NOT LIBCLANG_SYSTEM_INCLUDE_DIR)
-        find_path(LIBCLANG_SYSTEM_INCLUDE_DIR "stddef.h" "${llvm_library_dir}/clang/${llvm_version}/include" NO_DEFAULT_PATH)
-
-        if(NOT LIBCLANG_SYSTEM_INCLUDE_DIR)
-            message(FATAL_ERROR "libclang system header files not found")
-        else()
-            message(STATUS "Found libclang system header files at ${LIBCLANG_SYSTEM_INCLUDE_DIR}")
-        endif()
-    endif()
-
     # find clang binary in llvm_binary_dir
     # note: never override that binary
     if(NOT CLANG_BINARY)
@@ -238,6 +224,5 @@ add_library(_cppast_libclang INTERFACE)
 target_link_libraries(_cppast_libclang INTERFACE ${LIBCLANG_LIBRARY})
 target_include_directories(_cppast_libclang INTERFACE ${LIBCLANG_INCLUDE_DIR})
 target_compile_definitions(_cppast_libclang INTERFACE
-                           CPPAST_LIBCLANG_SYSTEM_INCLUDE_DIR="${LIBCLANG_SYSTEM_INCLUDE_DIR}"
                            CPPAST_CLANG_BINARY="${CLANG_BINARY}"
                            CPPAST_CLANG_VERSION_STRING="${LLVM_VERSION}")
