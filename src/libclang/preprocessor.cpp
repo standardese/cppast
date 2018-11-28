@@ -178,7 +178,7 @@ std::string get_macro_command(const libclang_compile_config& c, const char* full
     // other flags
     for (auto& flag : detail::libclang_compile_config_access::flags(c))
     {
-        cmd += flag;
+        cmd += quote(flag);
         cmd += ' ';
     }
 

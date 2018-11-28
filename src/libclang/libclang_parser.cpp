@@ -253,6 +253,12 @@ bool is_valid_binary(const std::string& binary)
     return process.get_exit_status() == 0;
 }
 
+#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32)) && !defined(__CYGWIN__)
+#    define CPPAST_DETAIL_WINDOWS 1
+#else
+#    define CPPAST_DETAIL_WINDOWS 0
+#endif
+
 void add_default_include_dirs(libclang_compile_config& config)
 {
     std::string  verbose_output;
@@ -275,12 +281,34 @@ void add_default_include_dirs(libclang_compile_config& config)
     while (verbose_output[pos] == ' ')
     {
         auto start = pos + 1;
-        while (verbose_output[pos] != '\n')
+        while (verbose_output[pos] != '\r' && verbose_output[pos] != '\n')
             ++pos;
         auto end = pos;
         ++pos;
 
-        config.add_include_dir(verbose_output.substr(start, end - start));
+        auto        line = verbose_output.substr(start, end - start);
+        std::string path;
+        for (auto c : line)
+        {
+            if (c == ' ')
+            { // escape spaces
+#if CPPAST_DETAIL_WINDOWS
+                path += "^ ";
+#else
+                path += "\\ ";
+#endif
+            }
+            // clang under MacOS adds comments to paths using '(' at the end, so they have to be
+            // ignored however, Windows uses '(' in paths, so they don't have to be ignored
+#if !CPPAST_DETAIL_WINDOWS
+            else if (c == '(')
+                break;
+#endif
+            else
+                path += c;
+        }
+
+        config.add_include_dir(std::move(path));
     }
 }
 } // namespace
