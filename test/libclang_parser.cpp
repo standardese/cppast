@@ -23,9 +23,15 @@ void require_flags(const libclang_compile_config& config, const char* flags)
 {
     std::string result;
     auto        config_flags = detail::libclang_compile_config_access::flags(config);
-    // skip first 4, those are the default options
-    for (auto iter = config_flags.begin() + 4; iter != config_flags.end(); ++iter)
-        result += *iter + ' ';
+    // skip until including __cppast_version__minor__, those are the default options
+    auto in_default = true;
+    for (auto iter = config_flags.begin(); iter != config_flags.end(); ++iter)
+    {
+        if (*iter == "-D__cppast_version_minor__=\"" CPPAST_VERSION_MINOR "\"")
+            in_default = false;
+        else if (!in_default)
+            result += *iter + ' ';
+    }
     result.pop_back();
     REQUIRE(result == flags);
 }

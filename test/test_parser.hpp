@@ -23,14 +23,21 @@ inline void write_file(const char* name, const char* code)
     file << code;
 }
 
-inline std::unique_ptr<cppast::cpp_file> parse_file(const cppast::cpp_entity_index& idx,
-                                                    const char*                     name,
-                                                    bool fast_preprocessing = false)
+inline cppast::libclang_compile_config make_test_config()
 {
     using namespace cppast;
 
     libclang_compile_config config;
     config.set_flags(cpp_standard::cpp_latest);
+    return config;
+}
+
+inline std::unique_ptr<cppast::cpp_file> parse_file(const cppast::cpp_entity_index& idx,
+                                                    const char*                     name,
+                                                    bool fast_preprocessing = false)
+{
+    using namespace cppast;
+    static auto config = make_test_config();
     config.fast_preprocessing(fast_preprocessing);
 
     libclang_parser p(default_logger());
