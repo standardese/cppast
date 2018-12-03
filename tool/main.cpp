@@ -207,6 +207,8 @@ int main(int argc, char* argv[]) try
          cxxopts::value<std::vector<std::string>>())
         ("U,macro_undefinition", "undefine a macro on the command line",
          cxxopts::value<std::vector<std::string>>())
+        ("f,feature", "enable a custom feature (-fXX flag)",
+         cxxopts::value<std::vector<std::string>>())
         ("gnu_extensions", "enable GNU extensions (equivalent to -std=gnu++XX)")
         ("msvc_extensions", "enable MSVC extensions (equivalent to -fms-extensions)")
         ("msvc_compatibility", "enable MSVC compatibility (equivalent to -fms-compatibility)")
@@ -275,6 +277,9 @@ int main(int argc, char* argv[]) try
         if (options.count("macro_undefinition"))
             for (auto& name : options["macro_undefinition"].as<std::vector<std::string>>())
                 config.undefine_macro(name);
+        if (options.count("feature"))
+            for (auto& name : options["feature"].as<std::vector<std::string>>())
+                config.enable_feature(name);
 
         // the compile_flags are generic flags
         cppast::compile_flags flags;
