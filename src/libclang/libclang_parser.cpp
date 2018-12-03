@@ -237,7 +237,7 @@ libclang_compile_config::libclang_compile_config(const libclang_compilation_data
             else if (flag == "-std")
                 // standard
                 add_flag(std::move(flag) + "=" + std::move(args));
-            else if (flag == "-f" && (args == "ms-compatibility" || args == "ms-extensions"))
+            else if (flag == "-f")
                 // other options
                 add_flag(std::move(flag) + std::move(args));
         });
