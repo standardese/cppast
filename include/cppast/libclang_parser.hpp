@@ -157,6 +157,8 @@ public:
 private:
     void do_set_flags(cpp_standard standard, compile_flags flags) override;
 
+    bool do_enable_feature(std::string name) override;
+
     void do_add_include_dir(std::string path) override;
 
     void do_add_macro_definition(std::string name, std::string definition) override;

@@ -386,6 +386,12 @@ void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags 
         add_flag("-fms-extensions");
 }
 
+bool libclang_compile_config::do_enable_feature(std::string name)
+{
+    add_flag("-f" + std::move(name));
+    return true;
+}
+
 void libclang_compile_config::do_add_include_dir(std::string path)
 {
     add_flag("-I" + std::move(path));
