@@ -24,18 +24,6 @@ bool cursor_is_function(CXCursorKind kind)
            || kind == CXCursor_ConversionFunction;
 }
 
-CXSourceLocation get_next_location(const CXTranslationUnit& tu, CXFile file,
-                                   const CXSourceLocation& loc, int inc = 1)
-{
-    unsigned offset;
-    clang_getSpellingLocation(loc, nullptr, nullptr, nullptr, &offset);
-    if (inc >= 0)
-        offset += unsigned(inc);
-    else
-        offset -= unsigned(-inc);
-    return clang_getLocationForOffset(tu, file, offset);
-}
-
 class simple_tokenizer
 {
 public:
@@ -59,7 +47,23 @@ public:
 
     const CXToken& operator[](unsigned i) const noexcept
     {
+        DEBUG_ASSERT(i < no_, detail::assert_handler{});
         return tokens_[i];
+    }
+
+    std::string get_spelling(std::size_t length) noexcept
+    {
+        // might need multiple tokens, because [[, for example, is treated as two separate tokens
+
+        std::string result;
+        for (auto cur = 0u; cur < no_; ++cur)
+        {
+            auto cur_spelling = detail::cxstring(clang_getTokenSpelling(tu_, tokens_[cur]));
+            result += cur_spelling.c_str();
+            if (result.length() >= length)
+                return result;
+        }
+        return result;
     }
 
 private:
@@ -68,20 +72,119 @@ private:
     unsigned          no_;
 };
 
-bool token_after_is(const CXTranslationUnit& tu, const CXFile& file, const CXSourceLocation& loc,
-                    const char* token_str, int inc)
+CXSourceLocation get_next_location_impl(const CXTranslationUnit& tu, CXFile file,
+                                        const CXSourceLocation& loc, int inc = 1)
 {
-    auto loc_after = get_next_location(tu, file, loc, inc);
+    DEBUG_ASSERT(clang_Location_isFromMainFile(loc), detail::assert_handler{});
+
+    unsigned offset;
+    clang_getSpellingLocation(loc, nullptr, nullptr, nullptr, &offset);
+    if (inc >= 0)
+        offset += unsigned(inc);
+    else
+        offset -= unsigned(-inc);
+    return clang_getLocationForOffset(tu, file, offset);
+}
+
+CXSourceLocation get_next_location(const CXTranslationUnit& tu, const CXFile& file,
+                                   const CXSourceLocation& loc, std::size_t token_length)
+{
+    // simple move over by token_length
+    return get_next_location_impl(tu, file, loc, int(token_length));
+}
+
+CXSourceLocation get_prev_location(const CXTranslationUnit& tu, const CXFile& file,
+                                   const CXSourceLocation& loc, std::size_t token_length)
+{
+    auto inc = 1;
+    while (true)
+    {
+        auto loc_before = get_next_location_impl(tu, file, loc, -inc);
+        DEBUG_ASSERT(!clang_equalLocations(loc_before, loc), detail::assert_handler{});
+
+        if (!clang_Location_isFromMainFile(loc_before))
+            // out of range
+            return clang_getNullLocation();
+
+        simple_tokenizer tokenizer(tu, clang_getRange(loc_before, loc));
+
+        auto token_location = clang_getTokenLocation(tu, tokenizer[0]);
+        if (clang_equalLocations(loc_before, token_location))
+        {
+            // actually found a new token and not just whitespace
+            // loc_before is now the last character of the new token
+            // need to move by token_length - 1 to get to the first character
+            return get_next_location_impl(tu, file, loc, -1 * (inc + int(token_length) - 1));
+        }
+        else
+            ++inc;
+    }
+
+    return clang_getNullLocation();
+}
+
+bool token_at_is(const CXTranslationUnit& tu, const CXFile& file, const CXSourceLocation& loc,
+                 const char* token_str)
+{
+    auto length = std::strlen(token_str);
+
+    auto loc_after = get_next_location(tu, file, loc, length);
     if (!clang_Location_isFromMainFile(loc_after))
         return false;
 
-    simple_tokenizer tokenizer(tu, inc > 0 ? clang_getRange(loc, loc_after)
-                                           : clang_getRange(loc_after, loc));
-    if (tokenizer.size() == 0u)
+    simple_tokenizer tokenizer(tu, clang_getRange(loc, loc_after));
+    return tokenizer.get_spelling(length) == token_str;
+}
+
+bool consume_if_token_at_is(const CXTranslationUnit& tu, const CXFile& file, CXSourceLocation& loc,
+                            const char* token_str)
+{
+    auto length = std::strlen(token_str);
+
+    auto loc_after = get_next_location(tu, file, loc, length);
+    if (!clang_Location_isFromMainFile(loc_after))
         return false;
 
-    detail::cxstring spelling(clang_getTokenSpelling(tu, tokenizer[0u]));
-    return spelling == token_str;
+    simple_tokenizer tokenizer(tu, clang_getRange(loc, loc_after));
+    if (tokenizer.get_spelling(length) == token_str)
+    {
+        loc = loc_after;
+        return true;
+    }
+    else
+        return false;
+}
+
+bool token_before_is(const CXTranslationUnit& tu, const CXFile& file, const CXSourceLocation& loc,
+                     const char* token_str)
+{
+    auto length = std::strlen(token_str);
+
+    auto loc_before = get_prev_location(tu, file, loc, length);
+    if (!clang_Location_isFromMainFile(loc_before))
+        return false;
+
+    simple_tokenizer tokenizer(tu, clang_getRange(loc_before, loc));
+    return tokenizer.get_spelling(length) == token_str;
+}
+
+bool consume_if_token_before_is(const CXTranslationUnit& tu, const CXFile& file,
+                                CXSourceLocation& loc, const char* token_str)
+{
+    auto length = std::strlen(token_str);
+
+    auto loc_before = get_prev_location(tu, file, loc, length);
+    if (!clang_Location_isFromMainFile(loc_before))
+        return false;
+
+    simple_tokenizer tokenizer(tu, clang_getRange(loc_before, loc));
+    if (tokenizer.get_spelling(length) == token_str)
+    {
+        loc = loc_before;
+        return true;
+    }
+    else
+        return false;
 }
 
 // clang_getCursorExtent() is somehow broken in various ways
@@ -98,60 +201,55 @@ CXSourceRange get_extent(const CXTranslationUnit& tu, const CXFile& file, const 
     auto end    = clang_getRangeEnd(extent);
 
     auto kind = clang_getCursorKind(cur);
+
+    // first need to extend the range to capture attributes that are before the declaration
     if (cursor_is_function(kind) || cursor_is_function(clang_getTemplateCursorKind(cur))
         || kind == CXCursor_VarDecl || kind == CXCursor_FieldDecl || kind == CXCursor_ParmDecl
         || kind == CXCursor_NonTypeTemplateParameter)
     {
-        if (token_after_is(tu, file, begin, "]", -2) && token_after_is(tu, file, begin, "]", -3))
+        auto save_begin = begin;
+        if (consume_if_token_before_is(tu, file, begin, "]]"))
         {
-            while (!token_after_is(tu, file, begin, "[", -1)
-                   && !token_after_is(tu, file, begin, "[", -2))
-                begin = get_next_location(tu, file, begin, -1);
-
-            begin = get_next_location(tu, file, begin, -3);
-            DEBUG_ASSERT(token_after_is(tu, file, begin, "[", 0)
-                             && token_after_is(tu, file, get_next_location(tu, file, begin), "[",
-                                               0),
-                         detail::parse_error_handler{}, cur,
-                         "error in pre-function attribute parsing");
+            while (!consume_if_token_before_is(tu, file, begin, "[["))
+                begin = get_prev_location(tu, file, begin, 1);
         }
-        else if (token_after_is(tu, file, begin, ")", -2))
+        else if (consume_if_token_before_is(tu, file, begin, ")"))
         {
             // maybe alignas specifier
-            auto save_begin = begin;
 
             auto paren_count = 1;
-            begin            = get_next_location(tu, file, begin, -1);
             for (auto last_begin = begin; paren_count != 0; last_begin = begin)
             {
-                begin = get_next_location(tu, file, begin, -1);
-                if (token_after_is(tu, file, begin, "(", -1))
+                if (token_before_is(tu, file, begin, "("))
                     --paren_count;
-                else if (token_after_is(tu, file, begin, ")", -1))
+                else if (token_before_is(tu, file, begin, ")"))
                     ++paren_count;
 
+                begin = get_prev_location(tu, file, begin, 1);
                 DEBUG_ASSERT(!clang_equalLocations(last_begin, begin),
                              detail::parse_error_handler{}, cur,
                              "infinite loop in alignas parsing");
             }
-            begin = get_next_location(tu, file, begin, -(int(std::strlen("alignas")) + 1));
 
-            if (token_after_is(tu, file, begin, "alignas", 0))
-                begin = get_next_location(tu, file, begin, -1);
-            else
+            if (!consume_if_token_before_is(tu, file, begin, "alignas"))
+                // not alignas
                 begin = save_begin;
         }
     }
 
     if (cursor_is_function(kind) || cursor_is_function(clang_getTemplateCursorKind(cur)))
     {
+        // for function definitions: remove the body, we don't care about that
+        // for function declarations: extend until the semiclon
+
         auto is_definition = false;
-        // if a function we need to remove the body
-        // it does not need to be parsed
+        // if it has the corresponding children, it's a definition and we can shrink the range
         detail::visit_children(cur, [&](const CXCursor& child) {
-            if (clang_getCursorKind(child) == CXCursor_CompoundStmt
-                || clang_getCursorKind(child) == CXCursor_CXXTryStmt
-                || clang_getCursorKind(child) == CXCursor_InitListExpr)
+            if (is_definition)
+                return;
+            else if (clang_getCursorKind(child) == CXCursor_CompoundStmt
+                     || clang_getCursorKind(child) == CXCursor_CXXTryStmt
+                     || clang_getCursorKind(child) == CXCursor_InitListExpr)
             {
                 auto child_extent = clang_getCursorExtent(child);
                 end               = clang_getRangeStart(child_extent);
@@ -159,123 +257,80 @@ CXSourceRange get_extent(const CXTranslationUnit& tu, const CXFile& file, const 
             }
         });
 
-        if (!is_definition)
+        if (!is_definition && !token_at_is(tu, file, end, ";"))
         {
-            // i have no idea why this is necessary
-            is_definition = token_after_is(tu, file, end, "{", 0)
-                            || token_after_is(tu, file, end, "try", 0)
-                            || token_after_is(tu, file, end, ":", 0);
-            if (is_definition)
-                // need to extend range here to include the token
-                end = get_next_location(tu, file, end);
+            // we have a declaration, extend until the semicolon
+            while (!token_at_is(tu, file, end, ";"))
+                end = get_next_location(tu, file, end, 1);
         }
-
-        if (!is_definition && !token_after_is(tu, file, end, ";", 0))
-        {
-            // we do not have a body, but it is not a declaration either
-            do
-            {
-                end = get_next_location(tu, file, end);
-            } while (!token_after_is(tu, file, end, ";", 0));
-        }
-        else if (kind == CXCursor_CXXMethod)
-            // necessary for some reason
-            begin = get_next_location(tu, file, begin, -1);
-        else if (kind == CXCursor_Destructor && token_after_is(tu, file, end, ")", 0))
-            // necessary for some other reason
-            end = get_next_location(tu, file, end);
     }
-    else if (kind == CXCursor_TemplateTypeParameter && token_after_is(tu, file, end, "(", 0))
+    else if (kind == CXCursor_TemplateTypeParameter && token_at_is(tu, file, end, "("))
     {
         // if you have decltype as default argument for a type template parameter
         // libclang doesn't include the parameters
-        auto next = get_next_location(tu, file, end);
+        auto next = get_next_location(tu, file, end, 1);
         auto prev = end;
-        for (auto paren_count = 1; paren_count != 0; next = get_next_location(tu, file, next))
+        for (auto paren_count = 1; paren_count != 0; next = get_next_location(tu, file, next, 1))
         {
-            if (token_after_is(tu, file, next, "(", 0))
+            if (token_at_is(tu, file, next, "("))
                 ++paren_count;
-            else if (token_after_is(tu, file, next, ")", 0))
+            else if (token_at_is(tu, file, next, ")"))
                 --paren_count;
             prev = next;
         }
         end = next;
     }
-    else if (kind == CXCursor_TemplateTemplateParameter && token_after_is(tu, file, end, "<", 0))
+    else if (kind == CXCursor_TemplateTemplateParameter && token_at_is(tu, file, end, "<"))
     {
         // if you have a template template parameter in a template template parameter,
         // the tokens are all messed up, only contain the `template`
 
         // first: skip to closing angle bracket
         // luckily no need to handle expressions here
-        auto next = get_next_location(tu, file, end, 2);
-        for (auto angle_count = 1; angle_count != 0; next = get_next_location(tu, file, next))
+        auto next = get_next_location(tu, file, end, 1);
+        for (auto angle_count = 1; angle_count != 0; next = get_next_location(tu, file, next, 1))
         {
-            if (token_after_is(tu, file, next, ">", 0))
+            if (token_at_is(tu, file, next, ">"))
                 --angle_count;
-            else if (token_after_is(tu, file, next, ">>", 0))
+            else if (token_at_is(tu, file, next, ">>"))
                 angle_count -= 2;
-            else if (token_after_is(tu, file, next, "<", 0))
+            else if (token_at_is(tu, file, next, "<"))
                 ++angle_count;
         }
 
         // second: skip until end of parameter
         // no need to handle default, so look for '>' or ','
-        while (!token_after_is(tu, file, next, ">", 0) && !token_after_is(tu, file, next, ",", 0))
-            next = get_next_location(tu, file, next);
+        while (!token_at_is(tu, file, next, ">") && !token_at_is(tu, file, next, ","))
+            next = get_next_location(tu, file, next, 1);
         // now we found the proper end of the token
-        end = get_next_location(tu, file, next, -1);
+        end = get_prev_location(tu, file, next, 1);
     }
     else if ((kind == CXCursor_TemplateTypeParameter || kind == CXCursor_NonTypeTemplateParameter
               || kind == CXCursor_TemplateTemplateParameter)
-             && token_after_is(tu, file, end, "...", 0))
+             && consume_if_token_at_is(tu, file, end, "..."))
     {
         // variadic tokens in unnamed parameter not included
-        end = get_next_location(tu, file, end, 3);
-        if (token_after_is(tu, file, end, ".", 0))
-            // extra whitespace, so bump again
-            // this should all go away once I redid the whole token thing...
-            end = get_next_location(tu, file, end, 1);
-
-        DEBUG_ASSERT(token_after_is(tu, file, end, ">", 0) || token_after_is(tu, file, end, ",", 0),
+        DEBUG_ASSERT(token_at_is(tu, file, end, ">") || token_at_is(tu, file, end, ","),
                      detail::parse_error_handler{}, cur,
                      "unexpected token in variadic parameter workaround");
     }
-    else if ((kind == CXCursor_TemplateTypeParameter || kind == CXCursor_NonTypeTemplateParameter
-              || kind == CXCursor_TemplateTemplateParameter)
-             && !token_after_is(tu, file, end, ">", 0) && !token_after_is(tu, file, end, ",", 0))
+    else if (kind == CXCursor_EnumDecl && !token_at_is(tu, file, end, ";"))
     {
-        DEBUG_ASSERT(token_after_is(tu, file, get_next_location(tu, file, end, -2), ">>", 0),
-                     detail::parse_error_handler{}, cur,
-                     "unexpected token in maximal munch workaround");
-        unmunch = true;
-        // need to shrink range anyway
-        end = get_next_location(tu, file, end, -1);
+        while (!token_at_is(tu, file, end, ";"))
+            end = get_next_location(tu, file, end, 1);
     }
-    else if (kind == CXCursor_EnumDecl && !token_after_is(tu, file, end, ";", 0))
-    {
-        while (!token_after_is(tu, file, end, ";", 0))
-            end = get_next_location(tu, file, end);
-    }
-    else if (kind == CXCursor_EnumConstantDecl && !token_after_is(tu, file, end, ",", 0))
+    else if (kind == CXCursor_EnumConstantDecl && !token_at_is(tu, file, end, ","))
     {
         // need to support attributes
         // just give up and extend the range to the range of the entire enum...
         auto parent = clang_getCursorLexicalParent(cur);
         end         = clang_getRangeEnd(clang_getCursorExtent(parent));
     }
-    else if (kind == CXCursor_ParmDecl && !token_after_is(tu, file, end, "]", -1))
-        // need to shrink range by one
-        end = get_next_location(tu, file, end, -1);
-    else if (kind == CXCursor_FieldDecl || kind == CXCursor_NonTypeTemplateParameter
-             || kind == CXCursor_TemplateTemplateParameter)
-        // need to shrink range by one
-        end = get_next_location(tu, file, end, -1);
     else if (kind == CXCursor_UnexposedDecl)
     {
         // include semicolon, if necessary
-        if (token_after_is(tu, file, end, ";", 0))
-            end = get_next_location(tu, file, end);
+        if (token_at_is(tu, file, end, ";"))
+            end = get_next_location(tu, file, end, 1);
     }
 
     return clang_getRange(begin, end);

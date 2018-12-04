@@ -140,6 +140,7 @@ alignas(type) int var;
     count = test_visit<cpp_variable>(*file,
                                      [&](const cpp_entity& e) {
                                          auto& attributes = e.attributes();
+                                         INFO(e.name());
                                          REQUIRE(attributes.size() == 1u);
                                          auto& attr = attributes.front();
                                          check_attribute(attr, "alignas", type_safe::nullopt, false,
@@ -215,6 +216,18 @@ using o [[o]] = int;
 
 template <typename T>
 using p [[p]] = T;
+
+// constructor
+struct [[q]] q
+{
+    [[q]] q();
+};
+
+struct [[r]] r
+{
+    [[r]]
+    r();
+};
 )";
 
     auto file = parse({}, "cpp_attribute__matching.cpp", code);
@@ -242,5 +255,5 @@ using p [[p]] = T;
 
         return true;
     });
-    REQUIRE(count == 36u);
+    REQUIRE(count == 40u);
 }
