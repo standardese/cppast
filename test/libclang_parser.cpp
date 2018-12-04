@@ -58,7 +58,7 @@ TEST_CASE("libclang_compile_config")
 },
 {
     "directory": "",
-    "command": "/usr/bin/clang++ -std=c++14 -fms-extensions -fms-compatibility -c -o c.o c.cpp",
+    "command": "/usr/bin/clang++ -std=c++14 -fms-extensions -fms-compatibility -fno-strict-aliasing -c -o c.o c.cpp",
     "file": "C:/c.cpp",
 }
 ])";
@@ -84,7 +84,7 @@ TEST_CASE("libclang_compile_config")
 },
 {
     "directory": "",
-    "command": "/usr/bin/clang++ -std=c++14 -fms-extensions -fms-compatibility -c -o c.o c.cpp",
+    "command": "/usr/bin/clang++ -std=c++14 -fms-extensions -fms-compatibility -fno-strict-aliasing -c -o c.o c.cpp",
     "file": "/c.cpp",
 }
 ])";
@@ -104,5 +104,5 @@ TEST_CASE("libclang_compile_config")
                      "/absolute -DB(X)=X");
 
     libclang_compile_config c(database, CPPAST_DETAIL_DRIVE "/c.cpp");
-    require_flags(c, "-std=c++14 -fms-extensions -fms-compatibility");
+    require_flags(c, "-std=c++14 -fms-extensions -fms-compatibility -fno-strict-aliasing");
 }

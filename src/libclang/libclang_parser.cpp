@@ -237,7 +237,7 @@ libclang_compile_config::libclang_compile_config(const libclang_compilation_data
             else if (flag == "-std")
                 // standard
                 add_flag(std::move(flag) + "=" + std::move(args));
-            else if (flag == "-f" && (args == "ms-compatibility" || args == "ms-extensions"))
+            else if (flag == "-f")
                 // other options
                 add_flag(std::move(flag) + std::move(args));
         });
@@ -384,6 +384,12 @@ void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags 
 
     if (flags & compile_flag::ms_extensions)
         add_flag("-fms-extensions");
+}
+
+bool libclang_compile_config::do_enable_feature(std::string name)
+{
+    add_flag("-f" + std::move(name));
+    return true;
 }
 
 void libclang_compile_config::do_add_include_dir(std::string path)

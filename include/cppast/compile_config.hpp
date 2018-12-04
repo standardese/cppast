@@ -74,6 +74,13 @@ public:
         do_set_flags(standard, flags);
     }
 
+    /// \effects Enables an `-fXXX` flag.
+    /// \returns Whether or not it was a known feature and enabled.
+    bool enable_feature(std::string name)
+    {
+        return do_enable_feature(name);
+    }
+
     /// \effects Adds the given path to the set of include directories.
     void add_include_dir(std::string path)
     {
@@ -120,6 +127,14 @@ protected:
 private:
     /// \effects Sets the given C++ standard and compilation flags.
     virtual void do_set_flags(cpp_standard standard, compile_flags flags) = 0;
+
+    /// \effects Sets the given feature flags.
+    /// \returns Whether or not it was a known feature and set.
+    virtual bool do_enable_feature(std::string name)
+    {
+        (void)name;
+        return false;
+    }
 
     /// \effects Adds the given path to the set of include directories.
     virtual void do_add_include_dir(std::string path) = 0;
