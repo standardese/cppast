@@ -305,13 +305,10 @@ CXSourceRange get_extent(const CXTranslationUnit& tu, const CXFile& file, const 
         end = get_prev_location(tu, file, next, 1);
     }
     else if ((kind == CXCursor_TemplateTypeParameter || kind == CXCursor_NonTypeTemplateParameter
-              || kind == CXCursor_TemplateTemplateParameter)
-             && consume_if_token_at_is(tu, file, end, "..."))
+              || kind == CXCursor_TemplateTemplateParameter))
     {
         // variadic tokens in unnamed parameter not included
-        DEBUG_ASSERT(token_at_is(tu, file, end, ">") || token_at_is(tu, file, end, ","),
-                     detail::parse_error_handler{}, cur,
-                     "unexpected token in variadic parameter workaround");
+        consume_if_token_at_is(tu, file, end, "...");
     }
     else if (kind == CXCursor_EnumDecl && !token_at_is(tu, file, end, ";"))
     {
