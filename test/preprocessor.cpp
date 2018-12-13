@@ -57,14 +57,10 @@ TEST_CASE("preprocessing use external macro")
     }
 
     auto file = parse({}, "preprocessing_external_macro.cpp", R"(
-#include <cmath>
-#ifdef _GLIBCXX_RELEASE
+#include <climits>
 
-// this requires libstdc++
-/// auto result=(__builtin_nanf(""));
-auto result = NAN;
-
-#endif
+/// auto result=8;
+auto result = CHAR_BIT;
 )",
                       fast_preprocessing);
 
