@@ -239,29 +239,28 @@ CXSourceRange get_extent(const CXTranslationUnit& tu, const CXFile& file, const 
 
     if (cursor_is_function(kind) || cursor_is_function(clang_getTemplateCursorKind(cur)))
     {
-        // for function definitions: remove the body, we don't care about that
-        // for function declarations: extend until the semiclon
-
-        auto is_definition = false;
-        // if it has the corresponding children, it's a definition and we can shrink the range
-        detail::visit_children(cur, [&](const CXCursor& child) {
-            if (is_definition)
-                return;
-            else if (clang_getCursorKind(child) == CXCursor_CompoundStmt
-                     || clang_getCursorKind(child) == CXCursor_CXXTryStmt
-                     || clang_getCursorKind(child) == CXCursor_InitListExpr)
-            {
-                auto child_extent = clang_getCursorExtent(child);
-                end               = clang_getRangeStart(child_extent);
-                is_definition     = true;
-            }
-        });
-
-        if (!is_definition && !token_at_is(tu, file, end, ";"))
+        if (clang_CXXMethod_isDefaulted(cur) || !clang_isCursorDefinition(cur))
         {
-            // we have a declaration, extend until the semicolon
+            // defaulted or declaration: extend until semicolon
             while (!token_at_is(tu, file, end, ";"))
                 end = get_next_location(tu, file, end, 1);
+        }
+        else
+        {
+            // declaration: remove body, we don't care about that
+            auto has_children = false;
+            detail::visit_children(cur, [&](const CXCursor& child) {
+                if (has_children)
+                    return;
+                else if (clang_getCursorKind(child) == CXCursor_CompoundStmt
+                         || clang_getCursorKind(child) == CXCursor_CXXTryStmt
+                         || clang_getCursorKind(child) == CXCursor_InitListExpr)
+                {
+                    auto child_extent = clang_getCursorExtent(child);
+                    end               = clang_getRangeStart(child_extent);
+                    has_children      = true;
+                }
+            });
         }
     }
     else if (kind == CXCursor_TemplateTypeParameter && token_at_is(tu, file, end, "("))
