@@ -297,8 +297,10 @@ struct foo
 /// foo<T>::foo(int);
 template <typename T>
 foo<T>::foo(int) {}
+; // there's a bug on MSVC's libclang, we have to give it a semicolon
 )";
     }
+    INFO(is_template);
 
     cpp_entity_index idx;
     auto             file  = parse(idx, "cpp_constructor.cpp", code);
