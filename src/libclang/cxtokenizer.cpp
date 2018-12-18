@@ -408,10 +408,10 @@ detail::cxtokenizer::cxtokenizer(const CXTranslationUnit& tu, const CXFile& file
 
     if (!clang_Range_isNull(extent.second_part))
     {
-        simple_tokenizer tokenizer(tu, extent.second_part);
-        tokens_.reserve(tokens_.size() + tokenizer.size());
-        for (auto i = 0u; i != tokenizer.size(); ++i)
-            tokens_.emplace_back(tu, tokenizer[i]);
+        simple_tokenizer second_tokenizer(tu, extent.second_part);
+        tokens_.reserve(tokens_.size() + second_tokenizer.size());
+        for (auto i = 0u; i != second_tokenizer.size(); ++i)
+            tokens_.emplace_back(tu, second_tokenizer[i]);
     }
 }
 
