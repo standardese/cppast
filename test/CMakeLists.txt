@@ -47,9 +47,9 @@ target_include_directories(cppast_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../src)
 target_link_libraries(cppast_test PUBLIC cppast)
 target_compile_definitions(cppast_test PUBLIC CPPAST_INTEGRATION_FILE="${CMAKE_CURRENT_SOURCE_DIR}/integration.cpp"
                                               CPPAST_COMPILE_COMMANDS="${CMAKE_BINARY_DIR}")
-set_target_properties(cppast_test PROPERTIES CXX_STANDARD 11)
 
-add_test(NAME test COMMAND cppast_test)
+add_test(NAME unit_test COMMAND cppast_test "~[integration]")
+add_test(NAME integration_test COMMAND cppast_test "[integration]")
 
 if(CPPAST_TEST_GCOV AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
     setup_target_for_coverage(

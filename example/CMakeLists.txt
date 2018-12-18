@@ -5,7 +5,6 @@
 function(_cppast_example name)
     add_executable(cppast_example_${name} ${name}.cpp example_parser.hpp)
     target_link_libraries(cppast_example_${name} PUBLIC cppast)
-    set_target_properties(cppast_example_${name} PROPERTIES CXX_STANDARD 11)
 endfunction()
 
 _cppast_example(ast_printer)
