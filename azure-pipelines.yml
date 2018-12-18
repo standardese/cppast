@@ -1,0 +1,46 @@
+name: 'CI build'
+trigger:
+  branches:
+    include:
+      - master
+      - feature/*
+  paths:
+    exclude:
+      - README.md
+
+jobs:
+  - job: llvm_linux
+    pool:
+      vmImage: 'Ubuntu 16.04'
+    strategy:
+      matrix:
+        LLVM4:
+          IMAGE: 'foonathan/micro_cpp_llvm:llvm4'
+        LLVM5:
+          IMAGE: 'foonathan/micro_cpp_llvm:llvm5'
+        LLVM6:
+          IMAGE: 'foonathan/micro_cpp_llvm:llvm6'
+        LLVM7:
+          IMAGE: 'foonathan/micro_cpp_llvm:llvm7'
+    steps:
+      - script: docker run -u root -v "$PWD:/cppast" $(IMAGE) bash -c "cmake /cppast/ && cmake --build . && ctest --output-on-failure"
+        displayName: "Compiling using $(IMAGE)"
+
+  - job: llvm_macos
+    pool:
+      vmImage: 'macOS-10.13'
+    strategy:
+      matrix:
+        LLVM4:
+          URL: 'http://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-apple-darwin.tar.xz'
+        LLVM5:
+          URL: 'http://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-apple-darwin.tar.xz'
+        LLVM6:
+          URL: 'http://releases.llvm.org/6.0.0/clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz'
+        LLVM7:
+          URL: 'http://releases.llvm.org/7.0.0/clang+llvm-7.0.0-x86_64-apple-darwin.tar.xz'
+    steps:
+      - script: |
+          mkdir build && cd build/
+          cmake -DLLVM_DOWNLOAD_URL=$URL ../ && cmake --build . && ctest --output-on-failure
+        displayName: "Compiling using $(URL)"
