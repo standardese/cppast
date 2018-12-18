@@ -520,7 +520,7 @@ detail::cxtranslation_unit get_cxunit(const diagnostic_logger& logger, const det
     CXUnsavedFile file;
     file.Filename = path;
     file.Contents = source.c_str();
-    file.Length   = source.length();
+    file.Length   = static_cast<unsigned long>(source.length());
 
     auto args = get_arguments(config);
 
@@ -648,10 +648,10 @@ std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx,
     for (; macro_iter != preprocessed.macros.end(); ++macro_iter)
         builder.add_child(std::move(macro_iter->macro));
 
-    for (auto& c : preprocessed.comments)
+    for (auto& cur : preprocessed.comments)
     {
-        if (!c.comment.empty())
-            builder.add_unmatched_comment(cpp_doc_comment(std::move(c.comment), c.line));
+        if (!cur.comment.empty())
+            builder.add_unmatched_comment(cpp_doc_comment(std::move(cur.comment), cur.line));
     }
 
     if (context.error)

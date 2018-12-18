@@ -7,16 +7,16 @@
 
 #include <debug_assert.hpp>
 
-#ifdef CPPAST_ENABLE_ASSERTIONS
-#    define CPPAST_ASSERTION_LEVEL 1
-#else
+#ifndef CPPAST_ASSERTION_LEVEL
 #    define CPPAST_ASSERTION_LEVEL 0
 #endif
 
-#ifdef CPPAST_ENABLE_PRECONDITION_CHECKS
-#    define CPPAST_PRECONDITION_LEVEL 1
-#else
-#    define CPPAST_PRECONDITION_LEVEL 0
+#ifndef CPPAST_PRECONDITION_LEVEL
+#    ifdef NDEBUG
+#        define CPPAST_PRECONDITION_LEVEL 0
+#    else
+#        define CPPAST_PRECONDITION_LEVEL 1
+#    endif
 #endif
 
 namespace cppast

@@ -1,8 +1,7 @@
 # cppast
 
-[![Build Status](https://travis-ci.org/foonathan/cppast.svg?branch=master)](https://travis-ci.org/foonathan/cppast)
+[![Build Status](https://dev.azure.com/foonathan/cppast/_apis/build/status/foonathan.cppast?branchName=master)](https://dev.azure.com/foonathan/cppast/_build/latest?definitionId=5?branchName=master)
 [![Build status](https://ci.appveyor.com/api/projects/status/8gp5btjq7eassvn7?svg=true)](https://ci.appveyor.com/project/foonathan/cppast)
-[![Coverage Status](https://coveralls.io/repos/github/foonathan/cppast/badge.svg)](https://coveralls.io/github/foonathan/cppast)
 
 Library interface to the C++ AST &mdash; parse source files, synthesize entities, get documentation comments and generate code.
 
@@ -60,6 +59,8 @@ Else you need to set the CMake variable `LLVM_CONFIG_BINARY` to the proper path.
 If you don't have a proper clang version installed, it can also be downloaded.
 For that you need to set `LLVM_DOWNLOAD_OS_NAME`.
 This is the name of the operating system used on the [LLVM pre-built binary archive](http://releases.llvm.org/download.html#4.0.0), e.g. `x86_64-linux-gnu-ubuntu-16.10` for Ubuntu 16.10.
+
+You can also set `LLVM_DOWNLOAD_URL` to a custom url, to download a specific version or from a mirror.
 
 If you don't have `llvm-config`, you need to pass the locations explictly.
 For that set the option `LLVM_VERSION_EXPLICIT` to the version you're using,

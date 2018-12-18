@@ -102,16 +102,19 @@ set(libclang_source
         libclang/variable_parser.cpp)
 
 add_library(cppast ${detail_header} ${header} ${source} ${libclang_source})
-set_target_properties(cppast PROPERTIES CXX_STANDARD 11)
-target_include_directories(cppast PUBLIC ../include)
+target_compile_features(cppast PUBLIC cxx_std_11)
+target_include_directories(cppast PRIVATE ../include SYSTEM INTERFACE ../include)
 target_link_libraries(cppast PUBLIC type_safe _cppast_tiny_process _cppast_libclang)
 target_compile_definitions(cppast PUBLIC
                                 CPPAST_VERSION_MINOR="${cppast_VERSION_MINOR}"
                                 CPPAST_VERSION_MAJOR="${cppast_VERSION_MAJOR}"
                                 CPPAST_VERSION_STRING="${cppast_VERSION}")
-if(CPPAST_ENABLE_ASSERTIONS)
-    target_compile_definitions(cppast PUBLIC CPPAST_ENABLE_ASSERTIONS)
-endif()
-if(CPPAST_ENABLE_PRECONDITION_CHECKS)
-    target_compile_definitions(cppast PUBLIC CPPAST_ENABLE_PRECONDITION_CHECKS)
-endif()
+target_compile_options(cppast PRIVATE
+                           # clang/GCC warnings
+                           $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                           -pedantic-errors -Werror -Wall -Wextra -Wconversion -Wsign-conversion>
+                           # disable noexcept type warning on GCC
+                           $<$<CXX_COMPILER_ID:GNU>: -Wno-noexcept-type>
+                           # MSVC warnings
+                           $<$<CXX_COMPILER_ID:MSVC>:
+                           /WX /W4>)

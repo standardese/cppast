@@ -72,7 +72,7 @@ function(_cppast_download_llvm url)
 
     if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${folder})
         message(STATUS "Downloading LLVM from ${url}")
-        file(DOWNLOAD ${url} ${CMAKE_CURRENT_BINARY_DIR}/${file} SHOW_PROGRESS
+        file(DOWNLOAD ${url} ${CMAKE_CURRENT_BINARY_DIR}/${file}
             STATUS status
             LOG log)
 
@@ -103,7 +103,7 @@ function(_cppast_find_llvm_config)
     if (LLVM_DOWNLOAD_DIR)
         find_program(LLVM_CONFIG_BINARY "llvm-config" "${LLVM_DOWNLOAD_DIR}/bin" NO_DEFAULT_PATH)
     else()
-        find_program(LLVM_CONFIG_BINARY "llvm-config")
+        find_program(LLVM_CONFIG_BINARY NAMES llvm-config llvm-config-4.0 llvm-config-5.0 llvm-config-6.0 llvm-config-7)
     endif()
     if(NOT LLVM_CONFIG_BINARY)
         message(FATAL_ERROR "Unable to find llvm-config binary, please set option LLVM_CONFIG_BINARY yourself")
