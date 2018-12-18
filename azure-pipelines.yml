@@ -9,6 +9,23 @@ trigger:
       - README.md
 
 jobs:
+  - job: compiler_linux
+    pool:
+      vmImage: 'Ubuntu 16.04'
+    strategy:
+      matrix:
+        GCC5:
+          IMAGE: 'conanio/gcc5'
+        GCC6:
+          IMAGE: 'conanio/gcc6'
+        GCC7:
+          IMAGE: 'conanio/gcc7'
+        GCC8:
+          IMAGE: 'conanio/gcc8'
+    steps:
+      - script: docker run --privileged -u root -v "$PWD:/cppast" $(IMAGE) bash -c "apt-get -qq update && apt-get -qq install -y --no-install-recommends llvm-4.0-dev clang-4.0 libclang-4.0-dev && cmake /cppast/ && cmake --build . && ctest --output-on-failure"
+        displayName: "Compiling using $(IMAGE)"
+
   - job: llvm_linux
     pool:
       vmImage: 'Ubuntu 16.04'
@@ -23,7 +40,7 @@ jobs:
         LLVM7:
           IMAGE: 'foonathan/micro_cpp_llvm:llvm7'
     steps:
-      - script: docker run -u root -v "$PWD:/cppast" $(IMAGE) bash -c "cmake /cppast/ && cmake --build . && ctest --output-on-failure"
+      - script: docker run -u root -v "$PWD:/cppast" $(IMAGE) bash -c "cmake -DCMAKE_CXX_COMPILER=clang++ /cppast/ && cmake --build . && ctest --output-on-failure"
         displayName: "Compiling using $(IMAGE)"
 
   - job: llvm_macos
