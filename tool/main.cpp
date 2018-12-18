@@ -40,6 +40,10 @@ void print_entity(std::ostream& out, const cppast::cpp_entity& e)
     if (cppast::is_definition(e))
         out << " [definition]";
 
+    // print number of attributes
+    if (!e.attributes().empty())
+        out << " [" << e.attributes().size() << " attribute(s)]";
+
     if (e.kind() == cppast::cpp_entity_kind::language_linkage_t)
         // no need to print additional information for language linkages
         out << '\n';

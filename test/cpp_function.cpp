@@ -61,6 +61,9 @@ void ns::l()
 
 /// ns::m m();
 ns::m m();
+
+/// void n(int i=int());
+void n(int i = int());
 )";
 
     auto check_body = [](const cpp_function& func, cpp_function_body_kind kind) {
@@ -72,7 +75,7 @@ ns::m m();
     cpp_entity_index idx;
     auto             file  = parse(idx, "cpp_function.cpp", code);
     auto             count = test_visit<cpp_function>(*file, [&](const cpp_function& func) {
-        if (func.name() == "a" || func.name() == "b" || func.name() == "c")
+        if (func.name() == "a" || func.name() == "b" || func.name() == "c" || func.name() == "n")
         {
             REQUIRE(!func.noexcept_condition());
             REQUIRE(func.storage_class() == cpp_storage_class_none);
@@ -149,6 +152,31 @@ ns::m m();
                 }
                 REQUIRE(count == 1u);
                 REQUIRE(func.is_variadic());
+            }
+            else if (func.name() == "n")
+            {
+                REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
+                REQUIRE(func.signature() == "(int)");
+
+                auto count = 0u;
+                for (auto& param : func.parameters())
+                {
+                    if (param.name() == "i")
+                    {
+                        REQUIRE(equal_types(idx, param.type(), *cpp_builtin_type::build(cpp_int)));
+                        REQUIRE(param.default_value());
+                        REQUIRE(equal_expressions(param.default_value().value(),
+                                                  *cpp_unexposed_expression::
+                                                      build(cpp_pointer_type::build(
+                                                                cpp_builtin_type::build(cpp_int)),
+                                                            cpp_token_string::tokenize("int()"))));
+                    }
+                    else
+                        REQUIRE(false);
+                    ++count;
+                }
+                REQUIRE(count == 1u);
+                REQUIRE(!func.is_variadic());
             }
         }
         else if (func.name() == "d" || func.name() == "e" || func.name() == "f")
@@ -243,7 +271,7 @@ ns::m m();
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 14u);
+    REQUIRE(count == 15u);
 }
 
 TEST_CASE("static cpp_function")

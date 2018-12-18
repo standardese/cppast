@@ -297,8 +297,10 @@ struct foo
 /// foo<T>::foo(int);
 template <typename T>
 foo<T>::foo(int) {}
+; // there's a bug on MSVC's libclang, we have to give it a semicolon
 )";
     }
+    INFO(is_template);
 
     cpp_entity_index idx;
     auto             file  = parse(idx, "cpp_constructor.cpp", code);
@@ -384,6 +386,15 @@ struct d : c
 /// virtual d::~d();
 d::~d() {}
 
+struct e : c
+{
+    /// virtual ~e() override final;
+    ~e() final;
+};
+
+/// virtual e::~e()=default;
+e::~e() = default;
+
 )";
 
     auto file  = parse({}, "cpp_destructor.cpp", code);
@@ -425,8 +436,21 @@ d::~d() {}
                 REQUIRE(dtor.virtual_info().value() == cpp_virtual_flags::override);
             REQUIRE(!dtor.noexcept_condition());
         }
+        else if (dtor.name() == "~e")
+        {
+            REQUIRE(dtor.virtual_info());
+            if (dtor.is_declaration())
+                REQUIRE(dtor.virtual_info().value()
+                        == (cpp_virtual_flags::override | cpp_virtual_flags::final));
+            else
+            {
+                REQUIRE(dtor.virtual_info().value() == cpp_virtual_flags::override);
+                REQUIRE(dtor.body_kind() == cpp_function_defaulted);
+            }
+            REQUIRE(!dtor.noexcept_condition());
+        }
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 5u);
+    REQUIRE(count == 7u);
 }

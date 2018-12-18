@@ -42,6 +42,9 @@ alignas(type) int var;
 
 // keyword attributes
 [[const]] int k();
+
+// multiple attributes but separately
+[[a]] [[b]] [[c]] int l();
 )";
 
     auto file = parse({}, "cpp_attribute.cpp", code);
@@ -122,9 +125,19 @@ alignas(type) int var;
                                        else if (e.name() == "k")
                                            check_attribute(attr, "const", type_safe::nullopt, false,
                                                            "", cpp_attribute_kind::unknown);
+                                       else if (e.name() == "l")
+                                       {
+                                           REQUIRE_NOTHROW(attributes.size() == 3);
+                                           check_attribute(attributes[0], "a", type_safe::nullopt,
+                                                           false, "", cpp_attribute_kind::unknown);
+                                           check_attribute(attributes[1], "b", type_safe::nullopt,
+                                                           false, "", cpp_attribute_kind::unknown);
+                                           check_attribute(attributes[2], "c", type_safe::nullopt,
+                                                           false, "", cpp_attribute_kind::unknown);
+                                       }
                                    },
                                    false);
-    REQUIRE(count == 10);
+    REQUIRE(count == 11);
 
     count = test_visit<cpp_class>(*file,
                                   [&](const cpp_entity& e) {
@@ -140,6 +153,7 @@ alignas(type) int var;
     count = test_visit<cpp_variable>(*file,
                                      [&](const cpp_entity& e) {
                                          auto& attributes = e.attributes();
+                                         INFO(e.name());
                                          REQUIRE(attributes.size() == 1u);
                                          auto& attr = attributes.front();
                                          check_attribute(attr, "alignas", type_safe::nullopt, false,
@@ -215,6 +229,27 @@ using o [[o]] = int;
 
 template <typename T>
 using p [[p]] = T;
+
+// constructor
+struct [[q]] q
+{
+    [[q]] q();
+};
+
+struct [[r]] r
+{
+    [[r]]
+    r();
+};
+
+// type defined inline
+struct [[inline_type]] inline_type
+{
+    [[field]] int field;
+}
+[[s]] s;
+
+int t [[t]];
 )";
 
     auto file = parse({}, "cpp_attribute__matching.cpp", code);
@@ -242,5 +277,5 @@ using p [[p]] = T;
 
         return true;
     });
-    REQUIRE(count == 36u);
+    REQUIRE(count == 44u);
 }

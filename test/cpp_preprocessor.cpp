@@ -93,8 +93,7 @@ namespace ns2
     }
 }
 
-// requires clang 4.0
-TEST_CASE("cpp_include_directive", "[!hide][clang4]")
+TEST_CASE("cpp_include_directive")
 {
     write_file("cpp_include_directive-header.hpp", R"(
 #define FOO a\

@@ -437,10 +437,9 @@ clang_preprocess_result clang_preprocess_impl(const libclang_compile_config& c,
     auto         cmd = get_preprocess_command(c, full_path.c_str(), macro_path);
     tpl::Process process(cmd, "",
                          [&](const char* str, std::size_t n) {
-                             result.file.reserve(result.file.size() + n);
                              for (auto ptr = str; ptr != str + n; ++ptr)
                                  if (*ptr == '\t')
-                                     result.file += "  "; // convert to two spaces
+                                     result.file += ' '; // convert to single spaces
                                  else if (*ptr != '\r')
                                      result.file += *ptr;
                          },
