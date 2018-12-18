@@ -72,7 +72,7 @@ function(_cppast_download_llvm url)
 
     if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${folder})
         message(STATUS "Downloading LLVM from ${url}")
-        file(DOWNLOAD ${url} ${CMAKE_CURRENT_BINARY_DIR}/${file} SHOW_PROGRESS
+        file(DOWNLOAD ${url} ${CMAKE_CURRENT_BINARY_DIR}/${file}
             STATUS status
             LOG log)
 
