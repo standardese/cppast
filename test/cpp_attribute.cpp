@@ -241,6 +241,13 @@ struct [[r]] r
     [[r]]
     r();
 };
+
+// type defined inline
+struct [[inline_type]] inline_type
+{
+    [[field]] int field;
+}
+[[s]] s;
 )";
 
     auto file = parse({}, "cpp_attribute__matching.cpp", code);
@@ -268,5 +275,5 @@ struct [[r]] r
 
         return true;
     });
-    REQUIRE(count == 40u);
+    REQUIRE(count == 43u);
 }

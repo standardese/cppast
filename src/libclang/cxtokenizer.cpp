@@ -9,6 +9,8 @@
 #include "libclang_visitor.hpp"
 #include "parse_error.hpp"
 
+#include <iostream> // TODO
+
 using namespace cppast;
 
 detail::cxtoken::cxtoken(const CXTranslationUnit& tu_unit, const CXToken& token)
@@ -22,6 +24,38 @@ bool cursor_is_function(CXCursorKind kind)
     return kind == CXCursor_FunctionDecl || kind == CXCursor_CXXMethod
            || kind == CXCursor_Constructor || kind == CXCursor_Destructor
            || kind == CXCursor_ConversionFunction;
+}
+
+bool cursor_is_var(CXCursorKind kind)
+{
+    return kind == CXCursor_VarDecl || kind == CXCursor_FieldDecl;
+}
+
+bool is_in_range(const CXSourceLocation& loc, const CXSourceRange& range)
+{
+    auto begin = clang_getRangeStart(range);
+    auto end   = clang_getRangeEnd(range);
+
+    CXFile   f_loc, f_begin, f_end;
+    unsigned l_loc, l_begin, l_end;
+    clang_getSpellingLocation(loc, &f_loc, &l_loc, nullptr, nullptr);
+    clang_getSpellingLocation(begin, &f_begin, &l_begin, nullptr, nullptr);
+    clang_getSpellingLocation(end, &f_end, &l_end, nullptr, nullptr);
+
+    return l_loc >= l_begin && l_loc < l_end && clang_File_isEqual(f_loc, f_begin);
+}
+
+// heuristic to detect when the type of a variable is declared inline,
+// i.e. `struct foo {} f`
+bool has_inline_type_definition(CXCursor var_decl)
+{
+    auto type_decl = clang_getTypeDeclaration(clang_getCursorType(var_decl));
+    if (clang_Cursor_isNull(type_decl))
+        return false;
+
+    auto type_loc  = clang_getCursorLocation(type_decl);
+    auto var_range = clang_getCursorExtent(var_decl);
+    return is_in_range(type_loc, var_range);
 }
 
 class simple_tokenizer
@@ -187,15 +221,18 @@ bool consume_if_token_before_is(const CXTranslationUnit& tu, const CXFile& file,
         return false;
 }
 
+struct Extent
+{
+    CXSourceRange first_part;
+    CXSourceRange second_part;
+};
+
 // clang_getCursorExtent() is somehow broken in various ways
 // this function returns the actual CXSourceRange that covers all parts required for parsing
 // might include more tokens
 // this function is the reason you shouldn't use libclang
-CXSourceRange get_extent(const CXTranslationUnit& tu, const CXFile& file, const CXCursor& cur,
-                         bool& unmunch)
+Extent get_extent(const CXTranslationUnit& tu, const CXFile& file, const CXCursor& cur)
 {
-    unmunch = false;
-
     auto extent = clang_getCursorExtent(cur);
     auto begin  = clang_getRangeStart(extent);
     auto end    = clang_getRangeEnd(extent);
@@ -269,6 +306,21 @@ CXSourceRange get_extent(const CXTranslationUnit& tu, const CXFile& file, const 
             });
         }
     }
+    else if (cursor_is_var(kind) || cursor_is_var(clang_getTemplateCursorKind(cur)))
+    {
+        if (has_inline_type_definition(cur))
+        {
+            // the type is declared inline,
+            // remove the type definition from the range
+            auto type_cursor = clang_getTypeDeclaration(clang_getCursorType(cur));
+            auto type_extent = clang_getCursorExtent(type_cursor);
+
+            auto type_begin = clang_getRangeStart(type_extent);
+            auto type_end   = clang_getRangeEnd(type_extent);
+
+            return {clang_getRange(begin, type_begin), clang_getRange(type_end, end)};
+        }
+    }
     else if (kind == CXCursor_TemplateTypeParameter && token_at_is(tu, file, end, "("))
     {
         // if you have decltype as default argument for a type template parameter
@@ -335,19 +387,28 @@ CXSourceRange get_extent(const CXTranslationUnit& tu, const CXFile& file, const 
             end = get_next_location(tu, file, end, 1);
     }
 
-    return clang_getRange(begin, end);
+    return Extent{clang_getRange(begin, end), clang_getNullRange()};
 }
 } // namespace
 
 detail::cxtokenizer::cxtokenizer(const CXTranslationUnit& tu, const CXFile& file,
                                  const CXCursor& cur)
+: unmunch_(false)
 {
-    auto extent = get_extent(tu, file, cur, unmunch_);
+    auto extent = get_extent(tu, file, cur);
 
-    simple_tokenizer tokenizer(tu, extent);
+    simple_tokenizer tokenizer(tu, extent.first_part);
     tokens_.reserve(tokenizer.size());
     for (auto i = 0u; i != tokenizer.size(); ++i)
         tokens_.emplace_back(tu, tokenizer[i]);
+
+    if (!clang_Range_isNull(extent.second_part))
+    {
+        simple_tokenizer tokenizer(tu, extent.second_part);
+        tokens_.reserve(tokens_.size() + tokenizer.size());
+        for (auto i = 0u; i != tokenizer.size(); ++i)
+            tokens_.emplace_back(tu, tokenizer[i]);
+    }
 }
 
 void detail::skip(detail::cxtoken_stream& stream, const char* str)
