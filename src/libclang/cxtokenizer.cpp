@@ -308,6 +308,10 @@ Extent get_extent(const CXTranslationUnit& tu, const CXFile& file, const CXCurso
     }
     else if (cursor_is_var(kind) || cursor_is_var(clang_getTemplateCursorKind(cur)))
     {
+        // need to extend until the semicolon
+        while (!token_at_is(tu, file, end, ";"))
+            end = get_next_location(tu, file, end, 1);
+
         if (has_inline_type_definition(cur))
         {
             // the type is declared inline,

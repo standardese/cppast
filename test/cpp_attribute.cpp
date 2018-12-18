@@ -248,6 +248,8 @@ struct [[inline_type]] inline_type
     [[field]] int field;
 }
 [[s]] s;
+
+int t [[t]];
 )";
 
     auto file = parse({}, "cpp_attribute__matching.cpp", code);
@@ -275,5 +277,5 @@ struct [[inline_type]] inline_type
 
         return true;
     });
-    REQUIRE(count == 43u);
+    REQUIRE(count == 44u);
 }
