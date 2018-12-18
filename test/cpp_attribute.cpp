@@ -42,6 +42,9 @@ alignas(type) int var;
 
 // keyword attributes
 [[const]] int k();
+
+// multiple attributes but separately
+[[a]] [[b]] [[c]] int l();
 )";
 
     auto file = parse({}, "cpp_attribute.cpp", code);
@@ -122,9 +125,19 @@ alignas(type) int var;
                                        else if (e.name() == "k")
                                            check_attribute(attr, "const", type_safe::nullopt, false,
                                                            "", cpp_attribute_kind::unknown);
+                                       else if (e.name() == "l")
+                                       {
+                                           REQUIRE_NOTHROW(attributes.size() == 3);
+                                           check_attribute(attributes[0], "a", type_safe::nullopt,
+                                                           false, "", cpp_attribute_kind::unknown);
+                                           check_attribute(attributes[1], "b", type_safe::nullopt,
+                                                           false, "", cpp_attribute_kind::unknown);
+                                           check_attribute(attributes[2], "c", type_safe::nullopt,
+                                                           false, "", cpp_attribute_kind::unknown);
+                                       }
                                    },
                                    false);
-    REQUIRE(count == 10);
+    REQUIRE(count == 11);
 
     count = test_visit<cpp_class>(*file,
                                   [&](const cpp_entity& e) {

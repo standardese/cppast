@@ -207,33 +207,39 @@ CXSourceRange get_extent(const CXTranslationUnit& tu, const CXFile& file, const 
         || kind == CXCursor_VarDecl || kind == CXCursor_FieldDecl || kind == CXCursor_ParmDecl
         || kind == CXCursor_NonTypeTemplateParameter)
     {
-        auto save_begin = begin;
-        if (consume_if_token_before_is(tu, file, begin, "]]"))
+        while (token_before_is(tu, file, begin, "]]") || token_before_is(tu, file, begin, ")"))
         {
-            while (!consume_if_token_before_is(tu, file, begin, "[["))
-                begin = get_prev_location(tu, file, begin, 1);
-        }
-        else if (consume_if_token_before_is(tu, file, begin, ")"))
-        {
-            // maybe alignas specifier
-
-            auto paren_count = 1;
-            for (auto last_begin = begin; paren_count != 0; last_begin = begin)
+            auto save_begin = begin;
+            if (consume_if_token_before_is(tu, file, begin, "]]"))
             {
-                if (token_before_is(tu, file, begin, "("))
-                    --paren_count;
-                else if (token_before_is(tu, file, begin, ")"))
-                    ++paren_count;
-
-                begin = get_prev_location(tu, file, begin, 1);
-                DEBUG_ASSERT(!clang_equalLocations(last_begin, begin),
-                             detail::parse_error_handler{}, cur,
-                             "infinite loop in alignas parsing");
+                while (!consume_if_token_before_is(tu, file, begin, "[["))
+                    begin = get_prev_location(tu, file, begin, 1);
             }
+            else if (consume_if_token_before_is(tu, file, begin, ")"))
+            {
+                // maybe alignas specifier
 
-            if (!consume_if_token_before_is(tu, file, begin, "alignas"))
-                // not alignas
-                begin = save_begin;
+                auto paren_count = 1;
+                for (auto last_begin = begin; paren_count != 0; last_begin = begin)
+                {
+                    if (token_before_is(tu, file, begin, "("))
+                        --paren_count;
+                    else if (token_before_is(tu, file, begin, ")"))
+                        ++paren_count;
+
+                    begin = get_prev_location(tu, file, begin, 1);
+                    DEBUG_ASSERT(!clang_equalLocations(last_begin, begin),
+                                 detail::parse_error_handler{}, cur,
+                                 "infinite loop in alignas parsing");
+                }
+
+                if (!consume_if_token_before_is(tu, file, begin, "alignas"))
+                {
+                    // not alignas
+                    begin = save_begin;
+                    break;
+                }
+            }
         }
     }
 
