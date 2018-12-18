@@ -33,6 +33,7 @@ jobs:
       matrix:
         LLVM4:
           URL: 'http://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-apple-darwin.tar.xz'
+          EXCLUDE: 'integration'
         LLVM5:
           URL: 'http://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-apple-darwin.tar.xz'
         LLVM6:
@@ -42,5 +43,5 @@ jobs:
     steps:
       - script: |
           mkdir build && cd build/
-          cmake -DLLVM_DOWNLOAD_URL=$URL ../ && cmake --build . && ctest --output-on-failure
+          cmake -DLLVM_DOWNLOAD_URL=$URL ../ && cmake --build . && ctest --output-on-failure -E $EXCLUDE
         displayName: "Compiling using $(URL)"
