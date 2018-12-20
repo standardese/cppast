@@ -93,6 +93,33 @@ namespace ns2
     }
 }
 
+TEST_CASE("command line macro definition")
+{
+    write_file("command_line_macro_definition.hpp", "NAME foo;");
+    write_file("command_line_macro_definition.cpp",
+               R"(#include "command_line_macro_definition.hpp")");
+
+    struct test_logger : diagnostic_logger
+    {
+        mutable bool error = false;
+
+        bool do_log(const char* source, const diagnostic& d) const override
+        {
+            error = true;
+            default_logger()->log(source, d);
+            return false;
+        }
+    } logger;
+
+    libclang_compile_config config;
+    config.define_macro("NAME", "int");
+
+    libclang_parser parser{type_safe::ref(logger)};
+    parser.parse({}, "command_line_macro_definition.cpp", config);
+    REQUIRE(!parser.error());
+    REQUIRE(!logger.error);
+}
+
 TEST_CASE("cpp_include_directive")
 {
     write_file("cpp_include_directive-header.hpp", R"(

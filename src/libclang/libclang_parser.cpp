@@ -401,17 +401,7 @@ void libclang_compile_config::do_add_macro_definition(std::string name, std::str
 {
     auto str = "-D" + std::move(name);
     if (!definition.empty())
-    {
-        str += "=\"";
-        for (auto c : definition)
-        {
-            if (c == '"')
-                str += "\\\"";
-            else
-                str += c;
-        }
-        str += "\"";
-    }
+        str += "=" + definition;
     add_flag(std::move(str));
 }
 
@@ -517,10 +507,7 @@ detail::cxtranslation_unit get_cxunit(const diagnostic_logger& logger, const det
                                       const libclang_compile_config& config, const char* path,
                                       const std::string& source)
 {
-    CXUnsavedFile file;
-    file.Filename = path;
-    file.Contents = source.c_str();
-    file.Length   = static_cast<unsigned long>(source.length());
+    CXUnsavedFile file{path, source.c_str(), static_cast<unsigned long>(source.length())};
 
     auto args = get_arguments(config);
 
