@@ -11,6 +11,11 @@ if(NOT type_safe_FOUND)
     execute_process(COMMAND git submodule update --init -- external/type_safe
                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/type_safe EXCLUDE_FROM_ALL)
+else()
+    if((NOT TARGET type_safe) AND (TARGET type_safe::type_safe))
+        add_library(type_safe INTERFACE)
+        target_link_libraries(type_safe INTERFACE type_safe::type_safe)
+    endif()
 endif()
 
 #
@@ -21,32 +26,46 @@ execute_process(COMMAND git submodule update --init -- external/tiny-process-lib
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 find_package(Threads REQUIRED QUIET)
 
-# create a target here instead of using the one provided
-set(tiny_process_dir ${CMAKE_CURRENT_SOURCE_DIR}/external/tiny-process-library)
-if(WIN32)
-    add_library(_cppast_tiny_process EXCLUDE_FROM_ALL
-                    ${tiny_process_dir}/process.hpp
-                    ${tiny_process_dir}/process.cpp
-                    ${tiny_process_dir}/process_win.cpp)
+find_package(tiny_process QUIET)
+
+if(tiny_process_FOUND)
+    add_library(_cppast_tiny_process INTERFACE)
+    target_link_libraries(_cppast_tiny_process INTERFACE tiny_process::tiny_process)
 else()
-    add_library(_cppast_tiny_process EXCLUDE_FROM_ALL
-                    ${tiny_process_dir}/process.hpp
-                    ${tiny_process_dir}/process.cpp
-                    ${tiny_process_dir}/process_unix.cpp)
+    # create a target here instead of using the one provided
+    set(tiny_process_dir ${CMAKE_CURRENT_SOURCE_DIR}/external/tiny-process-library)
+    if(WIN32)
+        add_library(_cppast_tiny_process EXCLUDE_FROM_ALL
+                        ${tiny_process_dir}/process.hpp
+                        ${tiny_process_dir}/process.cpp
+                        ${tiny_process_dir}/process_win.cpp)
+    else()
+        add_library(_cppast_tiny_process EXCLUDE_FROM_ALL
+                        ${tiny_process_dir}/process.hpp
+                        ${tiny_process_dir}/process.cpp
+                        ${tiny_process_dir}/process_unix.cpp)
+    endif()
+    target_include_directories(_cppast_tiny_process PUBLIC ${tiny_process_dir})
+    target_link_libraries(_cppast_tiny_process PUBLIC Threads::Threads)
+    set_target_properties(_cppast_tiny_process PROPERTIES CXX_STANDARD 11)
 endif()
-target_include_directories(_cppast_tiny_process PUBLIC ${tiny_process_dir})
-target_link_libraries(_cppast_tiny_process PUBLIC Threads::Threads)
-set_target_properties(_cppast_tiny_process PROPERTIES CXX_STANDARD 11)
 
 #
 # install cxxopts, if needed
 #
 if(build_tool)
-    message(STATUS "Installing cxxopts via submodule")
-    execute_process(COMMAND git submodule update --init -- external/cxxopts
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    find_package(cxxopts QUIET)
 
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/cxxopts EXCLUDE_FROM_ALL)
+    if(cxxopts_FOUND)
+        add_library(cxxopts INTERFACE)
+        target_link_libraries(cxxopts INTERFACE cxxopts::cxxopts)
+    else()
+        message(STATUS "Installing cxxopts via submodule")
+        execute_process(COMMAND git submodule update --init -- external/cxxopts
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/cxxopts EXCLUDE_FROM_ALL)
+    endif()
 endif()
 
 #
@@ -222,25 +241,33 @@ if(NOT DEFINED LLVM_PREFERRED_VERSION)
     set(LLVM_PREFERRED_VERSION 4.0.0 CACHE STRING "the preferred LLVM version")
 endif()
 
-if(DEFINED LLVM_VERSION_EXPLICIT)
-    if(LLVM_VERSION_EXPLICIT VERSION_LESS llvm_min_version)
-        message(FATAL_ERROR "Outdated LLVM version ${LLVM_VERSION_EXPLICIT}, minimal supported is ${llvm_min_version}")
-    endif()
-    set(LLVM_VERSION ${LLVM_VERSION_EXPLICIT} CACHE INTERNAL "")
-    message(STATUS "Using manually specified LLVM version ${LLVM_VERSION}")
-elseif(NOT LLVM_CONFIG_BINARY)
-    if(DEFINED LLVM_DOWNLOAD_OS_NAME)
-        _cppast_download_llvm_from_llvm_releases(${LLVM_PREFERRED_VERSION} ${LLVM_DOWNLOAD_OS_NAME})
-    elseif(DEFINED LLVM_DOWNLOAD_URL)
-        _cppast_download_llvm(${LLVM_DOWNLOAD_URL})
-    endif()
-    _cppast_find_llvm_config()
-    _cppast_find_libclang(${LLVM_CONFIG_BINARY} ${llvm_min_version} 1) # override here
+find_package(libclang QUIET)
+add_library(_cppast_libclang INTERFACE)
+
+if(libclang_FOUND)
+    target_link_libraries(_cppast_libclang INTERFACE libclang::libclang)
+    set(CLANG_BINARY "${libclang_LIB_DIRS}../bin/clang")
+    set(LLVM_VERSION "${libclang_VERSION}")
 else()
-    _cppast_find_libclang(${LLVM_CONFIG_BINARY} ${llvm_min_version} 0)
+    if(DEFINED LLVM_VERSION_EXPLICIT)
+        if(LLVM_VERSION_EXPLICIT VERSION_LESS llvm_min_version)
+            message(FATAL_ERROR "Outdated LLVM version ${LLVM_VERSION_EXPLICIT}, minimal supported is ${llvm_min_version}")
+        endif()
+        set(LLVM_VERSION ${LLVM_VERSION_EXPLICIT} CACHE INTERNAL "")
+        message(STATUS "Using manually specified LLVM version ${LLVM_VERSION}")
+    elseif(NOT LLVM_CONFIG_BINARY)
+        if(DEFINED LLVM_DOWNLOAD_OS_NAME)
+            _cppast_download_llvm_from_llvm_releases(${LLVM_PREFERRED_VERSION} ${LLVM_DOWNLOAD_OS_NAME})
+        elseif(DEFINED LLVM_DOWNLOAD_URL)
+            _cppast_download_llvm(${LLVM_DOWNLOAD_URL})
+        endif()
+        _cppast_find_llvm_config()
+        _cppast_find_libclang(${LLVM_CONFIG_BINARY} ${llvm_min_version} 1) # override here
+    else()
+        _cppast_find_libclang(${LLVM_CONFIG_BINARY} ${llvm_min_version} 0)
+    endif()
 endif()
 
-add_library(_cppast_libclang INTERFACE)
 target_link_libraries(_cppast_libclang INTERFACE ${LIBCLANG_LIBRARY})
 target_include_directories(_cppast_libclang INTERFACE ${LIBCLANG_INCLUDE_DIR})
 target_compile_definitions(_cppast_libclang INTERFACE
