@@ -15,6 +15,7 @@ endif()
 option(CPPAST_BUILD_TEST "whether or not to build the tests" ${CPPAST_IS_MAIN_PROJECT})
 option(CPPAST_BUILD_EXAMPLE "whether or not to build the examples" ${CPPAST_IS_MAIN_PROJECT})
 option(CPPAST_BUILD_TOOL "whether or not to build the tool" ${CPPAST_IS_MAIN_PROJECT})
+option(CPPAST_USE_OLD_LIBSTDCPP_ABI "Compile for the pre-C++11 libstdc++ ABI" OFF)
 
 if(${CPPAST_BUILD_TEST})
     set(build_test ON)

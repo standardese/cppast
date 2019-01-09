@@ -48,6 +48,10 @@ else()
     target_include_directories(_cppast_tiny_process PUBLIC ${tiny_process_dir})
     target_link_libraries(_cppast_tiny_process PUBLIC Threads::Threads)
     set_target_properties(_cppast_tiny_process PROPERTIES CXX_STANDARD 11)
+
+    if(CPPAST_USE_OLD_LIBSTDCPP_ABI)
+        target_compile_definitions(_cppast_tiny_process PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
+    endif()
 endif()
 
 #
