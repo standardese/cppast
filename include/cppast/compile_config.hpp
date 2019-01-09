@@ -106,6 +106,12 @@ public:
         return do_get_name();
     }
 
+    /// \effects Adds an arbitrary compiler flag to the config.
+    void add_flag(std::string flag)
+    {
+        flags_.push_back(std::move(flag));
+    }
+
 protected:
     compile_config(std::vector<std::string> def_flags) : flags_(std::move(def_flags)) {}
 
@@ -113,11 +119,6 @@ protected:
     compile_config& operator=(const compile_config&) = default;
 
     ~compile_config() noexcept = default;
-
-    void add_flag(std::string flag)
-    {
-        flags_.push_back(std::move(flag));
-    }
 
     const std::vector<std::string>& get_flags() const noexcept
     {
