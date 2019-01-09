@@ -5,25 +5,31 @@
 cmake_minimum_required(VERSION 3.8)
 project(cppast VERSION 0.0)
 
-# options
-option(CPPAST_BUILD_TEST "whether or not to build the tests" OFF)
-option(CPPAST_BUILD_EXAMPLE "whether or not to build the examples" OFF)
-option(CPPAST_BUILD_TOOL "whether or not to build the tool" OFF)
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    set(CPPAST_IS_MAIN_PROJECT TRUE)
+else()
+    set(CPPAST_IS_MAIN_PROJECT FALSE)
+endif()
 
-if(${CPPAST_BUILD_TEST} OR (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
+# options
+option(CPPAST_BUILD_TEST "whether or not to build the tests" ${CPPAST_IS_MAIN_PROJECT})
+option(CPPAST_BUILD_EXAMPLE "whether or not to build the examples" ${CPPAST_IS_MAIN_PROJECT})
+option(CPPAST_BUILD_TOOL "whether or not to build the tool" ${CPPAST_IS_MAIN_PROJECT})
+
+if(${CPPAST_BUILD_TEST})
     set(build_test ON)
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # for the self integration test
 else()
     set(build_test OFF)
 endif()
 
-if(${CPPAST_BUILD_EXAMPLE} OR (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
+if(${CPPAST_BUILD_EXAMPLE})
     set(build_example ON)
 else()
     set(build_example OFF)
 endif()
 
-if(${CPPAST_BUILD_TOOL} OR (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
+if(${CPPAST_BUILD_TOOL})
     set(build_tool ON)
 else()
     set(build_tool OFF)
