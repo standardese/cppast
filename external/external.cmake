@@ -51,6 +51,8 @@ else()
 
     if(CPPAST_USE_OLD_LIBSTDCPP_ABI)
         target_compile_definitions(_cppast_tiny_process PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
+    else()
+        target_compile_definitions(_cppast_tiny_process PUBLIC _GLIBCXX_USE_CXX11_ABI=1)
     endif()
 endif()
 

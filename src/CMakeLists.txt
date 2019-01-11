@@ -112,6 +112,8 @@ target_compile_definitions(cppast PUBLIC
 
 if(CPPAST_USE_OLD_LIBSTDCPP_ABI)
     target_compile_definitions(cppast PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
+else()
+    target_compile_definitions(cppast PUBLIC _GLIBCXX_USE_CXX11_ABI=1)
 endif()
 
 target_compile_options(cppast PRIVATE
