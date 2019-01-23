@@ -252,7 +252,20 @@ add_library(_cppast_libclang INTERFACE)
 
 if(libclang_FOUND)
     target_link_libraries(_cppast_libclang INTERFACE libclang::libclang)
-    set(CLANG_BINARY "${libclang_LIB_DIRS}../bin/clang")
+
+    if(NOT CLANG_BINARY)
+        set(libclang_ROOT_DIR "${libclang_LIB_DIRS}/..")
+        set(libclang_BINARY_DIR "${libclang_ROOT_DIR}/bin")
+
+        find_program(CLANG_BINARY "clang" "${libclang_BINARY_DIR}" NO_DEFAULT_PATH)
+
+        if(NOT CLANG_BINARY)
+            message(FATAL_ERROR "clang binary not found (Search started from ${libclang_BINARY_DIR})")
+        else()
+            message(STATUS "Found clang binary at ${CLANG_BINARY}")
+        endif()
+    endif()
+
     set(LLVM_VERSION "${libclang_VERSION}")
 else()
     if(DEFINED LLVM_VERSION_EXPLICIT)
