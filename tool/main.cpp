@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2018 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -227,7 +227,7 @@ int main(int argc, char* argv[]) try
     else if (options.count("version"))
     {
         std::cout << "cppast version " << CPPAST_VERSION_STRING << "\n";
-        std::cout << "Copyright (C) Jonathan Müller 2017-2018 <jonathanmueller.dev@gmail.com>\n";
+        std::cout << "Copyright (C) Jonathan Müller 2017-2019 <jonathanmueller.dev@gmail.com>\n";
         std::cout << '\n';
         std::cout << "Using libclang version " << CPPAST_CLANG_VERSION_STRING << '\n';
     }
