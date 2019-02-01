@@ -434,6 +434,11 @@ type_safe::optional<libclang_compile_config> cppast::find_config_for(
     return type_safe::nullopt;
 }
 
+int cppast::libclang_parser::libclang_minor_version()
+{
+    return CINDEX_VERSION_MINOR;
+}
+
 struct libclang_parser::impl
 {
     detail::cxindex index;
@@ -553,7 +558,6 @@ unsigned get_line_no(const CXCursor& cursor)
     return line;
 }
 } // namespace
-
 std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx, std::string path,
                                                     const compile_config& c) const try
 {

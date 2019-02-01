@@ -182,8 +182,9 @@ private:
 ///
 /// \returns If the database contains a configuration for the given file, returns that
 /// configuration. Otherwise removes the file extension of the file and tries the same procedure for
-/// common C++ header and source file extensions. \notes This function is intended to be used as the
-/// basis for a `get_config` function of
+/// common C++ header and source file extensions.
+///
+/// \notes This function is intended to be used as the basis for a `get_config` function of
 /// [cppast::parse_files](standardese://cppast::parse_files_basic/).
 type_safe::optional<libclang_compile_config> find_config_for(
     const libclang_compilation_database& database, std::string file_name);
@@ -193,6 +194,9 @@ class libclang_parser final : public parser
 {
 public:
     using config = libclang_compile_config;
+
+    /// The version of libclang used.
+    static int libclang_minor_version();
 
     /// \effects Creates a parser using the default logger.
     libclang_parser();
