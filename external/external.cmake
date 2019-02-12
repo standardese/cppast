@@ -96,15 +96,41 @@ function(_cppast_download_llvm_from_llvm_releases version os)
     set(LLVM_DOWNLOAD_DIR ${LLVM_DOWNLOAD_DIR} PARENT_SCOPE)
 endfunction()
 
+# determines the llvm version from a config binary
+macro(_cppast_llvm_version output_name llvm_binary)
+    execute_process(COMMAND ${llvm_binary} --version
+                    OUTPUT_VARIABLE ${output_name} OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    # ignore git tags in the version string, get the semver number only
+    string(REGEX REPLACE "([0-9]).([0-9]).([0-9])(.*)" "\\1.\\2.\\3" ${output_name} "${${output_name}}")
+endmacro()
+
 # finds the llvm-config binary
 # sets: LLVM_CONFIG_BINARY
 function(_cppast_find_llvm_config)
     unset(LLVM_CONFIG_BINARY CACHE)
-    if (LLVM_DOWNLOAD_DIR)
+    if(LLVM_DOWNLOAD_DIR)
         find_program(LLVM_CONFIG_BINARY "llvm-config" "${LLVM_DOWNLOAD_DIR}/bin" NO_DEFAULT_PATH)
     else()
-        find_program(LLVM_CONFIG_BINARY NAMES llvm-config llvm-config-4.0 llvm-config-5.0 llvm-config-6.0 llvm-config-7)
+        find_program(llvm_config_binary_no_suffix llvm-config)
+        find_program(llvm_config_binary_suffix NAMES llvm-config-7 llvm-config-6.0 llvm-config-5.0 llvm-config-4.0)
+
+        if(NOT llvm_config_binary_no_suffix)
+            set(LLVM_CONFIG_BINARY ${llvm_config_binary_suffix} CACHE INTERNAL "")
+        elseif(NOT llvm_config_binary_suffix)
+            set(LLVM_CONFIG_BINARY ${llvm_config_binary_no_suffix} CACHE INTERNAL "")
+        else()
+            # pick latest version of the two
+            _cppast_llvm_version(suffix_version ${llvm_config_binary_suffix})
+            _cppast_llvm_version(no_suffix_version ${llvm_config_binary_no_suffix})
+            if(suffix_version VERSION_GREATER no_suffix_version)
+                set(LLVM_CONFIG_BINARY ${llvm_config_binary_suffix} CACHE INTERNAL "")
+            else()
+                set(LLVM_CONFIG_BINARY ${llvm_config_binary_no_suffix} CACHE INTERNAL "")
+            endif()
+        endif()
     endif()
+
     if(NOT LLVM_CONFIG_BINARY)
         message(FATAL_ERROR "Unable to find llvm-config binary, please set option LLVM_CONFIG_BINARY yourself")
     else()
@@ -119,13 +145,7 @@ function(_cppast_find_libclang config_tool min_version force)
         message(FATAL_ERROR "LLVM config binary not found at ${LLVM_CONFIG_BINARY}")
     endif()
 
-    # check version
-    execute_process(COMMAND ${LLVM_CONFIG_BINARY} --version
-                    OUTPUT_VARIABLE llvm_version OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-    # ignore git tags in the version string, get the semver number only
-    string(REGEX REPLACE "([0-9]).([0-9]).([0-9])(.*)" "\\1.\\2.\\3" llvm_version "${llvm_version}")
-
+    _cppast_llvm_version(llvm_version ${config_tool})
     if(llvm_version VERSION_LESS min_version)
         message(FATAL_ERROR "Outdated LLVM version ${llvm_version}, minimal supported is ${min_version}")
     else()
