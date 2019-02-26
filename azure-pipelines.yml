@@ -23,7 +23,7 @@ jobs:
         GCC8:
           IMAGE: 'conanio/gcc8'
     steps:
-      - script: docker run --privileged -u root -v "$PWD:/cppast" $(IMAGE) bash -c "apt-get -qq update && apt-get -qq install -y --no-install-recommends llvm-4.0-dev clang-4.0 libclang-4.0-dev && cmake /cppast/ && cmake --build . && ctest --output-on-failure"
+      - script: docker run --privileged -u root -v "$PWD:/cppast" $(IMAGE) bash -c "apt-get -qq update && apt-get -qq install -y --no-install-recommends llvm-4.0-dev clang-4.0 libclang-4.0-dev && cmake /cppast/ && cmake --build . && ctest --output-on-failure -R test"
         displayName: "Compiling using $(IMAGE)"
 
   - job: llvm_linux
@@ -40,7 +40,7 @@ jobs:
         LLVM7:
           IMAGE: 'foonathan/micro_cpp_llvm:llvm7'
     steps:
-      - script: docker run -u root -v "$PWD:/cppast" $(IMAGE) bash -c "cmake -DCMAKE_CXX_COMPILER=clang++ /cppast/ && cmake --build . && ctest --output-on-failure"
+      - script: docker run -u root -v "$PWD:/cppast" $(IMAGE) bash -c "cmake -DCMAKE_CXX_COMPILER=clang++ /cppast/ && cmake --build . && ctest --output-on-failure -R test"
         displayName: "Compiling using $(IMAGE)"
 
   - job: llvm_macos
@@ -60,5 +60,5 @@ jobs:
     steps:
       - script: |
           mkdir build && cd build/
-          cmake -DLLVM_DOWNLOAD_URL=$URL ../ && cmake --build . && ctest --output-on-failure -E $EXCLUDE
+          cmake -DLLVM_DOWNLOAD_URL=$URL ../ && cmake --build . && ctest --output-on-failure -R test -E $EXCLUDE
         displayName: "Compiling using $(URL)"
