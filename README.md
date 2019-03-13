@@ -72,6 +72,27 @@ The other dependencies like [type_safe](http://type_safe.foonathan.net) are inst
 
 If you run into any issues with the installation, please report them.
 
+### Installation on Windows
+
+Similar to the above instructions for `cppast`, there are a couple extra requirements for Windows.
+
+The LLVM team does not currently distribute `llvm-config.exe` as part of the release binaries, so the only way to get it is through manual compilation or from 3rd parties. To prevent version mismatches, it's best to compile LLVM, libclang, and `llvm-config.exe` from source to ensure proper version matching. However, this is a non-trivial task, requiring a lot of time. The easiest way to work with LLVM and `llvm-config.exe` is to leverage the [Chocolatey](https://chocolatey.org/) `llvm` package, and then compile the `llvm-config.exe` tool as a standalone binary.
+
+* Install Visual Studio 2017 with the Desktop C++ development feature enabled.
+* Install `llvm` and `clang` with `choco install llvm` 
+* Check the version with `clang.exe --version`
+* Clone the LLVM project: `git clone https://github.com/llvm/llvm-project`
+* Checkout a release version matching the version output, such as 7.0.1, with `git checkout llvmorg-7.0.1`
+* `cd llvm-project && mkdir build && cd build` to prep the build environment.
+* `cmake -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_TARGETS_TO_BUILD="X86" -G "Visual Studio 15 2017" -Thost=x64 ..\llvm`
+  * This will configure clang and LLVM using a 64-bit toolchain. You'll have all the necessary projects configured for building clang, if you need other LLVM tools. See the [LLVM documentation](https://llvm.org/docs/CMake.html) and [clang documentation](http://clang.llvm.org/get_started.html) if you only need more assistance.
+* Open the `LLVM.sln` solution, and set the build type to be "Release".
+* Build the `Tools/llvm-config` target.
+* Copy the release binary to from `build\Release\bin\llvm-config.exe` to `C:\Program Files\LLVM\bin\llvm-config.exe`
+* Open a new Powershell window and test accessiblity of `llvm-config.exe`, it should return with it's help message.
+
+In your `cppast` based project, if you run into issues with cmake not finding libclang, set `LIBCLANG_LIBRARY` to be `C:/Program Files/LLVM/lib` in your CMakeLists.txt file.
+
 ### Quick API Overview
 
 There are three class hierarchies that represent the AST:
