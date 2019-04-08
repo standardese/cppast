@@ -39,6 +39,8 @@ jobs:
           IMAGE: 'foonathan/micro_cpp_llvm:llvm6'
         LLVM7:
           IMAGE: 'foonathan/micro_cpp_llvm:llvm7'
+        LLVM8:
+          IMAGE: 'foonathan/micro_cpp_llvm:llvm8'
     steps:
       - script: docker run -u root -v "$PWD:/cppast" $(IMAGE) bash -c "cmake -DCMAKE_CXX_COMPILER=clang++ /cppast/ && cmake --build . && ctest --output-on-failure -R test"
         displayName: "Compiling using $(IMAGE)"
@@ -57,6 +59,8 @@ jobs:
           URL: 'http://releases.llvm.org/6.0.0/clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz'
         LLVM7:
           URL: 'http://releases.llvm.org/7.0.0/clang+llvm-7.0.0-x86_64-apple-darwin.tar.xz'
+        LLVM8:
+          URL: 'http://releases.llvm.org/8.0.0/clang+llvm-8.0.0-x86_64-apple-darwin.tar.xz'
     steps:
       - script: |
           mkdir build && cd build/
