@@ -675,9 +675,6 @@ std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context, 
     case CXType_Auto:
         return make_leave_type(cur, type, [&](std::string&&) { return cpp_auto_type::build(); });
     }
-
-    DEBUG_UNREACHABLE(detail::assert_handler{});
-    return nullptr;
 }
 } // namespace
 
