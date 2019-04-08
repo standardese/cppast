@@ -525,70 +525,7 @@ std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context, 
     {
     // stuff I can't parse
     // or have no idea what it is and wait for bug report
-    case CXType_Invalid:
-    case CXType_Overload:
-    case CXType_ObjCId:
-    case CXType_ObjCClass:
-    case CXType_ObjCSel:
-    case CXType_BlockPointer:
-    case CXType_Vector:
-    case CXType_ObjCInterface:
-    case CXType_ObjCObjectPointer:
-#if CINDEX_VERSION_MINOR >= 43
-    case CXType_Half:
-    case CXType_Pipe:
-    case CXType_OCLImage1dRO:
-    case CXType_OCLImage1dArrayRO:
-    case CXType_OCLImage1dBufferRO:
-    case CXType_OCLImage2dRO:
-    case CXType_OCLImage2dArrayRO:
-    case CXType_OCLImage2dDepthRO:
-    case CXType_OCLImage2dArrayDepthRO:
-    case CXType_OCLImage2dMSAARO:
-    case CXType_OCLImage2dArrayMSAARO:
-    case CXType_OCLImage2dMSAADepthRO:
-    case CXType_OCLImage2dArrayMSAADepthRO:
-    case CXType_OCLImage3dRO:
-    case CXType_OCLImage1dWO:
-    case CXType_OCLImage1dArrayWO:
-    case CXType_OCLImage1dBufferWO:
-    case CXType_OCLImage2dWO:
-    case CXType_OCLImage2dArrayWO:
-    case CXType_OCLImage2dDepthWO:
-    case CXType_OCLImage2dArrayDepthWO:
-    case CXType_OCLImage2dMSAAWO:
-    case CXType_OCLImage2dArrayMSAAWO:
-    case CXType_OCLImage2dMSAADepthWO:
-    case CXType_OCLImage2dArrayMSAADepthWO:
-    case CXType_OCLImage3dWO:
-    case CXType_OCLImage1dRW:
-    case CXType_OCLImage1dArrayRW:
-    case CXType_OCLImage1dBufferRW:
-    case CXType_OCLImage2dRW:
-    case CXType_OCLImage2dArrayRW:
-    case CXType_OCLImage2dDepthRW:
-    case CXType_OCLImage2dArrayDepthRW:
-    case CXType_OCLImage2dMSAARW:
-    case CXType_OCLImage2dArrayMSAARW:
-    case CXType_OCLImage2dMSAADepthRW:
-    case CXType_OCLImage2dArrayMSAADepthRW:
-    case CXType_OCLImage3dRW:
-    case CXType_OCLSampler:
-    case CXType_OCLEvent:
-    case CXType_OCLQueue:
-    case CXType_OCLReserveID:
-#endif
-#if CINDEX_VERSION_MINOR > 43
-    case CXType_Float16:
-#endif
-#if CINDEX_VERSION_MINOR > 48
-    case CXType_ShortAccum:
-    case CXType_Accum:
-    case CXType_LongAccum:
-    case CXType_UShortAccum:
-    case CXType_UAccum:
-    case CXType_ULongAccum:
-#endif
+    default:
         context.logger->log("libclang parser",
                             format_diagnostic(severity::warning, detail::make_location(type),
                                               "unexpected type of kind '",
@@ -615,7 +552,7 @@ std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context, 
             return ptype;
     // fallthrough
     case CXType_Complex:
-        return cpp_unexposed_type::build(get_type_spelling(cur, type).c_str());
+        return cpp_unexposed_type::build(get_type_spelling(cur, type));
 
     case CXType_Void:
         return make_leave_type(cur, type,
