@@ -157,8 +157,7 @@ public:
     {
         user_data_ = data;
     }
-
-protected:
+    
     /// \effects Creates it giving it the the name.
     cpp_entity(std::string name) : name_(std::move(name)), user_data_(nullptr) {}
 
