@@ -105,6 +105,15 @@ macro(_cppast_llvm_version output_name llvm_binary)
     string(REGEX REPLACE "([0-9]).([0-9]).([0-9])(.*)" "\\1.\\2.\\3" ${output_name} "${${output_name}}")
 endmacro()
 
+# determines the llvm version from a config binary
+macro(_cppast_clang_version output_name clang_binary)
+    execute_process(COMMAND ${clang_binary} --version
+                    OUTPUT_VARIABLE ${output_name} OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    # ignore git tags in the version string, get the semver number only
+    string(REGEX REPLACE "clang version ([0-9]).([0-9]).([0-9])(.*)" "\\1.\\2.\\3" ${output_name} "${${output_name}}")
+endmacro()
+
 # finds the llvm-config binary
 # sets: LLVM_CONFIG_BINARY
 function(_cppast_find_llvm_config)
@@ -132,7 +141,7 @@ function(_cppast_find_llvm_config)
     endif()
 
     if(NOT LLVM_CONFIG_BINARY)
-        message(FATAL_ERROR "Unable to find llvm-config binary, please set option LLVM_CONFIG_BINARY yourself")
+        message(STATUS "Unable to find llvm-config binary, please set option LLVM_CONFIG_BINARY yourself")
     else()
         message(STATUS "Found llvm-config at ${LLVM_CONFIG_BINARY}")
     endif()
@@ -140,17 +149,9 @@ endfunction()
 
 # find libclang using the config tool
 # sets: LLVM_VERSION, LIBCLANG_INCLUDE_DIR, LIBCLANG_SYSTEM_INCLUDE_DIR, LIBCLANG_LIBRARY and CLANG_BINARY
-function(_cppast_find_libclang config_tool min_version force)
-    if (NOT EXISTS "${LLVM_CONFIG_BINARY}")
-        message(FATAL_ERROR "LLVM config binary not found at ${LLVM_CONFIG_BINARY}")
-    endif()
-
-    _cppast_llvm_version(llvm_version ${config_tool})
-    if(llvm_version VERSION_LESS min_version)
-        message(FATAL_ERROR "Outdated LLVM version ${llvm_version}, minimal supported is ${min_version}")
-    else()
-        message(STATUS "Using LLVM version ${llvm_version}")
-        set(LLVM_VERSION ${llvm_version} CACHE INTERNAL "")
+function(_cppast_find_libclang min_version force)
+    if (EXISTS "${LLVM_CONFIG_BINARY}")
+        set(llvm_no_default_path NO_DEFAULT_PATH)
     endif()
 
     # get include directory
@@ -158,9 +159,14 @@ function(_cppast_find_libclang config_tool min_version force)
         unset(LIBCLANG_INCLUDE_DIR CACHE)
     endif()
     if(NOT LIBCLANG_INCLUDE_DIR)
-        execute_process(COMMAND ${config_tool} --includedir
-                        OUTPUT_VARIABLE llvm_include_dir OUTPUT_STRIP_TRAILING_WHITESPACE)
-        find_path(LIBCLANG_INCLUDE_DIR "clang-c/Index.h" "${llvm_include_dir}" NO_DEFAULT_PATH)
+        if (EXISTS "${LLVM_CONFIG_BINARY}")
+            execute_process(COMMAND ${LLVM_CONFIG_BINARY} --includedir
+                            OUTPUT_VARIABLE llvm_include_dir OUTPUT_STRIP_TRAILING_WHITESPACE)
+        endif()
+        find_path(LIBCLANG_INCLUDE_DIR "clang-c/Index.h" "${llvm_include_dir}" 
+                  ${llvm_no_default_path}
+                  #Windows package from http://llvm.org/releases/
+                  PATH_SUFFIXES LLVM/include)
 
         if(NOT LIBCLANG_INCLUDE_DIR)
             message(FATAL_ERROR "libclang header files not found")
@@ -174,9 +180,21 @@ function(_cppast_find_libclang config_tool min_version force)
         unset(LIBCLANG_LIBRARY CACHE)
     endif()
     if(NOT LIBCLANG_LIBRARY)
-        execute_process(COMMAND ${config_tool} --libdir
-                        OUTPUT_VARIABLE llvm_library_dir OUTPUT_STRIP_TRAILING_WHITESPACE)
-        find_library(LIBCLANG_LIBRARY "clang" "${llvm_library_dir}" NO_DEFAULT_PATH)
+        if (EXISTS "${LLVM_CONFIG_BINARY}")
+            execute_process(COMMAND ${LLVM_CONFIG_BINARY} --libdir
+                            OUTPUT_VARIABLE llvm_library_dir OUTPUT_STRIP_TRAILING_WHITESPACE)
+        endif()
+        find_library(LIBCLANG_LIBRARY
+                     NAMES
+                        # On Windows with MSVC, the import library uses the ".imp" file extension
+                        # instead of the comon ".lib"
+                        libclang.imp
+                        libclang
+                        clang
+                    PATHS "${llvm_library_dir}"
+                    ${llvm_no_default_path}
+                    #Windows package from http://llvm.org/releases/
+                    PATH_SUFFIXES LLVM/lib)
 
         if(NOT LIBCLANG_LIBRARY)
             message(FATAL_ERROR "libclang library not found")
@@ -204,15 +222,34 @@ function(_cppast_find_libclang config_tool min_version force)
     # find clang binary in llvm_binary_dir
     # note: never override that binary
     if(NOT CLANG_BINARY)
-        execute_process(COMMAND ${config_tool} --bindir
-                        OUTPUT_VARIABLE llvm_binary_dir OUTPUT_STRIP_TRAILING_WHITESPACE)
-        find_program(CLANG_BINARY "clang" "${llvm_binary_dir}" NO_DEFAULT_PATH)
+        if (EXISTS "${LLVM_CONFIG_BINARY}")
+            execute_process(COMMAND ${LLVM_CONFIG_BINARY} --bindir
+                            OUTPUT_VARIABLE llvm_binary_dir OUTPUT_STRIP_TRAILING_WHITESPACE)
+        endif()
+        find_program(CLANG_BINARY "clang" "${llvm_binary_dir}"
+                     ${llvm_no_default_path}
+                     #Windows package from http://llvm.org/releases/
+                     PATH_SUFFIXES LLVM/bin)
 
         if(NOT CLANG_BINARY)
             message(FATAL_ERROR "clang binary not found")
         else()
             message(STATUS "Found clang binary at ${CLANG_BINARY}")
         endif()
+    endif()
+
+    if (EXISTS "${LLVM_CONFIG_BINARY}")
+        _cppast_llvm_version(llvm_version ${LLVM_CONFIG_BINARY})
+    else()
+        _cppast_clang_version(llvm_version ${CLANG_BINARY})
+    endif()
+
+    
+    if(llvm_version VERSION_LESS min_version)
+        message(FATAL_ERROR "Outdated LLVM version ${llvm_version}, minimal supported is ${min_version}")
+    else()
+        message(STATUS "Using LLVM version ${llvm_version}")
+        set(LLVM_VERSION ${llvm_version} CACHE INTERNAL "")
     endif()
 endfunction()
 
@@ -235,9 +272,9 @@ elseif(NOT LLVM_CONFIG_BINARY)
         _cppast_download_llvm(${LLVM_DOWNLOAD_URL})
     endif()
     _cppast_find_llvm_config()
-    _cppast_find_libclang(${LLVM_CONFIG_BINARY} ${llvm_min_version} 1) # override here
+    _cppast_find_libclang(${llvm_min_version} 1) # override here
 else()
-    _cppast_find_libclang(${LLVM_CONFIG_BINARY} ${llvm_min_version} 0)
+    _cppast_find_libclang(${llvm_min_version} 0)
 endif()
 
 add_library(_cppast_libclang INTERFACE)
