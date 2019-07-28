@@ -84,7 +84,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_variable(const detail::parse_conte
                                                  storage_class, is_constexpr);
     context.comments.match(*result, cur);
     result->add_attribute(attributes);
-    return std::move(result);
+    return result;
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_member_variable(const detail::parse_context& context,
@@ -117,5 +117,5 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_variable(const detail::pars
     }
     result->add_attribute(attributes);
     context.comments.match(*result, cur);
-    return std::move(result);
+    return result;
 }
