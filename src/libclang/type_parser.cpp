@@ -637,7 +637,7 @@ std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context, 
     case CXType_Typedef:
         return make_leave_type(cur, type, [&](std::string&& spelling) {
             auto decl = clang_getTypeDeclaration(type);
-            if (remove_prefix(spelling, "(anonymous", false))
+            if (detail::cxstring(clang_getCursorSpelling(decl)).empty())
                 spelling = ""; // anonymous type
             return cpp_user_defined_type::build(
                 cpp_type_ref(detail::get_entity_id(decl), std::move(spelling)));

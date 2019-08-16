@@ -509,7 +509,7 @@ typedef decltype(0) w;
         }
         else if (alias.name() == "v")
         {
-            auto type = cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "v"));
+            auto type = cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), ""));
             REQUIRE(equal_types(idx, alias.underlying_type(), *type));
             return false;
         }
