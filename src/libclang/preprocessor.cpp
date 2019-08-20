@@ -135,7 +135,7 @@ ts::optional<std::string> parse_missing_file(const std::string& cur_file, const 
     ++ptr;
 
     if (std::strcmp(ptr, " file not found") == 0)
-        return std::move(filename);
+        return filename;
     else
         throw libclang_error("preprocessor: unexpected diagnostic '" + msg + "'");
 }
