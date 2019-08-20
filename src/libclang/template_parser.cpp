@@ -114,7 +114,7 @@ std::unique_ptr<cpp_template_parameter> parse_non_type_parameter(
                                                          detail::parse_type(context, cur, type),
                                                          is_variadic, std::move(def));
     result->add_attribute(attributes);
-    return std::move(result);
+    return result;
 }
 
 std::unique_ptr<cpp_template_template_parameter> parse_template_parameter(
