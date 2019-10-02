@@ -284,5 +284,5 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_static_assert(const detail::parse_
 
     auto result = cpp_static_assert::build(std::move(expr), std::move(msg));
     context.comments.match(*result, cur);
-    return std::move(result);
+    return result;
 }
