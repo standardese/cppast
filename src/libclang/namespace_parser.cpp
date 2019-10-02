@@ -126,7 +126,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_namespace_alias(const detail::pars
     auto result = cpp_namespace_alias::build(*context.idx, get_entity_id(cur), std::move(name),
                                              std::move(target));
     context.comments.match(*result, cur);
-    return std::move(result);
+    return result;
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_using_directive(const detail::parse_context& context,
@@ -149,7 +149,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_using_directive(const detail::pars
     auto target = cpp_namespace_ref(parse_ns_target_cursor(cur), std::move(target_name));
     auto result = cpp_using_directive::build(target);
     context.comments.match(*result, cur);
-    return std::move(result);
+    return result;
 }
 
 namespace
@@ -221,5 +221,5 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_using_declaration(
     auto target = parse_entity_target_cursor(cur, std::move(target_name));
     auto result = cpp_using_declaration::build(std::move(target));
     context.comments.match(*result, cur);
-    return std::move(result);
+    return result;
 }
