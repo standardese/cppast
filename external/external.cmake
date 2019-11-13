@@ -176,7 +176,7 @@ function(_cppast_find_libclang config_tool min_version force)
     if(NOT LIBCLANG_LIBRARY)
         execute_process(COMMAND ${config_tool} --libdir
                         OUTPUT_VARIABLE llvm_library_dir OUTPUT_STRIP_TRAILING_WHITESPACE)
-        find_library(LIBCLANG_LIBRARY "clang" "${llvm_library_dir}" NO_DEFAULT_PATH)
+        find_library(LIBCLANG_LIBRARY NAMES clang libclang HINTS "${llvm_library_dir}" NO_DEFAULT_PATH)
 
         if(NOT LIBCLANG_LIBRARY)
             message(FATAL_ERROR "libclang library not found")
