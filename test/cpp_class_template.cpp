@@ -98,6 +98,11 @@ struct b<0, T> {};
 /// template<>
 /// class a<int>;
 extern template class a<int>;
+
+// non-extern template as well
+/// template<>
+/// class a<int>;
+template class a<int>;
 )";
 
     cpp_entity_index idx;
@@ -269,5 +274,5 @@ extern template class a<int>;
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 5u);
+    REQUIRE(count == 6u);
 }

@@ -125,6 +125,7 @@ TEST_CASE("cppast", "[!hide][integration]")
 
     libclang_compilation_database database(CPPAST_COMPILE_COMMANDS);
     libclang_compile_config       config(database, CPPAST_INTEGRATION_FILE);
+    config.set_flags(cpp_standard::cpp_latest);
     config.fast_preprocessing(true);
     parse_files(parser, files, config);
 
