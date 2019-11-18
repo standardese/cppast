@@ -717,10 +717,9 @@ cpp_token_kind get_kind(const detail::cxtoken& token)
     case CXToken_Identifier:
         return cpp_token_kind::identifier;
 
-    case CXToken_Literal:
-    {
+    case CXToken_Literal: {
         auto spelling = token.value().std_str();
-        if (spelling.find('.') != std::string::npos)
+        if (spelling.find('.') != std::string::npos && spelling.find('\"') == std::string::npos)
             return cpp_token_kind::float_literal;
         else if (std::isdigit(spelling.front()))
             return cpp_token_kind::int_literal;
