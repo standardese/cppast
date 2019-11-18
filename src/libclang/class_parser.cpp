@@ -19,8 +19,11 @@ cpp_class_kind parse_class_kind(detail::cxtoken_stream& stream)
         kind = clang_getCursorKind(stream.cursor());
 
     if (detail::skip_if(stream, "template"))
+    {
         // skip template parameters
-        detail::skip_brackets(stream);
+        if (!stream.done() && *stream.cur() == "<")
+            detail::skip_brackets(stream);
+    }
 
     detail::skip_if(stream, "friend");
 
