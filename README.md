@@ -5,8 +5,6 @@
 
 Library interface to the C++ AST &mdash; parse source files, synthesize entities, get documentation comments and generate code.
 
-[![Patreon](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://patreon.com/foonathan)
-
 ## Motivation
 
 If you're writing a tool that needs access to the C++ AST (i.e. documentation generator, reflection library, …), your only option apart from writing your own parser is to use [clang](https://clang.llvm.org).
