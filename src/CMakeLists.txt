@@ -2,6 +2,12 @@
 # This file is subject to the license terms in the LICENSE file
 # found in the top-level directory of this distribution.
 
+
+option(CPPAST_TEMPLATE_FULLARGUMENTSPARSING "Enable full argument parsing of template instantiation" OFF)
+IF(CPPAST_TEMPLATE_FULLARGUMENTSPARSING)
+    add_compile_definitions(CPPAST_TEMPLATE_FULLARGUMENTSPARSING)
+ENDIF(CPPAST_TEMPLATE_FULLARGUMENTSPARSING)
+
 set(detail_header
         ../include/cppast/detail/assert.hpp
         ../include/cppast/detail/intrusive_list.hpp)
