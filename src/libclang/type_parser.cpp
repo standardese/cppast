@@ -504,7 +504,7 @@ std::unique_ptr<cpp_type> try_parse_instantiation_type(const detail::parse_conte
         #else
             auto decl  = clang_getTypeDeclaration(type);
             auto count = clang_Type_getNumTemplateArguments(clang_getCursorType(decl));
-            for (int index = 0 ; index < count ; index++) {
+            for (unsigned int index = 0 ; static_cast<int>(index) < count ; index++) {
                 CXType argType = clang_Type_getTemplateArgumentAsType(type,index);
                 if (argType.kind != CXTypeKind::CXType_Invalid) {
                     auto parsedType = parse_type_impl(ctx,templ,argType);
