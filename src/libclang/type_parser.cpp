@@ -465,8 +465,13 @@ CXCursor get_instantiation_template(const CXCursor& cur, const CXType& type,
     }
 }
 
+#ifndef CPPAST_TEMPLATE_FULLARGUMENTSPARSING
 std::unique_ptr<cpp_type> try_parse_instantiation_type(const detail::parse_context& ctx,
                                                        const CXCursor& cur, const CXType& type)
+#else
+std::unique_ptr<cpp_type> try_parse_instantiation_type(const detail::parse_context&,
+                                                       const CXCursor& cur, const CXType& type)
+#endif
 {
     return make_leave_type(cur, type, [&](std::string&& spelling) -> std::unique_ptr<cpp_type> {
         auto ptr = spelling.c_str();
