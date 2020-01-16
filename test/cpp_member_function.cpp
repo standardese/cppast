@@ -236,8 +236,12 @@ struct foo
                 auto& inst = static_cast<const cpp_template_instantiation_type&>(op.return_type());
 
                 REQUIRE(inst.primary_template().name() == "ns::type");
+                #ifndef CPPAST_TEMPLATE_FULLARGUMENTSPARSING
                 REQUIRE(!inst.arguments_exposed());
                 REQUIRE(inst.unexposed_arguments() == "int");
+                #else
+                REQUIRE(inst.arguments_exposed());
+                #endif
             }
             else if (op.name() == "operator ns::type<char>")
             {
@@ -245,8 +249,12 @@ struct foo
                 auto& inst = static_cast<const cpp_template_instantiation_type&>(op.return_type());
 
                 REQUIRE(inst.primary_template().name() == "ns::type");
+                #ifndef CPPAST_TEMPLATE_FULLARGUMENTSPARSING
                 REQUIRE(!inst.arguments_exposed());
                 REQUIRE(inst.unexposed_arguments() == "char");
+                #else
+                REQUIRE(inst.arguments_exposed());
+                #endif
             }
             else
                 REQUIRE(false);

@@ -8,6 +8,11 @@ if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/catch.hpp)
             ${CMAKE_CURRENT_BINARY_DIR}/catch.hpp)
 endif()
 
+option(CPPAST_TEMPLATE_FULLARGUMENTSPARSING "Enable full argument parsing of template instantiation" OFF)
+IF(CPPAST_TEMPLATE_FULLARGUMENTSPARSING)
+    add_compile_definitions(CPPAST_TEMPLATE_FULLARGUMENTSPARSING)
+ENDIF(CPPAST_TEMPLATE_FULLARGUMENTSPARSING)
+
 set(tests
         code_generator.cpp
         cpp_alias_template.cpp
