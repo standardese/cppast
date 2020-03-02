@@ -15,7 +15,7 @@ using namespace cppast;
 TEST_CASE("cpp_class_template")
 {
 // Ignoring test for full argument parsing for now : must be fixed !
-#ifndef CPPAST_TEMPLATE_FULLARGUMENTSPARSING
+#ifndef CPPAST_TEMPLATE_FULL_ARGUMENTS_PARSING
     auto code = R"(
 // check everything not related to members first
 /// template<typename T>
@@ -160,7 +160,7 @@ template class a<int>;
                     {
                         cpp_template_instantiation_type::builder builder(
                             cpp_template_ref(cpp_entity_id(""), "a"));
-                        #ifndef CPPAST_TEMPLATE_FULLARGUMENTSPARSING
+                        #ifndef CPPAST_TEMPLATE_FULL_ARGUMENTS_PARSING
                             builder.add_unexposed_arguments("T");
                             REQUIRE(equal_types(idx, base.type(), *builder.finish()));
                         #else
@@ -200,7 +200,7 @@ template class a<int>;
                             cpp_template_instantiation_type::builder builder(
                                 cpp_template_ref(cpp_entity_id(""), "a"));
                             
-                            #ifndef CPPAST_TEMPLATE_FULLARGUMENTSPARSING
+                            #ifndef CPPAST_TEMPLATE_FULL_ARGUMENTS_PARSING
                             builder.add_unexposed_arguments("T");
                             REQUIRE(equal_types(idx, var.type(), *builder.finish()));
                             #endif
@@ -244,7 +244,7 @@ template class a<int>;
 #endif
 
 // Ignoring test for full argument parsing for now : must be fixed !
-#ifndef CPPAST_TEMPLATE_FULLARGUMENTSPARSING
+#ifndef CPPAST_TEMPLATE_FULL_ARGUMENTS_PARSING
     count = test_visit<
         cpp_class_template_specialization>(*file, [&](const cpp_class_template_specialization&
                                                           templ) {

@@ -13,7 +13,7 @@ using namespace cppast;
 TEST_CASE("cpp_function_template")
 {
 // Ignoring test for full argument parsing for now : must be fixed !
-#ifndef CPPAST_TEMPLATE_FULLARGUMENTSPARSING
+#ifndef CPPAST_TEMPLATE_FULL_ARGUMENTS_PARSING
     // only check templated related stuff
     auto code = R"(
 template <int I>
@@ -115,7 +115,7 @@ d::d(const int&);
 
             cpp_template_instantiation_type::builder builder(
                 cpp_template_ref(cpp_entity_id(""), "type"));
-            #ifndef CPPAST_TEMPLATE_FULLARGUMENTSPARSING
+            #ifndef CPPAST_TEMPLATE_FULL_ARGUMENTS_PARSING
                 builder.add_unexposed_arguments("I");
                 REQUIRE(equal_types(idx, func.return_type(), *builder.finish()));
             #else
@@ -188,7 +188,7 @@ d::d(const int&);
 #endif
 
 // Ignoring test for full argument parsing for now : must be fixed !
-#ifndef CPPAST_TEMPLATE_FULLARGUMENTSPARSING
+#ifndef CPPAST_TEMPLATE_FULL_ARGUMENTS_PARSING
     count = test_visit<
         cpp_function_template_specialization>(*file, [&](const cpp_function_template_specialization&
                                                              tfunc) {

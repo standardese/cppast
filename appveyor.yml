@@ -9,7 +9,7 @@ build_script:
   - cmd: cd .. && mkdir build-fullparsing\ && cd build-fullparsing\
   - cmd: call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64
   - cmd: clang++ --version
-  - cmd: cmake -G"Visual Studio 14 2015 Win64" -DCPPAST_TEMPLATE_FULLARGUMENTSPARSING=ON -DLLVM_VERSION_EXPLICIT=4.0.0 -DLIBCLANG_LIBRARY="C:/Program Files/LLVM/lib/libclang.lib" -DLIBCLANG_INCLUDE_DIR="C:/Program Files/LLVM/include" -DCLANG_BINARY="C:/Program Files/LLVM/bin/clang++.exe" ../
+  - cmd: cmake -G"Visual Studio 14 2015 Win64" -DCPPAST_TEMPLATE_FULL_ARGUMENTS_PARSING=OFF -DLLVM_VERSION_EXPLICIT=4.0.0 -DLIBCLANG_LIBRARY="C:/Program Files/LLVM/lib/libclang.lib" -DLIBCLANG_INCLUDE_DIR="C:/Program Files/LLVM/include" -DCLANG_BINARY="C:/Program Files/LLVM/bin/clang++.exe" ../
 
   - cmd: cmake --build . -- /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
 

@@ -26,7 +26,7 @@ jobs:
       - script: docker run --privileged -u root -v "$PWD:/cppast" $(IMAGE) bash -c "apt-get -qq update && apt-get -qq install -y --no-install-recommends llvm-4.0-dev clang-4.0 libclang-4.0-dev && cmake /cppast/ && cmake --build . && ctest --output-on-failure -R test"
         displayName: "Compiling using $(IMAGE)"
 
-  - job: compiler_linux_full_parsing
+  - job: compiler_linux_partial_parsing
     pool:
       vmImage: 'Ubuntu 16.04'
     strategy:
@@ -40,7 +40,7 @@ jobs:
         GCC8:
           IMAGE: 'conanio/gcc8'
     steps:
-      - script: docker run --privileged -u root -v "$PWD:/cppast" $(IMAGE) bash -c "apt-get -qq update && apt-get -qq install -y --no-install-recommends llvm-4.0-dev clang-4.0 libclang-4.0-dev && cmake -DCPPAST_TEMPLATE_FULLARGUMENTSPARSING=ON /cppast/ && cmake --build . && ctest --output-on-failure -R test"
+      - script: docker run --privileged -u root -v "$PWD:/cppast" $(IMAGE) bash -c "apt-get -qq update && apt-get -qq install -y --no-install-recommends llvm-4.0-dev clang-4.0 libclang-4.0-dev && cmake -DCPPAST_TEMPLATE_FULL_ARGUMENTS_PARSING=OFF /cppast/ && cmake --build . && ctest --output-on-failure -R test"
         displayName: "Compiling using $(IMAGE)"  
 
   - job: llvm_linux
@@ -62,7 +62,7 @@ jobs:
       - script: docker run -u root -v "$PWD:/cppast" $(IMAGE) bash -c "cmake -DCMAKE_CXX_COMPILER=clang++ /cppast/ && cmake --build . && ctest --output-on-failure -R test"
         displayName: "Compiling using $(IMAGE)"
 
-  - job: llvm_linux_full_parsing
+  - job: llvm_linux_partial_parsing
     pool:
       vmImage: 'Ubuntu 16.04'
     strategy:
@@ -78,7 +78,7 @@ jobs:
         LLVM8:
           IMAGE: 'foonathan/micro_cpp_llvm:llvm8'
     steps:
-      - script: docker run -u root -v "$PWD:/cppast" $(IMAGE) bash -c "cmake -DCPPAST_TEMPLATE_FULLARGUMENTSPARSING=ON -DCMAKE_CXX_COMPILER=clang++ /cppast/ && cmake --build . && ctest --output-on-failure -R test"
+      - script: docker run -u root -v "$PWD:/cppast" $(IMAGE) bash -c "cmake -DCPPAST_TEMPLATE_FULL_ARGUMENTS_PARSING=OFF -DCMAKE_CXX_COMPILER=clang++ /cppast/ && cmake --build . && ctest --output-on-failure -R test"
         displayName: "Compiling using $(IMAGE)"
 
   - job: llvm_macos
@@ -103,7 +103,7 @@ jobs:
           cmake -DLLVM_DOWNLOAD_URL=$URL ../ && cmake --build . && ctest --output-on-failure -R test -E $EXCLUDE
         displayName: "Compiling using $(URL)"
 
-  - job: llvm_macos_full_parsing
+  - job: llvm_macos_partial_parsing
     pool:
       vmImage: 'macOS-10.13'
     strategy:
@@ -122,5 +122,5 @@ jobs:
     steps:
       - script: |
           mkdir build && cd build/
-          cmake -DCPPAST_TEMPLATE_FULLARGUMENTSPARSING=ON -DLLVM_DOWNLOAD_URL=$URL ../ && cmake --build . && ctest --output-on-failure -R test -E $EXCLUDE
+          cmake -DCPPAST_TEMPLATE_FULL_ARGUMENTS_PARSING=OFF -DLLVM_DOWNLOAD_URL=$URL ../ && cmake --build . && ctest --output-on-failure -R test -E $EXCLUDE
         displayName: "Compiling using $(URL)"        

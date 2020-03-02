@@ -465,7 +465,7 @@ CXCursor get_instantiation_template(const CXCursor& cur, const CXType& type,
     }
 }
 
-#ifndef CPPAST_TEMPLATE_FULLARGUMENTSPARSING
+#ifndef CPPAST_TEMPLATE_FULL_ARGUMENTS_PARSING
 std::unique_ptr<cpp_type> try_parse_instantiation_type(const detail::parse_context&,
                                                        const CXCursor& cur, const CXType& type)
 #else
@@ -499,7 +499,7 @@ std::unique_ptr<cpp_type> try_parse_instantiation_type(const detail::parse_conte
         while (!spelling.empty() && spelling.back() == ' ')
             spelling.pop_back();
 
-        #ifndef CPPAST_TEMPLATE_FULLARGUMENTSPARSING
+        #ifndef CPPAST_TEMPLATE_FULL_ARGUMENTS_PARSING
             builder.add_unexposed_arguments(ptr);
         #else
             auto decl  = clang_getTypeDeclaration(type);
