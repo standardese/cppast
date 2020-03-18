@@ -11,6 +11,8 @@ else()
     set(CPPAST_IS_MAIN_PROJECT FALSE)
 endif()
 
+set(CPPAST_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+
 # options
 option(CPPAST_BUILD_TEST "whether or not to build the tests" ${CPPAST_IS_MAIN_PROJECT})
 option(CPPAST_BUILD_EXAMPLE "whether or not to build the examples" ${CPPAST_IS_MAIN_PROJECT})

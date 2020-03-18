@@ -2,14 +2,49 @@
 # This file is subject to the license terms in the LICENSE file
 # found in the top-level directory of this distribution.
 
+option(CPPAST_OVERRIDE_SUBMODULE_URLS "Override submodule URLs using cmake config variables" TRUE)
+
+if(NOT CPPAST_TYPE_SAFE_URL)
+    set(CPPAST_TYPE_SAFE_URL https://github.com/foonathan/type_safe)
+endif()
+if(NOT CPPAST_TINY-PROCESS-LIBRARY_URL)
+    set(CPPAST_TINY-PROCESS-LIBRARY_URL https://github.com/eidheim/tiny-process-library)
+endif()
+if(NOT CPPAST_CXXOPTS_URL)
+    set(CPPAST_CXXOPTS_URL https://github.com/jarro2783/cxxopts)
+endif()
+
+function(configure_submodule module)
+    message(STATUS "Installing ${module} via git submodule")
+
+    string(TOUPPER "${module}" moduleUpperCase)
+    set(urlVariable "CPPAST_${moduleUpperCase}_URL")
+
+    find_package(Git REQUIRED)
+
+    if(CPPAST_OVERRIDE_SUBMODULE_URLS AND ${urlVariable})
+        message(STATUS "Overriding ${module} submodule URL, using ${${urlVariable}}")
+
+        execute_process(COMMAND ${CMAKE_COMMAND} -E remove_directory external/${module}
+            WORKING_DIRECTORY ${CPPAST_SOURCE_DIR})
+
+        execute_process(COMMAND ${GIT_EXECUTABLE} config --file=.gitmodules submodule.${module}.url ${${urlVariable}}
+            WORKING_DIRECTORY ${CPPAST_SOURCE_DIR})
+
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule sync -- external/${module}
+            WORKING_DIRECTORY ${CPPAST_SOURCE_DIR})
+    endif()
+
+    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init -- external/${module}
+        WORKING_DIRECTORY ${CPPAST_SOURCE_DIR})
+endfunction()
+
 #
 # install type safe
 #
 find_package(type_safe QUIET)
 if(NOT type_safe_FOUND)
-    message(STATUS "Installing type_safe via submodule")
-    execute_process(COMMAND git submodule update --init -- external/type_safe
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    configure_submodule(type_safe)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/type_safe EXCLUDE_FROM_ALL)
 else()
     if((NOT TARGET type_safe) AND (TARGET type_safe::type_safe))
@@ -21,9 +56,7 @@ endif()
 #
 # install the tiny-process-library
 #
-message(STATUS "Installing tiny-process-library via submodule")
-execute_process(COMMAND git submodule update --init -- external/tiny-process-library
-                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+configure_submodule(tiny-process-library)
 find_package(Threads REQUIRED QUIET)
 
 find_package(tiny_process QUIET)
@@ -66,10 +99,7 @@ if(build_tool)
         add_library(cxxopts INTERFACE)
         target_link_libraries(cxxopts INTERFACE cxxopts::cxxopts)
     else()
-        message(STATUS "Installing cxxopts via submodule")
-        execute_process(COMMAND git submodule update --init -- external/cxxopts
-                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-
+        configure_submodule(cxxopts)
         add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/cxxopts EXCLUDE_FROM_ALL)
     endif()
 endif()
