@@ -14,7 +14,7 @@ if(NOT CPPAST_CXXOPTS_URL)
     set(CPPAST_CXXOPTS_URL https://github.com/jarro2783/cxxopts)
 endif()
 
-function(configure_submodule module)
+function(cppast_configure_submodule module)
     message(STATUS "Installing ${module} via git submodule")
 
     string(TOUPPER "${module}" moduleUpperCase)
@@ -44,7 +44,7 @@ endfunction()
 #
 find_package(type_safe QUIET)
 if(NOT type_safe_FOUND)
-    configure_submodule(type_safe)
+    cppast_configure_submodule(type_safe)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/type_safe EXCLUDE_FROM_ALL)
 else()
     if((NOT TARGET type_safe) AND (TARGET type_safe::type_safe))
@@ -56,7 +56,7 @@ endif()
 #
 # install the tiny-process-library
 #
-configure_submodule(tiny-process-library)
+cppast_configure_submodule(tiny-process-library)
 find_package(Threads REQUIRED QUIET)
 
 find_package(tiny_process QUIET)
@@ -99,7 +99,7 @@ if(build_tool)
         add_library(cxxopts INTERFACE)
         target_link_libraries(cxxopts INTERFACE cxxopts::cxxopts)
     else()
-        configure_submodule(cxxopts)
+        cppast_configure_submodule(cxxopts)
         add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/cxxopts EXCLUDE_FROM_ALL)
     endif()
 endif()
