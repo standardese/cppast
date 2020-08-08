@@ -2,50 +2,54 @@
 # This file is subject to the license terms in the LICENSE file
 # found in the top-level directory of this distribution.
 
-option(CPPAST_OVERRIDE_SUBMODULE_URLS "Override submodule URLs using cmake config variables" TRUE)
-
 if(NOT CPPAST_TYPE_SAFE_URL)
-    set(CPPAST_TYPE_SAFE_URL https://github.com/foonathan/type_safe)
+    set(CPPAST_TYPE_SAFE_URL https://github.com/Manu343726/type_safe)
+endif()
+if(NOT CPPAST_TYPE_SAFE_VERSION)
+    set(CPPAST_TYPE_SAFE_VERSION d35301f6c03b054fbad989f1490cb53c5cc782f2)
 endif()
 if(NOT CPPAST_TINY-PROCESS-LIBRARY_URL)
     set(CPPAST_TINY-PROCESS-LIBRARY_URL https://github.com/eidheim/tiny-process-library)
 endif()
+if(NOT CPPAST_TINY-PROCESS-LIBRARY_VERSION)
+    set(CPPAST_TINY-PROCESS-LIBRARY_VERSION 5bc47531a97f80ac07092ac3ed56a26139c748b3)
+endif()
 if(NOT CPPAST_CXXOPTS_URL)
     set(CPPAST_CXXOPTS_URL https://github.com/jarro2783/cxxopts)
 endif()
+if(NOT CPPAST_CXXOPTS_VERSION)
+    set(CPPAST_CXXOPTS_VERSION 3876c0907237e5fa89c5850ed1ee688a3bcb62b3)
+endif()
 
-function(cppast_configure_submodule module)
-    message(STATUS "Installing ${module} via git submodule")
+include(FetchContent)
 
-    string(TOUPPER "${module}" moduleUpperCase)
-    set(urlVariable "CPPAST_${moduleUpperCase}_URL")
+FetchContent_Declare(type_safe
+    GIT_REPOSITORY "${CPPAST_TYPE_SAFE_URL}"
+    GIT_TAG "${CPPAST_TYPE_SAFE_VERSION}"
+)
 
-    find_package(Git REQUIRED)
+FetchContent_Declare(tiny-process-library
+    GIT_REPOSITORY "${CPPAST_TINY-PROCESS-LIBRARY_URL}"
+    GIT_TAG "${CPPAST_TINY-PROCESS-LIBRARY_VERSION}"
+)
 
-    if(CPPAST_OVERRIDE_SUBMODULE_URLS AND ${urlVariable})
-        message(STATUS "Overriding ${module} submodule URL, using ${${urlVariable}}")
+FetchContent_Declare(cxxopts
+    GIT_REPOSITORY "${CPPAST_CXXOPTS_URL}"
+    GIT_TAG "${CPPAST_CXXOPTS_VERSION}"
+)
 
-        execute_process(COMMAND ${CMAKE_COMMAND} -E remove_directory external/${module}
-            WORKING_DIRECTORY ${CPPAST_SOURCE_DIR})
-
-        execute_process(COMMAND ${GIT_EXECUTABLE} config --file=.gitmodules submodule.${module}.url ${${urlVariable}}
-            WORKING_DIRECTORY ${CPPAST_SOURCE_DIR})
-
-        execute_process(COMMAND ${GIT_EXECUTABLE} submodule sync -- external/${module}
-            WORKING_DIRECTORY ${CPPAST_SOURCE_DIR})
-    endif()
-
-    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init -- external/${module}
-        WORKING_DIRECTORY ${CPPAST_SOURCE_DIR})
-endfunction()
 
 #
 # install type safe
 #
 find_package(type_safe QUIET)
 if(NOT type_safe_FOUND)
-    cppast_configure_submodule(type_safe)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/type_safe EXCLUDE_FROM_ALL)
+    FetchContent_GetProperties(type_safe)
+
+    if(NOT type_safe_POPULATED)
+        FetchContent_Populate(type_safe)
+        add_subdirectory("${type_safe_SOURCE_DIR}" "${type_safe_BINARY_DIR}" EXCLUDE_FROM_ALL)
+    endif()
 else()
     if((NOT TARGET type_safe) AND (TARGET type_safe::type_safe))
         add_library(type_safe INTERFACE)
@@ -56,7 +60,6 @@ endif()
 #
 # install the tiny-process-library
 #
-cppast_configure_submodule(tiny-process-library)
 find_package(Threads REQUIRED QUIET)
 
 find_package(tiny_process QUIET)
@@ -65,20 +68,26 @@ if(tiny_process_FOUND)
     add_library(_cppast_tiny_process INTERFACE)
     target_link_libraries(_cppast_tiny_process INTERFACE tiny_process::tiny_process)
 else()
+    FetchContent_GetProperties(tiny-process-library)
+
+    if(NOT tiny-process-library_POPULATED)
+        FetchContent_Populate(tiny-process-library)
+    endif()
+
     # create a target here instead of using the one provided
-    set(tiny_process_dir ${CMAKE_CURRENT_SOURCE_DIR}/external/tiny-process-library)
+
     if(WIN32)
         add_library(_cppast_tiny_process EXCLUDE_FROM_ALL
-                        ${tiny_process_dir}/process.hpp
-                        ${tiny_process_dir}/process.cpp
-                        ${tiny_process_dir}/process_win.cpp)
+            ${tiny-process-library_SOURCE_DIR}/process.hpp
+            ${tiny-process-library_SOURCE_DIR}/process.cpp
+            ${tiny-process-library_SOURCE_DIR}/process_win.cpp)
     else()
         add_library(_cppast_tiny_process EXCLUDE_FROM_ALL
-                        ${tiny_process_dir}/process.hpp
-                        ${tiny_process_dir}/process.cpp
-                        ${tiny_process_dir}/process_unix.cpp)
+            ${tiny-process-library_SOURCE_DIR}/process.hpp
+            ${tiny-process-library_SOURCE_DIR}/process.cpp
+            ${tiny-process-library_SOURCE_DIR}/process_unix.cpp)
     endif()
-    target_include_directories(_cppast_tiny_process PUBLIC ${tiny_process_dir})
+    target_include_directories(_cppast_tiny_process PUBLIC ${tiny-process-library_SOURCE_DIR})
     target_link_libraries(_cppast_tiny_process PUBLIC Threads::Threads)
     set_target_properties(_cppast_tiny_process PROPERTIES CXX_STANDARD 11)
 
@@ -99,8 +108,12 @@ if(build_tool)
         add_library(cxxopts INTERFACE)
         target_link_libraries(cxxopts INTERFACE cxxopts::cxxopts)
     else()
-        cppast_configure_submodule(cxxopts)
-        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/cxxopts EXCLUDE_FROM_ALL)
+        FetchContent_GetProperties(cxxopts)
+
+        if(NOT cxxopts_POPULATED)
+            FetchContent_Populate(cxxopts)
+            add_subdirectory("${cxxopts_SOURCE_DIR}" "${cxxopts_BINARY_DIR}" EXCLUDE_FROM_ALL)
+        endif()
     endif()
 endif()
 

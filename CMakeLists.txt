@@ -2,7 +2,7 @@
 # This file is subject to the license terms in the LICENSE file
 # found in the top-level directory of this distribution.
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.11.4)
 project(cppast VERSION 0.0)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)

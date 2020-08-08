@@ -1,9 +1,0 @@
-[submodule "type_safe"]
-	path = external/type_safe
-	url = https://github.com/Manu343726/type_safe
-[submodule "tiny-process-library"]
-	path = external/tiny-process-library
-	url = https://github.com/eidheim/tiny-process-library
-[submodule "cxxopts"]
-	path = external/cxxopts
-	url = https://github.com/jarro2783/cxxopts
