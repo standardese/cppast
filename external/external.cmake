@@ -138,19 +138,30 @@ function(_cppast_download_llvm url)
     get_filename_component(file "${url}" NAME)
     name_without_extension(${file} folder)
 
-    if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${folder})
-        message(STATUS "Downloading LLVM from ${url}")
-        file(DOWNLOAD ${url} ${CMAKE_CURRENT_BINARY_DIR}/${file}
-            STATUS status
-            LOG log)
+    if(NOT CPPAST_PRECOMPILED_LLVM_ARCHIVE_DIR)
+        set(CPPAST_PRECOMPILED_LLVM_ARCHIVE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+    endif()
 
-        list(GET status 0 status_code)
-        list(GET status 1 status_string)
-        if(NOT status_code EQUAL 0)
-            message(FATAL_ERROR "error downloading llvm: ${status_string}" "${log}")
+    set(archive_fullpath "${CPPAST_PRECOMPILED_LLVM_ARCHIVE_DIR}/${file}")
+    set(extracted_fullpath "${CMAKE_CURRENT_BINARY_DIR}/${folder}")
+
+    if(NOT EXISTS ${extracted_fullpath})
+        if(NOT EXISTS ${archive_fullpath})
+            message(STATUS "Downloading LLVM from ${url}")
+            file(DOWNLOAD ${url} ${CMAKE_CURRENT_BINARY_DIR}/${file}
+                STATUS status
+                LOG log)
+
+            list(GET status 0 status_code)
+            list(GET status 1 status_string)
+            if(NOT status_code EQUAL 0)
+                message(FATAL_ERROR "error downloading llvm: ${status_string}" "${log}")
+            endif()
         endif()
 
-        execute_process(COMMAND ${CMAKE_COMMAND} -E tar xJf ${file}
+        message(STATUS "Extracting LLVM from ${archive_fullpath}")
+
+        execute_process(COMMAND ${CMAKE_COMMAND} -E tar xJf ${archive_fullpath}
                         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     endif()
 
