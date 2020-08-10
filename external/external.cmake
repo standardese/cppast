@@ -137,6 +137,7 @@ endfunction()
 function(_cppast_download_llvm url)
     get_filename_component(file "${url}" NAME)
     name_without_extension(${file} folder)
+    string(REPLACE "%2B" "+" folder "${folder}")
 
     if(NOT CPPAST_PRECOMPILED_LLVM_ARCHIVE_DIR)
         set(CPPAST_PRECOMPILED_LLVM_ARCHIVE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
@@ -159,13 +160,13 @@ function(_cppast_download_llvm url)
             endif()
         endif()
 
-        message(STATUS "Extracting LLVM from ${archive_fullpath}")
+        message(STATUS "Extracting LLVM from ${archive_fullpath} to ${extracted_fullpath}")
 
         execute_process(COMMAND ${CMAKE_COMMAND} -E tar xJf ${archive_fullpath}
                         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     endif()
 
-    set(LLVM_DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}/${folder} PARENT_SCOPE)
+    set(LLVM_DOWNLOAD_DIR "${extracted_fullpath}" PARENT_SCOPE)
 endfunction()
 
 # downloads and extracts LLVM using the given version and OS name
