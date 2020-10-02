@@ -117,4 +117,4 @@ target_compile_options(cppast PRIVATE
                            $<$<CXX_COMPILER_ID:GNU>: -Wno-noexcept-type>
                            # MSVC warnings
                            $<$<CXX_COMPILER_ID:MSVC>:
-                           /WX /W4>)
+                           /W3>)
