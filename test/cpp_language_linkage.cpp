@@ -36,6 +36,8 @@ extern "C++" // yup
     enum e {};
 }
 
+extern "C" {}
+
 enum f {};
 )";
 
