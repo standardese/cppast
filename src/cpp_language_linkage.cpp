@@ -15,7 +15,11 @@ cpp_entity_kind cpp_language_linkage::kind() noexcept
 
 bool cpp_language_linkage::is_block() const noexcept
 {
-    DEBUG_ASSERT(begin() != end(), detail::assert_handler{}, "empty container");
+    if (begin() == end())
+    {
+        // An empty container must be a "block" of the form: extern "C" {}
+        return true;
+    }
     return std::next(begin()) != end(); // more than one entity, so block
 }
 
