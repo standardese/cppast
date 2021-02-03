@@ -36,6 +36,10 @@ extern "C++" // yup
     enum e {};
 }
 
+/// extern "C++"{
+/// }
+extern "C++" {}
+
 enum f {};
 )";
 
@@ -50,7 +54,7 @@ enum f {};
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 2u);
+    REQUIRE(count == 3u);
 
     // check enums for their correct parent
     count = test_visit<cpp_enum>(*file,
