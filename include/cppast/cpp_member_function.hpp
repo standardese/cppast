@@ -100,6 +100,12 @@ public:
         return constexpr_;
     }
 
+    /// \returns Whether or not the member function is `consteval`.
+    bool is_consteval() const noexcept
+    {
+        return consteval_;
+    }
+
 protected:
     /// Builder class for member functions.
     template <typename T>
@@ -132,6 +138,12 @@ protected:
             static_cast<cpp_member_function_base&>(*this->function).constexpr_ = true;
         }
 
+        /// \effects Marks the function as `consteval`.
+        void is_consteval() noexcept
+        {
+            static_cast<cpp_member_function_base&>(*this->function).consteval_ = true;
+        }
+
     protected:
         basic_member_builder() noexcept = default;
     };
@@ -151,6 +163,7 @@ private:
     cpp_cv                    cv_;
     cpp_reference             ref_;
     bool                      constexpr_;
+    bool                      consteval_;
 };
 
 /// A [cppast::cpp_entity]() modelling a member function.

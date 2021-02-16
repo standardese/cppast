@@ -326,7 +326,9 @@ bool libclang_compile_config::set_clang_binary(std::string binary)
         // first search in current directory, then in PATH
         static const char* paths[]
             = {"./clang++",   "clang++",       "./clang++-4.0", "clang++-4.0", "./clang++-5.0",
-               "clang++-5.0", "./clang++-6.0", "clang++-6.0",   "./clang-7",   "clang-7"};
+               "clang++-5.0", "./clang++-6.0", "clang++-6.0",   "./clang-7",   "clang-7",
+               "./clang-8",   "clang-8",       "./clang-9",     "clang-9",     "./clang-10",
+               "clang-10",    "./clang-11",    "clang-11"};
         for (auto& p : paths)
             if (is_valid_binary(p))
             {
@@ -372,6 +374,12 @@ void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags 
             add_flag("-std=gnu++1z");
         else
             add_flag("-std=c++1z");
+        break;
+    case cpp_standard::cpp_20:
+        if (flags & compile_flag::gnu_extensions)
+            add_flag("-std=gnu++20");
+        else
+            add_flag("-std=c++20");
         break;
     }
 

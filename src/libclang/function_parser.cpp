@@ -220,6 +220,7 @@ struct prefix_info
 {
     cpp_attribute_list attributes;
     bool               is_constexpr = false;
+    bool               is_consteval = false;
     bool               is_virtual   = false;
     bool               is_explicit  = false;
     bool               is_friend    = false;
@@ -284,7 +285,9 @@ prefix_info parse_prefix_info(detail::cxtoken_stream& stream, const char* name, 
 
     while (!stream.done() && !prefix_end(stream, name, is_ctor_dtor))
     {
-        if (detail::skip_if(stream, "constexpr"))
+        if (detail::skip_if(stream, "consteval"))
+            result.is_consteval = true;
+        else if (detail::skip_if(stream, "constexpr"))
             result.is_constexpr = true;
         else if (detail::skip_if(stream, "virtual"))
             result.is_virtual = true;
@@ -536,6 +539,8 @@ std::unique_ptr<cpp_entity> parse_cpp_function_impl(const detail::parse_context&
         | (is_static ? cpp_storage_class_static : cpp_storage_class_none)));
     if (prefix.is_constexpr)
         builder.is_constexpr();
+    else if (prefix.is_consteval)
+        builder.is_consteval();
 
     skip_parameters(stream);
 
@@ -687,6 +692,9 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
 
     if (prefix.is_constexpr)
         builder.is_constexpr();
+    else if (prefix.is_consteval) {
+        builder.is_consteval();
+    }
 
     skip_parameters(stream);
     return handle_suffix(context, cur, builder, stream, prefix.is_virtual,
@@ -751,6 +759,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
         builder.is_explicit();
     else if (prefix.is_constexpr)
         builder.is_constexpr();
+    else if (prefix.is_consteval)
+        builder.is_consteval();
 
     return handle_suffix(context, cur, builder, stream, prefix.is_virtual,
                          parse_scope(cur, is_friend));
