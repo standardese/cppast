@@ -274,6 +274,51 @@ void n(int i = int());
     REQUIRE(count == 15u);
 }
 
+TEST_CASE("consteval cpp_function")
+{
+    if (libclang_parser::libclang_minor_version() < 60)
+        return;
+
+    auto code       = R"(
+/// consteval void p();
+consteval void p();
+/// static consteval void q();
+static consteval void q();
+)";
+    auto check_body = [](const cpp_function& func, cpp_function_body_kind kind) {
+        REQUIRE(func.body_kind() == kind);
+        REQUIRE(func.is_declaration() == is_declaration(kind));
+        REQUIRE(func.is_definition() == is_definition(kind));
+    };
+
+    cpp_entity_index idx;
+    auto file  = parse(idx, "consteval_function.cpp", code, false, cppast::cpp_standard::cpp_2a);
+    auto count = test_visit<cpp_function>(*file, [&](const cpp_function& func) {
+        if (func.name() == "p" || func.name() == "q")
+        {
+            REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
+            REQUIRE(func.signature() == "()");
+            REQUIRE(!func.is_variadic());
+            REQUIRE(!func.noexcept_condition());
+            check_body(func, cpp_function_declaration);
+
+            if (func.name() == "p")
+            {
+                REQUIRE(func.is_consteval());
+                REQUIRE(func.storage_class() == cpp_storage_class_none);
+            }
+            else if (func.name() == "q")
+            {
+                REQUIRE(func.is_consteval());
+                REQUIRE(func.storage_class() == cpp_storage_class_static);
+            }
+        }
+        else
+            REQUIRE(false);
+    });
+    REQUIRE(count == 2u);
+}
+
 TEST_CASE("static cpp_function")
 {
     auto code = R"(

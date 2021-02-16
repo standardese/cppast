@@ -2,10 +2,9 @@
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
+#include "test_parser.hpp"
 #include <cppast/cpp_member_function.hpp>
 #include <cppast/cpp_template.hpp>
-
-#include "test_parser.hpp"
 
 using namespace cppast;
 
@@ -454,3 +453,139 @@ e::~e() = default;
     });
     REQUIRE(count == 7u);
 }
+
+TEST_CASE("consteval cpp_constructor")
+{
+    if (libclang_parser::libclang_minor_version() < 60)
+        return;
+
+    // only test constructor specific stuff
+    const char* code;
+    auto        is_template = false;
+    SECTION("non-template")
+    {
+        code = R"(
+struct foo
+{
+    /// consteval foo(int)=delete;
+    consteval foo(int) = delete;
+};
+
+)";
+    }
+    SECTION("template")
+    {
+        is_template = true;
+        code        = R"(
+template <typename T>
+struct foo
+{
+    /// consteval foo(int)=delete;
+    consteval foo(int) = delete;
+};
+
+)";
+    }
+    INFO(is_template);
+
+    cpp_entity_index idx;
+    auto file  = parse(idx, "consteval_constructor.cpp", code, false, cppast::cpp_standard::cpp_2a);
+    auto count = test_visit<cpp_constructor>(*file, [&](const cpp_constructor& cont) {
+        REQUIRE(!cont.is_variadic());
+        REQUIRE(cont.name() == "foo");
+
+        if (cont.semantic_parent())
+        {
+            if (is_template)
+                REQUIRE(cont.semantic_parent().value().name() == "foo<T>::");
+            else
+                REQUIRE(cont.semantic_parent().value().name() == "foo::");
+            REQUIRE(!cont.noexcept_condition());
+            REQUIRE(!cont.is_constexpr());
+        }
+        else
+        {
+            REQUIRE(cont.name() == "foo");
+
+            if (count_children(cont.parameters()) == 1u)
+            {
+                REQUIRE(!cont.noexcept_condition());
+                REQUIRE(!cont.is_explicit());
+                REQUIRE(cont.is_consteval());
+                REQUIRE(cont.body_kind() == cpp_function_deleted);
+                REQUIRE(cont.signature() == "(int)");
+            }
+            else
+                REQUIRE(false);
+        }
+    });
+    REQUIRE(count == 1u);
+}
+
+TEST_CASE("consteval cpp_conversion_op")
+{
+    if (libclang_parser::libclang_minor_version() < 60)
+        return;
+
+    auto             code = R"(
+namespace ns
+{
+    template <typename T>
+    struct type2 {};
+}
+
+// most of it only need to be check in member function
+struct foo
+{
+    /// consteval operator ns::type2<int>();
+    consteval operator ns::type2<int>()
+    {
+        return {};
+    }
+
+    /// consteval operator ns::type2<char>();
+    consteval operator ns::type2<char>()
+    {
+        return {};
+    }
+};
+)";
+    cpp_entity_index idx;
+    auto file  = parse(idx, "consteval_op.cpp", code, false, cppast::cpp_standard::cpp_2a);
+    auto count = test_visit<cpp_conversion_op>(*file, [&](const cpp_conversion_op& op) {
+        REQUIRE(count_children(op.parameters()) == 0u);
+        REQUIRE(!op.is_variadic());
+        REQUIRE(op.body_kind() == cpp_function_definition);
+        REQUIRE(op.ref_qualifier() == cpp_ref_none);
+        REQUIRE(!op.virtual_info());
+        REQUIRE(!op.noexcept_condition());
+
+        if (!op.is_explicit() && op.is_consteval())
+        {
+            REQUIRE(op.cv_qualifier() == cpp_cv_none);
+            REQUIRE(op.signature() == "()");
+            if (op.name() == "operator ns::type2<int>")
+            {
+                REQUIRE(op.return_type().kind() == cpp_type_kind::template_instantiation_t);
+                auto& inst = static_cast<const cpp_template_instantiation_type&>(op.return_type());
+
+                REQUIRE(inst.primary_template().name() == "ns::type2");
+                REQUIRE(!inst.arguments_exposed());
+                REQUIRE(inst.unexposed_arguments() == "int");
+            }
+            else if (op.name() == "operator ns::type2<char>")
+            {
+                REQUIRE(op.return_type().kind() == cpp_type_kind::template_instantiation_t);
+                auto& inst = static_cast<const cpp_template_instantiation_type&>(op.return_type());
+
+                REQUIRE(inst.primary_template().name() == "ns::type2");
+                REQUIRE(!inst.arguments_exposed());
+                REQUIRE(inst.unexposed_arguments() == "char");
+            }
+            else
+                REQUIRE(false);
+        }
+    });
+    REQUIRE(count == 2u);
+}
+
