@@ -113,7 +113,7 @@ function(_cppast_find_llvm_config)
         find_program(LLVM_CONFIG_BINARY "llvm-config" "${LLVM_DOWNLOAD_DIR}/bin" NO_DEFAULT_PATH)
     else()
         find_program(llvm_config_binary_no_suffix llvm-config)
-        find_program(llvm_config_binary_suffix NAMES llvm-config-7 llvm-config-6.0 llvm-config-5.0 llvm-config-4.0)
+        find_program(llvm_config_binary_suffix NAMES llvm-config-11 llvm-config-7 llvm-config-6.0 llvm-config-5.0 llvm-config-4.0)
 
         if(NOT llvm_config_binary_no_suffix)
             set(LLVM_CONFIG_BINARY ${llvm_config_binary_suffix} CACHE INTERNAL "")

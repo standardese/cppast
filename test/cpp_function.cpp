@@ -64,6 +64,11 @@ ns::m m();
 
 /// void n(int i=int());
 void n(int i = int());
+
+/// consteval void p();
+consteval void p();
+/// static consteval void q();
+static consteval void q();
 )";
 
     auto check_body = [](const cpp_function& func, cpp_function_body_kind kind) {
@@ -208,7 +213,7 @@ void n(int i = int());
                                                                            "noexcept(d())"))));
         }
         else if (func.name() == "g" || func.name() == "h" || func.name() == "i"
-                 || func.name() == "j")
+                 || func.name() == "j" || func.name() == "p" || func.name() == "q")
         {
             REQUIRE(equal_types(idx, func.return_type(), *cpp_builtin_type::build(cpp_void)));
             REQUIRE(func.signature() == "()");
@@ -234,6 +239,14 @@ void n(int i = int());
             else if (func.name() == "j")
             {
                 REQUIRE(func.is_constexpr());
+                REQUIRE(func.storage_class() == cpp_storage_class_static);
+            }
+            else if (func.name() == "p") {
+                REQUIRE(func.is_consteval());
+                REQUIRE(func.storage_class() == cpp_storage_class_none);
+            }
+            else if (func.name() == "q") {
+                REQUIRE(func.is_consteval());
                 REQUIRE(func.storage_class() == cpp_storage_class_static);
             }
         }
@@ -271,7 +284,7 @@ void n(int i = int());
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 15u);
+    REQUIRE(count == 17u);
 }
 
 TEST_CASE("static cpp_function")

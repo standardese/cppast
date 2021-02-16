@@ -226,6 +226,12 @@ public:
         {
             function->constexpr_ = true;
         }
+
+        /// \effects Marks the function as `consteval`.
+        void is_consteval()
+        {
+            function->consteval_ = true;
+        }
     };
 
     /// \returns A reference to the return [cppast::cpp_type]().
@@ -248,17 +254,24 @@ public:
         return constexpr_;
     }
 
+    /// \returns Whether the function is marked `consteval`.
+    bool is_consteval() const noexcept
+    {
+        return consteval_;
+    }
+
 private:
     cpp_entity_kind do_get_entity_kind() const noexcept override;
 
     cpp_function(std::string name, std::unique_ptr<cpp_type> ret)
     : cpp_function_base(std::move(name)), return_type_(std::move(ret)),
-      storage_(cpp_storage_class_auto), constexpr_(false)
+      storage_(cpp_storage_class_auto), constexpr_(false), consteval_(false)
     {}
 
     std::unique_ptr<cpp_type>    return_type_;
     cpp_storage_class_specifiers storage_;
     bool                         constexpr_;
+    bool                         consteval_;
 };
 } // namespace cppast
 

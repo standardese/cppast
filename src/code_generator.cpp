@@ -465,7 +465,7 @@ bool write_variable_base(code_generator::output& output, const cpp_variable_base
 }
 
 void write_storage_class(code_generator::output& output, cpp_storage_class_specifiers storage,
-                         bool is_constexpr)
+                         bool is_constexpr, bool is_consteval)
 {
     if (is_static(storage))
         output << keyword("static") << whitespace;
@@ -475,6 +475,8 @@ void write_storage_class(code_generator::output& output, cpp_storage_class_speci
         output << keyword("thread_local") << whitespace;
     if (is_constexpr)
         output << keyword("constexpr") << whitespace;
+    else if (is_consteval)
+        output << keyword("consteval") << whitespace;
 }
 
 bool generate_variable(code_generator& generator, const cpp_variable& var,
@@ -483,7 +485,7 @@ bool generate_variable(code_generator& generator, const cpp_variable& var,
     code_generator::output output(type_safe::ref(generator), type_safe::ref(var), cur_access);
     if (output)
     {
-        write_storage_class(output, var.storage_class(), var.is_constexpr());
+        write_storage_class(output, var.storage_class(), var.is_constexpr(), false);
 
         write_variable_base(output, var, var.name());
         output << punctuation(";") << newl;
@@ -602,7 +604,7 @@ bool generate_function(code_generator& generator, const cpp_function& func,
     {
         if (is_friended(func))
             output << keyword("friend") << whitespace;
-        write_storage_class(output, func.storage_class(), func.is_constexpr());
+        write_storage_class(output, func.storage_class(), func.is_constexpr(), func.is_consteval());
 
         if (output.options() & code_generator::exclude_return)
             output.excluded(func) << whitespace;
@@ -705,6 +707,8 @@ bool generate_member_function(code_generator& generator, const cpp_member_functi
             output << keyword("friend") << whitespace;
         if (func.is_constexpr())
             output << keyword("constexpr") << whitespace;
+        else if (func.is_consteval())
+            output << keyword("consteval") << whitespace;
         else
             write_prefix_virtual(output, func.virtual_info());
 
@@ -791,6 +795,8 @@ bool generate_constructor(code_generator& generator, const cpp_constructor& ctor
             output << keyword("explicit") << whitespace;
         if (ctor.is_constexpr())
             output << keyword("constexpr") << whitespace;
+        if (ctor.is_consteval())
+            output << keyword("consteval") << whitespace;
 
         output << identifier(ctor.semantic_scope()) << identifier(ctor.name());
         write_function_parameters(output, ctor);

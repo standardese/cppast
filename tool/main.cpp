@@ -304,6 +304,8 @@ int main(int argc, char* argv[]) try
             config.set_flags(cppast::cpp_standard::cpp_14, flags);
         else if (options["std"].as<std::string>() == "c++1z")
             config.set_flags(cppast::cpp_standard::cpp_1z, flags);
+        else if (options["std"].as<std::string>() == "c++20")
+            config.set_flags(cppast::cpp_standard::cpp_20, flags);
         else
         {
             print_error("invalid value '" + options["std"].as<std::string>() + "' for std flag");
