@@ -252,6 +252,12 @@ public:
         {
             function->constexpr_ = true;
         }
+
+        /// \effects Marks the constructor `consteval`.
+        void is_consteval() noexcept
+        {
+            function->consteval_ = true;
+        }
     };
 
     /// \returns Whether or not the constructor is `explicit`.
@@ -266,15 +272,22 @@ public:
         return constexpr_;
     }
 
+    /// \returns Whether or not the constructor is `consteval`.
+    bool is_consteval() const noexcept
+    {
+        return consteval_;
+    }
+
 private:
     cpp_constructor(std::string name)
-    : cpp_function_base(std::move(name)), explicit_(false), constexpr_(false)
+    : cpp_function_base(std::move(name)), explicit_(false), constexpr_(false), consteval_(false)
     {}
 
     cpp_entity_kind do_get_entity_kind() const noexcept override;
 
     bool explicit_;
     bool constexpr_;
+    bool consteval_;
 
     friend basic_builder<cpp_constructor>;
 };

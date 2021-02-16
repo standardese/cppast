@@ -273,6 +273,8 @@ struct foo
     explicit foo(int);
     /// constexpr foo(int,char)=delete;
     constexpr foo(int, char) = delete;
+    /// consteval foo(int,char,bool)=delete;
+    consteval foo(int, char, bool) = delete;
 };
 
 /// foo::foo(int);
@@ -292,6 +294,8 @@ struct foo
     explicit foo(int);
     /// constexpr foo(int,char)=delete;
     constexpr foo(int, char) = delete;
+    /// consteval foo(int,char,bool)=delete;
+    consteval foo(int, char, bool) = delete;
 };
 
 /// foo<T>::foo(int);
@@ -349,11 +353,18 @@ foo<T>::foo(int) {}
                 REQUIRE(cont.body_kind() == cpp_function_deleted);
                 REQUIRE(cont.signature() == "(int,char)");
             }
+            else if (count_children(cont.parameters()) == 3u) {
+                REQUIRE(!cont.noexcept_condition());
+                REQUIRE(!cont.is_explicit());
+                REQUIRE(cont.is_consteval());
+                REQUIRE(cont.body_kind() == cpp_function_deleted);
+                REQUIRE(cont.signature() == "(int,char,bool)");
+            }
             else
                 REQUIRE(false);
         }
     });
-    REQUIRE(count == 4u);
+    REQUIRE(count == 5u);
 }
 
 TEST_CASE("cpp_destructor")

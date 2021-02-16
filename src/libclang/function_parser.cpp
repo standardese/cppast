@@ -793,6 +793,8 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
         builder.is_variadic();
     if (prefix.is_constexpr)
         builder.is_constexpr();
+    else if (prefix.is_consteval)
+        builder.is_consteval();
     else if (prefix.is_explicit)
         builder.is_explicit();
 

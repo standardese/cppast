@@ -464,7 +464,6 @@ bool write_variable_base(code_generator::output& output, const cpp_variable_base
     return static_cast<bool>(output);
 }
 
-// TODO: consteval
 void write_storage_class(code_generator::output& output, cpp_storage_class_specifiers storage,
                          bool is_constexpr, bool is_consteval)
 {
@@ -785,7 +784,6 @@ bool generate_conversion_op(code_generator& generator, const cpp_conversion_op& 
     return static_cast<bool>(output);
 }
 
-// TODO: consteval
 bool generate_constructor(code_generator& generator, const cpp_constructor& ctor,
                           cpp_access_specifier_kind cur_access)
 {
@@ -798,6 +796,8 @@ bool generate_constructor(code_generator& generator, const cpp_constructor& ctor
             output << keyword("explicit") << whitespace;
         if (ctor.is_constexpr())
             output << keyword("constexpr") << whitespace;
+        if (ctor.is_consteval())
+            output << keyword("consteval") << whitespace;
 
         output << identifier(ctor.semantic_scope()) << identifier(ctor.name());
         write_function_parameters(output, ctor);
