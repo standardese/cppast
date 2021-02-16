@@ -203,7 +203,7 @@ int main(int argc, char* argv[]) try
         cxxopts::value<std::string>())
         ("database_file", "set the file name whose configuration will be used regardless of the current file name",
         cxxopts::value<std::string>())
-        ("std", "set the C++ standard (c++98, c++03, c++11, c++14, c++1z (experimental))",
+        ("std", "set the C++ standard (c++98, c++03, c++11, c++14, c++1z (experimental), c++17, c++2a, c++20)",
          cxxopts::value<std::string>()->default_value(cppast::to_string(cppast::cpp_standard::cpp_latest)))
         ("I,include_directory", "add directory to include search path",
          cxxopts::value<std::vector<std::string>>())
@@ -304,6 +304,12 @@ int main(int argc, char* argv[]) try
             config.set_flags(cppast::cpp_standard::cpp_14, flags);
         else if (options["std"].as<std::string>() == "c++1z")
             config.set_flags(cppast::cpp_standard::cpp_1z, flags);
+        else if (options["std"].as<std::string>() == "c++17")
+            config.set_flags(cppast::cpp_standard::cpp_17, flags);
+        else if (options["std"].as<std::string>() == "c++2a")
+            config.set_flags(cppast::cpp_standard::cpp_2a, flags);
+        else if (options["std"].as<std::string>() == "c++20")
+            config.set_flags(cppast::cpp_standard::cpp_20, flags);
         else
         {
             print_error("invalid value '" + options["std"].as<std::string>() + "' for std flag");

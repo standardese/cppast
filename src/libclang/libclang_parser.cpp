@@ -248,8 +248,8 @@ namespace
 {
 bool is_valid_binary(const std::string& binary)
 {
-    tpl::Process process(binary + " -v", "", [](const char*, std::size_t) {},
-                         [](const char*, std::size_t) {});
+    tpl::Process process(
+        binary + " -v", "", [](const char*, std::size_t) {}, [](const char*, std::size_t) {});
     return process.get_exit_status() == 0;
 }
 
@@ -262,11 +262,10 @@ bool is_valid_binary(const std::string& binary)
 void add_default_include_dirs(libclang_compile_config& config)
 {
     std::string  verbose_output;
-    tpl::Process process(detail::libclang_compile_config_access::clang_binary(config)
-                             + " -x c++ -v -",
-                         "", [](const char*, std::size_t) {},
-                         [&](const char* str, std::size_t n) { verbose_output.append(str, n); },
-                         true);
+    tpl::Process process(
+        detail::libclang_compile_config_access::clang_binary(config) + " -x c++ -v -", "",
+        [](const char*, std::size_t) {},
+        [&](const char* str, std::size_t n) { verbose_output.append(str, n); }, true);
     process.write("", 1);
     process.close_stdin();
     process.get_exit_status();
@@ -326,7 +325,9 @@ bool libclang_compile_config::set_clang_binary(std::string binary)
         // first search in current directory, then in PATH
         static const char* paths[]
             = {"./clang++",   "clang++",       "./clang++-4.0", "clang++-4.0", "./clang++-5.0",
-               "clang++-5.0", "./clang++-6.0", "clang++-6.0",   "./clang-7",   "clang-7"};
+               "clang++-5.0", "./clang++-6.0", "clang++-6.0",   "./clang-7",   "clang-7",
+               "./clang-8",   "clang-8",       "./clang-9",     "clang-9",     "./clang-10",
+               "clang-10",    "./clang-11",    "clang-11"};
         for (auto& p : paths)
             if (is_valid_binary(p))
             {
@@ -373,6 +374,39 @@ void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags 
         else
             add_flag("-std=c++1z");
         break;
+    case cpp_standard::cpp_17:
+        if (libclang_parser::libclang_minor_version() >= 43)
+        { // Corresponds to Clang version 5
+            if (flags & compile_flag::gnu_extensions)
+                add_flag("-std=gnu++17");
+            else
+                add_flag("-std=c++17");
+            break;
+        }
+        else
+            throw std::invalid_argument("c++17 is not yet supported for current version of clang");
+    case cpp_standard::cpp_2a:
+        if (libclang_parser::libclang_minor_version() >= 59)
+        { // Corresponds to Clang version 9
+            if (flags & compile_flag::gnu_extensions)
+                add_flag("-std=gnu++2a");
+            else
+                add_flag("-std=c++2a");
+            break;
+        }
+        else
+            throw std::invalid_argument("c++2a is not yet supported for current version of clang");
+    case cpp_standard::cpp_20:
+        if (libclang_parser::libclang_minor_version() >= 60)
+        { // Corresponds to Clang version 10
+            if (flags & compile_flag::gnu_extensions)
+                add_flag("-std=gnu++20");
+            else
+                add_flag("-std=c++20");
+            break;
+        }
+        else
+            throw std::invalid_argument("c++20 is not yet supported for current version of clang");
     }
 
     if (flags & compile_flag::ms_compatibility)
@@ -559,7 +593,8 @@ unsigned get_line_no(const CXCursor& cursor)
 }
 } // namespace
 std::unique_ptr<cpp_file> libclang_parser::do_parse(const cpp_entity_index& idx, std::string path,
-                                                    const compile_config& c) const try
+                                                    const compile_config& c) const
+try
 {
     DEBUG_ASSERT(std::strcmp(c.name(), "libclang") == 0, detail::precondition_error_handler{},
                  "config has mismatched type");

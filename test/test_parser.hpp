@@ -23,21 +23,18 @@ inline void write_file(const char* name, const char* code)
     file << code;
 }
 
-inline cppast::libclang_compile_config make_test_config()
-{
-    using namespace cppast;
-
-    libclang_compile_config config;
-    config.set_flags(cpp_standard::cpp_latest);
-    return config;
-}
-
 inline std::unique_ptr<cppast::cpp_file> parse_file(const cppast::cpp_entity_index& idx,
                                                     const char*                     name,
-                                                    bool fast_preprocessing = false)
+                                                    bool                 fast_preprocessing = false,
+                                                    cppast::cpp_standard standard
+                                                    = cppast::cpp_standard::cpp_latest)
 {
     using namespace cppast;
-    static auto config = make_test_config();
+
+    // Creating a config is expensive, so we remember a default one.
+    static auto default_config = libclang_compile_config();
+    auto        config         = default_config;
+    config.set_flags(standard);
     config.fast_preprocessing(fast_preprocessing);
 
     libclang_parser p(default_logger());
@@ -50,10 +47,12 @@ inline std::unique_ptr<cppast::cpp_file> parse_file(const cppast::cpp_entity_ind
 
 inline std::unique_ptr<cppast::cpp_file> parse(const cppast::cpp_entity_index& idx,
                                                const char* name, const char* code,
-                                               bool fast_preprocessing = false)
+                                               bool                 fast_preprocessing = false,
+                                               cppast::cpp_standard standard
+                                               = cppast::cpp_standard::cpp_latest)
 {
     write_file(name, code);
-    return parse_file(idx, name, fast_preprocessing);
+    return parse_file(idx, name, fast_preprocessing, standard);
 }
 
 class test_generator : public cppast::code_generator
