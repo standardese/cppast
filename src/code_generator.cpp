@@ -475,7 +475,7 @@ void write_storage_class(code_generator::output& output, cpp_storage_class_speci
         output << keyword("thread_local") << whitespace;
     if (is_constexpr)
         output << keyword("constexpr") << whitespace;
-    if (is_consteval)
+    else if (is_consteval)
         output << keyword("consteval") << whitespace;
 }
 
@@ -748,7 +748,6 @@ bool generate_member_function(code_generator& generator, const cpp_member_functi
     return static_cast<bool>(output);
 }
 
-// TODO: consteval
 bool generate_conversion_op(code_generator& generator, const cpp_conversion_op& op,
                             cpp_access_specifier_kind cur_access)
 {

@@ -151,7 +151,7 @@ protected:
     /// \effects Sets name and return type, as well as the rest to defaults.
     cpp_member_function_base(std::string name, std::unique_ptr<cpp_type> return_type)
     : cpp_function_base(std::move(name)), return_type_(std::move(return_type)), cv_(cpp_cv_none),
-      ref_(cpp_ref_none), constexpr_(false)
+      ref_(cpp_ref_none), constexpr_(false), consteval_(false)
     {}
 
 protected:
