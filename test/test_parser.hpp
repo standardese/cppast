@@ -7,7 +7,7 @@
 
 #include <fstream>
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include <cppast/code_generator.hpp>
 #include <cppast/cpp_class.hpp>

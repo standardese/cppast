@@ -2,11 +2,11 @@
 # This file is subject to the license terms in the LICENSE file
 # found in the top-level directory of this distribution.
 
-# download catch
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/catch.hpp)
-    file(DOWNLOAD https://raw.githubusercontent.com/catchorg/Catch2/v2.x/single_include/catch2/catch.hpp
-            ${CMAKE_CURRENT_BINARY_DIR}/catch.hpp)
-endif()
+# Fetch catch.
+message(STATUS "Fetching catch")
+include(FetchContent)
+FetchContent_Declare(catch URL https://github.com/catchorg/Catch2/archive/v2.13.4.zip)
+FetchContent_MakeAvailable(catch)
 
 set(tests
         code_generator.cpp
@@ -42,9 +42,8 @@ foreach(file ${files})
 endforeach()
 
 add_executable(cppast_test test.cpp test_parser.hpp ${tests})
-target_include_directories(cppast_test PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-target_include_directories(cppast_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../src)
-target_link_libraries(cppast_test PUBLIC cppast)
+target_include_directories(cppast_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../src ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(cppast_test PUBLIC cppast Catch2)
 target_compile_definitions(cppast_test PUBLIC CPPAST_INTEGRATION_FILE="${CMAKE_CURRENT_SOURCE_DIR}/integration.cpp"
                                               CPPAST_COMPILE_COMMANDS="${CMAKE_BINARY_DIR}")
 

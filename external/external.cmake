@@ -46,6 +46,7 @@ if(build_tool)
     execute_process(COMMAND git submodule update --init -- external/cxxopts
                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
+    set(CXXOPTS_BUILD_TESTS OFF)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/cxxopts EXCLUDE_FROM_ALL)
 endif()
 
