@@ -5,6 +5,11 @@
 
 Library interface to the C++ AST &mdash; parse source files, synthesize entities, get documentation comments and generate code.
 
+> |[![](https://www.jonathanmueller.dev/embarcadero-logo.png)](https://www.embarcadero.com/de/products/cbuilder/starter) | Sponsored by [Embarcadero C++Builder](https://www.embarcadero.com/de/products/cbuilder/starter). |
+> |-------------------------------------|----------------|
+>
+> If you like this project, consider [supporting me](https://jonathanmueller.dev/support-me/).
+
 ## Motivation
 
 If you're writing a tool that needs access to the C++ AST (i.e. documentation generator, reflection library, …), your only option apart from writing your own parser is to use [clang](https://clang.llvm.org).
