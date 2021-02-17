@@ -2,15 +2,16 @@
 # This file is subject to the license terms in the LICENSE file
 # found in the top-level directory of this distribution.
 
+include(FetchContent)
+
 #
 # install type safe
 #
 find_package(type_safe QUIET)
 if(NOT type_safe_FOUND)
-    message(STATUS "Installing type_safe via submodule")
-    execute_process(COMMAND git submodule update --init -- external/type_safe
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/type_safe EXCLUDE_FROM_ALL)
+    message(STATUS "Fetching type_safe")
+    FetchContent_Declare(type_safe GIT_REPOSITORY https://github.com/foonathan/type_safe GIT_TAG origin/main)
+    FetchContent_MakeAvailable(type_safe)
 endif()
 
 #
@@ -28,12 +29,11 @@ target_link_libraries(_cppast_tiny_process INTERFACE tiny-process-library::tiny-
 # install cxxopts, if needed
 #
 if(build_tool)
-    message(STATUS "Installing cxxopts via submodule")
-    execute_process(COMMAND git submodule update --init -- external/cxxopts
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    set(CXXOPTS_BUILD_TESTS OFF CACHE BOOL "")
 
-    set(CXXOPTS_BUILD_TESTS OFF)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/cxxopts EXCLUDE_FROM_ALL)
+    message(STATUS "Fetching cxxopts")
+    FetchContent_Declare(cxxopts URL https://github.com/jarro2783/cxxopts/archive/v2.2.1.zip)
+    FetchContent_MakeAvailable(cxxopts)
 endif()
 
 #
