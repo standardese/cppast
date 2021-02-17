@@ -16,27 +16,13 @@ endif()
 #
 # install the tiny-process-library
 #
-message(STATUS "Installing tiny-process-library via submodule")
-execute_process(COMMAND git submodule update --init -- external/tiny-process-library
-                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 find_package(Threads REQUIRED QUIET)
 
 # create a target here instead of using the one provided
-set(tiny_process_dir ${CMAKE_CURRENT_SOURCE_DIR}/external/tiny-process-library)
-if(WIN32)
-    add_library(_cppast_tiny_process EXCLUDE_FROM_ALL
-                    ${tiny_process_dir}/process.hpp
-                    ${tiny_process_dir}/process.cpp
-                    ${tiny_process_dir}/process_win.cpp)
-else()
-    add_library(_cppast_tiny_process EXCLUDE_FROM_ALL
-                    ${tiny_process_dir}/process.hpp
-                    ${tiny_process_dir}/process.cpp
-                    ${tiny_process_dir}/process_unix.cpp)
-endif()
-target_include_directories(_cppast_tiny_process PUBLIC ${tiny_process_dir})
-target_link_libraries(_cppast_tiny_process PUBLIC Threads::Threads)
-set_target_properties(_cppast_tiny_process PROPERTIES CXX_STANDARD 11)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/tpl)
+add_library(_cppast_tiny_process INTERFACE)
+target_include_directories(_cppast_tiny_process INTERFACE ${tiny_process_dir})
+target_link_libraries(_cppast_tiny_process INTERFACE tiny-process-library::tiny-process-library Threads::Threads)
 
 #
 # install cxxopts, if needed
@@ -114,7 +100,7 @@ function(_cppast_find_llvm_config)
         find_program(LLVM_CONFIG_BINARY "llvm-config" "${LLVM_DOWNLOAD_DIR}/bin" NO_DEFAULT_PATH)
     else()
         find_program(llvm_config_binary_no_suffix llvm-config)
-        find_program(llvm_config_binary_suffix NAMES llvm-config-7 llvm-config-6.0 llvm-config-5.0 llvm-config-4.0)
+        find_program(llvm_config_binary_suffix NAMES llvm-config-10 llvm-config-9 llvm-config-8 llvm-config-7 llvm-config-6.0 llvm-config-5.0 llvm-config-4.0)
 
         if(NOT llvm_config_binary_no_suffix)
             set(LLVM_CONFIG_BINARY ${llvm_config_binary_suffix} CACHE INTERNAL "")
