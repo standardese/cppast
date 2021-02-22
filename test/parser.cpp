@@ -4,7 +4,7 @@
 
 #include <cppast/parser.hpp>
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 using namespace cppast;
 
