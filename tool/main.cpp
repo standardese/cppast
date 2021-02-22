@@ -304,6 +304,10 @@ int main(int argc, char* argv[]) try
             config.set_flags(cppast::cpp_standard::cpp_14, flags);
         else if (options["std"].as<std::string>() == "c++1z")
             config.set_flags(cppast::cpp_standard::cpp_1z, flags);
+        else if (options["std"].as<std::string>() == "c++17")
+            config.set_flags(cppast::cpp_standard::cpp_17, flags);
+        else if (options["std"].as<std::string>() == "c++2A")
+            config.set_flags(cppast::cpp_standard::cpp_2A, flags);
         else if (options["std"].as<std::string>() == "c++20")
             config.set_flags(cppast::cpp_standard::cpp_20, flags);
         else

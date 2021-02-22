@@ -22,7 +22,9 @@ enum class cpp_standard
     cpp_03,
     cpp_11,
     cpp_14,
-    cpp_1z, //< Upcoming C++17 (experimental).
+    cpp_1z,
+    cpp_17,
+    cpp_2A,
     cpp_20,
 
     cpp_latest = cpp_standard::cpp_20, //< The latest supported C++ standard.
@@ -44,6 +46,10 @@ inline const char* to_string(cpp_standard standard) noexcept
         return "c++14";
     case cpp_standard::cpp_1z:
         return "c++1z";
+    case cpp_standard::cpp_17:
+        return "c++17";
+    case cpp_standard::cpp_2A:
+        return "c++2A";
     case cpp_standard::cpp_20:
         return "c++20";
     }
