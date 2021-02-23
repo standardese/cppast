@@ -537,6 +537,9 @@ std::unique_ptr<cpp_entity> parse_cpp_function_impl(const detail::parse_context&
     builder.storage_class(cpp_storage_class_specifiers(
         detail::get_storage_class(cur)
         | (is_static ? cpp_storage_class_static : cpp_storage_class_none)));
+
+    DEBUG_ASSERT(!(prefix.is_constexpr && prefix.is_consteval), detail::parse_error_handler{}, cur,
+                 "function cannot be both constexpr and consteval");
     if (prefix.is_constexpr)
         builder.is_constexpr();
     else if (prefix.is_consteval)
