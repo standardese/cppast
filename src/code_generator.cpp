@@ -760,6 +760,8 @@ bool generate_conversion_op(code_generator& generator, const cpp_conversion_op& 
             output << keyword("explicit") << whitespace;
         if (op.is_constexpr())
             output << keyword("constexpr") << whitespace;
+        else if (op.is_consteval())
+            output << keyword("consteval") << whitespace;
         else
             write_prefix_virtual(output, op.virtual_info());
 

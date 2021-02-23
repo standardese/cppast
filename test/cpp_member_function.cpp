@@ -161,6 +161,71 @@ struct bar : foo<int>
     REQUIRE(count == 13u);
 }
 
+#if __cplusplus == 202002L
+TEST_CASE("consteval_op") {
+    auto code = R"(
+namespace ns
+{
+    template <typename T>
+    struct type2 {};
+}
+
+// most of it only need to be check in member function
+struct foo
+{
+    /// consteval operator ns::type2<int>();
+    consteval operator ns::type2<int>()
+    {
+        return {};
+    }
+
+    /// consteval operator ns::type2<char>();
+    consteval operator ns::type2<char>()
+    {
+        return {};
+    }
+};
+)";
+
+    cpp_entity_index idx;
+    auto             file  = parse(idx, "consteval_op.cpp", code);
+    auto             count = test_visit<cpp_conversion_op>(*file, [&](const cpp_conversion_op& op) {
+      REQUIRE(count_children(op.parameters()) == 0u);
+      REQUIRE(!op.is_variadic());
+      REQUIRE(op.body_kind() == cpp_function_definition);
+      REQUIRE(op.ref_qualifier() == cpp_ref_none);
+      REQUIRE(!op.virtual_info());
+      REQUIRE(!op.noexcept_condition());
+
+      if (!op.is_explicit() && op.is_consteval()) {
+        REQUIRE(op.cv_qualifier() == cpp_cv_none);
+        REQUIRE(op.signature() == "()");
+        if (op.name() == "operator ns::type2<int>")
+        {
+            REQUIRE(op.return_type().kind() == cpp_type_kind::template_instantiation_t);
+            auto& inst = static_cast<const cpp_template_instantiation_type&>(op.return_type());
+
+            REQUIRE(inst.primary_template().name() == "ns::type2");
+            REQUIRE(!inst.arguments_exposed());
+            REQUIRE(inst.unexposed_arguments() == "int");
+        }
+        else if (op.name() == "operator ns::type2<char>")
+        {
+            REQUIRE(op.return_type().kind() == cpp_type_kind::template_instantiation_t);
+            auto& inst = static_cast<const cpp_template_instantiation_type&>(op.return_type());
+
+            REQUIRE(inst.primary_template().name() == "ns::type2");
+            REQUIRE(!inst.arguments_exposed());
+            REQUIRE(inst.unexposed_arguments() == "char");
+        }
+        else
+            REQUIRE(false);
+    }
+    });
+    REQUIRE(count == 2u);
+}
+#endif
+
 TEST_CASE("cpp_conversion_op")
 {
     auto code = R"(
@@ -168,9 +233,6 @@ namespace ns
 {
     template <typename T>
     struct type {};
-
-    template <typename T>
-    struct type2 {};
 }
 
 // most of it only need to be check in member function
@@ -213,7 +275,7 @@ struct foo
         REQUIRE(!op.virtual_info());
         REQUIRE(!op.noexcept_condition());
 
-        if (!op.is_explicit() && !op.is_constexpr() && !op.is_consteval())
+        if (!op.is_explicit() && !op.is_constexpr())
         {
             REQUIRE(op.name() == "operator int&");
             REQUIRE(equal_types(idx, op.return_type(),
@@ -222,7 +284,7 @@ struct foo
             REQUIRE(op.cv_qualifier() == cpp_cv_none);
             REQUIRE(op.signature() == "()");
         }
-        else if (op.is_explicit() && !op.is_constexpr() && !op.is_consteval())
+        else if (op.is_explicit() && !op.is_constexpr())
         {
             REQUIRE(op.name() == "operator bool");
             REQUIRE(equal_types(idx, op.return_type(), *cpp_builtin_type::build(cpp_bool)));
@@ -254,35 +316,77 @@ struct foo
             else
                 REQUIRE(false);
         }
-        else if (!op.is_explicit() && op.is_consteval()) {
-            REQUIRE(op.cv_qualifier() == cpp_cv_none);
-            REQUIRE(op.signature() == "()");
-            if (op.name() == "operator ns::type2<int>")
-            {
-                REQUIRE(op.return_type().kind() == cpp_type_kind::template_instantiation_t);
-                auto& inst = static_cast<const cpp_template_instantiation_type&>(op.return_type());
-
-                REQUIRE(inst.primary_template().name() == "ns::type2");
-                REQUIRE(!inst.arguments_exposed());
-                REQUIRE(inst.unexposed_arguments() == "int");
-            }
-            else if (op.name() == "operator ns::type2<char>")
-            {
-                REQUIRE(op.return_type().kind() == cpp_type_kind::template_instantiation_t);
-                auto& inst = static_cast<const cpp_template_instantiation_type&>(op.return_type());
-
-                REQUIRE(inst.primary_template().name() == "ns::type2");
-                REQUIRE(!inst.arguments_exposed());
-                REQUIRE(inst.unexposed_arguments() == "char");
-            }
-            else
-                REQUIRE(false);
-        }
         else
             REQUIRE(false);
     });
     REQUIRE(count == 4u);
 }
+
+#if __cplusplus == 202002L
+TEST_CASE("consteval_constructor")
+{
+    // only test constructor specific stuff
+    const char* code;
+    auto        is_template = false;
+    SECTION("non-template")
+    {
+        code = R"(
+struct foo
+{
+    /// consteval foo(int)=delete;
+    consteval foo(int) = delete;
+};
+
+)";
+    }
+    SECTION("template")
+    {
+        is_template = true;
+        code        = R"(
+template <typename T>
+struct foo
+{
+    /// consteval foo(int)=delete;
+    consteval foo(int) = delete;
+};
+
+)";
+    }
+    INFO(is_template);
+
+    cpp_entity_index idx;
+    auto             file  = parse(idx, "consteval_constructor.cpp", code);
+    auto             count = test_visit<cpp_constructor>(*file, [&](const cpp_constructor& cont) {
+      REQUIRE(!cont.is_variadic());
+      REQUIRE(cont.name() == "foo");
+
+      if (cont.semantic_parent())
+      {
+          if (is_template)
+              REQUIRE(cont.semantic_parent().value().name() == "foo<T>::");
+          else
+              REQUIRE(cont.semantic_parent().value().name() == "foo::");
+          REQUIRE(!cont.noexcept_condition());
+          REQUIRE(!cont.is_constexpr());
+      }
+      else
+      {
+          REQUIRE(cont.name() == "foo");
+
+          if (count_children(cont.parameters()) == 1u) {
+              REQUIRE(!cont.noexcept_condition());
+              REQUIRE(!cont.is_explicit());
+              REQUIRE(cont.is_consteval());
+              REQUIRE(cont.body_kind() == cpp_function_deleted);
+              REQUIRE(cont.signature() == "(int)");
+          }
+          else
+              REQUIRE(false);
+      }
+    });
+    REQUIRE(count == 1u);
+}
+#endif
 
 TEST_CASE("cpp_constructor")
 {
