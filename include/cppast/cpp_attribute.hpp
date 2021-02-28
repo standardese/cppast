@@ -107,8 +107,6 @@ type_safe::optional_ref<const cpp_attribute> has_attribute(const cpp_attribute_l
 type_safe::optional_ref<const cpp_attribute> has_attribute(const cpp_attribute_list& attributes,
                                                            cpp_attribute_kind        kind);
 
-class cpp_entity;
-
 /// \group has_attribute
 type_safe::optional_ref<const cpp_attribute> has_attribute(const cpp_entity&  e,
                                                            const std::string& name);

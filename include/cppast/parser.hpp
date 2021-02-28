@@ -15,7 +15,6 @@
 
 namespace cppast
 {
-class cpp_entity_index;
 
 /// Base class for a parser.
 ///

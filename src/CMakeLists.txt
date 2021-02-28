@@ -44,6 +44,7 @@ set(header
     ../include/cppast/cpp_variable_template.hpp
     ../include/cppast/diagnostic.hpp
     ../include/cppast/diagnostic_logger.hpp
+    ../include/cppast/cppast_fwd.hpp
     ../include/cppast/libclang_parser.hpp
     ../include/cppast/parser.hpp
     ../include/cppast/visitor.hpp)

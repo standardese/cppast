@@ -99,6 +99,25 @@ bool need_to_remove_scope(const CXCursor& cur, const CXType& type)
 
 std::string get_type_spelling(const CXCursor& cur, const CXType& type)
 {
+    // TODO: There are two interesting things we should keep track of here:
+    // * The canonical name of a type (easy, clang has a shortcut for that)
+    // * The type definition of this type, say for:
+    //   std::vector<int, default_alloator...> this should be the type (we
+    //   should ignore specialization here!) vector<T, S> whose parent is a
+    //   namespace in this case but could again be a concrete type as well (to
+    //   handle nested type specializations correctly.)
+    /*
+    auto ns_name = [](const CXCursor& cur) {
+      auto parent = clang_getCursorSemanticParent(cur);
+      if (clang_getCursorKind(parent) == CXCursor_TranslationUnit)
+        return "";
+      if (clang_getCursorKind(parent) == CXCursor_Namespace)
+        return spelling of cursor ...
+    };
+    */
+
+    // auto canonical = detail::cxstring(clang_getTypeSpelling(clang_getCanonicalType(type))).std_str();
+    // auto declaration = detail::cxstring(clang_getCursorSpelling(clang_getTypeDeclaration(type))).std_str();
     auto spelling = detail::cxstring(clang_getTypeSpelling(type)).std_str();
     if (need_to_remove_scope(cur, type))
     {

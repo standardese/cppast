@@ -16,12 +16,6 @@
 
 namespace cppast
 {
-class cpp_entity;
-enum class cpp_entity_kind;
-class cpp_entity_index;
-struct cpp_entity_id;
-class cpp_template_parameter;
-class cpp_template;
 
 /// The name of a scope.
 ///

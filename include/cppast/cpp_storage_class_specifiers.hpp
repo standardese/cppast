@@ -5,6 +5,8 @@
 #ifndef CPPAST_CPP_STORAGE_CLASS_SPECIFIERS_HPP_INCLUDED
 #define CPPAST_CPP_STORAGE_CLASS_SPECIFIERS_HPP_INCLUDED
 
+#include <cppast/cppast_fwd.hpp>
+
 namespace cppast
 {
 /// C++ storage class specifiers.

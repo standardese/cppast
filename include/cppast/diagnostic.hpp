@@ -10,6 +10,8 @@
 
 #include <type_safe/optional.hpp>
 
+#include <cppast/cppast_fwd.hpp>
+
 namespace cppast
 {
 /// Describes a physical source location attached to a [cppast::diagnostic]().

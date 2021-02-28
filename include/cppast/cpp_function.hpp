@@ -42,7 +42,7 @@ private:
 };
 
 /// The kinds of function bodies of a [cppast::cpp_function_base]().
-enum cpp_function_body_kind
+enum cpp_function_body_kind : int
 {
     cpp_function_declaration, //< Just a declaration.
     cpp_function_definition,  //< Regular definition.

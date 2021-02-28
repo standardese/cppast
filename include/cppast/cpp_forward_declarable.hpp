@@ -86,11 +86,6 @@ private:
 /// \returns Whether or not the given entity is a definition.
 bool is_definition(const cpp_entity& e) noexcept;
 
-class cpp_enum;
-class cpp_class;
-class cpp_variable;
-class cpp_function_base;
-
 /// Gets the definition of an entity.
 /// \returns A [ts::optional_ref]() to the entity that is the definition.
 /// If the entity is a definition or not derived from [cppast::cpp_forward_declarable]() (only valid

@@ -11,9 +11,6 @@
 
 namespace cppast
 {
-class libclang_compile_config;
-class libclang_compilation_database;
-
 namespace detail
 {
     struct libclang_compile_config_access

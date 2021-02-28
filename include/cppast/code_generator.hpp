@@ -15,8 +15,6 @@
 
 namespace cppast
 {
-enum cpp_access_specifier_kind : int;
-
 /// A simple string view implementation, like [std::string_view]().
 ///
 /// It "views" - stores a pointer to - some kind of string.
@@ -520,12 +518,6 @@ private:
 ///
 /// \returns Whether or not any code was actually written.
 bool generate_code(code_generator& generator, const cpp_entity& e);
-
-/// \exclude
-class cpp_template_argument;
-
-/// \exclude
-class cpp_token_string;
 
 /// \exclude
 namespace detail

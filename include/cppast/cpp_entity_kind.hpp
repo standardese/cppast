@@ -6,6 +6,7 @@
 #define CPPAST_CPP_ENTITY_KIND_HPP_INCLUDED
 
 #include <cppast/detail/assert.hpp>
+#include <cppast/cppast_fwd.hpp>
 
 namespace cppast
 {
