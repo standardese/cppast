@@ -1,0 +1,94 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  # Here we're keeping on arbitrary LLVM version fixed and varying GCC.
+  linux-gcc:
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          # List: https://github.com/conan-io/conan-docker-tools
+          - gcc10
+          - gcc9
+          - gcc8
+          - gcc7
+          - gcc6
+
+    runs-on: ubuntu-latest
+    container:
+      image: conanio/${{matrix.image}}
+      options: --user root
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Create Build Environment
+      run: cmake -E make_directory build
+    - name: Install libclang
+      run: apt-get -qq update && apt-get install -y llvm clang libclang-dev
+    - name: Install ninja
+      run: type ninja || apt-get install -y ninja-build
+
+    - name: Configure
+      working-directory: build/
+      run: cmake -GNinja $GITHUB_WORKSPACE
+    - name: Build
+      working-directory: build/
+      run: cmake --build .
+    - name: Test
+      working-directory: build/
+      run: ctest --output-on-failure
+
+  # Here we're varying the LLVM version and using its clang for compiling as well.
+  linux-clang:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [7, 8, 9, 10]
+
+    runs-on: ubuntu-latest
+    container:
+      # Just one of the newer images.
+      image: conanio/gcc10
+      options: --user root
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Create Build Environment
+      run: cmake -E make_directory build
+    - name: Install libclang
+      run: apt-get -qq update && apt-get install -y llvm-${{matrix.version}} clang-${{matrix.version}} libclang-${{matrix.version}}-dev
+    - name: Install ninja
+      run: type ninja || apt-get install -y ninja-build
+
+    - name: Configure
+      working-directory: build/
+      run: cmake -GNinja $GITHUB_WORKSPACE -DCMAKE_CXX_COMPILER=clang++-${{matrix.version}}
+    - name: Build
+      working-directory: build/
+      run: cmake --build .
+    - name: Test
+      working-directory: build/
+      run: ctest --output-on-failure
+
+  macos:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Create Build Environment
+      run: cmake -E make_directory build
+    - name: Install ninja
+      run: brew install ninja
+
+    - name: Configure
+      working-directory: build/
+      run: cmake -GNinja $GITHUB_WORKSPACE -DLLVM_CONFIG_BINARY="/usr/local/opt/llvm/bin/llvm-config"
+    - name: Build
+      working-directory: build/
+      run: cmake --build .
+    - name: Test
+      working-directory: build/
+      run: ctest --output-on-failure
+
+
