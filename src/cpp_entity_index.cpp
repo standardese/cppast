@@ -26,8 +26,9 @@ void cpp_entity_index::register_definition(cpp_entity_id                        
     {
         // already in map, override declaration
         auto& value = result.first->second;
-        if (value.is_definition && !is_template_specialization(value.entity->kind()))
-            // allow duplicate definition of template specializations as a workaround for MacOS
+        if (value.is_definition && !is_template(value.entity->kind()))
+            // allow duplicate definition of templates
+            // this handles things such as SFINAE
             throw duplicate_definition_error();
         value.is_definition = true;
         value.entity        = entity;
@@ -55,8 +56,8 @@ void cpp_entity_index::register_namespace(cpp_entity_id                         
     ns_[std::move(id)].push_back(ns);
 }
 
-type_safe::optional_ref<const cpp_entity> cpp_entity_index::lookup(const cpp_entity_id& id) const
-    noexcept
+type_safe::optional_ref<const cpp_entity> cpp_entity_index::lookup(
+    const cpp_entity_id& id) const noexcept
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto                        iter = map_.find(id);

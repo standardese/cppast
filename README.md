@@ -1,8 +1,5 @@
 # cppast
 
-[![Build Status](https://dev.azure.com/foonathan/cppast/_apis/build/status/foonathan.cppast?branchName=master)](https://dev.azure.com/foonathan/cppast/_build/latest?definitionId=7&branchName=master)
-[![Build status](https://ci.appveyor.com/api/projects/status/8gp5btjq7eassvn7?svg=true)](https://ci.appveyor.com/project/foonathan/cppast)
-
 Library interface to the C++ AST &mdash; parse source files, synthesize entities, get documentation comments and generate code.
 
 > |[![](https://www.jonathanmueller.dev/embarcadero-logo.png)](https://www.embarcadero.com/de/products/cbuilder/starter) | Sponsored by [Embarcadero C++Builder](https://www.embarcadero.com/de/products/cbuilder/starter). |
