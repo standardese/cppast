@@ -20,6 +20,8 @@ namespace detail
     {
         static const std::string& clang_binary(const libclang_compile_config& config);
 
+        static int8_t clang_major_version(std::string binary_location);
+
         static const std::vector<std::string>& flags(const libclang_compile_config& config);
 
         static bool write_preprocessed(const libclang_compile_config& config);

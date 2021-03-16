@@ -4,7 +4,6 @@
 
 #include <cppast/cpp_member_function.hpp>
 #include <cppast/cpp_template.hpp>
-
 #include "test_parser.hpp"
 
 using namespace cppast;
@@ -161,7 +160,6 @@ struct bar : foo<int>
     REQUIRE(count == 13u);
 }
 
-#if __cplusplus == 202002L
 TEST_CASE("consteval_op") {
     auto code = R"(
 namespace ns
@@ -186,6 +184,8 @@ struct foo
     }
 };
 )";
+    if (detail::libclang_compile_config_access::clang_major_version(CPPAST_CLANG_BINARY) < 10)
+        return;
 
     cpp_entity_index idx;
     auto             file  = parse(idx, "consteval_op.cpp", code);
@@ -224,7 +224,6 @@ struct foo
     });
     REQUIRE(count == 2u);
 }
-#endif
 
 TEST_CASE("cpp_conversion_op")
 {
@@ -322,7 +321,6 @@ struct foo
     REQUIRE(count == 4u);
 }
 
-#if __cplusplus == 202002L
 TEST_CASE("consteval_constructor")
 {
     // only test constructor specific stuff
@@ -352,6 +350,10 @@ struct foo
 
 )";
     }
+
+    if (detail::libclang_compile_config_access::clang_major_version(CPPAST_CLANG_BINARY) < 10)
+        return;
+
     INFO(is_template);
 
     cpp_entity_index idx;
@@ -386,7 +388,6 @@ struct foo
     });
     REQUIRE(count == 1u);
 }
-#endif
 
 TEST_CASE("cpp_constructor")
 {

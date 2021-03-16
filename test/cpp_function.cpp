@@ -11,7 +11,6 @@
 
 using namespace cppast;
 
-#if __cplusplus == 202002L
 TEST_CASE("consteval_function")
 {
     auto code = R"(
@@ -20,6 +19,9 @@ consteval void p();
 /// static consteval void q();
 static consteval void q();
 )";
+
+    if (detail::libclang_compile_config_access::clang_major_version(CPPAST_CLANG_BINARY) < 10)
+        return;
 
     auto check_body = [](const cpp_function& func, cpp_function_body_kind kind) {
       REQUIRE(func.body_kind() == kind);
@@ -53,7 +55,6 @@ static consteval void q();
     });
     REQUIRE(count == 2u);
 }
-#endif
 
 TEST_CASE("cpp_function")
 {

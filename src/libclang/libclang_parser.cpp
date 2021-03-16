@@ -27,6 +27,29 @@ const std::string& detail::libclang_compile_config_access::clang_binary(
     return config.clang_binary_;
 }
 
+int8_t detail::libclang_compile_config_access::clang_major_version(std::string binary_location) {
+    std::string output;
+    tpl::Process process(
+        binary_location + " -v",
+                         "", [](const char*, std::size_t) {},
+                         [&](const char* str, std::size_t n) { output.append(str, n); },
+                         true);
+    process.close_stdin();
+    auto status = process.get_exit_status();
+    DEBUG_ASSERT(status != 0, detail::assert_handler{}, "did not successfully retrieve the clang version");
+
+    auto newline = output.find_first_of('\n');
+    DEBUG_ASSERT(newline != std::string::npos, detail::assert_handler{},
+                 "new line was not found. Example: Ubuntu clang version 11.0.1\\n <---");
+    auto first_line = output.substr(0, newline);
+    auto last_space = first_line.find_last_of(' ');
+    auto version    = first_line.substr(last_space + 1, newline);
+    auto first_period = version.find_first_of('.');
+    auto major = version.substr(0, first_period);
+
+    return (int8_t)atoi(major.c_str());
+}
+
 const std::vector<std::string>& detail::libclang_compile_config_access::flags(
     const libclang_compile_config& config)
 {
@@ -259,29 +282,6 @@ bool is_valid_binary(const std::string& binary)
 #    define CPPAST_DETAIL_WINDOWS 0
 #endif
 
-int get_clang_version(libclang_compile_config& config) {
-    std::string output;
-    tpl::Process process(detail::libclang_compile_config_access::clang_binary(config)
-                         + " -v",
-                         "", [](const char*, std::size_t) {},
-                         [&](const char* str, std::size_t n) { output.append(str, n); },
-                         true);
-    process.close_stdin();
-    auto status = process.get_exit_status();
-    DEBUG_ASSERT(status != 0, detail::assert_handler{}, "did not successfully retrieve the clang version");
-
-    auto newline = output.find_first_of('\n');
-    DEBUG_ASSERT(newline != std::string::npos, detail::assert_handler{},
-                 "new line was not found. Example: Ubuntu clang version 11.0.1\\n <---");
-    auto first_line = output.substr(0, newline);
-    auto last_space = first_line.find_last_of(' ');
-    auto version    = first_line.substr(last_space + 1, newline);
-    auto first_period = version.find_first_of('.');
-    auto major = version.substr(0, first_period);
-
-    return atoi(major.c_str());
-}
-
 void add_default_include_dirs(libclang_compile_config& config)
 {
     std::string  verbose_output;
@@ -399,7 +399,7 @@ void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags 
             add_flag("-std=c++1z");
         break;
     case cpp_standard::cpp_17:
-        if (get_clang_version(*this) >= 5) {
+        if (detail::libclang_compile_config_access::clang_major_version(CPPAST_CLANG_BINARY) >= 5) {
             if (flags & compile_flag::gnu_extensions)
                 add_flag("-std=gnu++17");
             else
@@ -409,7 +409,7 @@ void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags 
         else
             throw std::invalid_argument("c++17 is not yet supported for current version of clang");
     case cpp_standard::cpp_2A:
-        if (get_clang_version(*this) >= 9) {
+        if (detail::libclang_compile_config_access::clang_major_version(CPPAST_CLANG_BINARY) >= 9) {
             if (flags & compile_flag::gnu_extensions)
                 add_flag("-std=gnu++2A");
             else
@@ -419,7 +419,7 @@ void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags 
         else
             throw std::invalid_argument("c++2A is not yet supported for current version of clang");
     case cpp_standard::cpp_20:
-        if (get_clang_version(*this) >= 10) {
+        if (detail::libclang_compile_config_access::clang_major_version(CPPAST_CLANG_BINARY) >= 10) {
             if (flags & compile_flag::gnu_extensions)
                 add_flag("-std=gnu++20");
             else
