@@ -376,7 +376,7 @@ void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags 
             add_flag("-std=c++1z");
         break;
     case cpp_standard::cpp_17:
-        if (libclang_parser::libclang_minor_version() >= 45) {
+        if (libclang_parser::libclang_minor_version() >= 43) { // Corresponds to Clang version 5
             if (flags & compile_flag::gnu_extensions)
                 add_flag("-std=gnu++17");
             else
@@ -386,7 +386,7 @@ void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags 
         else
             throw std::invalid_argument("c++17 is not yet supported for current version of clang");
     case cpp_standard::cpp_2A:
-        if (libclang_parser::libclang_minor_version() >= 59) {
+        if (libclang_parser::libclang_minor_version() >= 59) { // Corresponds to Clang version 9
             if (flags & compile_flag::gnu_extensions)
                 add_flag("-std=gnu++2A");
             else
@@ -396,7 +396,7 @@ void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags 
         else
             throw std::invalid_argument("c++2A is not yet supported for current version of clang");
     case cpp_standard::cpp_20:
-        if (libclang_parser::libclang_minor_version() >= 59) {
+        if (libclang_parser::libclang_minor_version() >= 60) { // Corresponds to Clang version 10
             if (flags & compile_flag::gnu_extensions)
                 add_flag("-std=gnu++20");
             else
