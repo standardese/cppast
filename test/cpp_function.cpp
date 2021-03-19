@@ -20,7 +20,7 @@ consteval void p();
 static consteval void q();
 )";
 
-    if (detail::libclang_compile_config_access::clang_major_version(CPPAST_CLANG_BINARY) < 10)
+    if (libclang_parser::libclang_minor_version() < 59)
         return;
 
     auto check_body = [](const cpp_function& func, cpp_function_body_kind kind) {

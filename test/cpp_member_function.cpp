@@ -184,7 +184,7 @@ struct foo
     }
 };
 )";
-    if (detail::libclang_compile_config_access::clang_major_version(CPPAST_CLANG_BINARY) < 10)
+    if (libclang_parser::libclang_minor_version() < 59)
         return;
 
     cpp_entity_index idx;
@@ -351,7 +351,7 @@ struct foo
 )";
     }
 
-    if (detail::libclang_compile_config_access::clang_major_version(CPPAST_CLANG_BINARY) < 10)
+    if (libclang_parser::libclang_minor_version() < 59)
         return;
 
     INFO(is_template);
