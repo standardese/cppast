@@ -432,7 +432,7 @@ foo<T>::foo(int) {}
     INFO(is_template);
 
     cpp_entity_index idx;
-    auto             file  = parse(idx, "cpp_constructor.cpp", code, false, cppast::cpp_standard::cpp_2a);
+    auto             file  = parse(idx, "cpp_constructor.cpp", code);
     auto             count = test_visit<cpp_constructor>(*file, [&](const cpp_constructor& cont) {
         REQUIRE(!cont.is_variadic());
         REQUIRE(cont.name() == "foo");
