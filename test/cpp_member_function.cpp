@@ -160,8 +160,10 @@ struct bar : foo<int>
     REQUIRE(count == 13u);
 }
 
-TEST_CASE("consteval_op") {
-    auto code = R"(
+#if CINDEX_VERSION_MINOR >= 60
+TEST_CASE("consteval_op")
+{
+    auto             code = R"(
 namespace ns
 {
     template <typename T>
@@ -184,46 +186,45 @@ struct foo
     }
 };
 )";
-    if (libclang_parser::libclang_minor_version() < 60)
-        return;
-
     cpp_entity_index idx;
-    auto             file  = parse(idx, "consteval_op.cpp", code);
+    auto             file  = parse(idx, "consteval_op.cpp", code, false, cppast::cpp_standard::cpp_2a);
     auto             count = test_visit<cpp_conversion_op>(*file, [&](const cpp_conversion_op& op) {
-      REQUIRE(count_children(op.parameters()) == 0u);
-      REQUIRE(!op.is_variadic());
-      REQUIRE(op.body_kind() == cpp_function_definition);
-      REQUIRE(op.ref_qualifier() == cpp_ref_none);
-      REQUIRE(!op.virtual_info());
-      REQUIRE(!op.noexcept_condition());
+        REQUIRE(count_children(op.parameters()) == 0u);
+        REQUIRE(!op.is_variadic());
+        REQUIRE(op.body_kind() == cpp_function_definition);
+        REQUIRE(op.ref_qualifier() == cpp_ref_none);
+        REQUIRE(!op.virtual_info());
+        REQUIRE(!op.noexcept_condition());
 
-      if (!op.is_explicit() && op.is_consteval()) {
-        REQUIRE(op.cv_qualifier() == cpp_cv_none);
-        REQUIRE(op.signature() == "()");
-        if (op.name() == "operator ns::type2<int>")
+        if (!op.is_explicit() && op.is_consteval())
         {
-            REQUIRE(op.return_type().kind() == cpp_type_kind::template_instantiation_t);
-            auto& inst = static_cast<const cpp_template_instantiation_type&>(op.return_type());
+            REQUIRE(op.cv_qualifier() == cpp_cv_none);
+            REQUIRE(op.signature() == "()");
+            if (op.name() == "operator ns::type2<int>")
+            {
+                REQUIRE(op.return_type().kind() == cpp_type_kind::template_instantiation_t);
+                auto& inst = static_cast<const cpp_template_instantiation_type&>(op.return_type());
 
-            REQUIRE(inst.primary_template().name() == "ns::type2");
-            REQUIRE(!inst.arguments_exposed());
-            REQUIRE(inst.unexposed_arguments() == "int");
-        }
-        else if (op.name() == "operator ns::type2<char>")
-        {
-            REQUIRE(op.return_type().kind() == cpp_type_kind::template_instantiation_t);
-            auto& inst = static_cast<const cpp_template_instantiation_type&>(op.return_type());
+                REQUIRE(inst.primary_template().name() == "ns::type2");
+                REQUIRE(!inst.arguments_exposed());
+                REQUIRE(inst.unexposed_arguments() == "int");
+            }
+            else if (op.name() == "operator ns::type2<char>")
+            {
+                REQUIRE(op.return_type().kind() == cpp_type_kind::template_instantiation_t);
+                auto& inst = static_cast<const cpp_template_instantiation_type&>(op.return_type());
 
-            REQUIRE(inst.primary_template().name() == "ns::type2");
-            REQUIRE(!inst.arguments_exposed());
-            REQUIRE(inst.unexposed_arguments() == "char");
+                REQUIRE(inst.primary_template().name() == "ns::type2");
+                REQUIRE(!inst.arguments_exposed());
+                REQUIRE(inst.unexposed_arguments() == "char");
+            }
+            else
+                REQUIRE(false);
         }
-        else
-            REQUIRE(false);
-    }
     });
     REQUIRE(count == 2u);
 }
+#endif
 
 TEST_CASE("cpp_conversion_op")
 {
@@ -321,6 +322,7 @@ struct foo
     REQUIRE(count == 4u);
 }
 
+#if CINDEX_VERSION_MINOR >= 60
 TEST_CASE("consteval_constructor")
 {
     // only test constructor specific stuff
@@ -350,14 +352,10 @@ struct foo
 
 )";
     }
-
-    if (libclang_parser::libclang_minor_version() < 60)
-        return;
-
     INFO(is_template);
 
     cpp_entity_index idx;
-    auto             file  = parse(idx, "consteval_constructor.cpp", code);
+    auto             file  = parse(idx, "consteval_constructor.cpp", code, false, cppast::cpp_standard::cpp_2a);
     auto             count = test_visit<cpp_constructor>(*file, [&](const cpp_constructor& cont) {
       REQUIRE(!cont.is_variadic());
       REQUIRE(cont.name() == "foo");
@@ -388,6 +386,7 @@ struct foo
     });
     REQUIRE(count == 1u);
 }
+#endif
 
 TEST_CASE("cpp_constructor")
 {
@@ -439,7 +438,7 @@ foo<T>::foo(int) {}
     INFO(is_template);
 
     cpp_entity_index idx;
-    auto             file  = parse(idx, "cpp_constructor.cpp", code);
+    auto             file  = parse(idx, "cpp_constructor.cpp", code, false, cppast::cpp_standard::cpp_2a);
     auto             count = test_visit<cpp_constructor>(*file, [&](const cpp_constructor& cont) {
         REQUIRE(!cont.is_variadic());
         REQUIRE(cont.name() == "foo");

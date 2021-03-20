@@ -24,10 +24,10 @@ enum class cpp_standard
     cpp_14,
     cpp_1z,
     cpp_17,
-    cpp_2A,
+    cpp_2a,
     cpp_20,
 
-    cpp_latest = cpp_standard::cpp_20, //< The latest supported C++ standard.
+    cpp_latest = cpp_standard::cpp_1z, //< The latest supported C++ standard.
 };
 
 /// \returns A human readable string representing the option,
@@ -48,8 +48,8 @@ inline const char* to_string(cpp_standard standard) noexcept
         return "c++1z";
     case cpp_standard::cpp_17:
         return "c++17";
-    case cpp_standard::cpp_2A:
-        return "c++2A";
+    case cpp_standard::cpp_2a:
+        return "c++2a";
     case cpp_standard::cpp_20:
         return "c++20";
     }

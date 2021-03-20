@@ -11,6 +11,7 @@
 
 using namespace cppast;
 
+#if CINDEX_VERSION_MINOR >= 60
 TEST_CASE("consteval_function")
 {
     auto code = R"(
@@ -19,10 +20,6 @@ consteval void p();
 /// static consteval void q();
 static consteval void q();
 )";
-
-    if (libclang_parser::libclang_minor_version() < 60)
-        return;
-
     auto check_body = [](const cpp_function& func, cpp_function_body_kind kind) {
       REQUIRE(func.body_kind() == kind);
       REQUIRE(func.is_declaration() == is_declaration(kind));
@@ -30,7 +27,7 @@ static consteval void q();
     };
 
     cpp_entity_index idx;
-    auto             file  = parse(idx, "consteval_function.cpp", code);
+    auto             file  = parse(idx, "consteval_function.cpp", code, false, cppast::cpp_standard::cpp_2a);
     auto             count = test_visit<cpp_function>(*file, [&](const cpp_function& func) {
 
       if (func.name() == "p" || func.name() == "q")
@@ -55,6 +52,7 @@ static consteval void q();
     });
     REQUIRE(count == 2u);
 }
+#endif
 
 TEST_CASE("cpp_function")
 {

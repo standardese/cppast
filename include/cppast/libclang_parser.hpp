@@ -7,6 +7,7 @@
 
 #include <stdexcept>
 
+#include <clang-c/Index.h>
 #include <cppast/parser.hpp>
 
 namespace cppast
@@ -196,7 +197,7 @@ public:
     using config = libclang_compile_config;
 
     /// The version of libclang used.
-    static int libclang_minor_version();
+    static constexpr int libclang_minor_version = CINDEX_VERSION_MINOR;
 
     /// \effects Creates a parser using the default logger.
     libclang_parser();
