@@ -27,7 +27,7 @@ enum class cpp_standard
     cpp_2a,
     cpp_20,
 
-    cpp_latest = cpp_standard::cpp_1z, //< The latest supported C++ standard.
+    cpp_latest = cpp_standard::cpp_11, //< The latest supported C++ standard.
 };
 
 /// \returns A human readable string representing the option,
