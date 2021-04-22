@@ -69,7 +69,7 @@ inline bool is_definition(cpp_function_body_kind body) noexcept
 class cpp_function_base : public cpp_entity, public cpp_forward_declarable
 {
 public:
-    /// \returns An iteratable object iterating over the [cppast::cpp_function__parameter]()
+    /// \returns An iteratable object iterating over the [cppast::cpp_function_parameter]()
     /// entities.
     detail::iteratable_intrusive_list<cpp_function_parameter> parameters() const noexcept
     {
