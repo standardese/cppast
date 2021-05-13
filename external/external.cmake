@@ -26,6 +26,17 @@ target_include_directories(_cppast_tiny_process INTERFACE ${tiny_process_dir})
 target_link_libraries(_cppast_tiny_process INTERFACE tiny-process-library::tiny-process-library Threads::Threads)
 
 #
+# install simdjson
+#
+find_package(simdjson QUIET)
+if (NOT simdjson_FOUND)
+    message(STATUS "Fetching simdjson")
+    FetchContent_Declare(simdjson GIT_REPOSITORY https://github.com/simdjson/simdjson GIT_TAG v0.9.6 GIT_SHALLOW TRUE)
+    FetchContent_MakeAvailable(simdjson)
+    add_library(simdjson::simdjson ALIAS simdjson)
+endif()
+
+#
 # install cxxopts, if needed
 #
 if(build_tool)

@@ -102,16 +102,19 @@ set(libclang_source
         libclang/type_parser.cpp
         libclang/variable_parser.cpp)
 set(astdump_source
-        astdump/astdump_parser.cpp)
+        astdump/astdump_parser.cpp
+        astdump/parse_functions.hpp
+        astdump/parse_functions.cpp)
 
 add_library(cppast ${detail_header} ${header} ${source} ${libclang_source} ${astdump_source})
 target_compile_features(cppast PUBLIC cxx_std_11)
 target_include_directories(cppast PRIVATE ../include SYSTEM INTERFACE ../include)
-target_link_libraries(cppast PUBLIC type_safe _cppast_tiny_process _cppast_libclang)
+target_link_libraries(cppast PUBLIC type_safe _cppast_tiny_process simdjson::simdjson _cppast_libclang)
 target_compile_definitions(cppast PUBLIC
                                 CPPAST_VERSION_MINOR="${cppast_VERSION_MINOR}"
                                 CPPAST_VERSION_MAJOR="${cppast_VERSION_MAJOR}"
                                 CPPAST_VERSION_STRING="${cppast_VERSION}")
+                            if(FALSE)
 target_compile_options(cppast PRIVATE
                            # clang/GCC warnings
                            $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
@@ -121,3 +124,4 @@ target_compile_options(cppast PRIVATE
                            # MSVC warnings
                            $<$<CXX_COMPILER_ID:MSVC>:
                            /W3>)
+                   endif()
