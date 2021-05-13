@@ -76,9 +76,6 @@ bool libclang_compilation_database::has_config(const char* file_name) const
     return true;
 }
 
-namespace
-{} // namespace
-
 libclang_compile_config::libclang_compile_config()
 : compile_config({}), write_preprocessed_(false), fast_preprocessing_(false),
   remove_comments_in_macro_(false)

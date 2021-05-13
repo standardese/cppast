@@ -6,6 +6,7 @@ set(detail_header
         ../include/cppast/detail/assert.hpp
         ../include/cppast/detail/intrusive_list.hpp)
 set(header
+    ../include/cppast/astdump_parser.hpp
     ../include/cppast/code_generator.hpp
     ../include/cppast/compile_config.hpp
     ../include/cppast/cpp_alias_template.hpp
@@ -100,8 +101,10 @@ set(libclang_source
         libclang/template_parser.cpp
         libclang/type_parser.cpp
         libclang/variable_parser.cpp)
+set(astdump_source
+        astdump/astdump_parser.cpp)
 
-add_library(cppast ${detail_header} ${header} ${source} ${libclang_source})
+add_library(cppast ${detail_header} ${header} ${source} ${libclang_source} ${astdump_source})
 target_compile_features(cppast PUBLIC cxx_std_11)
 target_include_directories(cppast PRIVATE ../include SYSTEM INTERFACE ../include)
 target_link_libraries(cppast PUBLIC type_safe _cppast_tiny_process _cppast_libclang)
