@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2021 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -186,7 +186,8 @@ std::unique_ptr<cppast::cpp_file> parse_file(const cppast::libclang_compile_conf
     return file;
 }
 
-int main(int argc, char* argv[]) try
+int main(int argc, char* argv[])
+try
 {
     cxxopts::Options option_list("cppast",
                                  "cppast - The commandline interface to the cppast library.\n");

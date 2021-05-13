@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2021 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -19,7 +19,7 @@ public:
     {
         return mutable_;
     }
-    
+
     cpp_member_variable_base(std::string name, std::unique_ptr<cpp_type> type,
                              std::unique_ptr<cpp_expression> def, bool is_mutable)
     : cpp_entity(std::move(name)), cpp_variable_base(std::move(type), std::move(def)),

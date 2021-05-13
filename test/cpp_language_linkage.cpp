@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2021 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -57,23 +57,24 @@ enum f {};
     REQUIRE(count == 3u);
 
     // check enums for their correct parent
-    count = test_visit<cpp_enum>(*file,
-                                 [&](const cpp_enum& e) {
-                                     if (e.name() == "a")
-                                         check_parent(e, "\"C\"", "a");
-                                     else if (e.name() == "b")
-                                         check_parent(e, "cpp_language_linkage.cpp", "b");
-                                     else if (e.name() == "c")
-                                         check_parent(e, "\"C++\"", "c");
-                                     else if (e.name() == "d")
-                                         check_parent(e, "\"C++\"", "d");
-                                     else if (e.name() == "e")
-                                         check_parent(e, "\"C++\"", "e");
-                                     else if (e.name() == "f")
-                                         check_parent(e, "cpp_language_linkage.cpp", "f");
-                                     else
-                                         REQUIRE(false);
-                                 },
-                                 false); // don't check code generation here
+    count = test_visit<cpp_enum>(
+        *file,
+        [&](const cpp_enum& e) {
+            if (e.name() == "a")
+                check_parent(e, "\"C\"", "a");
+            else if (e.name() == "b")
+                check_parent(e, "cpp_language_linkage.cpp", "b");
+            else if (e.name() == "c")
+                check_parent(e, "\"C++\"", "c");
+            else if (e.name() == "d")
+                check_parent(e, "\"C++\"", "d");
+            else if (e.name() == "e")
+                check_parent(e, "\"C++\"", "e");
+            else if (e.name() == "f")
+                check_parent(e, "cpp_language_linkage.cpp", "f");
+            else
+                REQUIRE(false);
+        },
+        false); // don't check code generation here
     REQUIRE(count == 6u);
 }

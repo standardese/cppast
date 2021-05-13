@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2021 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -25,8 +25,7 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         return static_cast<const cpp_builtin_type&>(parsed).builtin_type_kind()
                == static_cast<const cpp_builtin_type&>(synthesized).builtin_type_kind();
 
-    case cpp_type_kind::user_defined_t:
-    {
+    case cpp_type_kind::user_defined_t: {
         auto& user_parsed      = static_cast<const cpp_user_defined_type&>(parsed);
         auto& user_synthesized = static_cast<const cpp_user_defined_type&>(synthesized);
         return equal_ref(idx, user_parsed.entity(), user_synthesized.entity());
@@ -40,8 +39,7 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
     case cpp_type_kind::decltype_auto_t:
         return true;
 
-    case cpp_type_kind::cv_qualified_t:
-    {
+    case cpp_type_kind::cv_qualified_t: {
         auto& cv_a = static_cast<const cpp_cv_qualified_type&>(parsed);
         auto& cv_b = static_cast<const cpp_cv_qualified_type&>(synthesized);
         return cv_a.cv_qualifier() == cv_b.cv_qualifier()
@@ -51,16 +49,14 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
     case cpp_type_kind::pointer_t:
         return equal_types(idx, static_cast<const cpp_pointer_type&>(parsed).pointee(),
                            static_cast<const cpp_pointer_type&>(synthesized).pointee());
-    case cpp_type_kind::reference_t:
-    {
+    case cpp_type_kind::reference_t: {
         auto& ref_a = static_cast<const cpp_reference_type&>(parsed);
         auto& ref_b = static_cast<const cpp_reference_type&>(synthesized);
         return ref_a.reference_kind() == ref_b.reference_kind()
                && equal_types(idx, ref_a.referee(), ref_b.referee());
     }
 
-    case cpp_type_kind::array_t:
-    {
+    case cpp_type_kind::array_t: {
         auto& array_a = static_cast<const cpp_array_type&>(parsed);
         auto& array_b = static_cast<const cpp_array_type&>(synthesized);
 
@@ -77,8 +73,7 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         return equal_expressions(size_a, size_b);
     }
 
-    case cpp_type_kind::function_t:
-    {
+    case cpp_type_kind::function_t: {
         auto& func_a = static_cast<const cpp_function_type&>(parsed);
         auto& func_b = static_cast<const cpp_function_type&>(synthesized);
 
@@ -98,8 +93,7 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         }
         return iter_a == func_a.parameter_types().end() && iter_b == func_b.parameter_types().end();
     }
-    case cpp_type_kind::member_function_t:
-    {
+    case cpp_type_kind::member_function_t: {
         auto& func_a = static_cast<const cpp_member_function_type&>(parsed);
         auto& func_b = static_cast<const cpp_member_function_type&>(synthesized);
 
@@ -121,8 +115,7 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         }
         return iter_a == func_a.parameter_types().end() && iter_b == func_b.parameter_types().end();
     }
-    case cpp_type_kind::member_object_t:
-    {
+    case cpp_type_kind::member_object_t: {
         auto& obj_a = static_cast<const cpp_member_object_type&>(parsed);
         auto& obj_b = static_cast<const cpp_member_object_type&>(synthesized);
 
@@ -131,15 +124,13 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         return equal_types(idx, obj_a.object_type(), obj_b.object_type());
     }
 
-    case cpp_type_kind::template_parameter_t:
-    {
+    case cpp_type_kind::template_parameter_t: {
         auto& entity_parsed = static_cast<const cpp_template_parameter_type&>(parsed).entity();
         auto& entity_synthesized
             = static_cast<const cpp_template_parameter_type&>(synthesized).entity();
         return equal_ref(idx, entity_parsed, entity_synthesized);
     }
-    case cpp_type_kind::template_instantiation_t:
-    {
+    case cpp_type_kind::template_instantiation_t: {
         auto& inst_parsed      = static_cast<const cpp_template_instantiation_type&>(parsed);
         auto& inst_synthesized = static_cast<const cpp_template_instantiation_type&>(synthesized);
 
@@ -182,8 +173,7 @@ bool equal_types(const cpp_entity_index& idx, const cpp_type& parsed, const cpp_
         return iter_a == inst_parsed.arguments().value().end()
                && iter_b == inst_synthesized.arguments().value().end();
     }
-    case cpp_type_kind::dependent_t:
-    {
+    case cpp_type_kind::dependent_t: {
         auto& dep_a = static_cast<const cpp_dependent_type&>(parsed);
         auto& dep_b = static_cast<const cpp_dependent_type&>(synthesized);
         return dep_a.name() == dep_b.name() && equal_types(idx, dep_a.dependee(), dep_b.dependee());

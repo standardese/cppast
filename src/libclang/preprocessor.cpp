@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2021 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -373,11 +373,9 @@ std::string write_macro_file(const libclang_compile_config& c, const std::string
     std::ofstream stream(file);
 
     auto         cmd = get_macro_command(c, full_path.c_str());
-    tpl::Process process(cmd, "",
-                         [&](const char* str, std::size_t n) {
-                             stream.write(str, std::streamsize(n));
-                         },
-                         diagnostic_logger);
+    tpl::Process process(
+        cmd, "", [&](const char* str, std::size_t n) { stream.write(str, std::streamsize(n)); },
+        diagnostic_logger);
 
     if (auto include_guard = get_include_guard_macro(full_path))
         // undefine include guard
@@ -435,15 +433,16 @@ clang_preprocess_result clang_preprocess_impl(const libclang_compile_config& c,
     };
 
     auto         cmd = get_preprocess_command(c, full_path.c_str(), macro_path);
-    tpl::Process process(cmd, "",
-                         [&](const char* str, std::size_t n) {
-                             for (auto ptr = str; ptr != str + n; ++ptr)
-                                 if (*ptr == '\t')
-                                     result.file += ' '; // convert to single spaces
-                                 else if (*ptr != '\r')
-                                     result.file += *ptr;
-                         },
-                         diagnostic_handler);
+    tpl::Process process(
+        cmd, "",
+        [&](const char* str, std::size_t n) {
+            for (auto ptr = str; ptr != str + n; ++ptr)
+                if (*ptr == '\t')
+                    result.file += ' '; // convert to single spaces
+                else if (*ptr != '\r')
+                    result.file += *ptr;
+        },
+        diagnostic_handler);
     // wait for process end
     auto exit_code = process.get_exit_status();
     DEBUG_ASSERT(diagnostic.empty(), detail::assert_handler{});

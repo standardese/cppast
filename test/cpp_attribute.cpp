@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2021 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -63,103 +63,97 @@ alignas(type) int var;
                   REQUIRE(*args == '\0');
           };
 
-    auto count
-        = test_visit<cpp_function>(*file,
-                                   [&](const cpp_entity& e) {
-                                       auto& attributes = e.attributes();
-                                       REQUIRE(attributes.size() >= 1u);
-                                       auto& attr = attributes.front();
+    auto count = test_visit<cpp_function>(
+        *file,
+        [&](const cpp_entity& e) {
+            auto& attributes = e.attributes();
+            REQUIRE(attributes.size() >= 1u);
+            auto& attr = attributes.front();
 
-                                       if (e.name() == "a" || e.name() == "b")
-                                       {
-                                           REQUIRE(attributes.size() == 2u);
-                                           REQUIRE(has_attribute(e, "attribute1"));
-                                           REQUIRE(has_attribute(e, "attribute2"));
-                                           check_attribute(attr, "attribute1", type_safe::nullopt,
-                                                           false, "", cpp_attribute_kind::unknown);
-                                           check_attribute(attributes[1u], "attribute2",
-                                                           type_safe::nullopt, false, "",
-                                                           cpp_attribute_kind::unknown);
-                                       }
-                                       else if (e.name() == "c")
-                                           check_attribute(attr, "variadic", type_safe::nullopt,
-                                                           true, "", cpp_attribute_kind::unknown);
-                                       else if (e.name() == "d")
-                                       {
-                                           REQUIRE(has_attribute(e, "ns::attribute"));
-                                           check_attribute(attr, "attribute", "ns", false, "",
-                                                           cpp_attribute_kind::unknown);
-                                       }
-                                       else if (e.name() == "e")
-                                           check_attribute(attr, "attribute", type_safe::nullopt,
-                                                           false, R"(arg1,arg2,+(){},42,"Hello!")",
-                                                           cpp_attribute_kind::unknown);
-                                       else if (e.name() == "f")
-                                       {
-                                           REQUIRE(attributes.size() == 2u);
-                                           check_attribute(attr, "attribute", "ns", false,
-                                                           "+,-,0 4", cpp_attribute_kind::unknown);
-                                           check_attribute(attributes[1u], "other_attribute",
-                                                           type_safe::nullopt, false, "",
-                                                           cpp_attribute_kind::unknown);
-                                       }
-                                       else if (e.name() == "g")
-                                       {
-                                           REQUIRE(
-                                               has_attribute(e, cpp_attribute_kind::deprecated));
-                                           check_attribute(attr, "deprecated", type_safe::nullopt,
-                                                           false, "",
-                                                           cpp_attribute_kind::deprecated);
-                                       }
-                                       else if (e.name() == "h")
-                                           check_attribute(attr, "maybe_unused", type_safe::nullopt,
-                                                           false, "",
-                                                           cpp_attribute_kind::maybe_unused);
-                                       else if (e.name() == "i")
-                                           check_attribute(attr, "nodiscard", type_safe::nullopt,
-                                                           false, "",
-                                                           cpp_attribute_kind::nodiscard);
-                                       else if (e.name() == "j")
-                                           check_attribute(attr, "noreturn", type_safe::nullopt,
-                                                           false, "", cpp_attribute_kind::noreturn);
-                                       else if (e.name() == "k")
-                                           check_attribute(attr, "const", type_safe::nullopt, false,
-                                                           "", cpp_attribute_kind::unknown);
-                                       else if (e.name() == "l")
-                                       {
-                                           REQUIRE_NOTHROW(attributes.size() == 3);
-                                           check_attribute(attributes[0], "a", type_safe::nullopt,
-                                                           false, "", cpp_attribute_kind::unknown);
-                                           check_attribute(attributes[1], "b", type_safe::nullopt,
-                                                           false, "", cpp_attribute_kind::unknown);
-                                           check_attribute(attributes[2], "c", type_safe::nullopt,
-                                                           false, "", cpp_attribute_kind::unknown);
-                                       }
-                                   },
-                                   false);
+            if (e.name() == "a" || e.name() == "b")
+            {
+                REQUIRE(attributes.size() == 2u);
+                REQUIRE(has_attribute(e, "attribute1"));
+                REQUIRE(has_attribute(e, "attribute2"));
+                check_attribute(attr, "attribute1", type_safe::nullopt, false, "",
+                                cpp_attribute_kind::unknown);
+                check_attribute(attributes[1u], "attribute2", type_safe::nullopt, false, "",
+                                cpp_attribute_kind::unknown);
+            }
+            else if (e.name() == "c")
+                check_attribute(attr, "variadic", type_safe::nullopt, true, "",
+                                cpp_attribute_kind::unknown);
+            else if (e.name() == "d")
+            {
+                REQUIRE(has_attribute(e, "ns::attribute"));
+                check_attribute(attr, "attribute", "ns", false, "", cpp_attribute_kind::unknown);
+            }
+            else if (e.name() == "e")
+                check_attribute(attr, "attribute", type_safe::nullopt, false,
+                                R"(arg1,arg2,+(){},42,"Hello!")", cpp_attribute_kind::unknown);
+            else if (e.name() == "f")
+            {
+                REQUIRE(attributes.size() == 2u);
+                check_attribute(attr, "attribute", "ns", false, "+,-,0 4",
+                                cpp_attribute_kind::unknown);
+                check_attribute(attributes[1u], "other_attribute", type_safe::nullopt, false, "",
+                                cpp_attribute_kind::unknown);
+            }
+            else if (e.name() == "g")
+            {
+                REQUIRE(has_attribute(e, cpp_attribute_kind::deprecated));
+                check_attribute(attr, "deprecated", type_safe::nullopt, false, "",
+                                cpp_attribute_kind::deprecated);
+            }
+            else if (e.name() == "h")
+                check_attribute(attr, "maybe_unused", type_safe::nullopt, false, "",
+                                cpp_attribute_kind::maybe_unused);
+            else if (e.name() == "i")
+                check_attribute(attr, "nodiscard", type_safe::nullopt, false, "",
+                                cpp_attribute_kind::nodiscard);
+            else if (e.name() == "j")
+                check_attribute(attr, "noreturn", type_safe::nullopt, false, "",
+                                cpp_attribute_kind::noreturn);
+            else if (e.name() == "k")
+                check_attribute(attr, "const", type_safe::nullopt, false, "",
+                                cpp_attribute_kind::unknown);
+            else if (e.name() == "l")
+            {
+                REQUIRE_NOTHROW(attributes.size() == 3);
+                check_attribute(attributes[0], "a", type_safe::nullopt, false, "",
+                                cpp_attribute_kind::unknown);
+                check_attribute(attributes[1], "b", type_safe::nullopt, false, "",
+                                cpp_attribute_kind::unknown);
+                check_attribute(attributes[2], "c", type_safe::nullopt, false, "",
+                                cpp_attribute_kind::unknown);
+            }
+        },
+        false);
     REQUIRE(count == 11);
 
-    count = test_visit<cpp_class>(*file,
-                                  [&](const cpp_entity& e) {
-                                      auto& attributes = e.attributes();
-                                      REQUIRE(attributes.size() == 1u);
-                                      auto& attr = attributes.front();
-                                      check_attribute(attr, "alignas", type_safe::nullopt, false,
-                                                      "8", cpp_attribute_kind::alignas_);
-                                  },
-                                  false);
+    count = test_visit<cpp_class>(
+        *file,
+        [&](const cpp_entity& e) {
+            auto& attributes = e.attributes();
+            REQUIRE(attributes.size() == 1u);
+            auto& attr = attributes.front();
+            check_attribute(attr, "alignas", type_safe::nullopt, false, "8",
+                            cpp_attribute_kind::alignas_);
+        },
+        false);
     REQUIRE(count == 1u);
 
-    count = test_visit<cpp_variable>(*file,
-                                     [&](const cpp_entity& e) {
-                                         auto& attributes = e.attributes();
-                                         INFO(e.name());
-                                         REQUIRE(attributes.size() == 1u);
-                                         auto& attr = attributes.front();
-                                         check_attribute(attr, "alignas", type_safe::nullopt, false,
-                                                         "type", cpp_attribute_kind::alignas_);
-                                     },
-                                     false);
+    count = test_visit<cpp_variable>(
+        *file,
+        [&](const cpp_entity& e) {
+            auto& attributes = e.attributes();
+            INFO(e.name());
+            REQUIRE(attributes.size() == 1u);
+            auto& attr = attributes.front();
+            check_attribute(attr, "alignas", type_safe::nullopt, false, "type",
+                            cpp_attribute_kind::alignas_);
+        },
+        false);
     REQUIRE(count == 1u);
 }
 

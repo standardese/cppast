@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2021 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -292,11 +292,10 @@ bool generate_enum(code_generator& generator, const cpp_enum& e,
             output << opening_brace;
             output.indent();
 
-            auto need_sep = write_container(output, e,
-                                            [](const code_generator::output& out) {
-                                                out << punctuation(",") << newl;
-                                            },
-                                            cur_access);
+            auto need_sep = write_container(
+                output, e,
+                [](const code_generator::output& out) { out << punctuation(",") << newl; },
+                cur_access);
             if (need_sep)
                 output << newl;
 

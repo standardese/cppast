@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2021 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -69,52 +69,50 @@ void generate_serialize_member(std::ostream& out, const cppast::cpp_member_varia
 // generate serialization function
 void generate_serialize(const cppast::cpp_file& file)
 {
-    cppast::visit(file,
-                  [](const cppast::cpp_entity& e) {
-                      // only visit non-templated class definitions that have the attribute set
-                      return (!cppast::is_templated(e)
-                              && e.kind() == cppast::cpp_entity_kind::class_t
-                              && cppast::is_definition(e)
-                              && cppast::has_attribute(e, "generate::serialize"))
-                             // or all namespaces
-                             || e.kind() == cppast::cpp_entity_kind::namespace_t;
-                  },
-                  [](const cppast::cpp_entity& e, const cppast::visitor_info& info) {
-                      if (e.kind() == cppast::cpp_entity_kind::class_t && !info.is_old_entity())
-                      {
-                          auto& class_ = static_cast<const cppast::cpp_class&>(e);
+    cppast::visit(
+        file,
+        [](const cppast::cpp_entity& e) {
+            // only visit non-templated class definitions that have the attribute set
+            return (!cppast::is_templated(e) && e.kind() == cppast::cpp_entity_kind::class_t
+                    && cppast::is_definition(e) && cppast::has_attribute(e, "generate::serialize"))
+                   // or all namespaces
+                   || e.kind() == cppast::cpp_entity_kind::namespace_t;
+        },
+        [](const cppast::cpp_entity& e, const cppast::visitor_info& info) {
+            if (e.kind() == cppast::cpp_entity_kind::class_t && !info.is_old_entity())
+            {
+                auto& class_ = static_cast<const cppast::cpp_class&>(e);
 
-                          std::cout << "inline void serialize(const foo::serializer& s, const "
-                                    << class_.name() << "& obj) {\n";
+                std::cout << "inline void serialize(const foo::serializer& s, const "
+                          << class_.name() << "& obj) {\n";
 
-                          // serialize base classes
-                          for (auto& base : class_.bases())
-                              if (!cppast::has_attribute(base, "generate::transient"))
-                                  std::cout << " serialize(s, static_cast<const " << base.name()
-                                            << "&>(obj));\n";
+                // serialize base classes
+                for (auto& base : class_.bases())
+                    if (!cppast::has_attribute(base, "generate::transient"))
+                        std::cout << " serialize(s, static_cast<const " << base.name()
+                                  << "&>(obj));\n";
 
-                          // serialize member variables
-                          for (auto& member : class_)
-                          {
-                              if (member.kind() == cppast::cpp_entity_kind::member_variable_t)
-                                  generate_serialize_member(std::cout,
-                                                            static_cast<
-                                                                const cppast::cpp_member_variable&>(
-                                                                member));
-                          }
+                // serialize member variables
+                for (auto& member : class_)
+                {
+                    if (member.kind() == cppast::cpp_entity_kind::member_variable_t)
+                        generate_serialize_member(std::cout,
+                                                  static_cast<const cppast::cpp_member_variable&>(
+                                                      member));
+                }
 
-                          std::cout << "}\n\n";
-                      }
-                      else if (e.kind() == cppast::cpp_entity_kind::namespace_t)
-                      {
-                          if (info.event == cppast::visitor_info::container_entity_enter)
-                              // open namespace
-                              std::cout << "namespace " << e.name() << " {\n\n";
-                          else // if (info.event == cppast::visitor_info::container_entity_exit)
-                              // close namespace
-                              std::cout << "}\n";
-                      }
-                  });
+                std::cout << "}\n\n";
+            }
+            else if (e.kind() == cppast::cpp_entity_kind::namespace_t)
+            {
+                if (info.event == cppast::visitor_info::container_entity_enter)
+                    // open namespace
+                    std::cout << "namespace " << e.name() << " {\n\n";
+                else // if (info.event == cppast::visitor_info::container_entity_exit)
+                    // close namespace
+                    std::cout << "}\n";
+            }
+        });
 }
 
 int main(int argc, char* argv[])

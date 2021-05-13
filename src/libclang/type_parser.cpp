@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2021 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -643,8 +643,7 @@ std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context, 
                 cpp_type_ref(detail::get_entity_id(decl), std::move(spelling)));
         });
 
-    case CXType_Pointer:
-    {
+    case CXType_Pointer: {
         auto pointee = parse_type_impl(context, cur, clang_getPointeeType(type));
         auto pointer = cpp_pointer_type::build(std::move(pointee));
 
@@ -653,8 +652,7 @@ std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context, 
         return make_cv_qualified(std::move(pointer), cv);
     }
     case CXType_LValueReference:
-    case CXType_RValueReference:
-    {
+    case CXType_RValueReference: {
         auto referee = parse_type_impl(context, cur, clang_getPointeeType(type));
         return cpp_reference_type::build(std::move(referee), get_reference_kind(type));
     }

@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
+// Copyright (C) 2017-2021 Jonathan Müller <jonathanmueller.dev@gmail.com>
 // This file is subject to the license terms in the LICENSE file
 // found in the top-level directory of this distribution.
 
@@ -108,7 +108,8 @@ bool is_friend(const CXCursor& parent_cur)
 
 std::unique_ptr<cpp_entity> detail::parse_entity(const detail::parse_context& context,
                                                  cpp_entity* parent, const CXCursor& cur,
-                                                 const CXCursor& parent_cur) try
+                                                 const CXCursor& parent_cur)
+try
 {
     if (context.logger->is_verbose())
     {
