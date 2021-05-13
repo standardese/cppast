@@ -29,7 +29,7 @@ target_link_libraries(_cppast_tiny_process INTERFACE tiny-process-library::tiny-
 # install cxxopts, if needed
 #
 if(build_tool)
-    set(CXXOPTS_BUILD_TESTS OFF CACHE BOOL "")
+    set(CXXOPTS_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 
     message(STATUS "Fetching cxxopts")
     FetchContent_Declare(cxxopts URL https://github.com/jarro2783/cxxopts/archive/v2.2.1.zip)
