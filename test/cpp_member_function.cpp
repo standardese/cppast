@@ -456,8 +456,8 @@ e::~e() = default;
 
 TEST_CASE("consteval cpp_constructor")
 {
-    if (libclang_parser::libclang_minor_version() < 60)
-        return;
+    // if (libclang_parser::libclang_minor_version() < 60)
+    //    return;
 
     // only test constructor specific stuff
     const char* code;
@@ -524,8 +524,8 @@ struct foo
 
 TEST_CASE("consteval cpp_conversion_op")
 {
-    if (libclang_parser::libclang_minor_version() < 60)
-        return;
+    // if (libclang_parser::libclang_minor_version() < 60)
+    //    return;
 
     auto             code = R"(
 namespace ns

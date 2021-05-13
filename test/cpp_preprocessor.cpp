@@ -5,6 +5,7 @@
 #include <cppast/cpp_preprocessor.hpp>
 
 #include "test_parser.hpp"
+#include <cppast/libclang_parser.hpp>
 
 using namespace cppast;
 

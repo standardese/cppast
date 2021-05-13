@@ -9,12 +9,12 @@
 
 #include <catch2/catch.hpp>
 
+#include <cppast/astdump_parser.hpp>
 #include <cppast/code_generator.hpp>
 #include <cppast/cpp_class.hpp>
 #include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_expression.hpp>
 #include <cppast/cpp_type.hpp>
-#include <cppast/libclang_parser.hpp>
 #include <cppast/visitor.hpp>
 
 inline void write_file(const char* name, const char* code)
@@ -32,12 +32,12 @@ inline std::unique_ptr<cppast::cpp_file> parse_file(const cppast::cpp_entity_ind
     using namespace cppast;
 
     // Creating a config is expensive, so we remember a default one.
-    static auto default_config = libclang_compile_config();
+    static auto default_config = astdump_compile_config();
     auto        config         = default_config;
     config.set_flags(standard);
-    config.fast_preprocessing(fast_preprocessing);
+    (void)fast_preprocessing;
 
-    libclang_parser p(default_logger());
+    astdump_parser p(default_logger());
 
     std::unique_ptr<cppast::cpp_file> result;
     REQUIRE_NOTHROW(result = p.parse(idx, name, config));

@@ -276,8 +276,8 @@ void n(int i = int());
 
 TEST_CASE("consteval cpp_function")
 {
-    if (libclang_parser::libclang_minor_version() < 60)
-        return;
+    // if (libclang_parser::libclang_minor_version() < 60)
+    //    return;
 
     auto code       = R"(
 /// consteval void p();

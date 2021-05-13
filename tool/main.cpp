@@ -6,7 +6,8 @@
 
 #include <cxxopts.hpp>
 
-#include <cppast/code_generator.hpp>         // for generate_code()
+#include <cppast/astdump_parser.hpp> // for libclang_parser, libclang_compile_config, cpp_entity,...
+#include <cppast/code_generator.hpp> // for generate_code()
 #include <cppast/cpp_entity_kind.hpp>        // for the cpp_entity_kind definition
 #include <cppast/cpp_forward_declarable.hpp> // for is_definition()
 #include <cppast/cpp_namespace.hpp>          // for cpp_namespace
@@ -169,8 +170,8 @@ void print_ast(std::ostream& out, const cppast::cpp_file& file)
 }
 
 // parse a file
-std::unique_ptr<cppast::cpp_file> parse_file(const cppast::libclang_compile_config& config,
-                                             const cppast::diagnostic_logger&       logger,
+std::unique_ptr<cppast::cpp_file> parse_file(const cppast::astdump_compile_config& config,
+                                             const cppast::diagnostic_logger&      logger,
                                              const std::string& filename, bool fatal_error)
 {
     // the entity index is used to resolve cross references in the AST
@@ -178,7 +179,7 @@ std::unique_ptr<cppast::cpp_file> parse_file(const cppast::libclang_compile_conf
     cppast::cpp_entity_index idx;
     // the parser is used to parse the entity
     // there can be multiple parser implementations
-    cppast::libclang_parser parser(type_safe::ref(logger));
+    cppast::astdump_parser parser(type_safe::ref(logger));
     // parse the file
     auto file = parser.parse(idx, filename, config);
     if (fatal_error && parser.error())
@@ -240,28 +241,7 @@ try
     else
     {
         // the compile config stores compilation flags
-        cppast::libclang_compile_config config;
-        if (options.count("database_dir"))
-        {
-            cppast::libclang_compilation_database database(
-                options["database_dir"].as<std::string>());
-            if (options.count("database_file"))
-                config
-                    = cppast::libclang_compile_config(database,
-                                                      options["database_file"].as<std::string>());
-            else
-                config
-                    = cppast::libclang_compile_config(database, options["file"].as<std::string>());
-        }
-
-        if (options.count("verbose"))
-            config.write_preprocessed(true);
-
-        if (options.count("fast_preprocessing"))
-            config.fast_preprocessing(true);
-
-        if (options.count("remove_comments_in_macro"))
-            config.remove_comments_in_macro(true);
+        cppast::astdump_compile_config config;
 
         if (options.count("include_directory"))
             for (auto& include : options["include_directory"].as<std::vector<std::string>>())
@@ -329,7 +309,7 @@ try
         print_ast(std::cout, *file);
     }
 }
-catch (const cppast::libclang_error& ex)
+catch (const cppast::astdump_error& ex)
 {
     print_error(std::string("[fatal parsing error] ") + ex.what());
     return 2;
