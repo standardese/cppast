@@ -153,6 +153,8 @@ try
         return parse_namespace(context, entity);
     else if (kind == "NamespaceAliasDecl")
         return parse_namespace_alias(context, entity);
+    else if (kind == "UsingDirectiveDecl")
+        return parse_using_directive(context, entity);
 
     // Build an unexposed entity.
     return parse_unexposed_entity(context, entity);

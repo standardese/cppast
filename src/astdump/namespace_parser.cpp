@@ -62,3 +62,17 @@ std::unique_ptr<cpp_entity> astdump_detail::parse_namespace_alias(parse_context&
     return result;
 }
 
+std::unique_ptr<cpp_entity> astdump_detail::parse_using_directive(parse_context& context,
+                                                                  dom::object    entity)
+{
+    auto target    = entity["nominatedNamespace"].get_object().value();
+    auto target_id = get_entity_id(context, target);
+    // TODO: target name is a simplification and not the exact spelling as in the source.
+    auto target_name = target["name"].get_string().value();
+
+    auto result
+        = cpp_using_directive::build(cpp_namespace_ref(target_id, std::string(target_name)));
+    handle_comment_child(context, *result, entity);
+    return result;
+}
+
