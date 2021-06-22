@@ -46,11 +46,20 @@ source_location astdump_detail::get_location(dom::object& entity)
 cpp_entity_id astdump_detail::get_entity_id(parse_context& context, dom::object& entity)
 {
     // This id is only valid within one translation unit.
-    auto tu_id = entity["id"].raw_json_token();
+    auto tu_id = [&] {
+        auto id = entity["id"];
+
+        auto previous_decl = entity["previousDecl"];
+        if (previous_decl.error() != simdjson::error_code::NO_SUCH_FIELD)
+            // We need to use the original declaration as the id.
+            return previous_decl.raw_json_token().value();
+        else
+            return id.raw_json_token().value();
+    }();
 
     // We turn it into a global id by prefixing it with the file.
     // TODO: maybe allow cross references by using file + offset as id or something?
-    return cpp_entity_id(context.path + std::string(tu_id.value()));
+    return cpp_entity_id(context.path + std::string(tu_id));
 }
 
 std::string astdump_detail::parse_comment(parse_context& context, dom::object entity)
@@ -76,6 +85,24 @@ std::string astdump_detail::parse_comment(parse_context& context, dom::object en
         }
     }
     return result;
+}
+
+void astdump_detail::handle_comment_child(parse_context& context, cpp_entity& entity,
+                                          dom::object object)
+{
+    auto children = object["inner"];
+    if (children.error() == simdjson::error_code::NO_SUCH_FIELD)
+        return;
+
+    for (dom::object child : children.value())
+    {
+        if (child["kind"] == "FullComment")
+        {
+            auto comment = parse_comment(context, child);
+            entity.set_comment(std::move(comment));
+            break;
+        }
+    }
 }
 
 std::unique_ptr<cpp_entity> astdump_detail::parse_unexposed_entity(parse_context& context,
@@ -124,6 +151,8 @@ try
         return parse_language_linkage(context, entity);
     else if (kind == "NamespaceDecl")
         return parse_namespace(context, entity);
+    else if (kind == "NamespaceAliasDecl")
+        return parse_namespace_alias(context, entity);
 
     // Build an unexposed entity.
     return parse_unexposed_entity(context, entity);

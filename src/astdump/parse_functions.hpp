@@ -35,10 +35,12 @@ namespace astdump_detail
     cpp_entity_id get_entity_id(parse_context& context, dom::object& entity);
 
     std::string parse_comment(parse_context& context, dom::object entity);
+    void handle_comment_child(parse_context& context, cpp_entity& entity, dom::object object);
 
     std::unique_ptr<cpp_entity> parse_unexposed_entity(parse_context& context, dom::object entity);
     std::unique_ptr<cpp_entity> parse_language_linkage(parse_context& context, dom::object entity);
     std::unique_ptr<cpp_entity> parse_namespace(parse_context& context, dom::object entity);
+    std::unique_ptr<cpp_entity> parse_namespace_alias(parse_context& context, dom::object entity);
 
     std::unique_ptr<cpp_entity> parse_entity(parse_context& context, cpp_entity& parent,
                                              std::string_view kind, dom::object entity);

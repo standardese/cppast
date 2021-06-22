@@ -129,13 +129,13 @@ namespace f = outer::c;
     auto             check_alias = [&](const cpp_namespace_alias& alias, const char* target_name,
                            const char* target_full_name, unsigned no) {
         auto& target = alias.target();
-        REQUIRE(target.name() == target_name);
-        REQUIRE(!target.is_overloaded());
+        CHECK(target.name() == target_name);
+        CHECK(!target.is_overloaded());
 
         auto entities = target.get(idx);
-        REQUIRE(entities.size() == no);
+        CHECK(entities.size() == no);
         for (auto& entity : entities)
-            REQUIRE(full_name(*entity) == target_full_name);
+            CHECK(full_name(*entity) == target_full_name);
     };
 
     auto file  = parse(idx, "cpp_namespace_alias.cpp", code);
