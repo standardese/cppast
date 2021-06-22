@@ -58,9 +58,9 @@ struct source_location
     std::string to_string() const
     {
         std::string result;
-        if (file)
+        if (file || line)
         {
-            result += file.value() + ":";
+            result += file.value_or("<file>") + ":";
 
             if (line)
             {
