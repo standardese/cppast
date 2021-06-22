@@ -182,6 +182,12 @@ public:
         return target_;
     }
 
+    /// \effects Adds another target.
+    void add_target(cpp_entity_id target)
+    {
+        target_.add_target(target);
+    }
+
 private:
     cpp_using_declaration(cpp_entity_ref target) : cpp_entity(""), target_(std::move(target)) {}
 

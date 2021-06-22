@@ -12,6 +12,8 @@
 
 namespace cppast
 {
+class cpp_using_declaration;
+
 namespace astdump_detail
 {
     namespace dom = simdjson::ondemand; // Technically lying, as it's not simdjson::dom.
@@ -24,7 +26,10 @@ namespace astdump_detail
         std::ifstream                                  file;
         type_safe::object_ref<const diagnostic_logger> logger;
         type_safe::object_ref<const cpp_entity_index>  idx;
-        bool                                           error = false;
+
+        type_safe::optional_ref<cpp_using_declaration> last_using_decl;
+
+        bool error = false;
 
         explicit parse_context(type_safe::object_ref<const diagnostic_logger> logger,
                                type_safe::object_ref<const cpp_entity_index> idx, std::string path)
@@ -42,6 +47,9 @@ namespace astdump_detail
     std::unique_ptr<cpp_entity> parse_namespace(parse_context& context, dom::object entity);
     std::unique_ptr<cpp_entity> parse_namespace_alias(parse_context& context, dom::object entity);
     std::unique_ptr<cpp_entity> parse_using_directive(parse_context& context, dom::object entity);
+
+    std::unique_ptr<cpp_entity> parse_using_declaration(parse_context& context, dom::object entity);
+    void parse_shadow_using_declaration(parse_context& context, dom::object entity);
 
     std::unique_ptr<cpp_entity> parse_entity(parse_context& context, cpp_entity& parent,
                                              std::string_view kind, dom::object entity);

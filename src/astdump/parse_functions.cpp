@@ -155,6 +155,13 @@ try
         return parse_namespace_alias(context, entity);
     else if (kind == "UsingDirectiveDecl")
         return parse_using_directive(context, entity);
+    else if (kind == "UsingDecl")
+        return parse_using_declaration(context, entity);
+    else if (kind == "UsingShadowDecl")
+    {
+        parse_shadow_using_declaration(context, entity);
+        return nullptr; // Entity already created.
+    }
 
     // Build an unexposed entity.
     return parse_unexposed_entity(context, entity);

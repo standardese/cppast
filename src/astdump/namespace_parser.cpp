@@ -76,3 +76,21 @@ std::unique_ptr<cpp_entity> astdump_detail::parse_using_directive(parse_context&
     return result;
 }
 
+std::unique_ptr<cpp_entity> astdump_detail::parse_using_declaration(parse_context& context,
+                                                                    dom::object    entity)
+{
+    auto name = entity["name"].get_string().value();
+
+    auto result = cpp_using_declaration::build(cpp_entity_ref({}, std::string(name)));
+    handle_comment_child(context, *result, entity);
+    context.last_using_decl = type_safe::ref(*result);
+    return result;
+}
+
+void astdump_detail::parse_shadow_using_declaration(parse_context& context, dom::object entity)
+{
+    auto target    = entity["target"].get_object().value();
+    auto target_id = get_entity_id(context, target);
+    context.last_using_decl.value().add_target(target_id);
+}
+

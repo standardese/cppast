@@ -80,6 +80,19 @@ public:
         return result;
     }
 
+    /// \effects Adds another target.
+    void add_target(cpp_entity_id target)
+    {
+        if (is_overloaded())
+            target_.value(type_safe::variant_type<std::vector<cpp_entity_id>>{}).push_back(target);
+        else
+        {
+            auto old_target = id()[0u];
+            target_.emplace(type_safe::variant_type<std::vector<cpp_entity_id>>{},
+                            std::vector<cpp_entity_id>{old_target, target});
+        }
+    }
+
 private:
     void get_impl(std::true_type, std::vector<type_safe::object_ref<const T>>& result,
                   const cpp_entity_index& idx) const
