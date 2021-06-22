@@ -34,7 +34,7 @@ source_location astdump_detail::get_location(dom::object& entity)
         result.line = line.get_uint64().value();
     auto col = location["col"];
     if (col.error() != simdjson::error_code::NO_SUCH_FIELD)
-        result.column = line.get_uint64().value();
+        result.column = col.get_uint64().value();
 
     auto name = entity["name"];
     if (name.error() != simdjson::error_code::NO_SUCH_FIELD)
@@ -54,7 +54,7 @@ cpp_entity_id astdump_detail::get_entity_id(parse_context& context, dom::object&
 }
 
 std::unique_ptr<cpp_entity> astdump_detail::parse_unexposed_entity(parse_context& context,
-                                                                   dom::object&   entity)
+                                                                   dom::object    entity)
 {
     dom::object range = entity["range"];
 
@@ -79,7 +79,7 @@ std::unique_ptr<cpp_entity> astdump_detail::parse_unexposed_entity(parse_context
 }
 
 std::unique_ptr<cpp_entity> astdump_detail::parse_entity(parse_context&   context,
-                                                         std::string_view kind, dom::object& entity)
+                                                         std::string_view kind, dom::object entity)
 try
 {
     if (context.logger->is_verbose())
@@ -88,6 +88,11 @@ try
                             format_diagnostic(severity::debug, get_location(entity),
                                               "parsing entity of type '", kind, "'"));
     }
+
+    if (kind == "FullComment")
+        return nullptr; // TODO
+    else if (kind == "LinkageSpecDecl")
+        return parse_language_linkage(context, entity);
 
     // Build an unexposed entity.
     return parse_unexposed_entity(context, entity);
