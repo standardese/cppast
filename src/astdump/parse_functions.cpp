@@ -53,6 +53,31 @@ cpp_entity_id astdump_detail::get_entity_id(parse_context& context, dom::object&
     return cpp_entity_id(context.path + std::string(tu_id.value()));
 }
 
+std::string astdump_detail::parse_comment(parse_context& context, dom::object entity)
+{
+    // TODO: C style comments
+    std::string result;
+    for (dom::object child : entity["inner"])
+    {
+        if (child["kind"].get_string().value() == "ParagraphComment")
+        {
+            // Recursively process its children.
+            result += parse_comment(context, child);
+        }
+        else
+        {
+            if (!result.empty())
+                result.push_back('\n');
+
+            auto text = child["text"].get_string().value();
+            if (!text.empty() && (text.front() == ' ' || text.front() == '\t'))
+                text.remove_prefix(1);
+            result.append(text.data(), text.size());
+        }
+    }
+    return result;
+}
+
 std::unique_ptr<cpp_entity> astdump_detail::parse_unexposed_entity(parse_context& context,
                                                                    dom::object    entity)
 {
@@ -78,7 +103,7 @@ std::unique_ptr<cpp_entity> astdump_detail::parse_unexposed_entity(parse_context
         return cpp_unexposed_entity::build(std::move(spelling));
 }
 
-std::unique_ptr<cpp_entity> astdump_detail::parse_entity(parse_context&   context,
+std::unique_ptr<cpp_entity> astdump_detail::parse_entity(parse_context& context, cpp_entity& parent,
                                                          std::string_view kind, dom::object entity)
 try
 {
@@ -90,7 +115,11 @@ try
     }
 
     if (kind == "FullComment")
-        return nullptr; // TODO
+    {
+        auto comment = parse_comment(context, entity);
+        parent.set_comment(std::move(comment));
+        return nullptr;
+    }
     else if (kind == "LinkageSpecDecl")
         return parse_language_linkage(context, entity);
 

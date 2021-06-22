@@ -226,7 +226,7 @@ try
             continue;
 
         // Build the cpp_entity and add it to the file.
-        auto e = astdump_detail::parse_entity(context, kind, entity);
+        auto e = astdump_detail::parse_entity(context, builder.get(), kind, entity);
         if (e)
             builder.add_child(std::move(e));
     }

@@ -17,7 +17,7 @@ std::unique_ptr<cpp_entity> astdump_detail::parse_language_linkage(parse_context
 
     for (dom::object child : entity["inner"])
     {
-        auto e = astdump_detail::parse_entity(context, child);
+        auto e = astdump_detail::parse_entity(context, builder.get(), child);
         if (e)
             builder.add_child(std::move(e));
     }
