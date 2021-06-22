@@ -59,6 +59,7 @@ std::vector<std::string> astdump_compile_config::get_ast_dump_cmd() const
     result.push_back("-Xclang");
     result.push_back("-ast-dump=json");
     result.push_back("-fsyntax-only");
+    result.push_back("-Wno-everything");
     return result;
 }
 

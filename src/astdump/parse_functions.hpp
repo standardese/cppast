@@ -38,6 +38,7 @@ namespace astdump_detail
 
     std::unique_ptr<cpp_entity> parse_unexposed_entity(parse_context& context, dom::object entity);
     std::unique_ptr<cpp_entity> parse_language_linkage(parse_context& context, dom::object entity);
+    std::unique_ptr<cpp_entity> parse_namespace(parse_context& context, dom::object entity);
 
     std::unique_ptr<cpp_entity> parse_entity(parse_context& context, cpp_entity& parent,
                                              std::string_view kind, dom::object entity);

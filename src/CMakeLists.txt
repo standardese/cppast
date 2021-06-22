@@ -104,6 +104,7 @@ set(libclang_source
 set(astdump_source
         astdump/astdump_parser.cpp
         astdump/language_linkage_parser.cpp
+        astdump/namespace_parser.cpp
         astdump/parse_functions.hpp
         astdump/parse_functions.cpp)
 

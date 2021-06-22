@@ -122,6 +122,8 @@ try
     }
     else if (kind == "LinkageSpecDecl")
         return parse_language_linkage(context, entity);
+    else if (kind == "NamespaceDecl")
+        return parse_namespace(context, entity);
 
     // Build an unexposed entity.
     return parse_unexposed_entity(context, entity);
