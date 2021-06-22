@@ -207,6 +207,13 @@ try
     auto                       dump = get_ast_dump(config.get_ast_dump_cmd(), path);
     auto                       ast  = parser.iterate(dump);
 
+    // TODO: use proper flag
+    if (logger().is_verbose())
+    {
+        std::ofstream file(path + ".json");
+        file << dump.c_str();
+    }
+
     astdump_detail::parse_context context(type_safe::ref(logger()), type_safe::ref(idx), path);
     cpp_file::builder             builder(path);
     for (dom::object entity : ast["inner"])
