@@ -373,11 +373,9 @@ std::string write_macro_file(const libclang_compile_config& c, const std::string
     std::ofstream stream(file);
 
     auto         cmd = get_macro_command(c, full_path.c_str());
-    tpl::Process process(cmd, "",
-                         [&](const char* str, std::size_t n) {
-                             stream.write(str, std::streamsize(n));
-                         },
-                         diagnostic_logger);
+    tpl::Process process(
+        cmd, "", [&](const char* str, std::size_t n) { stream.write(str, std::streamsize(n)); },
+        diagnostic_logger);
 
     if (auto include_guard = get_include_guard_macro(full_path))
         // undefine include guard
@@ -435,15 +433,16 @@ clang_preprocess_result clang_preprocess_impl(const libclang_compile_config& c,
     };
 
     auto         cmd = get_preprocess_command(c, full_path.c_str(), macro_path);
-    tpl::Process process(cmd, "",
-                         [&](const char* str, std::size_t n) {
-                             for (auto ptr = str; ptr != str + n; ++ptr)
-                                 if (*ptr == '\t')
-                                     result.file += ' '; // convert to single spaces
-                                 else if (*ptr != '\r')
-                                     result.file += *ptr;
-                         },
-                         diagnostic_handler);
+    tpl::Process process(
+        cmd, "",
+        [&](const char* str, std::size_t n) {
+            for (auto ptr = str; ptr != str + n; ++ptr)
+                if (*ptr == '\t')
+                    result.file += ' '; // convert to single spaces
+                else if (*ptr != '\r')
+                    result.file += *ptr;
+        },
+        diagnostic_handler);
     // wait for process end
     auto exit_code = process.get_exit_status();
     DEBUG_ASSERT(diagnostic.empty(), detail::assert_handler{});
@@ -1024,7 +1023,12 @@ ts::optional<linemarker> parse_linemarker(position& p)
 
     std::string file_name;
     for (; !starts_with(p, "\""); p.skip())
-        file_name += *p.ptr();
+    {
+        if (*p.ptr() == '\\')
+            file_name += "\\\\";
+        else
+            file_name += *p.ptr();
+    }
     p.skip();
     result.file = std::move(file_name);
 
@@ -1066,6 +1070,13 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
     std::unordered_map<std::string, std::string> indirect_includes;
 
     auto preprocessed = clang_preprocess(config, path, logger);
+
+    std::string xpath;
+    for (const char* cpath = path; *cpath; cpath++)
+        if (*cpath == '\\')
+            xpath += "\\\\";
+        else
+            xpath += *cpath;
 
     position p(ts::ref(result.source), preprocessed.file.c_str());
     ts::flag in_string(false), in_char(false), first_line(true);
@@ -1186,7 +1197,7 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
                 {
                     // this is the first line marker
                     // just skip all builtin macro stuff until we reach the file again
-                    auto closing_line_marker = std::string("# 1 \"") + path + "\" 2\n";
+                    auto closing_line_marker = std::string("# 1 \"") + xpath + "\" 2\n";
 
                     auto ptr = std::strstr(p.ptr(), closing_line_marker.c_str());
                     DEBUG_ASSERT(ptr, detail::assert_handler{});
