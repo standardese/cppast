@@ -1024,7 +1024,8 @@ ts::optional<linemarker> parse_linemarker(position& p)
 
     std::string file_name;
     for (; !starts_with(p, "\""); p.skip())
-        file_name += *p.ptr();
+        if (*p.ptr() != '\\' || file_name.empty() || file_name.back() != '\\')
+            file_name += *p.ptr();
     p.skip();
     result.file = std::move(file_name);
 
@@ -1184,9 +1185,16 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
             {
                 if (first_line.try_reset() && lm.value().file == path && lm.value().line == 1u)
                 {
+                    std::string xpath;
+                    for (const char* cpath = path; *cpath; cpath++)
+                        if (*cpath == '\\')
+                            xpath += "\\\\";
+                        else
+                            xpath += *cpath;
+
                     // this is the first line marker
                     // just skip all builtin macro stuff until we reach the file again
-                    auto closing_line_marker = std::string("# 1 \"") + path + "\" 2\n";
+                    auto closing_line_marker = std::string("# 1 \"") + xpath + "\" 2\n";
 
                     auto ptr = std::strstr(p.ptr(), closing_line_marker.c_str());
                     DEBUG_ASSERT(ptr, detail::assert_handler{});
