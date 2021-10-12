@@ -31,9 +31,12 @@ target_link_libraries(_cppast_tiny_process INTERFACE tiny-process-library::tiny-
 find_package(simdjson QUIET)
 if (NOT simdjson_FOUND)
     message(STATUS "Fetching simdjson")
-    FetchContent_Declare(simdjson GIT_REPOSITORY https://github.com/simdjson/simdjson GIT_TAG v0.9.6 GIT_SHALLOW TRUE)
-    FetchContent_MakeAvailable(simdjson)
+    file(DOWNLOAD http://github.com/simdjson/simdjson/releases/download/v1.0.0/simdjson.cpp ${CMAKE_CURRENT_BINARY_DIR}/simdjson.cpp)
+    file(DOWNLOAD http://github.com/simdjson/simdjson/releases/download/v1.0.0/simdjson.h ${CMAKE_CURRENT_BINARY_DIR}/simdjson.h)
+
+    add_library(simdjson ${CMAKE_CURRENT_BINARY_DIR}/simdjson.cpp ${CMAKE_CURRENT_BINARY_DIR}/simdjson.h)
     add_library(simdjson::simdjson ALIAS simdjson)
+    target_include_directories(simdjson PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 #

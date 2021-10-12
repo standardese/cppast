@@ -9,8 +9,6 @@
 #include "libclang_visitor.hpp"
 #include "parse_error.hpp"
 
-#include <iostream> // TODO
-
 using namespace cppast;
 
 detail::cxtoken::cxtoken(const CXTranslationUnit& tu_unit, const CXToken& token)
