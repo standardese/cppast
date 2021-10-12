@@ -151,7 +151,7 @@ void astdump_compile_config::do_remove_macro_definition(std::string name)
 //=== parser ===//
 namespace
 {
-std::string get_ast_dump(std::vector<std::string> cmd, const std::string& path)
+simdjson::padded_string get_ast_dump(std::vector<std::string> cmd, const std::string& path)
 {
     // TODO: string escaping
     std::string cmd_str;
@@ -171,8 +171,7 @@ std::string get_ast_dump(std::vector<std::string> cmd, const std::string& path)
     if (code != 0)
         throw astdump_error("ast dump command '" + cmd_str + "' failed");
 
-    result.append(simdjson::SIMDJSON_PADDING, '\0');
-    return result;
+    return simdjson::padded_string(std::move(result));
 }
 
 bool entity_is_in_main_file(dom::object& entity)
@@ -212,11 +211,12 @@ try
     if (logger().is_verbose())
     {
         std::ofstream file(path + ".json");
-        file << dump.c_str();
+        file.write(dump.data(), dump.size());
     }
 
     astdump_detail::parse_context context(type_safe::ref(logger()), type_safe::ref(idx), path);
     cpp_file::builder             builder(path);
+
     for (dom::object entity : ast["inner"])
     {
         // Extract kinds before check as that field is logically first.

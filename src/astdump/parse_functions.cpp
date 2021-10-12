@@ -71,13 +71,12 @@ std::string astdump_detail::parse_comment(parse_context& context, dom::object en
         if (child["kind"].get_string().value() == "ParagraphComment")
         {
             // Recursively process its children.
+            if (!result.empty())
+                result.push_back('\n');
             result += parse_comment(context, child);
         }
         else
         {
-            if (!result.empty())
-                result.push_back('\n');
-
             auto text = child["text"].get_string().value();
             if (!text.empty() && (text.front() == ' ' || text.front() == '\t'))
                 text.remove_prefix(1);
@@ -148,19 +147,33 @@ try
         return nullptr;
     }
     else if (kind == "LinkageSpecDecl")
+    {
         return parse_language_linkage(context, entity);
+    }
     else if (kind == "NamespaceDecl")
+    {
         return parse_namespace(context, entity);
+    }
     else if (kind == "NamespaceAliasDecl")
+    {
         return parse_namespace_alias(context, entity);
+    }
     else if (kind == "UsingDirectiveDecl")
+    {
         return parse_using_directive(context, entity);
+    }
     else if (kind == "UsingDecl")
+    {
         return parse_using_declaration(context, entity);
+    }
     else if (kind == "UsingShadowDecl")
     {
         parse_shadow_using_declaration(context, entity);
         return nullptr; // Entity already created.
+    }
+    else if (kind == "TypeAliasDecl" || kind == "TypedefDecl")
+    {
+        return parse_type_alias(context, entity);
     }
 
     // Build an unexposed entity.

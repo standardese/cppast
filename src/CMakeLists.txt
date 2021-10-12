@@ -103,10 +103,12 @@ set(libclang_source
         libclang/variable_parser.cpp)
 set(astdump_source
         astdump/astdump_parser.cpp
+        astdump/expression_parser.cpp
         astdump/language_linkage_parser.cpp
         astdump/namespace_parser.cpp
         astdump/parse_functions.hpp
-        astdump/parse_functions.cpp)
+        astdump/parse_functions.cpp
+        astdump/type_parser.cpp)
 
 add_library(cppast ${detail_header} ${header} ${source} ${libclang_source} ${astdump_source})
 target_compile_features(cppast PUBLIC cxx_std_11)

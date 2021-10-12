@@ -6,6 +6,8 @@
 #define ASTDUMP_PARSE_FUNCTIONS_HPP_INCLUDED
 
 #include <cppast/cpp_entity.hpp>
+#include <cppast/cpp_expression.hpp>
+#include <cppast/cpp_type.hpp>
 #include <cppast/parser.hpp>
 #include <fstream>
 #include <simdjson.h>
@@ -42,11 +44,15 @@ namespace astdump_detail
     std::string parse_comment(parse_context& context, dom::object entity);
     void handle_comment_child(parse_context& context, cpp_entity& entity, dom::object object);
 
+    std::unique_ptr<cpp_expression> parse_expression(parse_context& context, dom::value type);
+    std::unique_ptr<cpp_type>       parse_type(parse_context& context, dom::value type);
+
     std::unique_ptr<cpp_entity> parse_unexposed_entity(parse_context& context, dom::object entity);
     std::unique_ptr<cpp_entity> parse_language_linkage(parse_context& context, dom::object entity);
     std::unique_ptr<cpp_entity> parse_namespace(parse_context& context, dom::object entity);
     std::unique_ptr<cpp_entity> parse_namespace_alias(parse_context& context, dom::object entity);
     std::unique_ptr<cpp_entity> parse_using_directive(parse_context& context, dom::object entity);
+    std::unique_ptr<cpp_entity> parse_type_alias(parse_context& context, dom::object entity);
 
     std::unique_ptr<cpp_entity> parse_using_declaration(parse_context& context, dom::object entity);
     void parse_shadow_using_declaration(parse_context& context, dom::object entity);
