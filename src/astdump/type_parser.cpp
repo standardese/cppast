@@ -282,6 +282,32 @@ std::unique_ptr<cpp_type> astdump_detail::parse_type(parse_context& context, dom
     return cpp_unexposed_type::build(std::string(qual_type));
 }
 
+std::unique_ptr<cpp_type> astdump_detail::parse_qual_type(parse_context&,
+                                                          std::string_view qual_type)
+{
+    auto builtin = get_builtin_type_kind(qual_type);
+    if (builtin.has_value())
+        return cpp_builtin_type::build(builtin.value());
+    else
+        return cpp_unexposed_type::build(std::string(qual_type));
+}
+
+std::unique_ptr<cpp_type> astdump_detail::parse_enum_underlying_type(
+    parse_context& context, dom::value fixed_underlying_type)
+{
+    auto qual_type = fixed_underlying_type["qualType"].get_string().value();
+
+    auto alias_decl = fixed_underlying_type["typeAliasDeclId"].get_string();
+    if (alias_decl.error() != simdjson::NO_SUCH_FIELD)
+    {
+        // Underlying type refers to a type alias.
+        auto target_id = get_entity_id(context, alias_decl.value());
+        return cpp_user_defined_type::build(cpp_type_ref(target_id, std::string(qual_type)));
+    }
+
+    return parse_qual_type(context, qual_type);
+}
+
 std::unique_ptr<cpp_entity> astdump_detail::parse_type_alias(parse_context& context,
                                                              dom::object    entity)
 {

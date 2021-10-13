@@ -43,6 +43,13 @@ source_location astdump_detail::get_location(dom::object& entity)
     return result;
 }
 
+cpp_entity_id astdump_detail::get_entity_id(parse_context& context, std::string_view tu_id)
+{
+    // We turn it into a global id by prefixing it with the file.
+    // TODO: maybe allow cross references by using file + offset as id or something?
+    return cpp_entity_id(context.path + std::string(tu_id));
+}
+
 cpp_entity_id astdump_detail::get_entity_id(parse_context& context, dom::object& entity)
 {
     // This id is only valid within one translation unit.
@@ -51,15 +58,15 @@ cpp_entity_id astdump_detail::get_entity_id(parse_context& context, dom::object&
 
         auto previous_decl = entity["previousDecl"];
         if (previous_decl.error() != simdjson::error_code::NO_SUCH_FIELD)
-            // We need to use the original declaration as the id.
+            // We need to use the earlierst declaration as the id.
+            // This ensures that we're consistently using the same id for entities in all
+            // (re)declarations.
             return previous_decl.raw_json_token().value();
         else
             return id.raw_json_token().value();
     }();
 
-    // We turn it into a global id by prefixing it with the file.
-    // TODO: maybe allow cross references by using file + offset as id or something?
-    return cpp_entity_id(context.path + std::string(tu_id));
+    return get_entity_id(context, tu_id);
 }
 
 std::string astdump_detail::parse_comment(parse_context& context, dom::object entity)
@@ -71,12 +78,12 @@ std::string astdump_detail::parse_comment(parse_context& context, dom::object en
         if (child["kind"].get_string().value() == "ParagraphComment")
         {
             // Recursively process its children.
-            if (!result.empty())
-                result.push_back('\n');
             result += parse_comment(context, child);
         }
         else
         {
+            if (!result.empty())
+                result.push_back('\n');
             auto text = child["text"].get_string().value();
             if (!text.empty() && (text.front() == ' ' || text.front() == '\t'))
                 text.remove_prefix(1);
@@ -174,6 +181,10 @@ try
     else if (kind == "TypeAliasDecl" || kind == "TypedefDecl")
     {
         return parse_type_alias(context, entity);
+    }
+    else if (kind == "EnumDecl")
+    {
+        return parse_enum(context, entity);
     }
 
     // Build an unexposed entity.

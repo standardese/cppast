@@ -103,6 +103,7 @@ set(libclang_source
         libclang/variable_parser.cpp)
 set(astdump_source
         astdump/astdump_parser.cpp
+        astdump/enum_parser.cpp
         astdump/expression_parser.cpp
         astdump/language_linkage_parser.cpp
         astdump/namespace_parser.cpp

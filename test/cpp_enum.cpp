@@ -15,7 +15,7 @@ TEST_CASE("cpp_enum")
 ///   a_a,
 ///   a_b=42,
 ///   a_c,
-///   a_d=a_a+2
+///   a_d=2
 /// };
 enum a
 {
@@ -25,16 +25,13 @@ enum a
     a_d = a_a + 2,
 };
 
-/// enum class b;
-enum class b; // forward declaration
-
 /// enum class b
-/// :int{
+/// :unsigned int{
 ///   b_a,
 ///   b_b=42,
 ///   b_c
 /// };
-enum class b : int
+enum class b : unsigned
 {
     b_a,
     b_b = 42,
@@ -43,15 +40,17 @@ enum class b : int
 
 namespace ns
 {
+    using underlying = int;
+
     /// enum c
-    /// :int;
-    enum c : int;
+    /// :ns::underlying;
+    enum c : underlying;
 }
 
 /// enum ns::c
-/// :int{
+/// :ns::underlying{
 /// };
-enum ns::c : int {};
+enum ns::c : ns::underlying {};
 )";
 
     cpp_entity_index idx;
@@ -97,10 +96,8 @@ enum ns::c : int {};
                     ++no_vals;
                     REQUIRE(val.value());
                     auto& expr = val.value().value();
-                    REQUIRE(expr.kind() == cpp_expression_kind::unexposed_t);
-                    REQUIRE(
-                        static_cast<const cpp_unexposed_expression&>(expr).expression().as_string()
-                        == "a_a+2");
+                    REQUIRE(expr.kind() == cpp_expression_kind::literal_t);
+                    REQUIRE(static_cast<const cpp_literal_expression&>(expr).value() == "2");
                     if (!equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_int)))
                         REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_uint)));
                 }
@@ -116,7 +113,7 @@ enum ns::c : int {};
             if (e.is_definition())
             {
                 REQUIRE(e.has_explicit_type());
-                REQUIRE(equal_types(idx, e.underlying_type(), *cpp_builtin_type::build(cpp_int)));
+                REQUIRE(equal_types(idx, e.underlying_type(), *cpp_builtin_type::build(cpp_uint)));
 
                 auto no_vals = 0u;
                 for (auto& val : e)
@@ -134,7 +131,7 @@ enum ns::c : int {};
                         auto& expr = val.value().value();
                         REQUIRE(expr.kind() == cpp_expression_kind::literal_t);
                         REQUIRE(static_cast<const cpp_literal_expression&>(expr).value() == "42");
-                        REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_int)));
+                        REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_uint)));
                     }
                     else
                         REQUIRE(false);
@@ -163,7 +160,9 @@ enum ns::c : int {};
 
             REQUIRE(!e.is_scoped());
             REQUIRE(e.has_explicit_type());
-            REQUIRE(equal_types(idx, e.underlying_type(), *cpp_builtin_type::build(cpp_int)));
+            REQUIRE(equal_types(idx, e.underlying_type(),
+                                *cpp_user_defined_type::build(
+                                    cpp_type_ref(cpp_entity_id(""), "ns::underlying"))));
             REQUIRE(count_children(e) == 0u);
 
             auto definition = get_definition(idx, e);
