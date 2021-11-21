@@ -68,6 +68,17 @@ protected:
 class e
 : a, private d {};
 
+// abstract classes
+/// struct h{
+///   virtual void z()=0;
+/// };
+struct h{ virtual void z() = 0; };
+
+/// struct i
+/// :h{
+/// };
+struct i: h{};
+
 namespace ns
 {
     /// struct base;
@@ -101,6 +112,7 @@ struct g
         {
             REQUIRE(c.class_kind() == cpp_class_kind::struct_t);
             REQUIRE(!c.is_final());
+			REQUIRE(!c.is_abstract());
             REQUIRE(c.bases().begin() == c.bases().end());
             REQUIRE(c.begin() == c.end());
 
@@ -115,8 +127,11 @@ struct g
             REQUIRE(c.begin() == c.end());
 
             if (c.is_definition())
+			{
                 REQUIRE(c.is_final());
-            else
+				REQUIRE(!c.is_abstract());
+			}
+			else
                 REQUIRE(c.is_declaration());
 
             auto definition = get_definition(idx, c);
@@ -129,6 +144,7 @@ struct g
             REQUIRE(!c.is_definition());
             REQUIRE(c.class_kind() == cpp_class_kind::struct_t);
             REQUIRE(!c.is_final());
+			REQUIRE(!c.is_abstract());
             REQUIRE(c.bases().begin() == c.bases().end());
             REQUIRE(c.begin() == c.end());
 
@@ -141,6 +157,7 @@ struct g
             REQUIRE(!c.is_declaration());
             REQUIRE(c.class_kind() == cpp_class_kind::union_t);
             REQUIRE(!c.is_final());
+			REQUIRE(!c.is_abstract());
             REQUIRE(c.bases().begin() == c.bases().end());
             REQUIRE(c.begin() == c.end());
         }
@@ -150,6 +167,7 @@ struct g
             REQUIRE(!c.is_declaration());
             REQUIRE(c.class_kind() == cpp_class_kind::struct_t);
             REQUIRE(!c.is_final());
+			REQUIRE(!c.is_abstract());
             REQUIRE(c.bases().begin() == c.bases().end());
 
             auto no_children = 0u;
@@ -206,6 +224,7 @@ struct g
             REQUIRE(!c.is_declaration());
             REQUIRE(c.class_kind() == cpp_class_kind::class_t);
             REQUIRE(!c.is_final());
+			REQUIRE(!c.is_abstract());
             REQUIRE(c.begin() == c.end());
 
             auto no_bases = 0u;
@@ -241,6 +260,7 @@ struct g
             REQUIRE(!c.is_declaration());
             REQUIRE(c.class_kind() == cpp_class_kind::struct_t);
             REQUIRE(!c.is_final());
+			REQUIRE(!c.is_abstract());
             REQUIRE(c.begin() == c.end());
 
             auto no_bases = 0u;
@@ -276,6 +296,7 @@ struct g
             REQUIRE(!c.is_declaration());
             REQUIRE(c.class_kind() == cpp_class_kind::struct_t);
             REQUIRE(!c.is_final());
+			REQUIRE(!c.is_abstract());
             REQUIRE(c.begin() == c.end());
 
             auto no_bases = 0u;
@@ -296,8 +317,24 @@ struct g
             }
             REQUIRE(no_bases == 1u);
         }
+		else if (c.name() == "h")
+		{
+			REQUIRE(c.is_definition());
+			REQUIRE(!c.is_declaration());
+			REQUIRE(c.class_kind() == cpp_class_kind::struct_t);
+			REQUIRE(!c.is_final());
+			REQUIRE(c.is_abstract());
+		}
+		else if (c.name() == "i")
+		{
+			REQUIRE(c.is_definition());
+			REQUIRE(!c.is_declaration());
+			REQUIRE(c.class_kind() == cpp_class_kind::struct_t);
+			REQUIRE(!c.is_final());
+			REQUIRE(c.is_abstract());
+		}
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 12u);
+	REQUIRE(count == 14u);
 }
