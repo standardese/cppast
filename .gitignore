@@ -1,0 +1,12 @@
+# Build fragments
+build
+build-*
+cmake-build-*
+*.o
+*.a
+*.lib
+*.so
+*.dll
+
+# Desktop/IDE related files
+CMakeLists.txt.user
