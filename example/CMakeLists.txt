@@ -15,6 +15,7 @@ _cppast_example(enum_to_string)
 _cppast_example(serialization)
 add_subdirectory(${PROJECT_SOURCE_DIR}/.. ${PROJECT_BINARY_DIR}/cppast-build)
 
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
 set(COMPILATION_DATABASE_DIR /home/caishenghang/oneflow-table-gen/build CACHE STRING "")
 add_custom_target(move-op
   DEPENDS cppast_example_ast_printer
