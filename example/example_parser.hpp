@@ -12,7 +12,7 @@
 #include <string>
 
 static ThreadPool pool(60);
-
+static const auto log_prefix = "mover";
 namespace cppast
 {
 /// A simple `FileParser` that parses all files synchronously.
@@ -41,16 +41,6 @@ public:
                                                   const std::string database_dir)
     {
         pool.enqueue([path, c, this, database_dir]() {
-            const bool is_cpp             = path.find(".cpp") != std::string::npos;
-            const bool is_in_database_dir = path.find(database_dir) != std::string::npos;
-            const bool is_in_user_op_dir  = path.find("oneflow/user/ops") != std::string::npos;
-            static const auto log_prefix  = "mover";
-            if (!is_cpp || is_in_database_dir || !is_in_user_op_dir)
-            {
-                parser_.logger().log(log_prefix, diagnostic{"skip file '" + path + "'",
-                                                            source_location(), severity::info});
-                return;
-            }
             std::ifstream ifs(path);
             std::string   content((std::istreambuf_iterator<char>(ifs)),
                                 (std::istreambuf_iterator<char>()));
@@ -111,11 +101,19 @@ private:
 // and invokes the callback for each of them
 
 template <typename DATA_T>
-void handle_one(void* ptr, std::string file, const std::string database_dir)
+void handle_one(void* ptr, std::string path, const std::string database_dir)
 {
-    auto&                           data = *static_cast<DATA_T*>(ptr);
-    cppast::libclang_compile_config config(data.database, file);
-    data.parser.parse(std::move(file), std::move(config), std::move(database_dir));
+    using namespace cppast;
+    auto&      data               = *static_cast<DATA_T*>(ptr);
+    const bool is_cpp             = path.find(".cpp") != std::string::npos;
+    const bool is_in_database_dir = path.find(database_dir) != std::string::npos;
+    const bool is_in_user_op_dir  = path.find("oneflow/user/ops") != std::string::npos;
+    if (!is_cpp || is_in_database_dir || !is_in_user_op_dir)
+    {
+        return;
+    }
+    cppast::libclang_compile_config config(data.database, path);
+    data.parser.parse(std::move(path), std::move(config), std::move(database_dir));
 }
 
 template <typename Callback>
