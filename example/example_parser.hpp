@@ -54,12 +54,12 @@ try
                 if (content.find("REGISTER_USER_OP") != std::string::npos)
                 {
                     std::cerr << "found: " << file << "\n";
+                    data.parser.parse(std::move(file), std::move(config));
                 }
                 else
                 {
                     std::cerr << "skip: " << file << "\n";
                 }
-                // data.parser.parse(std::move(file), std::move(config));
             });
             // cppast::parse_database(parser, database); // parse all files in the database
         }
