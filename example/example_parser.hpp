@@ -50,8 +50,8 @@ public:
                                                             source_location(), severity::info});
                 return;
             }
-            parser_.logger().log("start", diagnostic{"parsing file '" + path + "'",
-                                                     source_location(), severity::info});
+            parser_.logger().log(log_prefix, diagnostic{"parsing file '" + path + "'",
+                                                        source_location(), severity::info});
             auto file = parser_.parse(*idx_, std::move(path), c);
             auto ptr  = file.get();
             parser_.logger().log(log_prefix, diagnostic{"done parsing file '" + path + "'",
