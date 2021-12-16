@@ -11,7 +11,7 @@
 #include <iostream>
 #include <string>
 
-static ThreadPool pool(60);
+static ThreadPool pool(32);
 static const auto log_prefix = "mover";
 namespace cppast
 {
