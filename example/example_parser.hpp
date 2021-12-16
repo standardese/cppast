@@ -63,9 +63,9 @@ public:
             std::ifstream ifs(path);
             std::string   content((std::istreambuf_iterator<char>(ifs)),
                                 (std::istreambuf_iterator<char>()));
-            if (content.find("REGISTER") == std::string::npos)
+            if (content.find("REGISTER_USER_OP") == std::string::npos)
             {
-                parser_.logger().log(log_prefix, diagnostic{"no REGISTER found '" + path + "'",
+                parser_.logger().log(log_prefix, diagnostic{"no register found '" + path + "'",
                                                             source_location(), severity::info});
                 return;
             }
