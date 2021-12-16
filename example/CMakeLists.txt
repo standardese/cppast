@@ -16,7 +16,7 @@ _cppast_example(serialization)
 add_subdirectory(${PROJECT_SOURCE_DIR}/.. ${PROJECT_BINARY_DIR}/cppast-build)
 
 set(COMPILATION_DATABASE_DIR /home/caishenghang/oneflow-table-gen/build CACHE STRING "")
-add_custom_target(move-op ALL
+add_custom_target(move-op
   DEPENDS cppast_example_ast_printer
   COMMAND "$<TARGET_FILE:cppast_example_ast_printer>" ${COMPILATION_DATABASE_DIR}
 )

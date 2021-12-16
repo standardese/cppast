@@ -5,14 +5,119 @@
 #ifndef CPPAST_EXAMPLE_PARSER_HPP_INCLUDED
 #define CPPAST_EXAMPLE_PARSER_HPP_INCLUDED
 
+#include "ThreadPool.h"
 #include <cppast/libclang_parser.hpp>
 #include <fstream>
 #include <iostream>
 #include <string>
 
+static ThreadPool pool(32);
+
+namespace cppast
+{
+/// A simple `FileParser` that parses all files synchronously.
+///
+/// More advanced parsers could use a thread pool, for example.
+template <class Parser>
+class mover_file_parser
+{
+    static_assert(std::is_base_of<cppast::parser, Parser>::value,
+                  "Parser must be derived from cppast::parser");
+
+public:
+    using parser = Parser;
+    using config = typename Parser::config;
+
+    /// \effects Creates a file parser populating the given index
+    /// and using the parser created by forwarding the given arguments.
+    template <typename... Args>
+    explicit mover_file_parser(type_safe::object_ref<const cpp_entity_index> idx, Args&&... args)
+    : parser_(std::forward<Args>(args)...), idx_(idx)
+    {}
+
+    /// \effects Parses the given file using the given configuration.
+    /// \returns The parsed file or an empty optional, if a fatal error occurred.
+    type_safe::optional_ref<const cpp_file> parse(std::string path, const config& c,
+                                                  const std::string database_dir)
+    {
+        pool.enqueue([path, c, this, database_dir]() {
+            const bool is_cpp             = path.find(".cpp") != std::string::npos;
+            const bool is_in_database_dir = path.find(database_dir) != std::string::npos;
+            const bool is_in_user_op_dir  = path.find("oneflow/user/ops") != std::string::npos;
+            if (!is_cpp || is_in_database_dir || !is_in_user_op_dir)
+            {
+                parser_.logger().log("skip", diagnostic{"parsing file '" + path + "'",
+                                                        source_location(), severity::info});
+                return;
+            }
+            std::ifstream ifs(path);
+            std::string   content((std::istreambuf_iterator<char>(ifs)),
+                                (std::istreambuf_iterator<char>()));
+            if (content.find("REGISTER_USER_OP") == std::string::npos)
+            {
+                parser_.logger().log("REGISTER_USER_OP no found",
+                                     diagnostic{"parsing file '" + path + "'", source_location(),
+                                                severity::info});
+                return;
+            }
+            parser_.logger().log("start", diagnostic{"parsing file '" + path + "'",
+                                                     source_location(), severity::info});
+            auto file = parser_.parse(*idx_, std::move(path), c);
+            auto ptr  = file.get();
+            parser_.logger().log("done", diagnostic{"parsing file '" + path + "'",
+                                                    source_location(), severity::info});
+        });
+        // if (file)
+        // files_.push_back(std::move(file));
+        // return type_safe::opt_ref(ptr);
+        return nullptr;
+    }
+
+    /// \returns The result of [cppast::parser::error]().
+    bool error() const noexcept
+    {
+        return parser_.error();
+    }
+
+    /// \effects Calls [cppast::parser::reset_error]().
+    void reset_error() noexcept
+    {
+        parser_.reset_error();
+    }
+
+    /// \returns The index that is being populated.
+    const cpp_entity_index& index() const noexcept
+    {
+        return *idx_;
+    }
+
+    /// \returns An iteratable object iterating over all the files that have been parsed so far.
+    /// \exclude return
+    detail::iteratable_intrusive_list<cpp_file> files() const noexcept
+    {
+        return type_safe::ref(files_);
+    }
+
+private:
+    Parser                                        parser_;
+    detail::intrusive_list<cpp_file>              files_;
+    type_safe::object_ref<const cpp_entity_index> idx_;
+};
+
+} // namespace cppast
+
 // reads the database directory from the command line argument
 // parses all files in that directory
 // and invokes the callback for each of them
+
+template <typename DATA_T>
+void handle_one(void* ptr, std::string file, const std::string database_dir)
+{
+    auto&                           data = *static_cast<DATA_T*>(ptr);
+    cppast::libclang_compile_config config(data.database, file);
+    data.parser.parse(std::move(file), std::move(config), std::move(database_dir));
+}
+
 template <typename Callback>
 int example_main(int argc, char* argv[], const cppast::cpp_entity_index& index, Callback cb)
 try
@@ -25,9 +130,8 @@ try
     else
     {
         cppast::libclang_compilation_database database(argv[1]); // the compilation database
-
         // simple_file_parser allows parsing multiple files and stores the results for us
-        using ParserT = cppast::simple_file_parser<cppast::libclang_parser>;
+        using ParserT = cppast::mover_file_parser<cppast::libclang_parser>;
         ParserT                  parser(type_safe::ref(index));
         static const std::string database_dir = std::string(argv[1]);
         try
@@ -39,27 +143,7 @@ try
                 const libclang_compilation_database& database;
             } data{parser, database};
             detail::for_each_file(database, &data, [](void* ptr, std::string file) {
-                auto&      data               = *static_cast<data_t*>(ptr);
-                const bool is_cpp             = file.find(".cpp") != std::string::npos;
-                const bool is_in_database_dir = file.find(database_dir) != std::string::npos;
-                const bool is_in_user_op_dir  = file.find("oneflow/user/ops") != std::string::npos;
-                if (!is_cpp || is_in_database_dir)
-                    return;
-                if (!is_in_user_op_dir)
-                    return;
-                libclang_compile_config config(data.database, file);
-                std::ifstream           ifs(file);
-                std::string             content((std::istreambuf_iterator<char>(ifs)),
-                                    (std::istreambuf_iterator<char>()));
-                if (content.find("REGISTER_USER_OP") != std::string::npos)
-                {
-                    std::cerr << "found: " << file << "\n";
-                    data.parser.parse(std::move(file), std::move(config));
-                }
-                else
-                {
-                    std::cerr << "skip: " << file << "\n";
-                }
+                handle_one<data_t>(ptr, file, database_dir);
             });
             // cppast::parse_database(parser, database); // parse all files in the database
         }
