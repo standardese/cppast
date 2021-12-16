@@ -11,7 +11,6 @@
 #include <iostream>
 #include <string>
 
-static ThreadPool pool(60);
 static const auto log_prefix = "mover";
 namespace cppast
 {
@@ -31,8 +30,9 @@ public:
     /// \effects Creates a file parser populating the given index
     /// and using the parser created by forwarding the given arguments.
     template <typename... Args>
-    explicit mover_file_parser(type_safe::object_ref<const cpp_entity_index> idx, Args&&... args)
-    : parser_(std::forward<Args>(args)...), idx_(idx)
+    explicit mover_file_parser(type_safe::object_ref<const cpp_entity_index> idx, ThreadPool& pool,
+                               Args&&... args)
+    : parser_(std::forward<Args>(args)...), idx_(idx), pool(pool)
     {}
 
     /// \effects Parses the given file using the given configuration.
@@ -92,6 +92,7 @@ private:
     Parser                                        parser_;
     detail::intrusive_list<cpp_file>              files_;
     type_safe::object_ref<const cpp_entity_index> idx_;
+    ThreadPool&                                   pool;
 };
 
 } // namespace cppast
@@ -140,19 +141,20 @@ try
     }
     else
     {
+        static ThreadPool                     pool(120);
         cppast::libclang_compilation_database database(argv[1]); // the compilation database
         // simple_file_parser allows parsing multiple files and stores the results for us
         using ParserT = cppast::mover_file_parser<cppast::libclang_parser>;
-        ParserT                  parser(type_safe::ref(index));
+        ParserT                  parser(type_safe::ref(index), pool);
         static const std::string database_dir = std::string(argv[1]);
+        using namespace cppast;
+        struct data_t
+        {
+            ParserT&                             parser;
+            const libclang_compilation_database& database;
+        } data{parser, database};
         try
         {
-            using namespace cppast;
-            struct data_t
-            {
-                ParserT&                             parser;
-                const libclang_compilation_database& database;
-            } data{parser, database};
             detail::for_each_file(database, &data, [](void* ptr, std::string file) {
                 handle_one<data_t>(ptr, file, database_dir);
             });
@@ -169,8 +171,8 @@ try
             // error has been logged to stderr
             return 1;
 
-        for (auto& file : parser.files())
-            cb(file);
+        // for (auto& file : parser.files())
+        // cb(file);
     }
 
     return 0;
