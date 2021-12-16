@@ -4,6 +4,7 @@
 #include <condition_variable>
 #include <functional>
 #include <future>
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -82,6 +83,7 @@ auto ThreadPool::enqueue(F&& f, Args&&... args)
 // the destructor joins all threads
 inline ThreadPool::~ThreadPool()
 {
+    std::cerr << "[start] " << __PRETTY_FUNCTION__ << "\n";
     {
         std::unique_lock<std::mutex> lock(queue_mutex);
         stop = true;
@@ -89,6 +91,7 @@ inline ThreadPool::~ThreadPool()
     condition.notify_all();
     for (std::thread& worker : workers)
         worker.join();
+    std::cerr << "[end] " << __PRETTY_FUNCTION__ << "\n";
 }
 
 #endif

@@ -37,10 +37,9 @@ public:
 
     /// \effects Parses the given file using the given configuration.
     /// \returns The parsed file or an empty optional, if a fatal error occurred.
-    type_safe::optional_ref<const cpp_file> parse(std::string path, const config& c,
-                                                  const std::string database_dir)
+    std::future<void> parse(std::string path, const config& c, const std::string database_dir)
     {
-        pool.enqueue([path, c, this, database_dir]() {
+        std::future<void> x = pool.enqueue([path, c, this, database_dir]() {
             std::ifstream ifs(path);
             std::string   content((std::istreambuf_iterator<char>(ifs)),
                                 (std::istreambuf_iterator<char>()));
@@ -52,15 +51,24 @@ public:
             }
             parser_.logger().log(log_prefix, diagnostic{"parsing file '" + path + "'",
                                                         source_location(), severity::info});
-            auto file = parser_.parse(*idx_, path, c);
-            auto ptr  = file.get();
-            parser_.logger().log(log_prefix, diagnostic{"done parsing file '" + path + "'",
-                                                        source_location(), severity::info});
+            try
+            {
+                auto file = parser_.parse(*idx_, path, c);
+                auto ptr  = file.get();
+                parser_.logger().log(log_prefix, diagnostic{"done parsing file '" + path + "'",
+                                                            source_location(), severity::info});
+            }
+            catch (cppast::libclang_error& ex)
+            {
+                std::cerr << "fatal libclang error: " << ex.what() << '\n';
+            }
         });
+
         // if (file)
         // files_.push_back(std::move(file));
         // return type_safe::opt_ref(ptr);
-        return type_safe::nullopt;
+
+        return x;
     }
 
     /// \returns The result of [cppast::parser::error]().
@@ -113,23 +121,6 @@ inline bool will_cause_Segmentation_fault(std::vector<std::string> fault_paths, 
     return false;
 }
 
-template <typename DATA_T>
-void handle_one(void* ptr, std::string path, const std::string database_dir)
-{
-    using namespace cppast;
-    auto&      data                  = *static_cast<DATA_T*>(ptr);
-    const bool is_cpp                = path.find(".cpp") != std::string::npos;
-    const bool is_Segmentation_fault = will_cause_Segmentation_fault({}, path);
-    const bool is_in_database_dir    = path.find(database_dir) != std::string::npos;
-    const bool is_in_user_op_dir     = path.find("oneflow/user/ops") != std::string::npos;
-    if (!is_cpp || is_in_database_dir || is_Segmentation_fault || !is_in_user_op_dir)
-    {
-        return;
-    }
-    cppast::libclang_compile_config config(data.database, path);
-    data.parser.parse(std::move(path), std::move(config), std::move(database_dir));
-}
-
 template <typename Callback>
 int example_main(int argc, char* argv[], const cppast::cpp_entity_index& index, Callback cb)
 try
@@ -141,7 +132,7 @@ try
     }
     else
     {
-        static ThreadPool                     pool(120);
+        static ThreadPool                     pool(64);
         cppast::libclang_compilation_database database(argv[1]); // the compilation database
         // simple_file_parser allows parsing multiple files and stores the results for us
         using ParserT = cppast::mover_file_parser<cppast::libclang_parser>;
@@ -153,18 +144,29 @@ try
             ParserT&                             parser;
             const libclang_compilation_database& database;
         } data{parser, database};
-        try
+        static std::vector<std::future<void>> v{};
+        detail::for_each_file(database, &data, [](void* ptr, std::string path) {
+            using namespace cppast;
+            auto&      data                  = *static_cast<data_t*>(ptr);
+            const bool is_cpp                = path.find(".cpp") != std::string::npos;
+            const bool is_Segmentation_fault = will_cause_Segmentation_fault({}, path);
+            const bool is_in_database_dir    = path.find(database_dir) != std::string::npos;
+            // const bool is_in_user_op_dir
+            // = path.find("oneflow/user/ops/relu_op.cpp") != std::string::npos;
+            const bool is_in_user_op_dir = path.find("oneflow/user/ops") != std::string::npos;
+            if (!is_cpp || is_in_database_dir || is_Segmentation_fault || !is_in_user_op_dir)
+            {
+                return;
+            }
+            cppast::libclang_compile_config config(data.database, path);
+            auto f = data.parser.parse(path, std::move(config), std::move(database_dir));
+            v.push_back(std::move(f));
+        });
+        for (auto& f : v)
         {
-            detail::for_each_file(database, &data, [](void* ptr, std::string file) {
-                handle_one<data_t>(ptr, file, database_dir);
-            });
-            // cppast::parse_database(parser, database); // parse all files in the database
+            f.get();
         }
-        catch (cppast::libclang_error& ex)
-        {
-            std::cerr << "fatal libclang error: " << ex.what() << '\n';
-            return 1;
-        }
+        // cppast::parse_database(parser, database); // parse all files in the database
 
         if (parser.error())
             // a non-fatal parse error
@@ -174,7 +176,7 @@ try
         // for (auto& file : parser.files())
         // cb(file);
     }
-
+    std::cerr << "done all\n";
     return 0;
 }
 catch (std::exception& ex)
