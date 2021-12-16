@@ -11,7 +11,7 @@
 #include <iostream>
 #include <string>
 
-static ThreadPool pool(32);
+static ThreadPool pool(60);
 
 namespace cppast
 {
@@ -44,28 +44,28 @@ public:
             const bool is_cpp             = path.find(".cpp") != std::string::npos;
             const bool is_in_database_dir = path.find(database_dir) != std::string::npos;
             const bool is_in_user_op_dir  = path.find("oneflow/user/ops") != std::string::npos;
+            static const auto log_prefix  = "mover";
             if (!is_cpp || is_in_database_dir || !is_in_user_op_dir)
             {
-                parser_.logger().log("skip", diagnostic{"parsing file '" + path + "'",
-                                                        source_location(), severity::info});
+                parser_.logger().log(log_prefix, diagnostic{"skip file '" + path + "'",
+                                                            source_location(), severity::info});
                 return;
             }
             std::ifstream ifs(path);
             std::string   content((std::istreambuf_iterator<char>(ifs)),
                                 (std::istreambuf_iterator<char>()));
-            if (content.find("REGISTER_USER_OP") == std::string::npos)
+            if (content.find("REGISTER") == std::string::npos)
             {
-                parser_.logger().log("REGISTER_USER_OP no found",
-                                     diagnostic{"parsing file '" + path + "'", source_location(),
-                                                severity::info});
+                parser_.logger().log(log_prefix, diagnostic{"no REGISTER found '" + path + "'",
+                                                            source_location(), severity::info});
                 return;
             }
             parser_.logger().log("start", diagnostic{"parsing file '" + path + "'",
                                                      source_location(), severity::info});
             auto file = parser_.parse(*idx_, std::move(path), c);
             auto ptr  = file.get();
-            parser_.logger().log("done", diagnostic{"parsing file '" + path + "'",
-                                                    source_location(), severity::info});
+            parser_.logger().log(log_prefix, diagnostic{"done parsing file '" + path + "'",
+                                                        source_location(), severity::info});
         });
         // if (file)
         // files_.push_back(std::move(file));
