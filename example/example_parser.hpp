@@ -63,7 +63,8 @@ public:
             std::ifstream ifs(path);
             std::string   content((std::istreambuf_iterator<char>(ifs)),
                                 (std::istreambuf_iterator<char>()));
-            if (content.find("REGISTER_USER_OP") == std::string::npos)
+            if (content.find("REGISTER_USER_OP") == std::string::npos
+                && content.find("REGISTER_NO_GRAD_USER_OP") == std::string::npos)
             {
                 parser_.logger().log(log_prefix, diagnostic{"no register found '" + path + "'",
                                                             source_location(), severity::info});
@@ -172,10 +173,10 @@ try
             const bool is_cpp                = path.find(".cpp") != std::string::npos;
             const bool is_Segmentation_fault = will_cause_Segmentation_fault({}, path);
             const bool is_in_database_dir    = path.find(database_dir) != std::string::npos;
-            const bool is_in_relu_op
-                = path.find("oneflow/user/ops/relu_op.cpp") != std::string::npos;
+            const bool is_in_test_op
+                = path.find("oneflow/user/ops/arg_sort_op.cpp") != std::string::npos;
             const bool is_in_user_op_dir = path.find("oneflow/user/ops") != std::string::npos;
-            if (!is_in_relu_op)
+            if (!is_in_test_op)
                 return;
             if (!is_cpp || is_in_database_dir || is_Segmentation_fault || !is_in_user_op_dir)
             {
