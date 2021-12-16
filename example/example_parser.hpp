@@ -11,6 +11,26 @@
 #include <iostream>
 #include <string>
 
+#include <cppast/visitor.hpp> // visit()
+
+inline void handle_ast(const cppast::cpp_file& file)
+{
+    std::string prefix;
+    // visit each entity in the file
+    cppast::visit(file, [&](const cppast::cpp_entity& e, cppast::visitor_info info) {
+        if (info.event == cppast::visitor_info::container_entity_exit) // exiting an old container
+            prefix.pop_back();
+        else if (info.event == cppast::visitor_info::container_entity_enter)
+        // entering a new container
+        {
+            std::cout << prefix << "'" << e.name() << "' - " << cppast::to_string(e.kind()) << '\n';
+            prefix += "\t";
+        }
+        else // if (info.event == cppast::visitor_info::leaf_entity) // a non-container entity
+            std::cout << prefix << "'" << e.name() << "' - " << cppast::to_string(e.kind()) << '\n';
+    });
+}
+
 static const auto log_prefix = "mover";
 namespace cppast
 {
@@ -57,6 +77,7 @@ public:
                 auto ptr  = file.get();
                 parser_.logger().log(log_prefix, diagnostic{"done parsing file '" + path + "'",
                                                             source_location(), severity::info});
+                handle_ast(*file);
             }
             catch (cppast::libclang_error& ex)
             {
