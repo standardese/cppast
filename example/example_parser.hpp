@@ -11,7 +11,7 @@
 #include <iostream>
 #include <string>
 
-static ThreadPool pool(32);
+static ThreadPool pool(60);
 static const auto log_prefix = "mover";
 namespace cppast
 {
@@ -52,7 +52,7 @@ public:
             }
             parser_.logger().log(log_prefix, diagnostic{"parsing file '" + path + "'",
                                                         source_location(), severity::info});
-            auto file = parser_.parse(*idx_, std::move(path), c);
+            auto file = parser_.parse(*idx_, path, c);
             auto ptr  = file.get();
             parser_.logger().log(log_prefix, diagnostic{"done parsing file '" + path + "'",
                                                         source_location(), severity::info});
@@ -60,7 +60,7 @@ public:
         // if (file)
         // files_.push_back(std::move(file));
         // return type_safe::opt_ref(ptr);
-        return nullptr;
+        return type_safe::nullopt;
     }
 
     /// \returns The result of [cppast::parser::error]().
@@ -100,15 +100,28 @@ private:
 // parses all files in that directory
 // and invokes the callback for each of them
 
+inline bool will_cause_Segmentation_fault(std::vector<std::string> fault_paths, std::string path)
+{
+    for (auto fp : fault_paths)
+    {
+        if (path.find(fp) != std::string::npos)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 template <typename DATA_T>
 void handle_one(void* ptr, std::string path, const std::string database_dir)
 {
     using namespace cppast;
-    auto&      data               = *static_cast<DATA_T*>(ptr);
-    const bool is_cpp             = path.find(".cpp") != std::string::npos;
-    const bool is_in_database_dir = path.find(database_dir) != std::string::npos;
-    const bool is_in_user_op_dir  = path.find("oneflow/user/ops") != std::string::npos;
-    if (!is_cpp || is_in_database_dir || !is_in_user_op_dir)
+    auto&      data                  = *static_cast<DATA_T*>(ptr);
+    const bool is_cpp                = path.find(".cpp") != std::string::npos;
+    const bool is_Segmentation_fault = will_cause_Segmentation_fault({}, path);
+    const bool is_in_database_dir    = path.find(database_dir) != std::string::npos;
+    const bool is_in_user_op_dir     = path.find("oneflow/user/ops") != std::string::npos;
+    if (!is_cpp || is_in_database_dir || is_Segmentation_fault || !is_in_user_op_dir)
     {
         return;
     }
