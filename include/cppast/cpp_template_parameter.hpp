@@ -158,8 +158,6 @@ namespace detail
     };
 } // namespace detail
 
-class cpp_template;
-
 /// A reference to a [cppast::cpp_template]() or a [cppast::cpp_template_template_parameter]().
 using cpp_template_ref = basic_cpp_entity_ref<cpp_entity, detail::cpp_template_ref_predicate>;
 

@@ -120,7 +120,7 @@ private:
 };
 
 /// The C++ builtin types.
-enum cpp_builtin_type_kind
+enum cpp_builtin_type_kind : int
 {
     cpp_void, //< `void`
 
@@ -246,9 +246,6 @@ private:
     }
 };
 
-class cpp_template_parameter_type;
-class cpp_template_instantiation_type;
-
 /// A [cppast::cpp_type]() that depends on another type.
 class cpp_dependent_type final : public cpp_type
 {
@@ -291,7 +288,7 @@ private:
 };
 
 /// The kinds of C++ cv qualifiers.
-enum cpp_cv
+enum cpp_cv : int
 {
     cpp_cv_none,
     cpp_cv_const,
@@ -387,7 +384,7 @@ private:
 };
 
 /// The kinds of C++ references.
-enum cpp_reference
+enum cpp_reference : int
 {
     cpp_ref_none,
     cpp_ref_lvalue,

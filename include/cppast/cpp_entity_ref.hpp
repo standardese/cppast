@@ -14,7 +14,6 @@
 
 namespace cppast
 {
-enum class cpp_entity_kind;
 
 /// A basic reference to some kind of [cppast::cpp_entity]().
 ///

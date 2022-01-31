@@ -10,6 +10,8 @@
 
 #include <type_safe/reference.hpp>
 
+#include <cppast/cppast_fwd.hpp>
+
 namespace cppast
 {
 /// The kinds of C++ tokens.
