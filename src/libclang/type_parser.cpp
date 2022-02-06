@@ -116,8 +116,10 @@ std::string get_type_spelling(const CXCursor& cur, const CXType& type)
     };
     */
 
-    // auto canonical = detail::cxstring(clang_getTypeSpelling(clang_getCanonicalType(type))).std_str();
-    // auto declaration = detail::cxstring(clang_getCursorSpelling(clang_getTypeDeclaration(type))).std_str();
+    // auto canonical =
+    // detail::cxstring(clang_getTypeSpelling(clang_getCanonicalType(type))).std_str(); auto
+    // declaration =
+    // detail::cxstring(clang_getCursorSpelling(clang_getTypeDeclaration(type))).std_str();
     auto spelling = detail::cxstring(clang_getTypeSpelling(type)).std_str();
     if (need_to_remove_scope(cur, type))
     {
@@ -270,16 +272,32 @@ std::unique_ptr<cpp_expression> parse_array_size(const CXCursor& cur, const CXTy
                  type, "unexpected token");
 
     std::string size_expr;
-    auto        bracket_count = 1;
-    for (auto ptr = spelling.c_str() + spelling.size() - 2u; bracket_count != 0; --ptr)
-    {
-        if (*ptr == ']')
-            ++bracket_count;
-        else if (*ptr == '[')
-            --bracket_count;
 
-        if (bracket_count != 0)
-            size_expr += *ptr;
+    auto ptr = spelling.rbegin();
+    while (true)
+    {
+        // Consume the final closing ].
+        ++ptr;
+
+        auto bracket_count = 1;
+        while (bracket_count != 0)
+        {
+            if (*ptr == ']')
+                ++bracket_count;
+            else if (*ptr == '[')
+                --bracket_count;
+
+            if (bracket_count != 0)
+                size_expr += *ptr;
+
+            ++ptr;
+        }
+
+        if (ptr == spelling.rend() || *ptr != ']')
+            // We don't have another ].
+            break;
+        // We do have another ], as we want the innermost, we need to restart.
+        size_expr.clear();
     }
 
     return size_expr.empty()
@@ -662,8 +680,7 @@ std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context, 
                 cpp_type_ref(detail::get_entity_id(decl), std::move(spelling)));
         });
 
-    case CXType_Pointer:
-    {
+    case CXType_Pointer: {
         auto pointee = parse_type_impl(context, cur, clang_getPointeeType(type));
         auto pointer = cpp_pointer_type::build(std::move(pointee));
 
@@ -672,8 +689,7 @@ std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context, 
         return make_cv_qualified(std::move(pointer), cv);
     }
     case CXType_LValueReference:
-    case CXType_RValueReference:
-    {
+    case CXType_RValueReference: {
         auto referee = parse_type_impl(context, cur, clang_getPointeeType(type));
         return cpp_reference_type::build(std::move(referee), get_reference_kind(type));
     }
