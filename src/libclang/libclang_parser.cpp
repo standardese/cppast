@@ -1,6 +1,5 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
-// This file is subject to the license terms in the LICENSE file
-// found in the top-level directory of this distribution.
+// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// SPDX-License-Identifier: MIT
 
 #include <cppast/libclang_parser.hpp>
 
@@ -494,7 +493,7 @@ namespace
 std::vector<const char*> get_arguments(const libclang_compile_config& config)
 {
     std::vector<const char*> args
-    // TODO: Why? and Why?
+        // TODO: Why? and Why?
         = {"-x", "c++", "-I."}; // force C++ and enable current directory for include search
     for (auto& flag : detail::libclang_compile_config_access::flags(config))
         args.push_back(flag.c_str());

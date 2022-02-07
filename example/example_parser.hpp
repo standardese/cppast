@@ -1,6 +1,5 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
-// This file is subject to the license terms in the LICENSE file
-// found in the top-level directory of this distribution.
+// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// SPDX-License-Identifier: MIT
 
 #ifndef CPPAST_EXAMPLE_PARSER_HPP_INCLUDED
 #define CPPAST_EXAMPLE_PARSER_HPP_INCLUDED
@@ -13,7 +12,8 @@
 // parses all files in that directory
 // and invokes the callback for each of them
 template <typename Callback>
-int example_main(int argc, char* argv[], const cppast::cpp_entity_index& index, Callback cb) try
+int example_main(int argc, char* argv[], const cppast::cpp_entity_index& index, Callback cb)
+try
 {
     if (argc != 2)
     {

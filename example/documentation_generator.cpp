@@ -1,6 +1,5 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
-// This file is subject to the license terms in the LICENSE file
-// found in the top-level directory of this distribution.
+// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// SPDX-License-Identifier: MIT
 
 /// \file
 /// A primitive documentation generator.
@@ -120,39 +119,39 @@ std::string generate_synopsis(const cppast::cpp_entity& e)
 void generate_documentation(const cppast::cpp_file& file)
 {
     // visit each entity
-    cppast::visit(file,
-                  [](const cppast::cpp_entity& e, cppast::cpp_access_specifier_kind access) {
-                      if (is_excluded_documentation(e, access))
-                          // exclude this and all children
-                          return cppast::visit_filter::exclude_and_children;
-                      else if (cppast::is_templated(e) || cppast::is_friended(e))
-                          // continue on with children for a dummy entity
-                          return cppast::visit_filter::exclude;
-                      else
-                          return cppast::visit_filter::include;
-                  },
-                  [](const cppast::cpp_entity& e, const cppast::visitor_info& info) {
-                      if (info.is_old_entity())
-                          // already done
-                          return;
+    cppast::visit(
+        file,
+        [](const cppast::cpp_entity& e, cppast::cpp_access_specifier_kind access) {
+            if (is_excluded_documentation(e, access))
+                // exclude this and all children
+                return cppast::visit_filter::exclude_and_children;
+            else if (cppast::is_templated(e) || cppast::is_friended(e))
+                // continue on with children for a dummy entity
+                return cppast::visit_filter::exclude;
+            else
+                return cppast::visit_filter::include;
+        },
+        [](const cppast::cpp_entity& e, const cppast::visitor_info& info) {
+            if (info.is_old_entity())
+                // already done
+                return;
 
-                      // print name
-                      std::cout << "## " << cppast::to_string(e.kind()) << " '" << e.name()
-                                << "'\n";
-                      std::cout << '\n';
+            // print name
+            std::cout << "## " << cppast::to_string(e.kind()) << " '" << e.name() << "'\n";
+            std::cout << '\n';
 
-                      // print synopsis
-                      std::cout << "```\n";
-                      std::cout << generate_synopsis(e);
-                      std::cout << "```\n\n";
+            // print synopsis
+            std::cout << "```\n";
+            std::cout << generate_synopsis(e);
+            std::cout << "```\n\n";
 
-                      // print documentation comment
-                      if (e.comment())
-                          std::cout << e.comment().value() << '\n';
+            // print documentation comment
+            if (e.comment())
+                std::cout << e.comment().value() << '\n';
 
-                      // print separator
-                      std::cout << "\n---\n\n";
-                  });
+            // print separator
+            std::cout << "\n---\n\n";
+        });
     std::cout << "\n\n";
 }
 

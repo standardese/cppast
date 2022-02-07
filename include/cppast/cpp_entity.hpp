@@ -1,6 +1,5 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
-// This file is subject to the license terms in the LICENSE file
-// found in the top-level directory of this distribution.
+// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// SPDX-License-Identifier: MIT
 
 #ifndef CPPAST_CPP_ENTITY_HPP_INCLUDED
 #define CPPAST_CPP_ENTITY_HPP_INCLUDED
@@ -151,7 +150,7 @@ public:
     {
         user_data_ = data;
     }
-    
+
     /// \effects Creates it giving it the the name.
     cpp_entity(std::string name) : name_(std::move(name)), user_data_(nullptr) {}
 

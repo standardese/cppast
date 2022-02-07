@@ -1,6 +1,5 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
-// This file is subject to the license terms in the LICENSE file
-// found in the top-level directory of this distribution.
+// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// SPDX-License-Identifier: MIT
 
 #include "test_parser.hpp"
 #include <cppast/cpp_member_function.hpp>
@@ -213,8 +212,8 @@ struct foo
         {
             REQUIRE(op.name() == "operator int&");
             REQUIRE(equal_types(idx, op.return_type(),
-                                *cpp_reference_type::build(cpp_builtin_type::build(cpp_int),
-                                                           cpp_ref_lvalue)));
+                                            *cpp_reference_type::build(cpp_builtin_type::build(cpp_int),
+                                                                       cpp_ref_lvalue)));
             REQUIRE(op.cv_qualifier() == cpp_cv_none);
             REQUIRE(op.signature() == "()");
         }
@@ -324,9 +323,9 @@ foo<T>::foo(int) {}
             {
                 REQUIRE(cont.noexcept_condition());
                 REQUIRE(equal_expressions(cont.noexcept_condition().value(),
-                                          *cpp_literal_expression::build(cpp_builtin_type::build(
-                                                                             cpp_bool),
-                                                                         "true")));
+                                                      *cpp_literal_expression::build(cpp_builtin_type::build(
+                                                                                         cpp_bool),
+                                                                                     "true")));
                 REQUIRE(!cont.is_explicit());
                 REQUIRE(!cont.is_constexpr());
                 REQUIRE(cont.body_kind() == cpp_function_defaulted);

@@ -1,6 +1,5 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
-// This file is subject to the license terms in the LICENSE file
-// found in the top-level directory of this distribution.
+// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// SPDX-License-Identifier: MIT
 
 #ifndef CPPAST_CPP_ENTITY_INDEX_HPP_INCLUDED
 #define CPPAST_CPP_ENTITY_INDEX_HPP_INCLUDED
@@ -104,8 +103,8 @@ public:
     /// \returns A [ts::optional_ref]() corresponding to the entity of the given
     /// [cppast::cpp_entity_id](). If no definition has been registered, it returns an empty
     /// optional. \notes This operation is thread safe.
-    type_safe::optional_ref<const cpp_entity> lookup_definition(const cpp_entity_id& id) const
-        noexcept;
+    type_safe::optional_ref<const cpp_entity> lookup_definition(
+        const cpp_entity_id& id) const noexcept;
 
     /// \returns A [ts::array_ref]() of references to all namespaces matching the given
     /// [cppast::cpp_entity_id](). If no namespace is found, it returns an empty array reference.

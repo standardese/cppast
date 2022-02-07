@@ -1,6 +1,5 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
-// This file is subject to the license terms in the LICENSE file
-// found in the top-level directory of this distribution.
+// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// SPDX-License-Identifier: MIT
 
 #ifndef CPPAST_CPP_TEMPLATE_HPP_INCLUDED
 #define CPPAST_CPP_TEMPLATE_HPP_INCLUDED
@@ -143,8 +142,8 @@ public:
 
     /// \returns An array ref to the [cppast::cpp_template_argument](), if there are any.
     /// \requires The arguments are exposed, i.e. `arguments_exposed()` returns `true`.
-    type_safe::optional<type_safe::array_ref<const cpp_template_argument>> arguments() const
-        noexcept
+    type_safe::optional<type_safe::array_ref<const cpp_template_argument>> arguments()
+        const noexcept
     {
         auto& vec = arguments_.value(type_safe::variant_type<std::vector<cpp_template_argument>>{});
         if (vec.empty())

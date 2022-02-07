@@ -1,6 +1,5 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
-// This file is subject to the license terms in the LICENSE file
-// found in the top-level directory of this distribution.
+// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// SPDX-License-Identifier: MIT
 
 #include <cppast/code_generator.hpp>
 
@@ -292,11 +291,10 @@ bool generate_enum(code_generator& generator, const cpp_enum& e,
             output << opening_brace;
             output.indent();
 
-            auto need_sep = write_container(output, e,
-                                            [](const code_generator::output& out) {
-                                                out << punctuation(",") << newl;
-                                            },
-                                            cur_access);
+            auto need_sep = write_container(
+                output, e,
+                [](const code_generator::output& out) { out << punctuation(",") << newl; },
+                cur_access);
             if (need_sep)
                 output << newl;
 

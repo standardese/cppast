@@ -1,6 +1,5 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
-// This file is subject to the license terms in the LICENSE file
-// found in the top-level directory of this distribution.
+// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// SPDX-License-Identifier: MIT
 
 /// \file
 /// Generates enum category functions.
@@ -55,68 +54,67 @@ const cppast::cpp_enum& get_enum(const cppast::cpp_entity_index&       index,
 // generates the function definitions
 void generate_enum_category(const cppast::cpp_entity_index& index, const cppast::cpp_file& file)
 {
-    cppast::visit(file,
-                  [](const cppast::cpp_entity& e) {
-                      // only visit function declarations that have the attribute set
-                      return (e.kind() == cppast::cpp_entity_kind::function_t
-                              && !cppast::is_definition(e)
-                              && cppast::has_attribute(e, "generate::enum_category"))
-                             // or all namespaces
-                             || e.kind() == cppast::cpp_entity_kind::namespace_t;
-                  },
-                  [&](const cppast::cpp_entity& e, const cppast::visitor_info& info) {
-                      if (e.kind() == cppast::cpp_entity_kind::function_t)
-                      {
-                          // a new function, generate implementation
-                          assert(info.is_new_entity());
+    cppast::visit(
+        file,
+        [](const cppast::cpp_entity& e) {
+            // only visit function declarations that have the attribute set
+            return (e.kind() == cppast::cpp_entity_kind::function_t && !cppast::is_definition(e)
+                    && cppast::has_attribute(e, "generate::enum_category"))
+                   // or all namespaces
+                   || e.kind() == cppast::cpp_entity_kind::namespace_t;
+        },
+        [&](const cppast::cpp_entity& e, const cppast::visitor_info& info) {
+            if (e.kind() == cppast::cpp_entity_kind::function_t)
+            {
+                // a new function, generate implementation
+                assert(info.is_new_entity());
 
-                          auto category = cppast::has_attribute(e, "generate::enum_category")
-                                              .value()
-                                              .arguments()
-                                              .value()
-                                              .as_string();
+                auto category = cppast::has_attribute(e, "generate::enum_category")
+                                    .value()
+                                    .arguments()
+                                    .value()
+                                    .as_string();
 
-                          auto& func = static_cast<const cppast::cpp_function&>(e);
-                          // return type must be bool
-                          assert(func.return_type().kind() == cppast::cpp_type_kind::builtin_t
-                                 && static_cast<const cppast::cpp_builtin_type&>(func.return_type())
-                                            .builtin_type_kind()
-                                        == cppast::cpp_bool);
+                auto& func = static_cast<const cppast::cpp_function&>(e);
+                // return type must be bool
+                assert(func.return_type().kind() == cppast::cpp_type_kind::builtin_t
+                       && static_cast<const cppast::cpp_builtin_type&>(func.return_type())
+                                  .builtin_type_kind()
+                              == cppast::cpp_bool);
 
-                          // single parameter...
-                          assert(std::next(func.parameters().begin()) == func.parameters().end());
-                          auto& param = *func.parameters().begin();
-                          auto& enum_ = get_enum(index, param);
+                // single parameter...
+                assert(std::next(func.parameters().begin()) == func.parameters().end());
+                auto& param = *func.parameters().begin();
+                auto& enum_ = get_enum(index, param);
 
-                          // generate function definition
-                          std::cout << "inline bool " << func.name() << "("
-                                    << cppast::to_string(param.type()) << " e) {\n";
+                // generate function definition
+                std::cout << "inline bool " << func.name() << "(" << cppast::to_string(param.type())
+                          << " e) {\n";
 
-                          // generate switch
-                          std::cout << "  switch (e) {\n";
-                          for (const auto& enumerator : enum_)
-                          {
-                              std::cout << "  case " << enum_.name() << "::" << enumerator.name()
-                                        << ":\n";
-                              if (is_category(enumerator, category))
-                                  std::cout << "    return true;\n";
-                              else
-                                  std::cout << "    return false;\n";
-                          }
-                          std::cout << "  }\n";
+                // generate switch
+                std::cout << "  switch (e) {\n";
+                for (const auto& enumerator : enum_)
+                {
+                    std::cout << "  case " << enum_.name() << "::" << enumerator.name() << ":\n";
+                    if (is_category(enumerator, category))
+                        std::cout << "    return true;\n";
+                    else
+                        std::cout << "    return false;\n";
+                }
+                std::cout << "  }\n";
 
-                          std::cout << "}\n\n";
-                      }
-                      else if (e.kind() == cppast::cpp_entity_kind::namespace_t)
-                      {
-                          if (info.event == cppast::visitor_info::container_entity_enter)
-                              // open namespace
-                              std::cout << "namespace " << e.name() << " {\n\n";
-                          else // if (info.event == cppast::visitor_info::container_entity_exit)
-                              // close namespace
-                              std::cout << "}\n";
-                      }
-                  });
+                std::cout << "}\n\n";
+            }
+            else if (e.kind() == cppast::cpp_entity_kind::namespace_t)
+            {
+                if (info.event == cppast::visitor_info::container_entity_enter)
+                    // open namespace
+                    std::cout << "namespace " << e.name() << " {\n\n";
+                else // if (info.event == cppast::visitor_info::container_entity_exit)
+                    // close namespace
+                    std::cout << "}\n";
+            }
+        });
 }
 
 int main(int argc, char* argv[])

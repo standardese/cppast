@@ -1,6 +1,5 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
-// This file is subject to the license terms in the LICENSE file
-// found in the top-level directory of this distribution.
+// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// SPDX-License-Identifier: MIT
 
 #include <cppast/cpp_enum.hpp>
 
@@ -81,9 +80,9 @@ enum ns::c : int {};
                     {
                         REQUIRE(expr.kind() == cpp_expression_kind::unexposed_t);
                         REQUIRE(static_cast<const cpp_unexposed_expression&>(expr)
-                                    .expression()
-                                    .as_string()
-                                == "42");
+                                                .expression()
+                                                .as_string()
+                                            == "42");
                     }
                     else
                     {
@@ -99,8 +98,8 @@ enum ns::c : int {};
                     auto& expr = val.value().value();
                     REQUIRE(expr.kind() == cpp_expression_kind::unexposed_t);
                     REQUIRE(
-                        static_cast<const cpp_unexposed_expression&>(expr).expression().as_string()
-                        == "a_a+2");
+                                    static_cast<const cpp_unexposed_expression&>(expr).expression().as_string()
+                                    == "a_a+2");
                     if (!equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_int)))
                         REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_uint)));
                 }

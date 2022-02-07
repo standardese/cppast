@@ -1,6 +1,5 @@
 // Copyright (C) 2021 Julian Rüth <julian.rueth@fsfe.org>
-// This file is subject to the license terms in the LICENSE file
-// found in the top-level directory of this distribution.
+// SPDX-License-Identifier: MIT
 
 #ifndef CPPAST_FORWARD_HPP_INCLUDED
 #define CPPAST_FORWARD_HPP_INCLUDED
@@ -118,9 +117,12 @@ struct source_location;
 struct visitor_info;
 struct whitespace_t;
 
-template <class Derived, typename T> class cpp_entity_container;
-template <class Parser> class simple_file_parser;
-template <typename T, typename Predicate> class basic_cpp_entity_ref;
+template <class Derived, typename T>
+class cpp_entity_container;
+template <class Parser>
+class simple_file_parser;
+template <typename T, typename Predicate>
+class basic_cpp_entity_ref;
 
 } // namespace cppast
 

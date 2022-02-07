@@ -1,6 +1,5 @@
-// Copyright (C) 2017-2019 Jonathan Müller <jonathanmueller.dev@gmail.com>
-// This file is subject to the license terms in the LICENSE file
-// found in the top-level directory of this distribution.
+// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// SPDX-License-Identifier: MIT
 
 /// \file
 /// Generate equality comparisons.
@@ -80,48 +79,46 @@ void generate_op_non_equal(std::ostream& out, const cppast::cpp_class& c)
 // generate comparison operators for all classes in the file
 void generate_comparison(const cppast::cpp_file& file)
 {
-    cppast::visit(file,
-                  [](const cppast::cpp_entity& e) {
-                      // only visit non-templated class definitions that have the attribute set
-                      return (!cppast::is_templated(e)
-                              && e.kind() == cppast::cpp_entity_kind::class_t
-                              && cppast::is_definition(e)
-                              && cppast::has_attribute(e, "generate::comparison"))
-                             // or all namespaces
-                             || e.kind() == cppast::cpp_entity_kind::namespace_t;
-                  },
-                  [](const cppast::cpp_entity& e, const cppast::visitor_info& info) {
-                      if (e.kind() == cppast::cpp_entity_kind::class_t && !info.is_old_entity())
-                      {
-                          // it is a new class
-                          auto& class_ = static_cast<const cppast::cpp_class&>(e);
-                          auto& attribute
-                              = cppast::has_attribute(e, "generate::comparison").value();
+    cppast::visit(
+        file,
+        [](const cppast::cpp_entity& e) {
+            // only visit non-templated class definitions that have the attribute set
+            return (!cppast::is_templated(e) && e.kind() == cppast::cpp_entity_kind::class_t
+                    && cppast::is_definition(e) && cppast::has_attribute(e, "generate::comparison"))
+                   // or all namespaces
+                   || e.kind() == cppast::cpp_entity_kind::namespace_t;
+        },
+        [](const cppast::cpp_entity& e, const cppast::visitor_info& info) {
+            if (e.kind() == cppast::cpp_entity_kind::class_t && !info.is_old_entity())
+            {
+                // it is a new class
+                auto& class_    = static_cast<const cppast::cpp_class&>(e);
+                auto& attribute = cppast::has_attribute(e, "generate::comparison").value();
 
-                          // generate requested operators
-                          if (attribute.arguments())
-                          {
-                              if (has_token(attribute.arguments().value(), "=="))
-                                  generate_op_equal(std::cout, class_);
-                              if (has_token(attribute.arguments().value(), "!="))
-                                  generate_op_non_equal(std::cout, class_);
-                          }
-                          else
-                          {
-                              generate_op_equal(std::cout, class_);
-                              generate_op_non_equal(std::cout, class_);
-                          }
-                      }
-                      else if (e.kind() == cppast::cpp_entity_kind::namespace_t)
-                      {
-                          if (info.event == cppast::visitor_info::container_entity_enter)
-                              // open namespace
-                              std::cout << "namespace " << e.name() << " {\n\n";
-                          else // if (info.event == cppast::visitor_info::container_entity_exit)
-                              // close namespace
-                              std::cout << "}\n";
-                      }
-                  });
+                // generate requested operators
+                if (attribute.arguments())
+                {
+                    if (has_token(attribute.arguments().value(), "=="))
+                        generate_op_equal(std::cout, class_);
+                    if (has_token(attribute.arguments().value(), "!="))
+                        generate_op_non_equal(std::cout, class_);
+                }
+                else
+                {
+                    generate_op_equal(std::cout, class_);
+                    generate_op_non_equal(std::cout, class_);
+                }
+            }
+            else if (e.kind() == cppast::cpp_entity_kind::namespace_t)
+            {
+                if (info.event == cppast::visitor_info::container_entity_enter)
+                    // open namespace
+                    std::cout << "namespace " << e.name() << " {\n\n";
+                else // if (info.event == cppast::visitor_info::container_entity_exit)
+                    // close namespace
+                    std::cout << "}\n";
+            }
+        });
 }
 
 int main(int argc, char* argv[])
