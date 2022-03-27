@@ -194,7 +194,23 @@ void parse_flags(CXCompileCommand cmd, Func callback)
         }
         else if (!last_flag.empty())
         {
-            callback(std::move(last_flag), str.std_str());
+            // we have flags + args
+            std::string args;
+            if (auto ptr = find_flag_arg_sep(last_flag))
+            {
+                // If last flag contains an '=' then this is a positional argument, not its value
+                auto pos = std::size_t(ptr - last_flag.c_str());
+                ++ptr;
+                while (*ptr)
+                    args += *ptr++;
+                last_flag.erase(pos);
+
+                callback(std::move(last_flag), std::move(args));
+            }
+            else
+            {
+                callback(std::move(last_flag), str.std_str());
+            }
             last_flag.clear();
         }
         // else skip argument
