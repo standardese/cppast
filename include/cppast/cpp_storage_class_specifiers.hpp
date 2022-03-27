@@ -19,10 +19,16 @@ enum cpp_storage_class_specifiers : int
 
     cpp_storage_class_auto = 1, //< *automatic* storage duration.
 
-    cpp_storage_class_static = 2, //< *static* or *thread* storage duration and *internal* linkage.
-    cpp_storage_class_extern = 4, //< *static* or *thread* storage duration and *external* linkage.
 
-    cpp_storage_class_thread_local = 8, //< *thread* storage duration.
+    cpp_storage_class_register = 2, //< *automatic* storage duration.
+    /// Hints to the compiler to keep this in a register.
+    /// \notes In C a register variable cannot have its address taken. For C++ `register` is
+    /// deprecated in C++11 and removed in C++17.
+
+    cpp_storage_class_static = 4, //< *static* or *thread* storage duration and *internal* linkage.
+    cpp_storage_class_extern = 8, //< *static* or *thread* storage duration and *external* linkage.
+
+    cpp_storage_class_thread_local = 16, //< *thread* storage duration.
     /// \notes This is the only one that can be combined with the others.
 };
 
@@ -49,6 +55,13 @@ inline bool is_extern(cpp_storage_class_specifiers spec) noexcept
 {
     return (spec & cpp_storage_class_extern) != 0;
 }
+
+/// \returns Whether the [cppast::cpp_storage_class_specifiers]() contain `register`.
+inline bool is_register(cpp_storage_class_specifiers spec) noexcept
+{
+    return (spec & cpp_storage_class_register) != 0;
+}
 } // namespace cppast
+
 
 #endif // CPPAST_CPP_STORAGE_CLASS_SPECIFIERS_HPP_INCLUDED

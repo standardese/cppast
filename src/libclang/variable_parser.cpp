@@ -62,7 +62,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_variable(const detail::parse_conte
     // can't appear anywhere else, so good enough
     detail::cxtokenizer tokenizer(context.tu, context.file, cur);
     for (auto& token : tokenizer)
-        if (token.value() == "thread_local")
+        if (token.value() == "thread_local" || token.value() == "_Thread_local")
             storage_class
                 = cpp_storage_class_specifiers(storage_class | cpp_storage_class_thread_local);
         else if (token.value() == "constexpr")

@@ -1,6 +1,7 @@
 // Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
+#include "cppast/cpp_type.hpp"
 #include <cppast/code_generator.hpp>
 
 #include <cppast/cpp_alias_template.hpp>
@@ -471,6 +472,8 @@ void write_storage_class(code_generator::output& output, cpp_storage_class_speci
         output << keyword("extern") << whitespace;
     if (is_thread_local(storage))
         output << keyword("thread_local") << whitespace;
+    if (is_register(storage))
+        output << keyword("register") << whitespace;
     if (is_constexpr)
         output << keyword("constexpr") << whitespace;
     else if (is_consteval)
