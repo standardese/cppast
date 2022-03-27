@@ -102,7 +102,7 @@ enum class visit_filter;
 
 enum cpp_access_specifier_kind : int;
 enum cpp_builtin_type_kind : int;
-enum cpp_cv : int;
+enum cpp_cv_flags : int;
 enum cpp_function_body_kind : int;
 enum cpp_reference : int;
 enum cpp_storage_class_specifiers : int;

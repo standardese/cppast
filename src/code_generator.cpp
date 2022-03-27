@@ -661,22 +661,27 @@ void write_suffix_virtual(code_generator::output& output, const cpp_virtual& vir
 bool write_cv_ref(code_generator::output& output, const cpp_member_function_base& base)
 {
     auto need_ws = false;
-    switch (base.cv_qualifier())
+    auto cv = base.cv_qualifier();
+
+    std::vector<const char*> qualifiers;
+    if (is_const(cv))
+        qualifiers.push_back("const");
+    if (is_volatile(cv))
+        qualifiers.push_back("volatile");
+    if (is_atomic(cv))
+        qualifiers.push_back("_Atomic");
+    if (is_restrict(cv))
+        qualifiers.push_back("restrict");
+
+    bool first = true;
+    for (auto& q : qualifiers)
     {
-    case cpp_cv_none:
-        break;
-    case cpp_cv_const:
-        output << operator_ws << keyword("const");
-        need_ws = true;
-        break;
-    case cpp_cv_volatile:
-        output << operator_ws << keyword("volatile");
-        need_ws = true;
-        break;
-    case cpp_cv_const_volatile:
-        output << operator_ws << keyword("const") << whitespace << keyword("volatile");
-        need_ws = true;
-        break;
+        if (first)
+            output << operator_ws;
+        else
+            output << whitespace;
+        output << keyword(std::move(q));
+        first = false;
     }
 
     switch (base.ref_qualifier())

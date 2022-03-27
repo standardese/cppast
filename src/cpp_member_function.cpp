@@ -15,6 +15,10 @@ std::string cpp_member_function_base::do_get_signature() const
         result += " const";
     if (is_volatile(cv_qualifier()))
         result += " volatile";
+    if (is_atomic(cv_qualifier()))
+        result += " _Atomic";
+    if (is_restrict(cv_qualifier()))
+        result += " restrict";
 
     if (ref_qualifier() == cpp_ref_lvalue)
         result += " &";

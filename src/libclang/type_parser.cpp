@@ -134,20 +134,21 @@ std::string get_type_spelling(const CXCursor& cur, const CXType& type)
 // also used on member function pointers
 cpp_cv suffix_cv(std::string& spelling)
 {
-    auto cv = cpp_cv_none;
-    if (remove_suffix(spelling, "const", true))
-    {
-        if (remove_suffix(spelling, "volatile", true))
-            cv = cpp_cv_const_volatile;
-        else
-            cv = cpp_cv_const;
-    }
-    else if (remove_suffix(spelling, "volatile", true))
+    bool found_cv = true;
+    cpp_cv cv = cpp_cv_none;
+
+    while (found_cv)
     {
         if (remove_suffix(spelling, "const", true))
-            cv = cpp_cv_const_volatile;
+            cv |= cpp_cv_const;
+        else if (remove_suffix(spelling, "volatile", true))
+            cv |= cpp_cv_volatile;
+        else if (remove_suffix(spelling, "restrict", true))
+            cv |= cpp_cv_restrict;
+        else if (remove_suffix(spelling, "_Atomic", true))
+            cv |= cpp_cv_atomic;
         else
-            cv = cpp_cv_volatile;
+            found_cv = false;
     }
 
     return cv;
@@ -156,66 +157,29 @@ cpp_cv suffix_cv(std::string& spelling)
 // const/volatile at the beginning
 cpp_cv prefix_cv(std::string& spelling)
 {
-    auto cv = cpp_cv_none;
-    if (remove_prefix(spelling, "const", true))
-    {
-        if (remove_prefix(spelling, "volatile", true))
-            cv = cpp_cv_const_volatile;
-        else
-            cv = cpp_cv_const;
-    }
-    else if (remove_prefix(spelling, "volatile", true))
+    bool found_cv = true;
+    cpp_cv cv = cpp_cv_none;
+
+    while (found_cv)
     {
         if (remove_prefix(spelling, "const", true))
-            cv = cpp_cv_const_volatile;
+            cv |= cpp_cv_const;
+        else if (remove_prefix(spelling, "volatile", true))
+            cv |= cpp_cv_volatile;
+        else if (remove_prefix(spelling, "restrict", true))
+            cv |= cpp_cv_restrict;
+        else if (remove_prefix(spelling, "_Atomic", true))
+            cv |= cpp_cv_atomic;
         else
-            cv = cpp_cv_volatile;
+            found_cv = false;
     }
 
     return cv;
 }
 
-cpp_cv merge_cv(cpp_cv a, cpp_cv b)
+cpp_cv merge_cv(const cpp_cv& a, const cpp_cv& b)
 {
-    switch (a)
-    {
-    case cpp_cv_none:
-        return b;
-
-    case cpp_cv_const:
-        switch (b)
-        {
-        case cpp_cv_none:
-            return cpp_cv_const;
-        case cpp_cv_const:
-            return cpp_cv_const;
-        case cpp_cv_volatile:
-            return cpp_cv_const_volatile;
-        case cpp_cv_const_volatile:
-            return cpp_cv_const_volatile;
-        }
-        break;
-
-    case cpp_cv_volatile:
-        switch (b)
-        {
-        case cpp_cv_none:
-            return cpp_cv_volatile;
-        case cpp_cv_const:
-            return cpp_cv_const_volatile;
-        case cpp_cv_volatile:
-            return cpp_cv_volatile;
-        case cpp_cv_const_volatile:
-            return cpp_cv_const_volatile;
-        }
-        break;
-
-    case cpp_cv_const_volatile:
-        return cpp_cv_const_volatile;
-    }
-
-    DEBUG_UNREACHABLE(detail::assert_handler{});
-    return cpp_cv_none;
+    return combo(a) | b;
 }
 
 std::unique_ptr<cpp_type> make_cv_qualified(std::unique_ptr<cpp_type> entity, cpp_cv cv)
