@@ -80,7 +80,7 @@ namespace
 
 libclang_compile_config::libclang_compile_config()
 : compile_config({}), write_preprocessed_(false), fast_preprocessing_(false),
-  remove_comments_in_macro_(false)
+  remove_comments_in_macro_(false), use_c_(false)
 {
     // set given clang binary
     set_clang_binary(CPPAST_CLANG_BINARY);
@@ -194,7 +194,6 @@ void parse_flags(CXCompileCommand cmd, Func callback)
         }
         else if (!last_flag.empty())
         {
-            // we have flags + args
             callback(std::move(last_flag), str.std_str());
             last_flag.clear();
         }
@@ -217,6 +216,14 @@ libclang_compile_config::libclang_compile_config(const libclang_compilation_data
     for (auto i = 0u; i != size; ++i)
     {
         auto cmd = clang_CompileCommands_getCommand(commands.get(), i);
+
+        // If ++ exists within the compiler name (e.g. clang++, g++, etc), use C++
+        std::string exe(clang_getCString(clang_CompileCommand_getArg(cmd, 0)));
+        if (exe.find("++", 0) != std::string::npos)
+            use_c_ = false;
+        else
+            use_c_ = true;
+
         auto dir = detail::cxstring(clang_CompileCommand_getDirectory(cmd));
         parse_flags(cmd, [&](std::string flag, std::string args) {
             if (flag == "-I")
@@ -234,11 +241,30 @@ libclang_compile_config::libclang_compile_config(const libclang_compilation_data
                 add_flag(std::move(flag));
             }
             else if (flag == "-std")
+            {
                 // standard
+                try
+                {
+                    // detect whether the language standard is a C standard
+                    use_c_ = is_c_standard(to_standard(args));
+                }
+                catch (const std::invalid_argument&)
+                {
+                    use_c_ = false;
+                }
                 add_flag(std::move(flag) + "=" + std::move(args));
+            }
             else if (flag == "-f")
                 // other options
                 add_flag(std::move(flag) + std::move(args));
+            else if (flag == "-x")
+            {
+                // language
+                if (args == "c")
+                    use_c_ = true;
+                else
+                    use_c_ = false;
+            }
         });
     }
 }
@@ -261,8 +287,9 @@ bool is_valid_binary(const std::string& binary)
 void add_default_include_dirs(libclang_compile_config& config)
 {
     std::string  verbose_output;
+    std::string  language = config.use_c() ? "-xc" : "-xc++";
     tpl::Process process(
-        detail::libclang_compile_config_access::clang_binary(config) + " -x c++ -v -", "",
+        detail::libclang_compile_config_access::clang_binary(config) + " " + language + " -v -", "",
         [](const char*, std::size_t) {},
         [&](const char* str, std::size_t n) { verbose_output.append(str, n); }, true);
     process.write("", 1);
@@ -321,19 +348,19 @@ bool libclang_compile_config::set_clang_binary(std::string binary)
     }
     else
     {
+        static const char* versions[] = {"4.0", "5.0", "6.0", "7", "8", "9", "10", "11", "12", "13", "14"};
         // first search in current directory, then in PATH
-        static const char* paths[]
-            = {"./clang++",   "clang++",       "./clang++-4.0", "clang++-4.0", "./clang++-5.0",
-               "clang++-5.0", "./clang++-6.0", "clang++-6.0",   "./clang-7",   "clang-7",
-               "./clang-8",   "clang-8",       "./clang-9",     "clang-9",     "./clang-10",
-               "clang-10",    "./clang-11",    "clang-11"};
-        for (auto& p : paths)
-            if (is_valid_binary(p))
+        for (auto& v : versions)
+        {
+            // use clang rather than clang++ and use -x to choose C or C++
+            std::string path = std::string("clang-") + v;
+            if (is_valid_binary(path))
             {
-                clang_binary_ = p;
+                clang_binary_ = std::move(path);
                 add_default_include_dirs(*this);
                 return false;
             }
+        }
 
         throw std::invalid_argument("unable to find clang binary '" + binary + "'");
     }
@@ -406,6 +433,55 @@ void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags 
         }
         else
             throw std::invalid_argument("c++20 is not yet supported for current version of clang");
+    case cpp_standard::c_89:
+        if (flags & compile_flag::gnu_extensions)
+            add_flag("-std=gnu89");
+        else
+            add_flag("-std=c89");
+        break;
+    case cpp_standard::c_99:
+        if (flags & compile_flag::gnu_extensions)
+            add_flag("-std=gnu99");
+        else
+            add_flag("-std=c99");
+        break;
+    case cpp_standard::c_11:
+        if (flags & compile_flag::gnu_extensions)
+            add_flag("-std=gnu11");
+        else
+            add_flag("-std=c11");
+        break;
+    case cpp_standard::c_17:
+        if (libclang_parser::libclang_minor_version() >= 45)
+        { // Corresponds to Clang version 6
+            if (flags & compile_flag::gnu_extensions)
+                add_flag("-std=gnu17");
+            else
+                add_flag("-std=c17");
+            break;
+        }
+        else
+            throw std::invalid_argument("c17 is not yet supported for current version of clang");
+    case cpp_standard::c_2x:
+        if (libclang_parser::libclang_minor_version() >= 59)
+        { // Corresponds to Clang version 9
+            if (flags & compile_flag::gnu_extensions)
+                add_flag("-std=gnu2x");
+            else
+                add_flag("-std=c2x");
+            break;
+        }
+        else
+            throw std::invalid_argument("c2x is not yet supported for current version of clang");
+    }
+
+    // Add language flag for C or C++
+    if (is_c_standard(standard)) {
+        add_flag("-xc");
+        use_c_ = true;
+    } else {
+        add_flag("-xc++");
+        use_c_ = false;
     }
 
     if (flags & compile_flag::ms_compatibility)
@@ -443,6 +519,11 @@ void libclang_compile_config::do_remove_macro_definition(std::string name)
     add_flag("-U" + std::move(name));
 }
 
+bool libclang_compile_config::do_use_c() const noexcept
+{
+    return use_c_;
+}
+
 type_safe::optional<libclang_compile_config> cppast::find_config_for(
     const libclang_compilation_database& database, std::string file_name)
 {
@@ -456,7 +537,7 @@ type_safe::optional<libclang_compile_config> cppast::find_config_for(
     if (database.has_config(file_name))
         return libclang_compile_config(database, std::move(file_name));
     static const char* extensions[]
-        = {".h", ".hpp", ".cpp", ".h++", ".c++", ".hxx", ".cxx", ".hh", ".cc", ".H", ".C"};
+        = {".h", ".hpp", ".cpp", ".h++", ".c++", ".hxx", ".cxx", ".hh", ".cc", ".H", ".C", ".c"};
     for (auto ext : extensions)
     {
         auto name = file_name + ext;
@@ -493,8 +574,8 @@ namespace
 std::vector<const char*> get_arguments(const libclang_compile_config& config)
 {
     std::vector<const char*> args
-        // TODO: Why? and Why?
-        = {"-x", "c++", "-I."}; // force C++ and enable current directory for include search
+        // TODO: Why?
+        = {"-I."}; // enable current directory for include search
     for (auto& flag : detail::libclang_compile_config_access::flags(config))
         args.push_back(flag.c_str());
     return args;
