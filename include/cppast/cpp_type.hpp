@@ -289,7 +289,6 @@ private:
 /// Flags for the kinds of C/C++ qualifiers.
 enum cpp_cv_flags : int
 {
-    cpp_cv_none, //< unqualified type
     cpp_cv_const, //< constant type
     cpp_cv_volatile, //< volatile type
     cpp_cv_restrict, //< restrict pointer type (C-only)
@@ -300,6 +299,11 @@ enum cpp_cv_flags : int
 
 /// Flag set for the kinds for C/C++ qualifiers.
 using cpp_cv = type_safe::flag_set<cpp_cv_flags>;
+
+/// Represents a const volatile qualified type
+constexpr cpp_cv cpp_cv_const_volatile = cpp_cv(cpp_cv_const) | cpp_cv_volatile;
+/// Represents an unqualified type
+constexpr cpp_cv cpp_cv_none = cpp_cv();
 
 /// \returns `true` if the qualifier contains `const`.
 inline bool is_const(const cpp_cv& cv) noexcept

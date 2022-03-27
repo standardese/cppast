@@ -682,6 +682,7 @@ bool write_cv_ref(code_generator::output& output, const cpp_member_function_base
             output << whitespace;
         output << keyword(std::move(q));
         first = false;
+        need_ws = true;
     }
 
     switch (base.ref_qualifier())
