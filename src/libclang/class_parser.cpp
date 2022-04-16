@@ -98,11 +98,22 @@ void add_base_class(cpp_class::builder& builder, const detail::parse_context& co
     detail::cxtoken_stream stream(tokenizer, cur);
 
     // [<attribute>] [virtual] [<access>] <name>
+    // or
+    // [<attribute>] [<access>] [virtual] <name>
     // can't use spelling to get the name
     auto attributes = detail::parse_attributes(stream);
     if (is_virtual)
-        detail::skip(stream, "virtual");
-    detail::skip_if(stream, to_string(access));
+    {
+        if (detail::skip_if(stream, "virtual"))
+            detail::skip_if(stream, to_string(access));
+        else
+        {
+            detail::skip_if(stream, to_string(access));
+            detail::skip(stream, "virtual");
+        }
+    }
+    else
+        detail::skip_if(stream, to_string(access));
 
     auto name = detail::to_string(stream, stream.end()).as_string();
 

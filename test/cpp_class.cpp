@@ -84,6 +84,13 @@ struct f
 : public ns::base, virtual protected e
 {};
 
+/// struct f2
+/// :ns::base,virtual protected e{
+/// };
+struct f2
+: public ns::base, protected virtual e
+{};
+
 using namespace ns;
 
 /// struct g
@@ -234,7 +241,7 @@ struct g
             }
             REQUIRE(no_bases == 2u);
         }
-        else if (c.name() == "f")
+        else if (c.name() == "f" || c.name() == "f2")
         {
             REQUIRE(c.is_definition());
             REQUIRE(!c.is_declaration());
@@ -298,5 +305,5 @@ struct g
         else
             REQUIRE(false);
     });
-    REQUIRE(count == 12u);
+    REQUIRE(count == 13u);
 }
