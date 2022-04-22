@@ -1,7 +1,6 @@
 // Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
-#include "cppast/cpp_type.hpp"
 #include <cppast/code_generator.hpp>
 
 #include <cppast/cpp_alias_template.hpp>

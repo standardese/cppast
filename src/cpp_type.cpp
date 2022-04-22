@@ -11,7 +11,6 @@
 #include <cppast/cpp_function_type.hpp>
 #include <cppast/cpp_template.hpp>
 #include <cppast/cpp_type_alias.hpp>
-#include <vector>
 
 using namespace cppast;
 
