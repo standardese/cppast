@@ -247,8 +247,8 @@ bool generate_type_alias(code_generator& generator, const cpp_type_alias& alias,
             if (output.options() & code_generator::exclude_target)
                 output.excluded(alias);
             else
-                detail::write_type(output, alias.underlying_type(), "");
-            output << whitespace << identifier(alias.name()) << punctuation(";") << newl;
+                detail::write_type(output, alias.underlying_type(), alias.name());
+            output << punctuation(";") << newl;
         }
         else
         {
