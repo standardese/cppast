@@ -54,6 +54,7 @@ namespace detail
         type_safe::object_ref<const diagnostic_logger> logger;
         type_safe::object_ref<const cpp_entity_index>  idx;
         comment_context                                comments;
+        bool                                           use_c_style;
         mutable bool                                   error;
     };
 

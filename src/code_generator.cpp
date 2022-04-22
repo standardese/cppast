@@ -242,13 +242,25 @@ bool generate_type_alias(code_generator& generator, const cpp_type_alias& alias,
     code_generator::output output(type_safe::ref(generator), type_safe::ref(alias), cur_access);
     if (output)
     {
-        output << keyword("using") << whitespace << identifier(alias.name()) << operator_ws
-               << punctuation("=") << operator_ws;
-        if (output.options() & code_generator::exclude_target)
-            output.excluded(alias);
+        if (alias.use_c_style())
+        {
+            output << keyword("typedef") << whitespace;
+            if (output.options() & code_generator::exclude_target)
+                output.excluded(alias);
+            else
+                detail::write_type(output, alias.underlying_type(), "");
+            output << whitespace << identifier(alias.name()) << punctuation(";") << newl;
+        }
         else
-            detail::write_type(output, alias.underlying_type(), "");
-        output << punctuation(";") << newl;
+        {
+            output << keyword("using") << whitespace << identifier(alias.name()) << operator_ws
+                << punctuation("=") << operator_ws;
+            if (output.options() & code_generator::exclude_target)
+                output.excluded(alias);
+            else
+                detail::write_type(output, alias.underlying_type(), "");
+            output << punctuation(";") << newl;
+        }
     }
     return static_cast<bool>(output);
 }

@@ -719,6 +719,7 @@ try
                                   type_safe::ref(logger()),
                                   type_safe::ref(idx),
                                   detail::comment_context(preprocessed.comments),
+                                  c.use_c(),
                                   false};
     detail::visit_tu(tu, path.c_str(), [&](const CXCursor& cur) {
         if (clang_getCursorKind(cur) == CXCursor_InclusionDirective)

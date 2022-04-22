@@ -18,11 +18,13 @@ public:
 
     /// \returns A newly created and registered type alias.
     static std::unique_ptr<cpp_type_alias> build(const cpp_entity_index& idx, cpp_entity_id id,
-                                                 std::string name, std::unique_ptr<cpp_type> type);
+                                                 std::string name, std::unique_ptr<cpp_type> type,
+                                                 bool use_c_style = false);
 
     /// \returns A newly created type alias that isn't registered.
     /// \notes This function is intendend for templated type aliases.
-    static std::unique_ptr<cpp_type_alias> build(std::string name, std::unique_ptr<cpp_type> type);
+    static std::unique_ptr<cpp_type_alias> build(std::string name, std::unique_ptr<cpp_type> type,
+                                                 bool use_c_style = false);
 
     /// \returns A reference to the aliased [cppast::cpp_type]().
     const cpp_type& underlying_type() const noexcept
@@ -30,14 +32,21 @@ public:
         return *type_;
     }
 
+    /// \returns Whether to generate C-style typedefs instead of C++ using statements
+    bool use_c_style() const noexcept
+    {
+        return use_c_style_;
+    }
+
 private:
-    cpp_type_alias(std::string name, std::unique_ptr<cpp_type> type)
-    : cpp_entity(std::move(name)), type_(std::move(type))
+    cpp_type_alias(std::string name, std::unique_ptr<cpp_type> type, bool use_c_style)
+    : cpp_entity(std::move(name)), type_(std::move(type)), use_c_style_(use_c_style)
     {}
 
     cpp_entity_kind do_get_entity_kind() const noexcept override;
 
     std::unique_ptr<cpp_type> type_;
+    bool                      use_c_style_;
 };
 } // namespace cppast
 
