@@ -20,12 +20,30 @@ namespace detail
     template <typename T>
     class intrusive_list_node
     {
-        std::unique_ptr<T> next_;
+    public:
+        intrusive_list_node() = default;
 
+        intrusive_list_node(intrusive_list_node&&) = default;
+        intrusive_list_node& operator=(intrusive_list_node&&) = default;
+
+        ~intrusive_list_node() noexcept
+        {
+            // Free iteratively to avoid stack overflow in debug builds.
+            auto next = next_.release();
+            while (next)
+            {
+                std::unique_ptr<T> cur(next);
+                next = cur->next_.release();
+            }
+        }
+
+    private:
         void do_on_insert(const T& parent) noexcept
         {
             static_cast<T&>(*this).on_insert(parent);
         }
+
+        std::unique_ptr<T> next_;
 
         template <typename U>
         friend struct intrusive_list_access;
