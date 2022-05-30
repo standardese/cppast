@@ -1023,8 +1023,11 @@ ts::optional<linemarker> parse_linemarker(position& p)
     std::string file_name;
     for (; !starts_with(p, "\""); p.skip())
     {
-        if (*p.ptr() == '\\')
-            file_name += "\\\\";
+        if ( starts_with( p, "\\\\" ) )
+        {
+            file_name += "\\";
+            p.skip();
+        }
         else
             file_name += *p.ptr();
     }
