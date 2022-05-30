@@ -29,6 +29,18 @@ namespace detail
 
         template <typename U>
         friend struct intrusive_list_access;
+
+    public:
+        ~intrusive_list_node() noexcept
+        {
+            // free iteratively to avoid stack overflow in debug builds
+            T* next = next_.release();
+            while ( next )
+            {
+                std::unique_ptr<T> cur( next );
+                next = cur->next_.release();
+            }
+        }
     };
 
     template <typename T>
