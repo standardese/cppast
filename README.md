@@ -68,7 +68,7 @@ For that set the option `LLVM_VERSION_EXPLICIT` to the version you're using,
 `LIBCLANG_INCLUDE_DIR` to the directory where the header files are located (so they can be included with `clang-c/Index.h`),
 and `CLANG_BINARY` to the full path of the `clang++` exectuable.
 
-The other dependencies like [type_safe](http://type_safe.foonathan.net) are installed automatically with git submodules, if they're not installed already.
+The other dependencies like [type_safe](http://type_safe.foonathan.net) are installed automatically with FetchContent, if they're not installed already.
 
 If you run into any issues with the installation, please report them.
 
