@@ -63,7 +63,10 @@ source_location parse_source_location(const char*& ptr)
     DEBUG_ASSERT(*ptr == ':', detail::assert_handler{});
     ++ptr;
 
-    return {type_safe::nullopt, std::move(filename), std::move(line), type_safe::nullopt};
+    return {type_safe::nullopt,
+            filename == "<scratch space>" ? type_safe::optional<std::string>()
+                                          : std::move(filename),
+            std::move(line), type_safe::nullopt};
 }
 
 severity parse_severity(const char*& ptr)
@@ -81,6 +84,8 @@ severity parse_severity(const char*& ptr)
         return severity::error;
     else if (sev == "fatal error")
         return severity::critical;
+    else if (sev == "note")
+        return severity::info;
     else
         ptr = fallback;
     return severity::error;
@@ -102,6 +107,10 @@ void log_diagnostic(const diagnostic_logger& logger, const std::string& msg)
     std::string message;
     while (*ptr && *ptr != '\n')
         message.push_back(*ptr++);
+
+    if (!loc.file && message == "expanded from here")
+        // Useless info.
+        return;
 
     logger.log("preprocessor", diagnostic{std::move(message), std::move(loc), sev});
 }
