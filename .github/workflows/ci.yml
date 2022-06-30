@@ -71,24 +71,3 @@ jobs:
       working-directory: build/
       run: ctest --output-on-failure
 
-  macos:
-    runs-on: macos-latest
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: Create Build Environment
-      run: cmake -E make_directory build
-    - name: Install ninja
-      run: brew install ninja
-
-    - name: Configure
-      working-directory: build/
-      run: cmake -GNinja $GITHUB_WORKSPACE -DLLVM_CONFIG_BINARY="$(brew --prefix llvm)/bin/llvm-config" -DCLANG_BINARY=clang++
-    - name: Build
-      working-directory: build/
-      run: cmake --build .
-    - name: Test
-      working-directory: build/
-      run: ctest --output-on-failure
-
-
