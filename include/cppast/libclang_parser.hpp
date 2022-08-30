@@ -95,6 +95,13 @@ public:
     /// and `__cppast_minor__`.
     libclang_compile_config();
 
+    /// Create the default configuration, using a custom path to the clang binary
+    /// \effects It will set the clang binary as passed, or will search for it as normal if not found
+    /// as well as the libclang system include directory determined by the build system.
+    /// It will also define `__cppast__` with the value `"libclang"` as well as `__cppast_major__`
+    /// and `__cppast_minor__`.
+    libclang_compile_config(std::string clang_binary);
+
     /// Creates the configuration stored in the database.
     ///
     /// \effects It will use the options found in the database for the specified file.
@@ -108,6 +115,20 @@ public:
     /// \notes The file key will include the specified directory in the JSON, if it is not a full
     /// path.
     libclang_compile_config(const libclang_compilation_database& database, const std::string& file);
+
+    /// Creates the configuration stored in the database, using a custom path to the clang binary
+    ///
+    /// \effects It will use the options found in the database for the specified file.
+    /// This does not necessarily need to match the file that is going to be parsed,
+    /// but it should.
+    /// It will also add the default configuration options.
+    /// \notes Header files are not included in the compilation database,
+    /// you need to pass in the file name of the corresponding source file,
+    /// if you want to parse one.
+    /// \notes It will only consider options you could also set by the other functions.
+    /// \notes The file key will include the specified directory in the JSON, if it is not a full
+    /// path.
+    libclang_compile_config(std::string clang_binary, const libclang_compilation_database& database, const std::string& file);
 
     libclang_compile_config(const libclang_compile_config& other) = default;
     libclang_compile_config& operator=(const libclang_compile_config& other) = default;
