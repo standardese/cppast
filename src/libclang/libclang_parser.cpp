@@ -78,12 +78,14 @@ bool libclang_compilation_database::has_config(const char* file_name) const
 namespace
 {} // namespace
 
-libclang_compile_config::libclang_compile_config()
+libclang_compile_config::libclang_compile_config() : libclang_compile_config(CPPAST_CLANG_BINARY) {}
+
+libclang_compile_config::libclang_compile_config(std::string clang_binary)
 : compile_config({}), write_preprocessed_(false), fast_preprocessing_(false),
   remove_comments_in_macro_(false)
 {
     // set given clang binary
-    set_clang_binary(CPPAST_CLANG_BINARY);
+    set_clang_binary(clang_binary);
 
     // set macros to detect cppast
     define_macro("__cppast__", "libclang");
@@ -205,7 +207,14 @@ void parse_flags(CXCompileCommand cmd, Func callback)
 
 libclang_compile_config::libclang_compile_config(const libclang_compilation_database& database,
                                                  const std::string&                   file)
-: libclang_compile_config()
+: libclang_compile_config(CPPAST_CLANG_BINARY, database, file)
+{}
+
+
+cppast::libclang_compile_config::libclang_compile_config(
+    std::string clang_binary, const libclang_compilation_database& database,
+    const std::string& file)
+: libclang_compile_config(clang_binary)
 {
     auto cxcommands
         = clang_CompilationDatabase_getCompileCommands(database.database_, file.c_str());
