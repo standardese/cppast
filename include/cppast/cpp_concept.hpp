@@ -16,6 +16,7 @@ namespace cppast
 /// as concepts act very differently from other templates
 class cpp_concept final : public cpp_entity
 {
+public:
     /// \returns An iteratable object iterating over the [cppast::cpp_template_parameter]()
     /// entities.
     detail::iteratable_intrusive_list<cpp_template_parameter> parameters() const noexcept
@@ -36,7 +37,7 @@ class cpp_concept final : public cpp_entity
         : concept_(new cpp_concept(std::move(name)))
         {}
 
-        cpp_template_parameter& add_parameter(std::unique_ptr<cpp_template_parameter> param) noexcept
+        void add_parameter(std::unique_ptr<cpp_template_parameter> param) noexcept
         {
             concept_->parameters_.push_back(*concept_, std::move(param));
         }
@@ -44,6 +45,7 @@ class cpp_concept final : public cpp_entity
         cpp_expression& setExpression(std::unique_ptr<cpp_expression> expression) noexcept
         {
             concept_->expression_ = std::move(expression);
+            return *concept_->expression_;
         }
 
         std::unique_ptr<cpp_concept> finish(const cpp_entity_index& idx, cpp_entity_id id);

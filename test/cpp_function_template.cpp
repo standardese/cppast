@@ -68,8 +68,6 @@ d::operator int() const;
 /// d::d(int const&);
 template <>
 d::d(const int&);
-
-void e(auto t);
 )";
 
     cpp_entity_index idx;
@@ -175,10 +173,6 @@ void e(auto t);
                                           cpp_ref_lvalue)));
             }
             REQUIRE(count == 1u);
-        }
-        else if(tfunc.name() == "e")
-        {
-
         }
         else
             REQUIRE(false);

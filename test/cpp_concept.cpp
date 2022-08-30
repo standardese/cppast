@@ -38,9 +38,13 @@ void f1(T param);
 template<has_methods T>
 class c {};
 
-void f2(has_types auto param);
+template<std::convertible_to<int> T>
+void f2(T param);
+
 )";
     cpp_entity_index idx;
-    auto             file = parse(idx, "cpp_concept.cpp", code);
+    auto             file = parse(idx, "cpp_concept.cpp", code, false, cppast::cpp_standard::cpp_20);
     //TODO: actual tests
+
+
 }

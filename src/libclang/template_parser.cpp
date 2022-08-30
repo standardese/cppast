@@ -4,6 +4,7 @@
 #include <cppast/cpp_alias_template.hpp>
 #include <cppast/cpp_class_template.hpp>
 #include <cppast/cpp_function_template.hpp>
+#include <cppast/cpp_concept.hpp>
 
 #include <cppast/cpp_entity_kind.hpp>
 
@@ -43,7 +44,8 @@ type_safe::optional<typename TemplateT::builder> get_builder(const detail::parse
 }
 
 std::unique_ptr<cpp_template_parameter> parse_type_parameter(const detail::parse_context& context,
-                                                             const CXCursor&              cur)
+                                                             const CXCursor&              cur,
+                                                             bool allow_constrained = true)
 {
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_TemplateTypeParameter,
                  detail::assert_handler{});
@@ -52,11 +54,21 @@ std::unique_ptr<cpp_template_parameter> parse_type_parameter(const detail::parse
     detail::cxtoken_stream stream(tokenizer, cur);
     auto                   name = detail::get_cursor_name(cur);
 
-    // syntax: typename/class [...] name [= ...]
+    // syntax: typename/class/constraint [...] name [= ...]
     auto keyword = cpp_template_keyword::keyword_class;
     if (detail::skip_if(stream, "typename"))
         keyword = cpp_template_keyword::keyword_typename;
-    else
+    else if (allow_constrained && !detail::skip_if(stream, "class"))
+    {
+        // TODO: record the constraint?
+        stream.bump();
+        if(stream.peek() == "<")
+        {
+            detail::skip_brackets(stream);
+        }
+        keyword = cpp_template_keyword::concept_contraint;
+    }
+    else if (!allow_constrained)
         detail::skip(stream, "class");
 
     auto variadic = false;
@@ -182,7 +194,7 @@ std::unique_ptr<cpp_template_template_parameter> parse_template_parameter(
 }
 
 template <class Builder>
-void parse_parameters(Builder& builder, const detail::parse_context& context, const CXCursor& cur)
+void parse_parameters(Builder& builder, const detail::parse_context& context, const CXCursor& cur, bool refuse_constraint_types = false)
 {
     // now visit to get the parameters
     detail::visit_children(cur, [&](const CXCursor& child) {
@@ -388,4 +400,52 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_class_template_specialization(
     parse_arguments(builder, context, cur);
     return builder.finish(*context.idx, detail::get_entity_id(cur),
                           builder.get().class_().is_definition());
+}
+
+std::unique_ptr<cpp_entity> detail::try_parse_cpp_concept(const detail::parse_context& context,
+                                                          const CXCursor&              cur)
+{
+    DEBUG_ASSERT(cur.kind == CXCursor_UnexposedDecl, detail::assert_handler{});
+
+    detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
+    detail::cxtoken_stream stream(tokenizer, cur);
+
+    if (!detail::skip_if(stream, "template"))
+    {
+        return nullptr;
+    }
+
+    if(stream.peek() != "<")
+    {
+        return nullptr;
+    }
+    detail::skip_brackets(stream);
+    if(!detail::skip_if(stream, "concept"))
+    {
+        return nullptr;
+    }
+    const auto& identifier_token = stream.get();
+    if(identifier_token.kind() != CXTokenKind::CXToken_Identifier)
+    {
+        return nullptr;
+    }
+
+    cpp_concept::builder builder(identifier_token.value().std_str());
+
+    if(!detail::skip_if(stream, "="))
+    {
+        return nullptr;
+    }
+
+    if(*(stream.end()-1) != ";")
+    {
+        return nullptr;
+    }
+
+    builder.setExpression(parse_raw_expression(context, stream, stream.end() - 1,
+                             cpp_builtin_type::build(cpp_builtin_type_kind::cpp_bool)));
+
+    parse_parameters(builder, context, cur, true);
+
+    return builder.finish(*context.idx, detail::get_entity_id(cur));
 }
