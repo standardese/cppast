@@ -88,6 +88,8 @@ const char* cppast::to_string(cpp_entity_kind kind) noexcept
         return "class template";
     case cpp_entity_kind::class_template_specialization_t:
         return "class template specialization";
+    case cpp_entity_kind::concept_t:
+        return "concept";
 
     case cpp_entity_kind::static_assert_t:
         return "static_assert";
@@ -142,6 +144,7 @@ bool cppast::is_function(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::function_template_specialization_t:
     case cpp_entity_kind::class_template_t:
     case cpp_entity_kind::class_template_specialization_t:
+    case cpp_entity_kind::concept_t:
     case cpp_entity_kind::static_assert_t:
     case cpp_entity_kind::unexposed_t:
     case cpp_entity_kind::count:
@@ -191,6 +194,7 @@ bool cppast::is_parameter(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::function_template_specialization_t:
     case cpp_entity_kind::class_template_t:
     case cpp_entity_kind::class_template_specialization_t:
+    case cpp_entity_kind::concept_t:
     case cpp_entity_kind::static_assert_t:
     case cpp_entity_kind::unexposed_t:
     case cpp_entity_kind::count:
@@ -209,6 +213,7 @@ bool cppast::is_template(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::function_template_specialization_t:
     case cpp_entity_kind::class_template_t:
     case cpp_entity_kind::class_template_specialization_t:
+    case cpp_entity_kind::concept_t:
         return true;
 
     case cpp_entity_kind::file_t:
