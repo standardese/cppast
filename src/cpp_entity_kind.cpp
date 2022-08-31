@@ -293,6 +293,7 @@ bool cppast::is_template_specialization(cpp_entity_kind kind) noexcept
     case cpp_entity_kind::variable_template_t:
     case cpp_entity_kind::function_template_t:
     case cpp_entity_kind::class_template_t:
+    case cpp_entity_kind::concept_t:
     case cpp_entity_kind::static_assert_t:
     case cpp_entity_kind::unexposed_t:
     case cpp_entity_kind::count:
