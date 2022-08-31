@@ -82,6 +82,7 @@ set(source
         visitor.cpp)
 set(libclang_source
         libclang/class_parser.cpp
+        libclang/concept_parser.cpp
         libclang/cxtokenizer.cpp
         libclang/cxtokenizer.hpp
         libclang/debug_helper.cpp

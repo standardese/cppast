@@ -19,9 +19,9 @@ class cpp_concept final : public cpp_entity
 public:
     /// \returns An iteratable object iterating over the [cppast::cpp_template_parameter]()
     /// entities.
-    detail::iteratable_intrusive_list<cpp_template_parameter> parameters() const noexcept
+    const cpp_token_string& parameters() const noexcept
     {
-        return type_safe::ref(parameters_);
+        return parameters_;
     }
 
     /// \returns the [cppast::cpp_expression]() defining the concept constraint
@@ -37,12 +37,13 @@ public:
         : concept_(new cpp_concept(std::move(name)))
         {}
 
-        void add_parameter(std::unique_ptr<cpp_template_parameter> param) noexcept
+        cpp_token_string& set_parameters(cpp_token_string string) noexcept
         {
-            concept_->parameters_.push_back(*concept_, std::move(param));
+            concept_->parameters_ = std::move(string);
+            return concept_->parameters_;
         }
 
-        cpp_expression& setExpression(std::unique_ptr<cpp_expression> expression) noexcept
+        cpp_expression& set_expression(std::unique_ptr<cpp_expression> expression) noexcept
         {
             concept_->expression_ = std::move(expression);
             return *concept_->expression_;
@@ -56,12 +57,12 @@ public:
 
 private:
     cpp_concept(std::string name) 
-        : cpp_entity(std::move(name))
+        : cpp_entity(std::move(name)), parameters_({})
     {}
 
     cpp_entity_kind do_get_entity_kind() const noexcept override;
 
-    detail::intrusive_list<cpp_template_parameter> parameters_;
+    cpp_token_string parameters_;
 
     std::unique_ptr<cpp_expression> expression_;
 };
