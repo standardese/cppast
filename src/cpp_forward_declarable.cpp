@@ -56,6 +56,7 @@ type_safe::optional_ref<const cpp_forward_declarable> get_declarable(const cpp_e
     case cpp_entity_kind::template_type_parameter_t:
     case cpp_entity_kind::non_type_template_parameter_t:
     case cpp_entity_kind::template_template_parameter_t:
+    case cpp_entity_kind::concept_t:
     case cpp_entity_kind::alias_template_t:
     case cpp_entity_kind::variable_template_t:
     case cpp_entity_kind::static_assert_t:
