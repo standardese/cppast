@@ -42,29 +42,65 @@ type_safe::optional<typename TemplateT::builder> get_builder(const detail::parse
         std::unique_ptr<EntityT>(static_cast<EntityT*>(entity.release())));
 }
 
+cpp_token_string extract_parameter_constraint(const detail::parse_context& context,
+    const CXCursor& parent,
+    detail::cxtoken_iterator target_range_start,
+    detail::cxtoken_iterator target_range_end)
+{
+    //search the parent context for the *exact* sequence in it's entirety
+    detail::cxtokenizer    tokenizer(context.tu, context.file, parent);
+    detail::cxtoken_stream stream(tokenizer, parent);
+    
+    detail::cxtoken_iterator found_start = detail::find_sequence(stream, target_range_start, target_range_end);
+    if(found_start == stream.end())
+    {
+        return detail::to_string(stream, stream.cur() + 1);
+    }
+    stream.set_cur(found_start);
+    stream.bump();
+    if (stream.peek() == "<")
+    {
+        detail::skip_brackets(stream);
+    }
+    detail::cxtoken_iterator constraint_end = stream.cur();
+    stream.set_cur(found_start);
+    //seek backwards until we are at the start of the qualified name
+    while(stream.peek().value() != "<" && stream.peek().value() != ",")
+    {
+        std::string str = stream.peek().value().std_str();
+        stream.bump_back();
+    }
+    stream.bump();
+    return detail::to_string(stream, constraint_end);
+}
+
 std::unique_ptr<cpp_template_parameter> parse_type_parameter(const detail::parse_context& context,
-                                                             const CXCursor&              cur)
+                                                             const CXCursor&              cur,
+                                                             const CXCursor&              parent)
 {
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_TemplateTypeParameter,
                  detail::assert_handler{});
+
 
     detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
     detail::cxtoken_stream stream(tokenizer, cur);
     auto                   name = detail::get_cursor_name(cur);
 
     // syntax: typename/class/constraint [...] name [= ...]
-    auto keyword = cpp_template_keyword::keyword_class;
+    auto                                  keyword    = cpp_template_keyword::keyword_class;
+    type_safe::optional<cpp_token_string> constraint = type_safe::nullopt;
+
     if (detail::skip_if(stream, "typename"))
         keyword = cpp_template_keyword::keyword_typename;
     else if (!detail::skip_if(stream, "class"))
     {
-        // TODO: record the constraint?
-        stream.bump();
-        if(stream.peek() == "<")
-        {
-            detail::skip_brackets(stream);
-        }
         keyword = cpp_template_keyword::concept_contraint;
+
+        //try to extract the constraint token string
+        constraint = extract_parameter_constraint(context, parent, stream.cur(), stream.end());
+        stream.bump();
+        if (stream.peek() == "<")
+            detail::skip_brackets(stream);
     }
 
     auto variadic = false;
@@ -80,7 +116,7 @@ std::unique_ptr<cpp_template_parameter> parse_type_parameter(const detail::parse
         def = detail::parse_raw_type(context, stream, stream.end());
 
     return cpp_template_type_parameter::build(*context.idx, detail::get_entity_id(cur),
-                                              name.c_str(), keyword, variadic, std::move(def));
+                                              name.c_str(), keyword, variadic, std::move(def), constraint);
 }
 
 std::unique_ptr<cpp_template_parameter> parse_non_type_parameter(
@@ -155,7 +191,7 @@ std::unique_ptr<cpp_template_template_parameter> parse_template_parameter(
     detail::visit_children(cur, [&](const CXCursor& child) {
         auto kind = clang_getCursorKind(child);
         if (kind == CXCursor_TemplateTypeParameter)
-            builder.add_parameter(parse_type_parameter(context, child));
+            builder.add_parameter(parse_type_parameter(context, child, cur));
         else if (kind == CXCursor_NonTypeTemplateParameter)
             builder.add_parameter(parse_non_type_parameter(context, child));
         else if (kind == CXCursor_TemplateTemplateParameter)
@@ -196,7 +232,7 @@ void parse_parameters(Builder& builder, const detail::parse_context& context, co
     detail::visit_children(cur, [&](const CXCursor& child) {
         auto kind = clang_getCursorKind(child);
         if (kind == CXCursor_TemplateTypeParameter)
-            builder.add_parameter(parse_type_parameter(context, child));
+            builder.add_parameter(parse_type_parameter(context, child, cur));
         else if (kind == CXCursor_NonTypeTemplateParameter)
             builder.add_parameter(parse_non_type_parameter(context, child));
         else if (kind == CXCursor_TemplateTemplateParameter)
@@ -213,15 +249,6 @@ void handle_comment_attributes(cpp_entity& templ_entity, cpp_entity& non_templat
 
     // copy attributes over
     templ_entity.add_attribute(non_template.attributes());
-}
-
-template<class Builder>
-void parse_constraint(Builder& builder, const detail::parse_context& context, const CXCursor& cur)
-{
-    detail::visit_children(cur, [&](const CxCursor& child) {
-        auto kind = clang_getCursorKind(child);
-        
-    });
 }
 } // namespace
 

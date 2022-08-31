@@ -14,6 +14,14 @@ TEST_CASE("cpp_concept")
     auto code = R"(
 #include <concepts>
 
+/// template<typename T>
+/// concept a = requires(T t, int i)
+/// {
+///   {t.a()};
+///   {t.b()} -> std::copy_constructible;
+///   {t.c(i)} -> std::same_as<int>;
+///   typename T::inner;
+/// };
 template<typename T>
 concept a = requires(T t, int i)
 {
@@ -23,16 +31,24 @@ concept a = requires(T t, int i)
     typename T::inner;
 };
 
+/// template<typename T>
+/// concept b = a<T> && std::constructible_from<T, int>;
 template<typename T>
 concept b = a<T> && std::constructible_from<T, int>;
 
+/// template<typename T>
+/// void f1(T param);
 template<typename T>
     requires a<T>
 void f1(T param);
 
+/// template<b T>
+/// void f2(T param);
 template<b T>
 void f2(T param);
 
+/// template<std::convertible_to<int> T>
+/// void f3(T param);
 template<std::convertible_to<int> T>
 void f3(T param);
 
@@ -60,7 +76,7 @@ void f3(T param);
                         .keyword()
                     == cpp_template_keyword::concept_contraint);
         }
-    }, false);
+    });
 
     REQUIRE(count == 3u);
 }

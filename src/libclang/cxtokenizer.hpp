@@ -184,6 +184,10 @@ namespace detail
     // note: < might not work in the arguments of a template specialization
     void skip_brackets(cxtoken_stream& stream);
 
+    // finds the location of the given sequence in a stream
+    // returns an iterator to the first token of the found sequence, or stream.end() if not found
+    cxtoken_iterator find_sequence(cxtoken_stream stream, cxtoken_iterator start, cxtoken_iterator end);
+
     // parses attributes
     // if skip_anyway is true it will bump even if no attributes have been parsed
     cpp_attribute_list parse_attributes(cxtoken_stream& stream, bool skip_anyway = false);

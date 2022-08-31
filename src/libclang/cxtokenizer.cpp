@@ -532,6 +532,39 @@ void detail::skip_brackets(detail::cxtoken_stream& stream)
     stream.set_cur(std::next(closing));
 }
 
+detail::cxtoken_iterator detail::find_sequence(detail::cxtoken_stream stream, detail::cxtoken_iterator start,
+                                               detail::cxtoken_iterator end)
+{
+    detail::cxtoken_iterator search_start = stream.cur();
+    while(search_start != stream.end())
+    {
+        detail::cxtoken_iterator search_iter = search_start;
+        detail::cxtoken_iterator seq_iter    = start;
+        bool                     failed      = false;
+
+        while(!failed && search_iter != stream.end() && seq_iter != end)
+        {
+            if(search_iter->value() != seq_iter->value()
+                || search_iter->kind() != seq_iter->kind())
+            {
+                failed = true;
+            }
+            else
+            {
+                ++search_iter;
+                ++seq_iter;
+            }
+        }
+        if(!failed)
+        {
+            return search_start;
+        }
+        ++search_start;
+    }
+
+    return stream.end();
+}
+
 namespace
 {
 type_safe::optional<std::string> parse_attribute_using(detail::cxtoken_stream& stream)
