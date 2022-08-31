@@ -12,6 +12,7 @@
 #include <cppast/cpp_entity_container.hpp>
 #include <cppast/cpp_template_parameter.hpp>
 #include <cppast/cpp_token.hpp>
+#include <cppast/cpp_expression.hpp>
 
 namespace cppast
 {
@@ -26,6 +27,12 @@ public:
     detail::iteratable_intrusive_list<cpp_template_parameter> parameters() const noexcept
     {
         return type_safe::ref(parameters_);
+    }
+
+    type_safe::optional_ref<const cpp_expression> constraint() const noexcept
+    {
+        return constraint_ == nullptr ? type_safe::nullopt
+                                      : type_safe::optional_ref<const cpp_expression>(*constraint_);
     }
 
 protected:
@@ -73,7 +80,7 @@ protected:
     };
 
     /// \effects Sets the entity to be templated.
-    cpp_template(std::unique_ptr<cpp_entity> entity) : cpp_entity(entity->name())
+    cpp_template(std::unique_ptr<cpp_entity> entity) : cpp_entity(entity->name()), constraint_(nullptr)
     {
         add_child(std::move(entity));
     }
@@ -87,6 +94,7 @@ private:
     }
 
     detail::intrusive_list<cpp_template_parameter> parameters_;
+    std::unique_ptr<cpp_expression>                constraint_;
 };
 
 /// A [cppast::cpp_type]() representing an instantiation of a [cppast::cpp_template]().

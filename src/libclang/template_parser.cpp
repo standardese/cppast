@@ -214,6 +214,15 @@ void handle_comment_attributes(cpp_entity& templ_entity, cpp_entity& non_templat
     // copy attributes over
     templ_entity.add_attribute(non_template.attributes());
 }
+
+template<class Builder>
+void parse_constraint(Builder& builder, const detail::parse_context& context, const CXCursor& cur)
+{
+    detail::visit_children(cur, [&](const CxCursor& child) {
+        auto kind = clang_getCursorKind(child);
+        
+    });
+}
 } // namespace
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_alias_template(const detail::parse_context& context,
