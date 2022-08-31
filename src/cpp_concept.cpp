@@ -7,6 +7,11 @@
 
 using namespace cppast;
 
+cpp_entity_kind cppast::cpp_concept::kind() noexcept
+{
+    return cpp_entity_kind::concept_t;
+}
+
 cpp_entity_kind cpp_concept::do_get_entity_kind() const noexcept
 {
     return cpp_entity_kind::concept_t;

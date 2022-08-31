@@ -1,6 +1,10 @@
 // Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
+#include <cppast/cpp_concept.hpp>
+
+#include <cppast/cpp_function_template.hpp>
+
 #include "test_parser.hpp"
 
 using namespace cppast;
@@ -11,40 +15,52 @@ TEST_CASE("cpp_concept")
 #include <concepts>
 
 template<typename T>
-class container{};
-
-template<typename T>
-concept integer_direct = std::same_as<T, int>;
-
-template<typename T>
-concept has_methods = requires (T t)
+concept a = requires(T t, int i)
 {
-    {t.a()} -> std::copy_constructible;
-    {t.b()} -> integer_direct;
-    {t.c()} -> std::convertible_to<int>;
+    {t.a()};
+    {t.b()} -> std::copy_constructible;
+    {t.c(i)} -> std::same_as<int>;
+    typename T::inner;
 };
 
 template<typename T>
-concept has_types = requires
-{
-  typename T::inner;
-  typename container<T>;
-};
+concept b = a<T> && std::constructible_from<T, int>;
 
 template<typename T>
-    requires integer_direct<T>
+    requires a<T>
 void f1(T param);
 
-template<has_methods T>
-class c {};
+template<b T>
+void f2(T param);
 
 template<std::convertible_to<int> T>
-void f2(T param);
+void f3(T param);
 
 )";
     cpp_entity_index idx;
     auto             file = parse(idx, "cpp_concept.cpp", code, false, cppast::cpp_standard::cpp_20);
-    //TODO: actual tests
 
+    auto count = test_visit<cpp_concept>(*file, [&](const cpp_concept& con) {}, false);
+    REQUIRE(count == 2u);
 
+    count = test_visit<cpp_function_template>(*file, [&](const cpp_function_template& tfunc) {
+        REQUIRE(is_templated(tfunc.function()));
+        REQUIRE(!tfunc.scope_name());
+        check_template_parameters(tfunc, {{cpp_entity_kind::template_type_parameter_t, "T"}});
+
+        if(tfunc.name() == "f1")
+        {
+            REQUIRE(
+                static_cast<const cpp_template_type_parameter&>(*tfunc.parameters().begin()).keyword()
+                == cpp_template_keyword::keyword_typename);
+        }
+        else if (tfunc.name() == "f2" || tfunc.name() == "f3")
+        {
+            REQUIRE(static_cast<const cpp_template_type_parameter&>(*tfunc.parameters().begin())
+                        .keyword()
+                    == cpp_template_keyword::concept_contraint);
+        }
+    }, false);
+
+    REQUIRE(count == 3u);
 }

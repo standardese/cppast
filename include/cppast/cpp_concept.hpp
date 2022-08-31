@@ -17,8 +17,9 @@ namespace cppast
 class cpp_concept final : public cpp_entity
 {
 public:
-    /// \returns An iteratable object iterating over the [cppast::cpp_template_parameter]()
-    /// entities.
+    static cpp_entity_kind kind() noexcept;
+
+    /// \returns the template parameters as a string
     const cpp_token_string& parameters() const noexcept
     {
         return parameters_;
