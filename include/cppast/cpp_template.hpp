@@ -15,7 +15,7 @@
 
 namespace cppast
 {
-/// Base class for all entities modelling a C++ template of some kind.
+/// Base class for all entities modelling a C++ template of some kind, aside from concepts
 ///
 /// It is a container of a single [cppast::cpp_entity]() that is the entity being templated.
 class cpp_template : public cpp_entity, public cpp_entity_container<cpp_template, cpp_entity>

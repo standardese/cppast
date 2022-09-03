@@ -91,6 +91,11 @@ namespace detail
     // unexposed
     std::unique_ptr<cpp_entity> try_parse_cpp_language_linkage(const parse_context& context,
                                                                const CXCursor&      cur);
+    
+    //unexposed
+    std::unique_ptr<cpp_entity> try_parse_cpp_concept(const parse_context& context,
+                                                      const CXCursor&      cur);
+
     // CXXMethod
     std::unique_ptr<cpp_entity> try_parse_static_cpp_function(const parse_context& context,
                                                               const CXCursor&      cur);

@@ -125,6 +125,8 @@ try
         // go through all the try_parse_XXX functions
         if (auto entity = try_parse_cpp_language_linkage(context, cur))
             return entity;
+        if (auto entity = try_parse_cpp_concept(context, cur))
+            return entity;
         break;
 
     case CXCursor_MacroDefinition:

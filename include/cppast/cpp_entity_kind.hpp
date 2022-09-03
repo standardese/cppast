@@ -57,6 +57,7 @@ enum class cpp_entity_kind
     function_template_specialization_t,
     class_template_t,
     class_template_specialization_t,
+    concept_t,
 
     static_assert_t,
 
