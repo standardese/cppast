@@ -11,6 +11,9 @@ using namespace cppast;
 
 TEST_CASE("cpp_concept") 
 {
+    if (libclang_parser::libclang_minor_version() < 60)
+        return;
+
     auto code = R"(
 #include <concepts>
 
