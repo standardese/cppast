@@ -556,9 +556,8 @@ detail::cxtoken_iterator detail::find_sequence(detail::cxtoken_stream stream, de
             }
         }
         if(!failed)
-        {
             return search_start;
-        }
+
         ++search_start;
     }
 

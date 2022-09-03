@@ -19,26 +19,21 @@ std::unique_ptr<cpp_entity> detail::try_parse_cpp_concept(const detail::parse_co
     detail::cxtoken_stream stream(tokenizer, cur);
 
     if (!detail::skip_if(stream, "template"))
-    {
         return nullptr;
-    }
 
     if (stream.peek() != "<")
-    {
         return nullptr;
-    }
+
+
     auto closing_bracket_iter = detail::find_closing_bracket(stream);
     auto params               = to_string(stream, closing_bracket_iter);
 
     if (!detail::skip_if(stream, ">"))
-    {
         return nullptr;
-    }
 
     if (!detail::skip_if(stream, "concept"))
-    {
         return nullptr;
-    }
+
     const auto& identifier_token = stream.get();
     if (identifier_token.kind() != CXTokenKind::CXToken_Identifier)
     {

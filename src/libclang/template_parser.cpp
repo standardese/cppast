@@ -53,15 +53,13 @@ cpp_token_string extract_parameter_constraint(const detail::parse_context& conte
     
     detail::cxtoken_iterator found_start = detail::find_sequence(stream, target_range_start, target_range_end);
     if(found_start == stream.end())
-    {
         return detail::to_string(stream, stream.cur() + 1);
-    }
+
     stream.set_cur(found_start);
     stream.bump();
     if (stream.peek() == "<")
-    {
         detail::skip_brackets(stream);
-    }
+
     detail::cxtoken_iterator constraint_end = stream.cur();
     stream.set_cur(found_start);
     //seek backwards until we are at the start of the qualified name
