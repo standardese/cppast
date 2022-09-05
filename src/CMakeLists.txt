@@ -107,7 +107,7 @@ set(libclang_source
 
 add_library(cppast ${detail_header} ${header} ${source} ${libclang_source})
 target_compile_features(cppast PUBLIC cxx_std_11)
-target_include_directories(cppast PRIVATE ../include SYSTEM INTERFACE ../include)
+target_include_directories(cppast PUBLIC ../include)
 target_link_libraries(cppast PUBLIC type_safe _cppast_tiny_process _cppast_libclang)
 target_compile_definitions(cppast PUBLIC
                                 CPPAST_VERSION_MINOR="${cppast_VERSION_MINOR}"
@@ -122,3 +122,6 @@ target_compile_options(cppast PRIVATE
                            # MSVC warnings
                            $<$<CXX_COMPILER_ID:MSVC>:
                            /W3>)
+
+install(TARGETS cppast)
+install(DIRECTORY ../include/ DESTINATION include)
