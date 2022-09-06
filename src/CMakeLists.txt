@@ -122,3 +122,6 @@ target_compile_options(cppast PRIVATE
                            # MSVC warnings
                            $<$<CXX_COMPILER_ID:MSVC>:
                            /W3>)
+
+install(TARGETS cppast)
+install(DIRECTORY ../include/ DESTINATION include)
