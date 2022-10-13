@@ -54,7 +54,7 @@ cpp_token_string extract_parameter_constraint(const detail::parse_context& conte
     detail::cxtoken_iterator found_start
         = detail::find_sequence(stream, target_range_start, target_range_end);
     if (found_start == stream.end())
-        return detail::to_string(stream, stream.cur() + 1);
+        return detail::to_string(stream, stream.cur() + 1, false);
 
     stream.set_cur(found_start);
     stream.bump();
@@ -70,7 +70,7 @@ cpp_token_string extract_parameter_constraint(const detail::parse_context& conte
         stream.bump_back();
     }
     stream.bump();
-    return detail::to_string(stream, constraint_end);
+    return detail::to_string(stream, constraint_end, false);
 }
 
 std::unique_ptr<cpp_template_parameter> parse_type_parameter(const detail::parse_context& context,
@@ -316,10 +316,10 @@ void parse_arguments(Builder& b, const detail::parse_context& context, const CXC
 
     if (stream.peek() == "<")
     {
-        auto iter = detail::find_closing_bracket(stream);
+        auto closing = detail::find_closing_bracket(stream);
         stream.bump();
 
-        auto args = detail::to_string(stream, iter);
+        auto args = detail::to_string(stream, closing.bracket, closing.unmunch);
         b.add_unexposed_arguments(std::move(args));
     }
     else

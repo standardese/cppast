@@ -210,7 +210,7 @@ try
         // build unexposed entity
         detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
         detail::cxtoken_stream stream(tokenizer, cur);
-        auto                   spelling = detail::to_string(stream, stream.end());
+        auto                   spelling = detail::to_string(stream, stream.end(), false);
         if (spelling.begin() + 1 == spelling.end() && spelling.front().spelling == ";")
             // unnecessary semicolon
             return nullptr;

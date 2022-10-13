@@ -368,7 +368,7 @@ std::unique_ptr<cpp_expression> parse_noexcept(detail::cxtoken_stream&      stre
     auto closing = detail::find_closing_bracket(stream);
 
     detail::skip(stream, "(");
-    auto expr = detail::parse_raw_expression(context, stream, closing, std::move(type));
+    auto expr = detail::parse_raw_expression(context, stream, closing.bracket, std::move(type));
     detail::skip(stream, ")");
 
     return expr;
@@ -745,7 +745,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
 
     // read the type
     stream.set_cur(type_start);
-    auto type_spelling = detail::to_string(stream, type_end).as_string();
+    auto type_spelling = detail::to_string(stream, type_end, false).as_string();
 
     // parse arguments again
     detail::skip(stream, "(");

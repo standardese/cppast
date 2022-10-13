@@ -158,10 +158,19 @@ namespace detail
     // if multi_token == true, str can consist of multiple tokens optionally separated by whitespace
     bool skip_if(cxtoken_stream& stream, const char* str, bool multi_token = false);
 
+    struct closing_bracket_pos
+    {
+        // If unmunch == false: bracket points to the closing bracket, after is the iterator after
+        // that. If unmunch == true: bracket points to >>, after points to the same >>; only one
+        // bracket is part of the matching closing one.
+        cxtoken_iterator bracket, after;
+        bool             unmunch;
+    };
+
     // returns the location of the closing bracket
     // the current token must be (,[,{ or <
     // note: < might not work in the arguments of a template specialization
-    cxtoken_iterator find_closing_bracket(cxtoken_stream stream);
+    closing_bracket_pos find_closing_bracket(cxtoken_stream stream);
 
     // skips brackets
     // the current token must be (,[,{ or <
@@ -178,7 +187,7 @@ namespace detail
     cpp_attribute_list parse_attributes(cxtoken_stream& stream, bool skip_anyway = false);
 
     // converts a token range to a string
-    cpp_token_string to_string(cxtoken_stream& stream, cxtoken_iterator end);
+    cpp_token_string to_string(cxtoken_stream& stream, cxtoken_iterator end, bool unmunch);
 
     // appends token to scope, if it is still valid
     // else clears it

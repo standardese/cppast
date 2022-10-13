@@ -24,9 +24,8 @@ std::unique_ptr<cpp_entity> detail::try_parse_cpp_concept(const detail::parse_co
     if (stream.peek() != "<")
         return nullptr;
 
-
-    auto closing_bracket_iter = detail::find_closing_bracket(stream);
-    auto params               = to_string(stream, closing_bracket_iter);
+    auto closing_bracket = detail::find_closing_bracket(stream);
+    auto params          = to_string(stream, closing_bracket.bracket, closing_bracket.unmunch);
 
     if (!detail::skip_if(stream, ">"))
         return nullptr;

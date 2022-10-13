@@ -8,8 +8,6 @@
 #include "libclang_visitor.hpp"
 #include "parse_error.hpp"
 
-#include <iostream> // TODO
-
 using namespace cppast;
 
 detail::cxtoken::cxtoken(const CXTranslationUnit& tu_unit, const CXToken& token)
@@ -474,7 +472,7 @@ bool is_comparison(CXTokenKind last_kind, const detail::cxtoken& cur, CXTokenKin
 }
 } // namespace
 
-detail::cxtoken_iterator detail::find_closing_bracket(detail::cxtoken_stream stream)
+detail::closing_bracket_pos detail::find_closing_bracket(detail::cxtoken_stream stream)
 {
     auto        template_bracket = false;
     auto        open_bracket     = stream.peek().c_str();
@@ -494,11 +492,14 @@ detail::cxtoken_iterator detail::find_closing_bracket(detail::cxtoken_stream str
         DEBUG_UNREACHABLE(parse_error_handler{}, stream.cursor(),
                           format("expected a bracket, got '", stream.peek().c_str(), "'"));
 
-    auto bracket_count = 1;
-    auto paren_count   = 0; // internal nested parenthesis
-    auto last_token    = CXToken_Comment;
+    auto bracket_count         = 1;
+    auto paren_count           = 0; // internal nested parenthesis
+    auto last_token            = CXToken_Comment;
+    auto last_was_double_angle = false;
     while (!stream.done() && bracket_count != 0)
     {
+        last_was_double_angle = false;
+
         auto& cur = stream.get();
         if (paren_count == 0 && cur == open_bracket
             && !is_comparison(last_token, cur, stream.peek().kind()))
@@ -507,8 +508,11 @@ detail::cxtoken_iterator detail::find_closing_bracket(detail::cxtoken_stream str
                  && !is_comparison(last_token, cur, stream.peek().kind()))
             --bracket_count;
         else if (paren_count == 0 && template_bracket && cur == ">>")
+        {
             // maximal munch
             bracket_count -= 2;
+            last_was_double_angle = true;
+        }
         else if (cur == "(" || cur == "{" || cur == "[")
             ++paren_count;
         else if (cur == ")" || cur == "}" || cur == "]")
@@ -516,19 +520,25 @@ detail::cxtoken_iterator detail::find_closing_bracket(detail::cxtoken_stream str
 
         last_token = cur.kind();
     }
-    stream.bump_back();
-    // only check first parameter, token might be ">>"
-    DEBUG_ASSERT(bracket_count == 0 && paren_count == 0
-                     && stream.peek().value()[0] == close_bracket[0],
-                 parse_error_handler{}, stream.cursor(),
+    DEBUG_ASSERT(bracket_count == 0 && paren_count == 0, parse_error_handler{}, stream.cursor(),
                  "find_closing_bracket() internal parse error");
-    return stream.cur();
+
+    if (last_was_double_angle)
+    {
+        return {stream.cur(), stream.cur(), true};
+    }
+    else
+    {
+        auto after = stream.cur();
+        stream.bump_back();
+        return {stream.cur(), after, false};
+    }
 }
 
 void detail::skip_brackets(detail::cxtoken_stream& stream)
 {
     auto closing = find_closing_bracket(stream);
-    stream.set_cur(std::next(closing));
+    stream.set_cur(closing.after);
 }
 
 detail::cxtoken_iterator detail::find_sequence(detail::cxtoken_stream   stream,
@@ -605,9 +615,9 @@ cpp_token_string parse_attribute_arguments(detail::cxtoken_stream& stream)
     auto end = find_closing_bracket(stream);
     skip(stream, "(");
 
-    auto arguments = detail::to_string(stream, end);
+    auto arguments = detail::to_string(stream, end.bracket, end.unmunch);
+    stream.set_cur(end.bracket);
 
-    stream.set_cur(end);
     skip(stream, ")");
 
     return arguments;
@@ -769,7 +779,7 @@ cpp_token_kind get_kind(const detail::cxtoken& token)
 }
 } // namespace
 
-cpp_token_string detail::to_string(cxtoken_stream& stream, cxtoken_iterator end)
+cpp_token_string detail::to_string(cxtoken_stream& stream, cxtoken_iterator end, bool unmunch)
 {
     cpp_token_string::builder builder;
 
@@ -778,6 +788,9 @@ cpp_token_string detail::to_string(cxtoken_stream& stream, cxtoken_iterator end)
         auto& token = stream.get();
         builder.add_token(cpp_token(get_kind(token), token.c_str()));
     }
+
+    if (unmunch)
+        builder.unmunch();
 
     return builder.finish();
 }
@@ -800,8 +813,8 @@ bool detail::append_scope(detail::cxtoken_stream& stream, std::string& scope)
     }
     else if (stream.peek() == "<")
     {
-        auto iter = detail::find_closing_bracket(stream);
-        scope += detail::to_string(stream, iter).as_string();
+        auto pos = detail::find_closing_bracket(stream);
+        scope += detail::to_string(stream, pos.bracket, pos.unmunch).as_string();
         if (!detail::skip_if(stream, ">>"))
             detail::skip(stream, ">");
         scope += ">";
