@@ -43,16 +43,17 @@ type_safe::optional<typename TemplateT::builder> get_builder(const detail::parse
 }
 
 cpp_token_string extract_parameter_constraint(const detail::parse_context& context,
-    const CXCursor& parent,
-    detail::cxtoken_iterator target_range_start,
-    detail::cxtoken_iterator target_range_end)
+                                              const CXCursor&              parent,
+                                              detail::cxtoken_iterator     target_range_start,
+                                              detail::cxtoken_iterator     target_range_end)
 {
-    //search the parent context for the *exact* sequence in it's entirety
+    // search the parent context for the *exact* sequence in it's entirety
     detail::cxtokenizer    tokenizer(context.tu, context.file, parent);
     detail::cxtoken_stream stream(tokenizer, parent);
-    
-    detail::cxtoken_iterator found_start = detail::find_sequence(stream, target_range_start, target_range_end);
-    if(found_start == stream.end())
+
+    detail::cxtoken_iterator found_start
+        = detail::find_sequence(stream, target_range_start, target_range_end);
+    if (found_start == stream.end())
         return detail::to_string(stream, stream.cur() + 1);
 
     stream.set_cur(found_start);
@@ -62,8 +63,8 @@ cpp_token_string extract_parameter_constraint(const detail::parse_context& conte
 
     detail::cxtoken_iterator constraint_end = stream.cur();
     stream.set_cur(found_start);
-    //seek backwards until we are at the start of the qualified name
-    while(stream.peek().value() != "<" && stream.peek().value() != ",")
+    // seek backwards until we are at the start of the qualified name
+    while (stream.peek().value() != "<" && stream.peek().value() != ",")
     {
         std::string str = stream.peek().value().std_str();
         stream.bump_back();
@@ -79,7 +80,6 @@ std::unique_ptr<cpp_template_parameter> parse_type_parameter(const detail::parse
     DEBUG_ASSERT(clang_getCursorKind(cur) == CXCursor_TemplateTypeParameter,
                  detail::assert_handler{});
 
-
     detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
     detail::cxtoken_stream stream(tokenizer, cur);
     auto                   name = detail::get_cursor_name(cur);
@@ -94,7 +94,7 @@ std::unique_ptr<cpp_template_parameter> parse_type_parameter(const detail::parse
     {
         keyword = cpp_template_keyword::concept_contraint;
 
-        //try to extract the constraint token string
+        // try to extract the constraint token string
         constraint = extract_parameter_constraint(context, parent, stream.cur(), stream.end());
         stream.bump();
         if (stream.peek() == "<")
@@ -114,7 +114,8 @@ std::unique_ptr<cpp_template_parameter> parse_type_parameter(const detail::parse
         def = detail::parse_raw_type(context, stream, stream.end());
 
     return cpp_template_type_parameter::build(*context.idx, detail::get_entity_id(cur),
-                                              name.c_str(), keyword, variadic, std::move(def), constraint);
+                                              name.c_str(), keyword, variadic, std::move(def),
+                                              constraint);
 }
 
 std::unique_ptr<cpp_template_parameter> parse_non_type_parameter(
@@ -205,12 +206,6 @@ std::unique_ptr<cpp_template_template_parameter> parse_template_parameter(
             std::string spelling;
             while (!stream.done())
                 spelling += stream.get().c_str();
-            if (stream.unmunch())
-            {
-                DEBUG_ASSERT(!spelling.empty() && spelling.back() == '>', detail::assert_handler{});
-                spelling.pop_back();
-                DEBUG_ASSERT(!spelling.empty() && spelling.back() == '>', detail::assert_handler{});
-            }
 
             builder.default_template(
                 cpp_template_ref(detail::get_entity_id(target), std::move(spelling)));

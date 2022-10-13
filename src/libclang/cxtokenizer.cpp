@@ -70,7 +70,7 @@ public:
         clang_disposeTokens(tu_, tokens_, no_);
     }
 
-    simple_tokenizer(const simple_tokenizer&) = delete;
+    simple_tokenizer(const simple_tokenizer&)            = delete;
     simple_tokenizer& operator=(const simple_tokenizer&) = delete;
 
     unsigned size() const noexcept
@@ -396,7 +396,6 @@ Extent get_extent(const CXTranslationUnit& tu, const CXFile& file, const CXCurso
 
 detail::cxtokenizer::cxtokenizer(const CXTranslationUnit& tu, const CXFile& file,
                                  const CXCursor& cur)
-: unmunch_(false)
 {
     auto extent = get_extent(tu, file, cur);
 
@@ -532,19 +531,20 @@ void detail::skip_brackets(detail::cxtoken_stream& stream)
     stream.set_cur(std::next(closing));
 }
 
-detail::cxtoken_iterator detail::find_sequence(detail::cxtoken_stream stream, detail::cxtoken_iterator start,
+detail::cxtoken_iterator detail::find_sequence(detail::cxtoken_stream   stream,
+                                               detail::cxtoken_iterator start,
                                                detail::cxtoken_iterator end)
 {
     detail::cxtoken_iterator search_start = stream.cur();
-    while(search_start != stream.end())
+    while (search_start != stream.end())
     {
         detail::cxtoken_iterator search_iter = search_start;
         detail::cxtoken_iterator seq_iter    = start;
         bool                     failed      = false;
 
-        while(!failed && search_iter != stream.end() && seq_iter != end)
+        while (!failed && search_iter != stream.end() && seq_iter != end)
         {
-            if(search_iter->value() != seq_iter->value()
+            if (search_iter->value() != seq_iter->value()
                 || search_iter->kind() != seq_iter->kind())
             {
                 failed = true;
@@ -555,7 +555,7 @@ detail::cxtoken_iterator detail::find_sequence(detail::cxtoken_stream stream, de
                 ++seq_iter;
             }
         }
-        if(!failed)
+        if (!failed)
             return search_start;
 
         ++search_start;
@@ -778,9 +778,6 @@ cpp_token_string detail::to_string(cxtoken_stream& stream, cxtoken_iterator end)
         auto& token = stream.get();
         builder.add_token(cpp_token(get_kind(token), token.c_str()));
     }
-
-    if (stream.unmunch())
-        builder.unmunch();
 
     return builder.finish();
 }

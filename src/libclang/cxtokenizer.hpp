@@ -78,25 +78,15 @@ namespace detail
             return tokens_.end();
         }
 
-        // if it returns true, the last token is ">>",
-        // but should haven been ">"
-        // only a problem for template parameters
-        bool unmunch() const noexcept
-        {
-            return unmunch_;
-        }
-
     private:
         std::vector<cxtoken> tokens_;
-        bool                 unmunch_;
     };
 
     class cxtoken_stream
     {
     public:
         explicit cxtoken_stream(const cxtokenizer& tokenizer, const CXCursor& cur)
-        : cursor_(cur), begin_(tokenizer.begin()), cur_(begin_), end_(tokenizer.end()),
-          unmunch_(tokenizer.unmunch())
+        : cursor_(cur), begin_(tokenizer.begin()), cur_(begin_), end_(tokenizer.end())
         {}
 
         const cxtoken& peek() const noexcept
@@ -155,15 +145,9 @@ namespace detail
             cur_ = iter;
         }
 
-        bool unmunch() const noexcept
-        {
-            return unmunch_;
-        }
-
     private:
         CXCursor         cursor_;
         cxtoken_iterator begin_, cur_, end_;
-        bool             unmunch_;
     };
 
     // skips the next token
@@ -186,7 +170,8 @@ namespace detail
 
     // finds the location of the given sequence in a stream
     // returns an iterator to the first token of the found sequence, or stream.end() if not found
-    cxtoken_iterator find_sequence(cxtoken_stream stream, cxtoken_iterator start, cxtoken_iterator end);
+    cxtoken_iterator find_sequence(cxtoken_stream stream, cxtoken_iterator start,
+                                   cxtoken_iterator end);
 
     // parses attributes
     // if skip_anyway is true it will bump even if no attributes have been parsed
