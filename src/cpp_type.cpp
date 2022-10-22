@@ -491,7 +491,9 @@ void write_template_instantiation(code_generator::output&                output,
 
 void write_dependent(code_generator::output& output, const cpp_dependent_type& type)
 {
-    output << token_seq(type.name());
+    output << keyword("typename") << whitespace;
+    detail::write_type(output, type.dependee(), "");
+    output << punctuation("::") << identifier(type.name());
 }
 
 void write_unexposed(code_generator::output& output, const cpp_unexposed_type& type)
