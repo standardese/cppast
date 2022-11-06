@@ -673,10 +673,21 @@ std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context, 
     case CXType_Typedef:
         return make_leave_type(cur, type, [&](std::string&& spelling) {
             auto decl = clang_getTypeDeclaration(type);
-            if (detail::cxstring(clang_getCursorSpelling(decl)).empty())
-                spelling = ""; // anonymous type
-            return cpp_user_defined_type::build(
-                cpp_type_ref(detail::get_entity_id(decl), std::move(spelling)));
+            if (clang_isInvalid(clang_getCursorKind(decl)))
+            {
+                // We can reach this point if we have an elaborated type referencing a using
+                // declaration. Give it an invalid id, since we have no way of retrieving it, but
+                // keep the spelling.
+                return cpp_user_defined_type::build(
+                    cpp_type_ref(cpp_entity_id(""), std::move(spelling)));
+            }
+            else
+            {
+                if (detail::cxstring(clang_getCursorSpelling(decl)).empty())
+                    spelling = ""; // anonymous type
+                return cpp_user_defined_type::build(
+                    cpp_type_ref(detail::get_entity_id(decl), std::move(spelling)));
+            }
         });
 
     case CXType_Pointer: {
