@@ -506,7 +506,15 @@ class position
 public:
     position(ts::object_ref<std::string> result, const char* ptr) noexcept
     : result_(result), cur_line_(1u), cur_column_(0u), ptr_(ptr), write_(true)
-    {}
+    {
+        // We strip all conditional defines and pragmas from the input, which includes the include
+        // guard. If the source includes a file, which includes itself again (for some reason), this
+        // leads to a duplicate include, as we no longer have an include guard. So we manually add
+        // one.
+        *result += "#pragma once\n";
+        // We also need to reset the line afterwards to ensure comments still match.
+        *result += "#line 1\n";
+    }
 
     void set_line(unsigned line)
     {
