@@ -505,7 +505,7 @@ class position
 {
 public:
     position(ts::object_ref<std::string> result, const char* ptr) noexcept
-    : result_(result), cur_line_(1u), cur_column_(0u), ptr_(ptr), write_(true)
+    : result_(result), cur_line_(1u), cur_column_(0u), ptr_(ptr), write_disabled_count_(0)
     {
         // We strip all conditional defines and pragmas from the input, which includes the include
         // guard. If the source includes a file, which includes itself again (for some reason), this
@@ -518,7 +518,7 @@ public:
 
     void set_line(unsigned line)
     {
-        if (cur_line_ != line)
+        if (write_enabled() && cur_line_ != line)
         {
             *result_ += "#line " + std::to_string(line) + "\n";
             cur_line_   = line;
@@ -528,8 +528,9 @@ public:
 
     void write_str(std::string str)
     {
-        if (write_ == false)
+        if (!write_enabled())
             return;
+
         for (auto c : str)
         {
             *result_ += c;
@@ -545,7 +546,7 @@ public:
 
     void bump() noexcept
     {
-        if (write_ == true)
+        if (write_enabled())
         {
             result_->push_back(*ptr_);
             ++cur_column_;
@@ -561,13 +562,15 @@ public:
 
     void bump(std::size_t offset) noexcept
     {
-        if (write_ == true)
+        if (write_enabled())
         {
             for (std::size_t i = 0u; i != offset; ++i)
                 bump();
         }
         else
+        {
             skip(offset);
+        }
     }
 
     // no write, no newline detection
@@ -578,7 +581,7 @@ public:
 
     void skip_with_linecount() noexcept
     {
-        if (write_ == true)
+        if (write_enabled())
         {
             ++cur_column_;
             if (*ptr_ == '\n')
@@ -594,17 +597,18 @@ public:
 
     void enable_write() noexcept
     {
-        write_.set();
+        DEBUG_ASSERT(write_disabled_count_ > 0, detail::assert_handler{});
+        --write_disabled_count_;
     }
 
     void disable_write() noexcept
     {
-        write_.try_reset();
+        ++write_disabled_count_;
     }
 
     bool write_enabled() const noexcept
     {
-        return write_ == true;
+        return write_disabled_count_ == 0;
     }
 
     explicit operator bool() const noexcept
@@ -636,7 +640,7 @@ private:
     ts::object_ref<std::string> result_;
     unsigned                    cur_line_, cur_column_;
     const char*                 ptr_;
-    ts::flag                    write_;
+    unsigned                    write_disabled_count_;
 };
 
 bool starts_with(const position& p, const char* str, std::size_t len)
@@ -1204,11 +1208,8 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
             }
             else if (lm.value().flag == linemarker::enter_old)
             {
-                if (lm.value().file == path)
-                {
-                    p.enable_write();
-                    p.set_line(lm.value().line);
-                }
+                p.enable_write();
+                p.set_line(lm.value().line);
             }
             else if (lm.value().flag == linemarker::line_directive && p.write_enabled())
             {
