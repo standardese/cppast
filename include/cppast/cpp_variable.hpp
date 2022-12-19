@@ -27,16 +27,16 @@ public:
     static std::unique_ptr<cpp_variable> build(const cpp_entity_index& idx, cpp_entity_id id,
                                                std::string name, std::unique_ptr<cpp_type> type,
                                                std::unique_ptr<cpp_expression> def,
-                                               cpp_storage_class_specifiers    spec,
-                                               bool                            is_constexpr);
+                                               cpp_storage_class_specifiers spec, bool is_constexpr,
+                                               type_safe::optional<cpp_entity_ref> semantic_parent
+                                               = {});
 
     /// \returns A newly created variable that is a declaration.
     /// A declaration will not be registered and it does not have the default value.
-    static std::unique_ptr<cpp_variable> build_declaration(cpp_entity_id             definition_id,
-                                                           std::string               name,
-                                                           std::unique_ptr<cpp_type> type,
-                                                           cpp_storage_class_specifiers spec,
-                                                           bool is_constexpr);
+    static std::unique_ptr<cpp_variable> build_declaration(
+        cpp_entity_id definition_id, std::string name, std::unique_ptr<cpp_type> type,
+        cpp_storage_class_specifiers spec, bool is_constexpr,
+        type_safe::optional<cpp_entity_ref> semantic_parent = {});
 
     /// \returns The [cppast::cpp_storage_specifiers]() on that variable.
     cpp_storage_class_specifiers storage_class() const noexcept

@@ -20,6 +20,7 @@ class cpp_builtin_type;
 class cpp_class;
 class cpp_class_template;
 class cpp_class_template_specialization;
+class cpp_concept;
 class cpp_constructor;
 class cpp_conversion_op;
 class cpp_cv_qualified_type;

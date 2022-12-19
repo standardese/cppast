@@ -17,7 +17,7 @@ std::unique_ptr<cpp_expression> detail::parse_expression(const detail::parse_con
     detail::cxtoken_stream stream(tokenizer, cur);
 
     auto type = parse_type(context, cur, clang_getCursorType(cur));
-    auto expr = to_string(stream, stream.end());
+    auto expr = to_string(stream, stream.end(), false);
     if (kind == CXCursor_CallExpr && (expr.empty() || expr.back().spelling != ")"))
     {
         // we have a call expression that doesn't end in a closing parentheses
@@ -42,6 +42,6 @@ std::unique_ptr<cpp_expression> detail::parse_raw_expression(const parse_context
     if (stream.done())
         return nullptr;
 
-    auto expr = to_string(stream, std::prev(end)->value() == ";" ? std::prev(end) : end);
+    auto expr = to_string(stream, std::prev(end)->value() == ";" ? std::prev(end) : end, false);
     return cpp_unexposed_expression::build(std::move(type), std::move(expr));
 }

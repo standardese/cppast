@@ -36,7 +36,8 @@ private:
 enum class cpp_template_keyword
 {
     keyword_class,
-    keyword_typename
+    keyword_typename,
+    concept_contraint
 };
 
 /// \returns The string associated of the keyword.
@@ -52,7 +53,8 @@ public:
     /// \notes The `default_type` may be `nullptr` in which case the parameter has no default.
     static std::unique_ptr<cpp_template_type_parameter> build(
         const cpp_entity_index& idx, cpp_entity_id id, std::string name, cpp_template_keyword kw,
-        bool variadic, std::unique_ptr<cpp_type> default_type = nullptr);
+        bool variadic, std::unique_ptr<cpp_type> default_type = nullptr,
+        type_safe::optional<cpp_token_string> concept_constraint = type_safe::nullopt);
 
     /// \returns A [ts::optional_ref]() to the default type.
     type_safe::optional_ref<const cpp_type> default_type() const noexcept
@@ -66,17 +68,24 @@ public:
         return keyword_;
     }
 
+    const type_safe::optional<cpp_token_string>& concept_constraint() const noexcept
+    {
+        return concept_constraint_;
+    }
+
 private:
     cpp_template_type_parameter(std::string name, cpp_template_keyword kw, bool variadic,
-                                std::unique_ptr<cpp_type> default_type)
+                                std::unique_ptr<cpp_type>             default_type,
+                                type_safe::optional<cpp_token_string> concept_constraint)
     : cpp_template_parameter(std::move(name), variadic), default_type_(std::move(default_type)),
-      keyword_(kw)
+      keyword_(kw), concept_constraint_(concept_constraint)
     {}
 
     cpp_entity_kind do_get_entity_kind() const noexcept override;
 
     std::unique_ptr<cpp_type> default_type_;
     cpp_template_keyword      keyword_;
+    type_safe::optional<cpp_token_string> concept_constraint_;
 };
 
 /// \exclude

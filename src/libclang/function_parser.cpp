@@ -154,66 +154,6 @@ bool equivalent_cursor(const CXCursor& a, const CXCursor& b)
         return clang_equalCursors(a, b) == 1;
 }
 
-type_safe::optional<cpp_entity_ref> parse_scope(const CXCursor& cur, bool is_friend)
-{
-    std::string scope_name;
-
-    auto friended = clang_getCursorReferenced(cur);
-    if (is_friend && !clang_Cursor_isNull(friended))
-    {
-        // it refers to another function
-        // find the common parent between the two cursors
-        // scope is the scope from the common parent down to the function
-
-        auto friended_parents = get_semantic_parents(friended);
-        auto cur_parents      = get_semantic_parents(get_definition_scope(cur, true));
-
-        // remove common parents
-        while (!friended_parents.empty() && !cur_parents.empty()
-               && equivalent_cursor(friended_parents.back(), cur_parents.back()))
-        {
-            friended_parents.pop_back();
-            cur_parents.pop_back();
-        }
-        DEBUG_ASSERT(!clang_isTranslationUnit(clang_getCursorKind(friended_parents.back()))
-                         && !friended_parents.empty(),
-                     detail::parse_error_handler{}, cur,
-                     "invalid common parent of friend and friended");
-
-        // scope consists of all remaining parents of friended
-        // (last one is cursor itself)
-        for (auto iter = friended_parents.rbegin(); iter != std::prev(friended_parents.rend());
-             ++iter)
-        {
-            auto parent_name = detail::cxstring(clang_getCursorDisplayName(*iter));
-            scope_name += parent_name.std_str() + "::";
-        }
-    }
-    else
-    {
-        // find the difference between the definition scope parent and semantic parent
-        // all semantic parents in between form the scope
-        // the definition scope is the lexical parent for regular functions,
-        // and the scope outside of the class for friend functions
-        for (auto definition                                = get_definition_scope(cur, is_friend),
-                  parent                                    = clang_getCursorSemanticParent(cur);
-             !equivalent_cursor(definition, parent); parent = clang_getCursorSemanticParent(parent))
-        {
-            DEBUG_ASSERT(!clang_isTranslationUnit(clang_getCursorKind(parent)),
-                         detail::parse_error_handler{}, cur,
-                         "infinite loop while calculating scope");
-            auto parent_name = detail::cxstring(clang_getCursorDisplayName(parent));
-            scope_name       = parent_name.std_str() + "::" + std::move(scope_name);
-        }
-    }
-
-    if (scope_name.empty())
-        return type_safe::nullopt;
-    else
-        return cpp_entity_ref(detail::get_entity_id(clang_getCursorSemanticParent(cur)),
-                              std::move(scope_name));
-}
-
 // just the tokens occurring in the prefix
 struct prefix_info
 {
@@ -368,7 +308,7 @@ std::unique_ptr<cpp_expression> parse_noexcept(detail::cxtoken_stream&      stre
     auto closing = detail::find_closing_bracket(stream);
 
     detail::skip(stream, "(");
-    auto expr = detail::parse_raw_expression(context, stream, closing, std::move(type));
+    auto expr = detail::parse_raw_expression(context, stream, closing.bracket, std::move(type));
     detail::skip(stream, ")");
 
     return expr;
@@ -553,12 +493,72 @@ std::unique_ptr<cpp_entity> parse_cpp_function_impl(const detail::parse_context&
 
     if (is_templated_cursor(cur))
         return builder.finish(detail::get_entity_id(cur), suffix.body_kind,
-                              parse_scope(cur, is_friend));
+                              cppast::detail::get_semantic_parent(cur, is_friend));
     else
         return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind,
-                              parse_scope(cur, is_friend));
+                              cppast::detail::get_semantic_parent(cur, is_friend));
 }
 } // namespace
+
+type_safe::optional<cpp_entity_ref> detail::get_semantic_parent(const CXCursor& cur, bool is_friend)
+{
+    std::string scope_name;
+
+    auto friended = clang_getCursorReferenced(cur);
+    if (is_friend && !clang_Cursor_isNull(friended))
+    {
+        // it refers to another function
+        // find the common parent between the two cursors
+        // scope is the scope from the common parent down to the function
+
+        auto friended_parents = get_semantic_parents(friended);
+        auto cur_parents      = get_semantic_parents(get_definition_scope(cur, true));
+
+        // remove common parents
+        while (!friended_parents.empty() && !cur_parents.empty()
+               && equivalent_cursor(friended_parents.back(), cur_parents.back()))
+        {
+            friended_parents.pop_back();
+            cur_parents.pop_back();
+        }
+        DEBUG_ASSERT(!clang_isTranslationUnit(clang_getCursorKind(friended_parents.back()))
+                         && !friended_parents.empty(),
+                     detail::parse_error_handler{}, cur,
+                     "invalid common parent of friend and friended");
+
+        // scope consists of all remaining parents of friended
+        // (last one is cursor itself)
+        for (auto iter = friended_parents.rbegin(); iter != std::prev(friended_parents.rend());
+             ++iter)
+        {
+            auto parent_name = detail::cxstring(clang_getCursorDisplayName(*iter));
+            scope_name += parent_name.std_str() + "::";
+        }
+    }
+    else
+    {
+        // find the difference between the definition scope parent and semantic parent
+        // all semantic parents in between form the scope
+        // the definition scope is the lexical parent for regular functions,
+        // and the scope outside of the class for friend functions
+        for (auto definition                                = get_definition_scope(cur, is_friend),
+                  parent                                    = clang_getCursorSemanticParent(cur);
+             !equivalent_cursor(definition, parent); parent = clang_getCursorSemanticParent(parent))
+        {
+            DEBUG_ASSERT(!clang_isTranslationUnit(clang_getCursorKind(parent)),
+                         detail::parse_error_handler{}, cur,
+                         "infinite loop while calculating scope");
+            auto parent_name = detail::cxstring(clang_getCursorDisplayName(parent));
+            scope_name       = parent_name.std_str() + "::" + std::move(scope_name);
+        }
+    }
+
+    if (scope_name.empty())
+        return type_safe::nullopt;
+    else
+        return cpp_entity_ref(detail::get_entity_id(clang_getCursorSemanticParent(cur)),
+                              std::move(scope_name));
+}
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_function(const detail::parse_context& context,
                                                        const CXCursor& cur, bool is_friend)
@@ -699,7 +699,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_member_function(const detail::pars
 
     skip_parameters(stream);
     return handle_suffix(context, cur, builder, stream, prefix.is_virtual,
-                         parse_scope(cur, is_friend));
+                         get_semantic_parent(cur, is_friend));
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_context& context,
@@ -745,7 +745,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
 
     // read the type
     stream.set_cur(type_start);
-    auto type_spelling = detail::to_string(stream, type_end).as_string();
+    auto type_spelling = detail::to_string(stream, type_end, false).as_string();
 
     // parse arguments again
     detail::skip(stream, "(");
@@ -764,7 +764,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_conversion_op(const detail::parse_
         builder.is_consteval();
 
     return handle_suffix(context, cur, builder, stream, prefix.is_virtual,
-                         parse_scope(cur, is_friend));
+                         get_semantic_parent(cur, is_friend));
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_context& context,
@@ -808,10 +808,10 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_constructor(const detail::parse_co
 
     if (is_templated_cursor(cur))
         return builder.finish(detail::get_entity_id(cur), suffix.body_kind,
-                              parse_scope(cur, is_friend));
+                              get_semantic_parent(cur, is_friend));
     else
         return builder.finish(*context.idx, detail::get_entity_id(cur), suffix.body_kind,
-                              parse_scope(cur, is_friend));
+                              get_semantic_parent(cur, is_friend));
 }
 
 std::unique_ptr<cpp_entity> detail::parse_cpp_destructor(const detail::parse_context& context,
@@ -833,5 +833,5 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_destructor(const detail::parse_con
     detail::skip(stream, "(");
     detail::skip(stream, ")");
     return handle_suffix(context, cur, builder, stream, prefix_info.is_virtual,
-                         parse_scope(cur, is_friend));
+                         get_semantic_parent(cur, is_friend));
 }

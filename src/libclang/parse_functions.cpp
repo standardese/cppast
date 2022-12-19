@@ -125,6 +125,8 @@ try
         // go through all the try_parse_XXX functions
         if (auto entity = try_parse_cpp_language_linkage(context, cur))
             return entity;
+        if (auto entity = try_parse_cpp_concept(context, cur))
+            return entity;
         break;
 
     case CXCursor_MacroDefinition:
@@ -208,7 +210,7 @@ try
         // build unexposed entity
         detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
         detail::cxtoken_stream stream(tokenizer, cur);
-        auto                   spelling = detail::to_string(stream, stream.end());
+        auto                   spelling = detail::to_string(stream, stream.end(), false);
         if (spelling.begin() + 1 == spelling.end() && spelling.front().spelling == ";")
             // unnecessary semicolon
             return nullptr;

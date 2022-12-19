@@ -78,25 +78,15 @@ namespace detail
             return tokens_.end();
         }
 
-        // if it returns true, the last token is ">>",
-        // but should haven been ">"
-        // only a problem for template parameters
-        bool unmunch() const noexcept
-        {
-            return unmunch_;
-        }
-
     private:
         std::vector<cxtoken> tokens_;
-        bool                 unmunch_;
     };
 
     class cxtoken_stream
     {
     public:
         explicit cxtoken_stream(const cxtokenizer& tokenizer, const CXCursor& cur)
-        : cursor_(cur), begin_(tokenizer.begin()), cur_(begin_), end_(tokenizer.end()),
-          unmunch_(tokenizer.unmunch())
+        : cursor_(cur), begin_(tokenizer.begin()), cur_(begin_), end_(tokenizer.end())
         {}
 
         const cxtoken& peek() const noexcept
@@ -155,15 +145,9 @@ namespace detail
             cur_ = iter;
         }
 
-        bool unmunch() const noexcept
-        {
-            return unmunch_;
-        }
-
     private:
         CXCursor         cursor_;
         cxtoken_iterator begin_, cur_, end_;
-        bool             unmunch_;
     };
 
     // skips the next token
@@ -174,22 +158,36 @@ namespace detail
     // if multi_token == true, str can consist of multiple tokens optionally separated by whitespace
     bool skip_if(cxtoken_stream& stream, const char* str, bool multi_token = false);
 
+    struct closing_bracket_pos
+    {
+        // If unmunch == false: bracket points to the closing bracket, after is the iterator after
+        // that. If unmunch == true: bracket points to >>, after points to the same >>; only one
+        // bracket is part of the matching closing one.
+        cxtoken_iterator bracket, after;
+        bool             unmunch;
+    };
+
     // returns the location of the closing bracket
     // the current token must be (,[,{ or <
     // note: < might not work in the arguments of a template specialization
-    cxtoken_iterator find_closing_bracket(cxtoken_stream stream);
+    closing_bracket_pos find_closing_bracket(cxtoken_stream stream);
 
     // skips brackets
     // the current token must be (,[,{ or <
     // note: < might not work in the arguments of a template specialization
     void skip_brackets(cxtoken_stream& stream);
 
+    // finds the location of the given sequence in a stream
+    // returns an iterator to the first token of the found sequence, or stream.end() if not found
+    cxtoken_iterator find_sequence(cxtoken_stream stream, cxtoken_iterator start,
+                                   cxtoken_iterator end);
+
     // parses attributes
     // if skip_anyway is true it will bump even if no attributes have been parsed
     cpp_attribute_list parse_attributes(cxtoken_stream& stream, bool skip_anyway = false);
 
     // converts a token range to a string
-    cpp_token_string to_string(cxtoken_stream& stream, cxtoken_iterator end);
+    cpp_token_string to_string(cxtoken_stream& stream, cxtoken_iterator end, bool unmunch);
 
     // appends token to scope, if it is still valid
     // else clears it
