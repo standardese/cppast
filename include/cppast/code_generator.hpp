@@ -63,7 +63,7 @@ namespace detail
     {
     public:
         template <typename T>
-        explicit semantic_string_view(T&& obj, decltype(string_view(std::forward<T>(obj)), 0) = 0)
+        explicit semantic_string_view(T&& obj, decltype(string_view(std::declval<T>()), 0) = 0)
         : str_(std::forward<T>(obj))
         {}
 
