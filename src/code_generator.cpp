@@ -242,13 +242,25 @@ bool generate_type_alias(code_generator& generator, const cpp_type_alias& alias,
     code_generator::output output(type_safe::ref(generator), type_safe::ref(alias), cur_access);
     if (output)
     {
-        output << keyword("using") << whitespace << identifier(alias.name()) << operator_ws
-               << punctuation("=") << operator_ws;
-        if (output.options() & code_generator::exclude_target)
-            output.excluded(alias);
+        if (alias.use_c_style())
+        {
+            output << keyword("typedef") << whitespace;
+            if (output.options() & code_generator::exclude_target)
+                output.excluded(alias);
+            else
+                detail::write_type(output, alias.underlying_type(), alias.name());
+            output << punctuation(";") << newl;
+        }
         else
-            detail::write_type(output, alias.underlying_type(), "");
-        output << punctuation(";") << newl;
+        {
+            output << keyword("using") << whitespace << identifier(alias.name()) << operator_ws
+                << punctuation("=") << operator_ws;
+            if (output.options() & code_generator::exclude_target)
+                output.excluded(alias);
+            else
+                detail::write_type(output, alias.underlying_type(), "");
+            output << punctuation(";") << newl;
+        }
     }
     return static_cast<bool>(output);
 }
@@ -472,6 +484,8 @@ void write_storage_class(code_generator::output& output, cpp_storage_class_speci
         output << keyword("extern") << whitespace;
     if (is_thread_local(storage))
         output << keyword("thread_local") << whitespace;
+    if (is_register(storage))
+        output << keyword("register") << whitespace;
     if (is_constexpr)
         output << keyword("constexpr") << whitespace;
     else if (is_consteval)
@@ -659,22 +673,28 @@ void write_suffix_virtual(code_generator::output& output, const cpp_virtual& vir
 bool write_cv_ref(code_generator::output& output, const cpp_member_function_base& base)
 {
     auto need_ws = false;
-    switch (base.cv_qualifier())
+    auto cv = base.cv_qualifier();
+
+    std::vector<const char*> qualifiers;
+    if (is_const(cv))
+        qualifiers.push_back("const");
+    if (is_volatile(cv))
+        qualifiers.push_back("volatile");
+    if (is_atomic(cv))
+        qualifiers.push_back("_Atomic");
+    if (is_restrict(cv))
+        qualifiers.push_back("restrict");
+
+    bool first = true;
+    for (auto& q : qualifiers)
     {
-    case cpp_cv_none:
-        break;
-    case cpp_cv_const:
-        output << operator_ws << keyword("const");
+        if (first)
+            output << operator_ws;
+        else
+            output << whitespace;
+        output << keyword(std::move(q));
+        first = false;
         need_ws = true;
-        break;
-    case cpp_cv_volatile:
-        output << operator_ws << keyword("volatile");
-        need_ws = true;
-        break;
-    case cpp_cv_const_volatile:
-        output << operator_ws << keyword("const") << whitespace << keyword("volatile");
-        need_ws = true;
-        break;
     }
 
     switch (base.ref_qualifier())

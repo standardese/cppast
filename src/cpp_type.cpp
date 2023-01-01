@@ -108,6 +108,28 @@ const cpp_type& cppast::remove_volatile(const cpp_type& type) noexcept
     return type;
 }
 
+const cpp_type& cppast::remove_restrict(const cpp_type& type) noexcept
+{
+    if (type.kind() == cpp_type_kind::cv_qualified_t)
+    {
+        auto& cv = static_cast<const cpp_cv_qualified_type&>(type);
+        if (is_restrict(cv.cv_qualifier()))
+            return cv.type();
+    }
+    return type;
+}
+
+const cpp_type& cppast::remove_atomic(const cpp_type& type) noexcept
+{
+    if (type.kind() == cpp_type_kind::cv_qualified_t)
+    {
+        auto& cv = static_cast<const cpp_cv_qualified_type&>(type);
+        if (is_atomic(cv.cv_qualifier()))
+            return cv.type();
+    }
+    return type;
+}
+
 bool detail::cpp_type_ref_predicate::operator()(const cpp_entity& e)
 {
     switch (e.kind())
@@ -284,6 +306,10 @@ void write_cv_qualified_prefix(code_generator::output& output, const cpp_cv_qual
         output << whitespace << keyword("const");
     if (is_volatile(type.cv_qualifier()))
         output << whitespace << keyword("volatile");
+    if (is_atomic(type.cv_qualifier()))
+        output << whitespace << keyword("_Atomic");
+    if (is_restrict(type.cv_qualifier()))
+        output << whitespace << keyword("restrict");
 }
 
 void write_cv_qualified_suffix(code_generator::output& output, const cpp_cv_qualified_type& type)
@@ -436,16 +462,28 @@ void write_member_function_suffix(code_generator::output&         output,
     output << bracket_ws << punctuation(")");
     write_parameters(output, type);
 
-    auto cv  = cpp_cv_none;
-    auto ref = cpp_ref_none;
+    cpp_cv cv = cpp_cv_none;
+    auto ref  = cpp_ref_none;
     strip_class_type(type.class_type(), &cv, &ref);
 
-    if (cv == cpp_cv_const_volatile)
-        output << keyword("const") << whitespace << keyword("volatile");
-    else if (is_const(cv))
-        output << keyword("const");
-    else if (is_volatile(cv))
-        output << keyword("volatile");
+    std::vector<const char*> qualifiers;
+    if (is_const(cv))
+        qualifiers.push_back("const");
+    if (is_volatile(cv))
+        qualifiers.push_back("volatile");
+    if (is_atomic(cv))
+        qualifiers.push_back("_Atomic");
+    if (is_restrict(cv))
+        qualifiers.push_back("restrict");
+
+    bool first = true;
+    for (auto& q : qualifiers)
+    {
+        if (!first)
+            output << whitespace;
+        output << keyword(std::move(q));
+        first = false;
+    }
 
     if (ref == cpp_ref_lvalue)
         output << operator_ws << punctuation("&") << operator_ws;

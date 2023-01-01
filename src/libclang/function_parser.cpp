@@ -267,22 +267,24 @@ struct suffix_info
 
 cpp_cv parse_cv(detail::cxtoken_stream& stream)
 {
-    if (detail::skip_if(stream, "const"))
-    {
-        if (detail::skip_if(stream, "volatile"))
-            return cpp_cv_const_volatile;
-        else
-            return cpp_cv_const;
-    }
-    else if (detail::skip_if(stream, "volatile"))
+    bool found_qualifier = true;
+    cpp_cv qualifier = cpp_cv_none;
+
+    while (found_qualifier)
     {
         if (detail::skip_if(stream, "const"))
-            return cpp_cv_const_volatile;
+            qualifier |= cpp_cv_const;
+        else if (detail::skip_if(stream, "volatile"))
+            qualifier |= cpp_cv_volatile;
+        else if (detail::skip_if(stream, "restrict"))
+            qualifier |= cpp_cv_restrict;
+        else if (detail::skip_if(stream, "_Atomic"))
+            qualifier |= cpp_cv_atomic;
         else
-            return cpp_cv_volatile;
+            found_qualifier = false;
     }
-    else
-        return cpp_cv_none;
+
+    return qualifier;
 }
 
 cpp_reference parse_ref(detail::cxtoken_stream& stream)

@@ -27,6 +27,11 @@ TEST_CASE("parse_files")
         {
             return "null";
         }
+
+        bool do_use_c() const noexcept override
+        {
+            return false;
+        }
     } config;
 
     class null_parser : public parser

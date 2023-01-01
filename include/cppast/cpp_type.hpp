@@ -286,25 +286,47 @@ private:
     std::unique_ptr<cpp_type> dependee_;
 };
 
-/// The kinds of C++ cv qualifiers.
-enum cpp_cv : int
+/// Flags for the kinds of C/C++ qualifiers.
+enum cpp_cv_flags : int
 {
-    cpp_cv_none,
-    cpp_cv_const,
-    cpp_cv_volatile,
-    cpp_cv_const_volatile,
+    cpp_cv_const, //< constant type
+    cpp_cv_volatile, //< volatile type
+    cpp_cv_restrict, //< restrict pointer type (C-only)
+    cpp_cv_atomic, //< atomic type (C-only)
+
+    _flag_set_size, //< \exclude
 };
 
+/// Flag set for the kinds for C/C++ qualifiers.
+using cpp_cv = type_safe::flag_set<cpp_cv_flags>;
+
+/// Represents a const volatile qualified type
+constexpr cpp_cv cpp_cv_const_volatile = cpp_cv(cpp_cv_const) | cpp_cv_volatile;
+/// Represents an unqualified type
+constexpr cpp_cv cpp_cv_none = cpp_cv();
+
 /// \returns `true` if the qualifier contains `const`.
-inline bool is_const(cpp_cv cv) noexcept
+inline bool is_const(const cpp_cv& cv) noexcept
 {
-    return cv == cpp_cv_const || cv == cpp_cv_const_volatile;
+    return (cv & cpp_cv_const) != 0;
 }
 
 /// \returns `true` if the qualifier contains `volatile`.
-inline bool is_volatile(cpp_cv cv) noexcept
+inline bool is_volatile(const cpp_cv& cv) noexcept
 {
-    return cv == cpp_cv_volatile || cv == cpp_cv_const_volatile;
+    return (cv & cpp_cv_volatile) != 0;
+}
+
+/// \returns `true` if the qualifier contains `restrict`.
+inline bool is_restrict(const cpp_cv& cv) noexcept
+{
+    return (cv & cpp_cv_restrict) != 0;
+}
+
+/// \returns `true` if the qualifier contains `atomic`.
+inline bool is_atomic(const cpp_cv& cv) noexcept
+{
+    return (cv & cpp_cv_atomic) != 0;
 }
 
 /// A [cppast::cpp_cv]() qualified [cppast::cpp_type]().
@@ -354,6 +376,12 @@ const cpp_type& remove_const(const cpp_type& type) noexcept;
 
 /// \returns The type without top-level volatile qualifiers.
 const cpp_type& remove_volatile(const cpp_type& type) noexcept;
+
+/// \returns The type without top-level restrict qualifiers.
+const cpp_type& remove_restrict(const cpp_type& type) noexcept;
+
+/// \returns The type without top-level atomic qualifiers.
+const cpp_type& remove_atomic(const cpp_type& type) noexcept;
 
 /// A pointer to a [cppast::cpp_type]().
 class cpp_pointer_type final : public cpp_type

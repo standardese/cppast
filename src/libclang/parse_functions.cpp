@@ -57,8 +57,10 @@ cpp_storage_class_specifiers detail::get_storage_class(const CXCursor& cur)
         return cpp_storage_class_none;
 
     case CX_SC_Auto:
-    case CX_SC_Register:
         return cpp_storage_class_auto;
+
+    case CX_SC_Register:
+        return cpp_storage_class_register;
 
     case CX_SC_Extern:
         return cpp_storage_class_extern;
