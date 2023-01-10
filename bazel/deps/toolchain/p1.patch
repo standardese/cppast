@@ -1,0 +1,21 @@
+diff --git a/toolchain/BUILD.tpl b/toolchain/BUILD.tpl
+index bc9280f..07fd98c 100644
+--- a/toolchain/BUILD.tpl
++++ b/toolchain/BUILD.tpl
+@@ -19,7 +19,7 @@ load("@rules_cc//cc:defs.bzl", "cc_toolchain_suite")
+ exports_files(["Makevars"])
+ 
+ # Some targets may need to directly depend on these files.
+-exports_files(glob(["bin/*", "lib/*"]))
++exports_files(glob(["bin/*", "lib/*", "include/*"]))
+ 
+ filegroup(
+     name = "empty",
+@@ -116,6 +116,7 @@ filegroup(
+     name = "include",
+     srcs = glob([
+         "include/c++/**",
++        "include/clang-c/**",
+         "lib/clang/%{llvm_version}/include/**",
+     ]),
+ )
