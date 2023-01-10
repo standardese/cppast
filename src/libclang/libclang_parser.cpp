@@ -415,6 +415,15 @@ void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags 
         }
         else
             throw std::invalid_argument("c++20 is not yet supported for current version of clang");
+    case cpp_standard::cpp_2b:
+        if (libclang_parser::libclang_minor_version() >= 61)
+        { // Corresponds to Clang version 12
+            if (flags & compile_flag::gnu_extensions)
+                add_flag("-std=gnu++2a");
+            else
+                add_flag("-std=c++2a");
+            break;
+        }
     }
 
     if (flags & compile_flag::ms_compatibility)
