@@ -310,6 +310,8 @@ try
             config.set_flags(cppast::cpp_standard::cpp_2a, flags);
         else if (options["std"].as<std::string>() == "c++20")
             config.set_flags(cppast::cpp_standard::cpp_20, flags);
+        else if (options["std"].as<std::string>() == "c++2b")
+            config.set_flags(cppast::cpp_standard::cpp_2b, flags);
         else
         {
             print_error("invalid value '" + options["std"].as<std::string>() + "' for std flag");
