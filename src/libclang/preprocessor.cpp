@@ -174,11 +174,12 @@ std::string diagnostics_flags()
 // get the command that returns all macros defined in the TU
 std::string get_macro_command(const libclang_compile_config& c, const char* full_path)
 {
-    // -x c++: force C++ as input language
+    // -xc/-xc++: force C or C++ as input language
     // -I.: add current working directory to include search path
     // -E: print preprocessor output
     // -dM: print macro definitions instead of preprocessed file
-    auto flags = std::string("-x c++ -I. -E -dM");
+    std::string language = c.use_c() ? "-xc" : "-xc++";
+    auto flags = language + " -I. -E -dM";
     flags += diagnostics_flags();
 
     std::string cmd(detail::libclang_compile_config_access::clang_binary(c) + " " + std::move(flags)
@@ -198,10 +199,11 @@ std::string get_macro_command(const libclang_compile_config& c, const char* full
 std::string get_preprocess_command(const libclang_compile_config& c, const char* full_path,
                                    const char* macro_file_path)
 {
-    // -x c++: force C++ as input language
+    // -xc/-xc++: force C or C++ as input language
     // -E: print preprocessor output
     // -dD: keep macros
-    auto flags = std::string("-x c++ -E -dD");
+    std::string language = c.use_c() ? "-xc" : "-xc++";
+    auto flags = language + " -E -dD";
 
     // -CC: keep comments, even in macro
     // -C: keep comments, but not in macro
