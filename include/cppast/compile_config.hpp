@@ -27,6 +27,7 @@ enum class cpp_standard
     cpp_2a,
     cpp_20,
     cpp_2b,
+
     c_89,
     c_99,
     c_11,
@@ -61,6 +62,7 @@ inline const char* to_string(cpp_standard standard) noexcept
         return "c++20";
     case cpp_standard::cpp_2b:
         return "c++2b";
+
     case cpp_standard::c_89:
         return "c89";
     case cpp_standard::c_99:
@@ -75,42 +77,6 @@ inline const char* to_string(cpp_standard standard) noexcept
 
     DEBUG_UNREACHABLE(detail::assert_handler{});
     return "ups";
-}
-
-/// \returns The C/C++ standard corresponding to the string, e.g. `cpp_14` for `c++14`
-/// \throws std::invalid_argument for an unknown language standard
-inline cpp_standard to_standard(const std::string& str)
-{
-    if (str == "c++98")
-        return cpp_standard::cpp_98;
-    else if (str == "c++03")
-        return cpp_standard::cpp_03;
-    else if (str == "c++11")
-        return cpp_standard::cpp_11;
-    else if (str == "c++14")
-        return cpp_standard::cpp_14;
-    else if (str == "c++1z")
-        return cpp_standard::cpp_1z;
-    else if (str == "c++17")
-        return cpp_standard::cpp_17;
-    else if (str == "c++2a")
-        return cpp_standard::cpp_2a;
-    else if (str == "c++20")
-        return cpp_standard::cpp_20;
-    else if (str == "c++2b")
-        return cpp_standard::cpp_2b;
-    else if (str == "c89")
-        return cpp_standard::c_89;
-    else if (str == "c99")
-        return cpp_standard::c_99;
-    else if (str == "c11")
-        return cpp_standard::c_11;
-    else if (str == "c17")
-        return cpp_standard::c_17;
-    else if (str == "c2x")
-        return cpp_standard::c_2x;
-    else
-        throw std::invalid_argument("invalid C/C++ standard '" + str + "'");
 }
 
 /// \returns whether the language standard is a C standard

@@ -249,16 +249,7 @@ cppast::libclang_compile_config::libclang_compile_config(
             }
             else if (flag == "-std")
             {
-                // standard
-                try
-                {
-                    // detect whether the language standard is a C standard
-                    use_c_ = is_c_standard(to_standard(args));
-                }
-                catch (const std::invalid_argument&)
-                {
-                    use_c_ = false;
-                }
+                use_c_ = (args.find("++") == std::string::npos);
                 add_flag(std::move(flag) + "=" + std::move(args));
             }
             else if (flag == "-f")
