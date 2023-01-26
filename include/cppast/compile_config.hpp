@@ -15,7 +15,7 @@
 
 namespace cppast
 {
-/// The C++ standard that should be used.
+/// The C/C++ standard that should be used.
 enum class cpp_standard
 {
     cpp_98,
@@ -28,7 +28,14 @@ enum class cpp_standard
     cpp_20,
     cpp_2b,
 
+    c_89,
+    c_99,
+    c_11,
+    c_17,
+    c_2x,
+
     cpp_latest = cpp_standard::cpp_14, //< The latest supported C++ standard.
+    c_latest = cpp_standard::c_17, //< The latest supported C standard.
 };
 
 /// \returns A human readable string representing the option,
@@ -55,10 +62,48 @@ inline const char* to_string(cpp_standard standard) noexcept
         return "c++20";
     case cpp_standard::cpp_2b:
         return "c++2b";
+
+    case cpp_standard::c_89:
+        return "c89";
+    case cpp_standard::c_99:
+        return "c99";
+    case cpp_standard::c_11:
+        return "c11";
+    case cpp_standard::c_17:
+        return "c17";
+    case cpp_standard::c_2x:
+        return "c2x";
     }
 
     DEBUG_UNREACHABLE(detail::assert_handler{});
     return "ups";
+}
+
+/// \returns whether the language standard is a C standard
+inline bool is_c_standard(cpp_standard standard) noexcept
+{
+    switch (standard)
+    {
+    case cpp_standard::cpp_98:
+    case cpp_standard::cpp_03:
+    case cpp_standard::cpp_11:
+    case cpp_standard::cpp_14:
+    case cpp_standard::cpp_1z:
+    case cpp_standard::cpp_17:
+    case cpp_standard::cpp_2a:
+    case cpp_standard::cpp_20:
+    case cpp_standard::cpp_2b:
+        return false;
+    case cpp_standard::c_89:
+    case cpp_standard::c_99:
+    case cpp_standard::c_11:
+    case cpp_standard::c_17:
+    case cpp_standard::c_2x:
+        return true;
+    }
+
+    DEBUG_UNREACHABLE(detail::assert_handler{});
+    return false;
 }
 
 /// Other special compilation flags.
@@ -117,6 +162,12 @@ public:
         return do_get_name();
     }
 
+    /// \returns Whether to parse files as C rather than C++.
+    bool use_c() const noexcept
+    {
+        return do_use_c();
+    }
+
 protected:
     compile_config(std::vector<std::string> def_flags) : flags_(std::move(def_flags)) {}
 
@@ -159,6 +210,9 @@ private:
     /// \returns A unique name of the configuration.
     /// \notes This allows detecting mismatches of configurations and parsers.
     virtual const char* do_get_name() const noexcept = 0;
+
+    /// \returns Whether to parse files as C rather than C++.
+    virtual bool do_use_c() const noexcept = 0;
 
     std::vector<std::string> flags_;
 };

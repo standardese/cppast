@@ -187,10 +187,13 @@ private:
         return "libclang";
     }
 
+    bool do_use_c() const noexcept override;
+
     std::string clang_binary_;
     bool        write_preprocessed_ : 1;
     bool        fast_preprocessing_ : 1;
     bool        remove_comments_in_macro_ : 1;
+    bool        use_c_              : 1;
 
     friend detail::libclang_compile_config_access;
 };
