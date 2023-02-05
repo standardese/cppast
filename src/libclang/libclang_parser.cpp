@@ -120,6 +120,9 @@ std::string get_full_path(const detail::cxstring& dir, const std::string& file)
     if (is_absolute(file))
         // absolute file
         return file;
+    if (dir.empty())
+        // should never happen, but GCC 12.2 is not convinced. That's what exceptions are for, isn't it?
+        throw std::invalid_argument("Either file is absolute or relative to some named dir");
     else if (dir[dir.length() - 1] != '/' && dir[dir.length() - 1] != '\\')
         // relative needing separator
         return dir.std_str() + '/' + file;
