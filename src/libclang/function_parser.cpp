@@ -656,7 +656,7 @@ std::unique_ptr<cpp_entity> handle_suffix(const detail::parse_context& context, 
     builder.get().add_attribute(suffix.attributes);
     set_qualifier(0, builder, suffix.cv_qualifier, suffix.ref_qualifier);
     if (suffix.noexcept_condition)
-        builder.noexcept_condition(move(suffix.noexcept_condition));
+        builder.noexcept_condition(std::move(suffix.noexcept_condition));
     if (auto virt = calculate_virtual(cur, is_virtual, suffix.virtual_keywords))
         builder.virtual_info(virt.value());
 
