@@ -13,7 +13,7 @@ using namespace cppast;
 std::unique_ptr<cpp_entity> detail::try_parse_cpp_concept(const detail::parse_context& context,
                                                           const CXCursor&              cur)
 {
-#if CINDEX_VERSION_MINOR >= 62
+#if CINDEX_VERSION_MINOR > 62
     if (cur.kind != CXCursor_ConceptDecl)
         return nullptr;
 #else
