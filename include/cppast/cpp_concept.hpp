@@ -1,12 +1,12 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2022 Jonathan MÃ¼ller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #ifndef CPPAST_CPP_CONCEPT_HPP_INCLUDED
 #define CPPAST_CPP_CONCEPT_HPP_INCLUDED
 
 #include <cppast/cpp_entity.hpp>
-#include <cppast/cpp_template_parameter.hpp>
 #include <cppast/cpp_expression.hpp>
+#include <cppast/cpp_template_parameter.hpp>
 
 namespace cppast
 {
@@ -34,9 +34,7 @@ public:
     class builder
     {
     public:
-        builder(std::string name)
-        : concept_(new cpp_concept(std::move(name)))
-        {}
+        builder(std::string name) : concept_(new cpp_concept(std::move(name))) {}
 
         cpp_token_string& set_parameters(cpp_token_string string) noexcept
         {
@@ -57,9 +55,7 @@ public:
     };
 
 private:
-    cpp_concept(std::string name) 
-        : cpp_entity(std::move(name)), parameters_({})
-    {}
+    cpp_concept(std::string name) : cpp_entity(std::move(name)), parameters_({}) {}
 
     cpp_entity_kind do_get_entity_kind() const noexcept override;
 
@@ -67,7 +63,6 @@ private:
 
     std::unique_ptr<cpp_expression> expression_;
 };
-
 
 } // namespace cppast
 

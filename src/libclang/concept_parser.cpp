@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2022 Jonathan MÃ¼ller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #include <cppast/cpp_concept.hpp>
