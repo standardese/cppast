@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #ifndef CPPAST_INTRUSIVE_LIST_HPP_INCLUDED
@@ -23,7 +23,7 @@ namespace detail
     public:
         intrusive_list_node() = default;
 
-        intrusive_list_node(intrusive_list_node&&) = default;
+        intrusive_list_node(intrusive_list_node&&)            = default;
         intrusive_list_node& operator=(intrusive_list_node&&) = default;
 
         ~intrusive_list_node() noexcept

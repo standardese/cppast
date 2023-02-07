@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #include <cppast/cpp_class.hpp>
@@ -225,7 +225,7 @@ struct g
 
                     REQUIRE(equal_types(idx, base.type(),
                                                     *cpp_user_defined_type::build(
-                                                        cpp_type_ref(cpp_entity_id(""), "a"))));
+                                            cpp_type_ref(cpp_entity_id(""), "a"))));
                 }
                 else if (base.name() == "d")
                 {
@@ -234,7 +234,7 @@ struct g
 
                     REQUIRE(equal_types(idx, base.type(),
                                                     *cpp_user_defined_type::build(
-                                                        cpp_type_ref(cpp_entity_id(""), "d"))));
+                                            cpp_type_ref(cpp_entity_id(""), "d"))));
                 }
                 else
                     REQUIRE(false);
@@ -260,7 +260,7 @@ struct g
 
                     REQUIRE(equal_types(idx, base.type(),
                                                     *cpp_user_defined_type::build(
-                                                        cpp_type_ref(cpp_entity_id(""), "ns::base"))));
+                                            cpp_type_ref(cpp_entity_id(""), "ns::base"))));
                 }
                 else if (base.name() == "e")
                 {
@@ -269,7 +269,7 @@ struct g
 
                     REQUIRE(equal_types(idx, base.type(),
                                                     *cpp_user_defined_type::build(
-                                                        cpp_type_ref(cpp_entity_id(""), "e"))));
+                                            cpp_type_ref(cpp_entity_id(""), "e"))));
                 }
                 else
                     REQUIRE(false);
@@ -295,7 +295,7 @@ struct g
 
                     REQUIRE(equal_types(idx, base.type(),
                                                     *cpp_user_defined_type::build(
-                                                        cpp_type_ref(cpp_entity_id(""), "ns::base"))));
+                                            cpp_type_ref(cpp_entity_id(""), "ns::base"))));
                 }
                 else
                     REQUIRE(false);

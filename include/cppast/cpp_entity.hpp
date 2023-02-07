@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #ifndef CPPAST_CPP_ENTITY_HPP_INCLUDED
@@ -47,7 +47,7 @@ private:
 class cpp_entity : detail::intrusive_list_node<cpp_entity>
 {
 public:
-    cpp_entity(const cpp_entity&) = delete;
+    cpp_entity(const cpp_entity&)            = delete;
     cpp_entity& operator=(const cpp_entity&) = delete;
 
     virtual ~cpp_entity() noexcept = default;

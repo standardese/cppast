@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #ifndef CPPAST_CPP_TEMPLATE_PARAMETER_HPP_INCLUDED
@@ -83,8 +83,8 @@ private:
 
     cpp_entity_kind do_get_entity_kind() const noexcept override;
 
-    std::unique_ptr<cpp_type> default_type_;
-    cpp_template_keyword      keyword_;
+    std::unique_ptr<cpp_type>             default_type_;
+    cpp_template_keyword                  keyword_;
     type_safe::optional<cpp_token_string> concept_constraint_;
 };
 

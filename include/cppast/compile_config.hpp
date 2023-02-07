@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #ifndef CPPAST_COMPILE_CONFIG_HPP_INCLUDED
@@ -35,7 +35,7 @@ enum class cpp_standard
     c_2x,
 
     cpp_latest = cpp_standard::cpp_14, //< The latest supported C++ standard.
-    c_latest = cpp_standard::c_17, //< The latest supported C standard.
+    c_latest   = cpp_standard::c_17,   //< The latest supported C standard.
 };
 
 /// \returns A human readable string representing the option,
@@ -171,7 +171,7 @@ public:
 protected:
     compile_config(std::vector<std::string> def_flags) : flags_(std::move(def_flags)) {}
 
-    compile_config(const compile_config&) = default;
+    compile_config(const compile_config&)            = default;
     compile_config& operator=(const compile_config&) = default;
 
     ~compile_config() noexcept = default;

@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #include <cppast/cpp_template_parameter.hpp>
@@ -28,7 +28,8 @@ std::unique_ptr<cpp_template_type_parameter> cpp_template_type_parameter::build(
     type_safe::optional<cpp_token_string> concept_constraint)
 {
     std::unique_ptr<cpp_template_type_parameter> result(
-        new cpp_template_type_parameter(std::move(name), kw, variadic, std::move(default_type), std::move(concept_constraint)));
+        new cpp_template_type_parameter(std::move(name), kw, variadic, std::move(default_type),
+                                        std::move(concept_constraint)));
     idx.register_definition(std::move(id), type_safe::cref(*result));
     return result;
 }

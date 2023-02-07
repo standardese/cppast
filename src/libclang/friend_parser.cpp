@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #include <cppast/cpp_friend.hpp>
@@ -44,7 +44,7 @@ std::unique_ptr<cpp_entity> detail::parse_cpp_friend(const detail::parse_context
                 // as then the class name would be wrong
                 auto name = detail::get_cursor_name(referenced);
                 type      = cpp_user_defined_type::build(
-                         cpp_type_ref(detail::get_entity_id(referenced),
+                    cpp_type_ref(detail::get_entity_id(referenced),
                                       namespace_str + "::" + name.c_str()));
             }
             else

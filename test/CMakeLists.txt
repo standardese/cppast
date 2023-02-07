@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+# Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 # SPDX-License-Identifier: MIT
 # found in the top-level directory of this distribution.
 

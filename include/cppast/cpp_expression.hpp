@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #ifndef CPPAST_CPP_EXPRESSION_HPP_INCLUDED
@@ -24,7 +24,7 @@ enum class cpp_expression_kind
 class cpp_expression
 {
 public:
-    cpp_expression(const cpp_expression&) = delete;
+    cpp_expression(const cpp_expression&)            = delete;
     cpp_expression& operator=(const cpp_expression&) = delete;
 
     virtual ~cpp_expression() noexcept = default;

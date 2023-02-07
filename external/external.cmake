@@ -1,6 +1,5 @@
-# Copyright (C) 2017 Jonathan Müller <jonathanmueller.dev@gmail.com>
+# Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 # SPDX-License-Identifier: MIT
-# found in the top-level directory of this distribution.
 
 include(FetchContent)
 

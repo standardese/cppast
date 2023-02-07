@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #ifndef CPPAST_DIAGNOSTIC_LOGGER_HPP_INCLUDED
@@ -19,7 +19,7 @@ public:
     /// \effects Creates it either as verbose or not.
     explicit diagnostic_logger(bool is_verbose = false) noexcept : verbose_(is_verbose) {}
 
-    diagnostic_logger(const diagnostic_logger&) = delete;
+    diagnostic_logger(const diagnostic_logger&)            = delete;
     diagnostic_logger& operator=(const diagnostic_logger&) = delete;
     virtual ~diagnostic_logger() noexcept                  = default;
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #ifndef CPPAST_RAII_WRAPPER_HPP_INCLUDED
@@ -39,7 +39,7 @@ namespace detail
         ~raii_wrapper() noexcept
         {
             if (obj_)
-                static_cast<Deleter&> (*this)(obj_);
+                static_cast<Deleter&>(*this)(obj_);
         }
 
         raii_wrapper& operator=(raii_wrapper&& other) noexcept

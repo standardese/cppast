@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #include "test_parser.hpp"
@@ -324,7 +324,7 @@ foo<T>::foo(int) {}
                 REQUIRE(cont.noexcept_condition());
                 REQUIRE(equal_expressions(cont.noexcept_condition().value(),
                                                       *cpp_literal_expression::build(cpp_builtin_type::build(
-                                                                                         cpp_bool),
+                                                                             cpp_bool),
                                                                                      "true")));
                 REQUIRE(!cont.is_explicit());
                 REQUIRE(!cont.is_constexpr());

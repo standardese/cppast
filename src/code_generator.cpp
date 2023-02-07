@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #include <cppast/code_generator.hpp>
@@ -880,7 +880,7 @@ bool generate_template_type_parameter(code_generator&                    generat
     code_generator::output output(type_safe::ref(generator), type_safe::ref(param), cur_access);
     if (output)
     {
-        if(param.keyword() == cpp_template_keyword::concept_contraint)
+        if (param.keyword() == cpp_template_keyword::concept_contraint)
             detail::write_token_string(output, param.concept_constraint().value());
         else
             output << keyword(to_string(param.keyword()));
@@ -1040,19 +1040,19 @@ bool generate_class_template_specialization(code_generator&                     
     return static_cast<bool>(output);
 }
 
-bool generate_concept(code_generator&           generator,
-                      const cpp_concept&        con,
+bool generate_concept(code_generator& generator, const cpp_concept& con,
                       cpp_access_specifier_kind cur_access)
 {
     code_generator::output output(type_safe::ref(generator), type_safe::ref(con), cur_access);
-    if(output)
+    if (output)
     {
         output << keyword("template") << operator_ws << punctuation("<") << bracket_ws;
         detail::write_token_string(output, con.parameters());
         output << bracket_ws << punctuation(">") << newl;
-        output << keyword("concept") << operator_ws << identifier(con.name()) << operator_ws << punctuation("=") << operator_ws;
+        output << keyword("concept") << operator_ws << identifier(con.name()) << operator_ws
+               << punctuation("=") << operator_ws;
         detail::write_expression(output, con.constraint_expression());
-        output << operator_ws << punctuation(";") << newl; 
+        output << operator_ws << punctuation(";") << newl;
     }
     return static_cast<bool>(output);
 }

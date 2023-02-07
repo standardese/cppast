@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #include <iostream>
@@ -227,7 +227,6 @@ try
     else if (options.count("version"))
     {
         std::cout << "cppast version " << CPPAST_VERSION_STRING << "\n";
-        std::cout << "Copyright (C) Jonathan Müller 2017-2019 <jonathanmueller.dev@gmail.com>\n";
         std::cout << '\n';
         std::cout << "Using libclang version " << CPPAST_CLANG_VERSION_STRING << '\n';
     }

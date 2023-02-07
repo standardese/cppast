@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #include <cppast/cpp_template_parameter.hpp>
@@ -134,7 +134,7 @@ using d = void;
                 {
                     REQUIRE(alias.name() == "b");
                     REQUIRE(
-                                    equal_types(idx, param.type(),
+                        equal_types(idx, param.type(),
                                                 *cpp_pointer_type::build(cpp_builtin_type::build(cpp_char))));
                     REQUIRE(!param.is_variadic());
                     REQUIRE(param.default_value());
@@ -157,7 +157,7 @@ using d = void;
                     cpp_function_type::builder builder(cpp_builtin_type::build(cpp_void));
                     builder.is_variadic();
                     REQUIRE(
-                                    equal_types(idx, param.type(), *cpp_pointer_type::build(builder.finish())));
+                        equal_types(idx, param.type(), *cpp_pointer_type::build(builder.finish())));
 
                     REQUIRE(!param.is_variadic());
                     REQUIRE(!param.default_value());

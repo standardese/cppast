@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #include <cppast/cpp_type_alias.hpp>
@@ -358,7 +358,7 @@ typedef decltype(0) w;
         else if (alias.name() == "e")
         {
             auto type = add_cv(cpp_pointer_type::build(
-                                               add_cv(cpp_builtin_type::build(cpp_uint), cpp_cv_const)),
+                                   add_cv(cpp_builtin_type::build(cpp_uint), cpp_cv_const)),
                                            cpp_cv_volatile);
             CHECK(equal_types(idx, alias.underlying_type(), *type));
         }
@@ -388,7 +388,7 @@ typedef decltype(0) w;
         else if (alias.name() == "j")
         {
             auto type = cpp_pointer_type::build(
-                            cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "e")));
+                cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "e")));
             CHECK(equal_types(idx, alias.underlying_type(), *type));
         }
         else if (alias.name() == "k")
@@ -428,9 +428,9 @@ typedef decltype(0) w;
         else if (alias.name() == "o")
         {
             cpp_function_type::builder builder(
-                            cpp_pointer_type::build(cpp_builtin_type::build(cpp_char)));
+                cpp_pointer_type::build(cpp_builtin_type::build(cpp_char)));
             builder.add_parameter(
-                            cpp_reference_type::build(add_cv(cpp_builtin_type::build(cpp_int), cpp_cv_const),
+                cpp_reference_type::build(add_cv(cpp_builtin_type::build(cpp_int), cpp_cv_const),
                                                       cpp_ref_lvalue));
             builder.is_variadic();
             auto type = cpp_reference_type::build(builder.finish(), cpp_ref_lvalue);
@@ -440,10 +440,10 @@ typedef decltype(0) w;
         else if (alias.name() == "p")
         {
             cpp_function_type::builder builder(
-                            cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "n")));
+                cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "n")));
             builder.add_parameter(cpp_builtin_type::build(cpp_int));
             builder.add_parameter(
-                            cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "o")));
+                cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "o")));
             auto type = cpp_pointer_type::build(builder.finish());
 
             CHECK(equal_types(idx, alias.underlying_type(), *type));
@@ -451,7 +451,7 @@ typedef decltype(0) w;
         else if (alias.name() == "q")
         {
             cpp_member_function_type::builder builder(cpp_user_defined_type::build(
-                                                                      cpp_type_ref(cpp_entity_id(""), "foo")),
+                                                          cpp_type_ref(cpp_entity_id(""), "foo")),
                                                                   cpp_builtin_type::build(cpp_void));
             builder.add_parameter(cpp_builtin_type::build(cpp_int));
             auto type = cpp_pointer_type::build(builder.finish());
@@ -461,7 +461,7 @@ typedef decltype(0) w;
         else if (alias.name() == "r")
         {
             auto obj = cpp_reference_type::build(add_cv(cpp_user_defined_type::build(
-                                                                        cpp_type_ref(cpp_entity_id(""), "foo")),
+                                                            cpp_type_ref(cpp_entity_id(""), "foo")),
                                                                     cpp_cv_const),
                                                              cpp_ref_lvalue);
 
@@ -478,7 +478,7 @@ typedef decltype(0) w;
             // in old libclang version, the member type isn't exposed for some reason
             auto pointee
                 = cpp_member_object_type::build(cpp_user_defined_type::build(
-                                                                cpp_type_ref(cpp_entity_id(""), "foo")),
+                                                    cpp_type_ref(cpp_entity_id(""), "foo")),
                                                             cpp_unexposed_type::build("int"));
             auto type         = cpp_pointer_type::build(std::move(pointee));
             auto is_unexposed = equal_types(idx, alias.underlying_type(), *type);
@@ -486,7 +486,7 @@ typedef decltype(0) w;
             if (!is_unexposed)
             {
                 pointee = cpp_member_object_type::build(cpp_user_defined_type::build(
-                                                                        cpp_type_ref(cpp_entity_id(""), "foo")),
+                                                            cpp_type_ref(cpp_entity_id(""), "foo")),
                                                                     cpp_builtin_type::build(cpp_int));
                 type    = cpp_pointer_type::build(std::move(pointee));
                 auto is_builtin = equal_types(idx, alias.underlying_type(), *type);
@@ -503,7 +503,7 @@ typedef decltype(0) w;
         else if (alias.name() == "u")
         {
             auto type = cpp_pointer_type::build(
-                            add_cv(cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "u_")),
+                add_cv(cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), "u_")),
                                    cpp_cv_const));
             CHECK(equal_types(idx, alias.underlying_type(), *type));
             return false;
@@ -517,7 +517,7 @@ typedef decltype(0) w;
         else if (alias.name() == "w")
         {
             auto type = cpp_decltype_type::build(
-                            cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
+                cpp_unexposed_expression::build(cpp_builtin_type::build(cpp_int),
                                                             cpp_token_string::tokenize("0")));
             CHECK(equal_types(idx, alias.underlying_type(), *type));
         }

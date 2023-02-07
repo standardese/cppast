@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #ifndef CPPAST_CPP_TYPE_HPP_INCLUDED
@@ -44,7 +44,7 @@ enum class cpp_type_kind
 class cpp_type : detail::intrusive_list_node<cpp_type>
 {
 public:
-    cpp_type(const cpp_type&) = delete;
+    cpp_type(const cpp_type&)            = delete;
     cpp_type& operator=(const cpp_type&) = delete;
 
     virtual ~cpp_type() noexcept = default;

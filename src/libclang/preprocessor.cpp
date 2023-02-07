@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #include "preprocessor.hpp"
@@ -179,7 +179,7 @@ std::string get_macro_command(const libclang_compile_config& c, const char* full
     // -E: print preprocessor output
     // -dM: print macro definitions instead of preprocessed file
     std::string language = c.use_c() ? "-xc" : "-xc++";
-    auto flags = language + " -I. -E -dM";
+    auto        flags    = language + " -I. -E -dM";
     flags += diagnostics_flags();
 
     std::string cmd(detail::libclang_compile_config_access::clang_binary(c) + " " + std::move(flags)
@@ -203,7 +203,7 @@ std::string get_preprocess_command(const libclang_compile_config& c, const char*
     // -E: print preprocessor output
     // -dD: keep macros
     std::string language = c.use_c() ? "-xc" : "-xc++";
-    auto flags = language + " -E -dD";
+    auto        flags    = language + " -E -dD";
 
     // -CC: keep comments, even in macro
     // -C: keep comments, but not in macro

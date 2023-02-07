@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2022 Jonathan Müller and cppast contributors
+// Copyright (C) 2017-2023 Jonathan Müller and cppast contributors
 // SPDX-License-Identifier: MIT
 
 #include <cppast/cpp_enum.hpp>
@@ -98,8 +98,8 @@ enum ns::c : int {};
                     auto& expr = val.value().value();
                     REQUIRE(expr.kind() == cpp_expression_kind::unexposed_t);
                     REQUIRE(
-                                    static_cast<const cpp_unexposed_expression&>(expr).expression().as_string()
-                                    == "a_a+2");
+                        static_cast<const cpp_unexposed_expression&>(expr).expression().as_string()
+                        == "a_a+2");
                     if (!equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_int)))
                         REQUIRE(equal_types(idx, expr.type(), *cpp_builtin_type::build(cpp_uint)));
                 }
