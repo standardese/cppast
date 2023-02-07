@@ -94,7 +94,18 @@ namespace detail
     std::unique_ptr<cpp_entity> try_parse_cpp_language_linkage(const parse_context& context,
                                                                const CXCursor&      cur);
 
-    // unexposed
+    // If the version is < 62, CXCursor_ConceptDecl does not exist.
+    // If the version is > 62, CXCursor_ConceptDecl does exist.
+    // If the version == 62, it may or may not exist. :(
+    // As such, manually define it to the corresponding number.
+    constexpr auto libclang_definitely_has_concept_support = CINDEX_VERSION_MINOR > 62;
+#if CINDEX_VERSION_MINOR > 62
+    constexpr auto CXCursor_ConceptDecl = ::CXCursor_ConceptDecl;
+#else
+    constexpr auto CXCursor_ConceptDecl = CXCursorKind(604);
+#endif
+
+    // unexposed, ConceptDecl
     std::unique_ptr<cpp_entity> try_parse_cpp_concept(const parse_context& context,
                                                       const CXCursor&      cur);
 

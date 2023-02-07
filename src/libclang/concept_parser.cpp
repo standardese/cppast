@@ -13,12 +13,10 @@ using namespace cppast;
 std::unique_ptr<cpp_entity> detail::try_parse_cpp_concept(const detail::parse_context& context,
                                                           const CXCursor&              cur)
 {
-#if CINDEX_VERSION_MINOR >= 62
-    if (cur.kind != CXCursor_ConceptDecl)
+    DEBUG_ASSERT(cur.kind == CXCursor_UnexposedDecl || cur.kind == CXCursor_ConceptDecl,
+                 detail::assert_handler{});
+    if (libclang_definitely_has_concept_support && cur.kind != CXCursor_ConceptDecl)
         return nullptr;
-#else
-    DEBUG_ASSERT(cur.kind == CXCursor_UnexposedDecl, detail::assert_handler{});
-#endif
 
     detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
     detail::cxtoken_stream stream(tokenizer, cur);
