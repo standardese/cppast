@@ -117,7 +117,10 @@ bool is_absolute(const std::string& file)
 
 std::string get_full_path(const detail::cxstring& dir, const std::string& file)
 {
-    if (is_absolute(file))
+    if (file.empty())
+        // empty file refers to directory
+        return dir.std_str();
+    else if (is_absolute(file))
         // absolute file
         return file;
     else if (dir[dir.length() - 1] != '/' && dir[dir.length() - 1] != '\\')
@@ -209,7 +212,6 @@ libclang_compile_config::libclang_compile_config(const libclang_compilation_data
                                                  const std::string&                   file)
 : libclang_compile_config(CPPAST_CLANG_BINARY, database, file)
 {}
-
 
 cppast::libclang_compile_config::libclang_compile_config(
     std::string clang_binary, const libclang_compilation_database& database,
@@ -485,10 +487,13 @@ void libclang_compile_config::do_set_flags(cpp_standard standard, compile_flags 
     }
 
     // Add language flag for C or C++
-    if (is_c_standard(standard)) {
+    if (is_c_standard(standard))
+    {
         add_flag("-xc");
         use_c_ = true;
-    } else {
+    }
+    else
+    {
         add_flag("-xc++");
         use_c_ = false;
     }
