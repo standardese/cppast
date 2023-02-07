@@ -198,6 +198,11 @@ try
     case CXCursor_ClassTemplatePartialSpecialization:
         return parse_cpp_class_template_specialization(context, cur);
 
+#if CINDEX_VERSION_MINOR >= 62
+    case CXCursor_ConceptDecl:
+        return try_parse_cpp_concept(context, cur);
+#endif
+
     case CXCursor_StaticAssert:
         return parse_cpp_static_assert(context, cur);
 

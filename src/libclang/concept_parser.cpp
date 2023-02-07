@@ -13,7 +13,12 @@ using namespace cppast;
 std::unique_ptr<cpp_entity> detail::try_parse_cpp_concept(const detail::parse_context& context,
                                                           const CXCursor&              cur)
 {
+#if CINDEX_VERSION_MINOR >= 62
+    if (cur.kind != CXCursor_ConceptDecl)
+        return nullptr;
+#else
     DEBUG_ASSERT(cur.kind == CXCursor_UnexposedDecl, detail::assert_handler{});
+#endif
 
     detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
     detail::cxtoken_stream stream(tokenizer, cur);
@@ -34,28 +39,15 @@ std::unique_ptr<cpp_entity> detail::try_parse_cpp_concept(const detail::parse_co
         return nullptr;
 
     const auto& identifier_token = stream.get();
-    if (identifier_token.kind() != CXTokenKind::CXToken_Identifier)
-    {
-        return nullptr;
-    }
+    DEBUG_ASSERT(identifier_token.kind() == CXTokenKind::CXToken_Identifier,
+                 detail::assert_handler{});
+
+    detail::skip(stream, "=");
+    auto expr = parse_raw_expression(context, stream, stream.end() - 1,
+                                     cpp_builtin_type::build(cpp_builtin_type_kind::cpp_bool));
 
     cpp_concept::builder builder(identifier_token.value().std_str());
-
-    if (!detail::skip_if(stream, "="))
-    {
-        return nullptr;
-    }
-
-    if (*(stream.end() - 1) != ";")
-    {
-        return nullptr;
-    }
-
-    builder.set_expression(
-        parse_raw_expression(context, stream, stream.end() - 1,
-                             cpp_builtin_type::build(cpp_builtin_type_kind::cpp_bool)));
-
+    builder.set_expression(std::move(expr));
     builder.set_parameters(std::move(params));
-
     return builder.finish(*context.idx, detail::get_entity_id(cur));
 }
