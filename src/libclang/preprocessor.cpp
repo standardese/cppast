@@ -1126,8 +1126,17 @@ detail::preprocessor_output detail::preprocess(const libclang_compile_config& co
         }
         else if (in_string == false && starts_with(p, "'"))
         {
+            if (in_char == false && p.ptr() != preprocessed.file.c_str()
+                && std::isdigit(p.ptr()[-1]))
+            {
+                // It's a digit separator, not a char literal.
+            }
+            else
+            {
+                in_char.toggle();
+            }
+
             p.bump();
-            in_char.toggle();
         }
         else if (in_string == true || in_char == true)
             p.bump();
