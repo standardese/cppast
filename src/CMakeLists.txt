@@ -113,15 +113,18 @@ target_compile_definitions(cppast PUBLIC
                                 CPPAST_VERSION_MINOR="${cppast_VERSION_MINOR}"
                                 CPPAST_VERSION_MAJOR="${cppast_VERSION_MAJOR}"
                                 CPPAST_VERSION_STRING="${cppast_VERSION}")
-target_compile_options(cppast PRIVATE
-                           # clang/GCC warnings
-                           $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
-                           -pedantic-errors -Werror -Wall -Wextra -Wconversion -Wsign-conversion>
-                           # disable noexcept type warning on GCC
-                           $<$<CXX_COMPILER_ID:GNU>: -Wno-noexcept-type>
-                           # MSVC warnings
-                           $<$<CXX_COMPILER_ID:MSVC>:
-                           /W3>)
+
+if(${is_top_level_project})
+    target_compile_options(cppast PRIVATE
+                               # clang/GCC warnings
+                               $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                               -pedantic-errors -Werror -Wall -Wextra -Wconversion -Wsign-conversion>
+                               # disable noexcept type warning on GCC
+                               $<$<CXX_COMPILER_ID:GNU>: -Wno-noexcept-type>
+                               # MSVC warnings
+                               $<$<CXX_COMPILER_ID:MSVC>:
+                               /W3>)
+endif()
 
 install(TARGETS cppast)
 install(DIRECTORY ../include/ DESTINATION include)
