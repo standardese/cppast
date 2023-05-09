@@ -40,6 +40,9 @@ enum class cpp_type_kind
     unexposed_t,
 };
 
+/// \returns A human readable string describing the type kind.
+const char* to_string(cpp_type_kind kind) noexcept;
+
 /// Base class for all C++ types.
 class cpp_type : detail::intrusive_list_node<cpp_type>
 {

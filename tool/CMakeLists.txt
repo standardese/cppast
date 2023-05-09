@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 # found in the top-level directory of this distribution.
 
-add_executable(cppast_tool main.cpp)
-target_link_libraries(cppast_tool PUBLIC cppast cxxopts)
+add_executable(cppast_tool main.cpp cppast2json.cpp)
+target_link_libraries(cppast_tool PUBLIC cppast cxxopts nlohmann_json)
 set_target_properties(cppast_tool PROPERTIES CXX_STANDARD 11 OUTPUT_NAME cppast)
 
 install(TARGETS cppast_tool)

@@ -36,6 +36,18 @@ if(build_tool)
 endif()
 
 #
+# install nlohmann json, if needed
+#
+if(build_tool)
+    find_package(nlohmann_json QUIET)
+    if(NOT nlohmann_json_FOUND)
+        message(STATUS "Fetching nlohmann_json")
+        FetchContent_Declare(nlohmann_json URL https://github.com/nlohmann/json/releases/download/v3.10.1/json.tar.xz)
+        FetchContent_MakeAvailable(nlohmann_json)
+    endif()
+endif()
+
+#
 # install libclang
 #
 

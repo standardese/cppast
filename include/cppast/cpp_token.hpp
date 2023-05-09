@@ -25,6 +25,9 @@ enum class cpp_token_kind
     punctuation     //< Any other punctuation.
 };
 
+/// \returns A human readable string describing the token kind.
+const char* to_string(cpp_token_kind kind) noexcept;
+
 /// A C++ token.
 struct cpp_token
 {

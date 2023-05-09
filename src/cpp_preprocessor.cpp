@@ -7,6 +7,17 @@
 
 using namespace cppast;
 
+const char* cppast::to_string(cpp_include_kind kind) noexcept
+{
+    switch (kind)
+    {
+    case cpp_include_kind::system:
+        return "system";
+    case cpp_include_kind::local:
+        return "local";
+    }
+}
+
 cpp_entity_kind cpp_macro_parameter::kind() noexcept
 {
     return cpp_entity_kind::macro_parameter_t;

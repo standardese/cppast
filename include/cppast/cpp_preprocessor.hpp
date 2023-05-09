@@ -150,6 +150,9 @@ enum class cpp_include_kind
     local,  //< An `#include "..."`.
 };
 
+/// \returns A human readable string describing the include kind.
+const char* to_string(cpp_include_kind kind) noexcept;
+
 /// A [cppast::cpp_entity]() modelling an `#include`.
 class cpp_include_directive final : public cpp_entity
 {

@@ -12,6 +12,27 @@
 
 using namespace cppast;
 
+const char* cppast::to_string(cpp_token_kind kind) noexcept
+{
+    switch (kind)
+    {
+    case cpp_token_kind::identifier:
+        return "identifier";
+    case cpp_token_kind::keyword:
+        return "keyword";
+    case cpp_token_kind::int_literal:
+        return "int_literal";
+    case cpp_token_kind::float_literal:
+        return "float_literal";
+    case cpp_token_kind::char_literal:
+        return "char_literal";
+    case cpp_token_kind::string_literal:
+        return "string_literal";
+    case cpp_token_kind::punctuation:
+        return "punctuation";
+    }
+}
+
 void cpp_token_string::builder::unmunch()
 {
     DEBUG_ASSERT(!tokens_.empty() && tokens_.back().spelling == ">>", detail::assert_handler{});
