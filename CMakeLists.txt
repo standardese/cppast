@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # found in the top-level directory of this distribution.
 
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 4.0)
 project(cppast VERSION 0.1.0)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)

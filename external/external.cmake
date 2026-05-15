@@ -31,7 +31,7 @@ if(build_tool)
     set(CXXOPTS_BUILD_TESTS OFF CACHE BOOL "")
 
     message(STATUS "Fetching cxxopts")
-    FetchContent_Declare(cxxopts URL https://github.com/jarro2783/cxxopts/archive/v2.2.1.zip)
+    FetchContent_Declare(cxxopts GIT_REPOSITORY https://github.com/jarro2783/cxxopts GIT_TAG origin/master)
     FetchContent_MakeAvailable(cxxopts)
 endif()
 

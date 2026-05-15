@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <fstream>
 
 #include "libclang/preprocessor.hpp"
@@ -8,7 +8,7 @@
 
 using namespace cppast;
 
-TEST_CASE("preprocessor escaped character", "[!hide][clang4]")
+TEST_CASE("preprocessor escaped character", "[.][clang4]")
 {
     write_file("ppec.hpp", R"(
 )");

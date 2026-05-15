@@ -46,7 +46,7 @@ struct cpp_entity_id : type_safe::strong_typedef<cpp_entity_id, detail::hash_typ
 inline namespace literals
 {
     /// \returns A new [cppast::cpp_entity_id]() created from the given string.
-    inline cpp_entity_id operator"" _id(const char* str, std::size_t)
+    inline cpp_entity_id operator""_id(const char* str, std::size_t)
     {
         return cpp_entity_id(str);
     }

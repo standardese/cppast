@@ -6,7 +6,7 @@
 
 #include <fstream>
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include <cppast/code_generator.hpp>
 #include <cppast/cpp_class.hpp>

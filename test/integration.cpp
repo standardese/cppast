@@ -7,7 +7,7 @@
 
 using namespace cppast;
 
-TEST_CASE("stdlib", "[!hide][integration]")
+TEST_CASE("stdlib", "[.][integration]")
 {
     auto code = R"(
 // list of headers from: http://en.cppreference.com/w/cpp/header
@@ -113,7 +113,7 @@ TEST_CASE("stdlib", "[!hide][integration]")
     REQUIRE(!parser.error());
 }
 
-TEST_CASE("cppast", "[!hide][integration]")
+TEST_CASE("cppast", "[integration]")
 {
     const char* files[] = {
 #include <cppast_files.hpp>

@@ -3,7 +3,7 @@
 
 #include <cppast/cpp_token.hpp>
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
 #include <initializer_list>
