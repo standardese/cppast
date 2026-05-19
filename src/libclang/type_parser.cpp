@@ -683,8 +683,37 @@ std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context, 
             }
             else
             {
-                if (detail::cxstring(clang_getCursorSpelling(decl)).empty())
-                    spelling = ""; // anonymous type
+                auto decl_kind = clang_getCursorKind(decl);
+                if (clang_Cursor_isAnonymous(decl) != 0u
+                    || detail::cxstring(clang_getCursorSpelling(decl)).empty())
+                {
+                    // libclang 16+ synthesizes a spelling like
+                    // "(unnamed struct at ...)" for anonymous tags, so the
+                    // empty() check no longer suffices.
+                    spelling = "";
+                }
+                else if (decl_kind != CXCursor_TypedefDecl
+                         && decl_kind != CXCursor_TypeAliasDecl)
+                {
+                    // libclang 16+ may return only the source-level spelling
+                    // for elaborated record/enum references (e.g. "base"
+                    // when "using namespace ns" makes ns::base reachable);
+                    // use the canonical type for the fully-qualified name.
+                    // Restricted to non-typedef decls so typedef aliases are
+                    // preserved instead of resolved to their target.
+                    // Strip cv qualifiers and the struct/class/union prefix
+                    // that the canonical spelling can re-introduce (they
+                    // were already extracted from the original spelling by
+                    // make_leave_type).
+                    spelling = detail::cxstring(
+                                   clang_getTypeSpelling(clang_getCanonicalType(type)))
+                                   .std_str();
+                    prefix_cv(spelling);
+                    suffix_cv(spelling);
+                    remove_prefix(spelling, "struct", true);
+                    remove_prefix(spelling, "class", true);
+                    remove_prefix(spelling, "union", true);
+                }
                 return cpp_user_defined_type::build(
                     cpp_type_ref(detail::get_entity_id(decl), std::move(spelling)));
             }
