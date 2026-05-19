@@ -372,6 +372,25 @@ std::unique_ptr<cpp_type> make_ref_qualified(std::unique_ptr<cpp_type> type, cpp
     return cpp_reference_type::build(std::move(type), ref);
 }
 
+bool is_in_template_context(CXCursor cur)
+{
+    while (!clang_Cursor_isNull(cur))
+    {
+        switch (clang_getCursorKind(cur))
+        {
+        case CXCursor_ClassTemplate:
+        case CXCursor_ClassTemplatePartialSpecialization:
+        case CXCursor_FunctionTemplate:
+        case CXCursor_TypeAliasTemplateDecl:
+            return true;
+        default:
+            break;
+        }
+        cur = clang_getCursorSemanticParent(cur);
+    }
+    return false;
+}
+
 std::unique_ptr<cpp_type> parse_member_pointee_type(const detail::parse_context& context,
                                                     const CXCursor& cur, const CXType& type)
 {
@@ -744,6 +763,11 @@ std::unique_ptr<cpp_type> parse_type_impl(const detail::parse_context& context, 
         return try_parse_function_type(context, cur, type);
 
     case CXType_MemberPointer:
+        // libclang 21+ crashes inside clang_Type_getClassType when the class
+        // is dependent (e.g. 'void (T::*)()' in a function template); fall
+        // back to an unexposed type when we cannot safely inspect the class.
+        if (is_in_template_context(cur))
+            return cpp_unexposed_type::build(get_type_spelling(cur, type));
         return cpp_pointer_type::build(parse_member_pointee_type(context, cur, type));
 
     case CXType_Auto:
