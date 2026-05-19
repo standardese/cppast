@@ -44,10 +44,8 @@ For development, we recommend to use [pixi](https://pixi.sh). Run `pixi run buil
 
 The library can also be used as CMake subdirectory, download it and call `add_subdirectory(path/to/cppast)`, then link to the `cppast` target and enable C++11 or higher.
 
-The parser needs `libclang` and the `clang++` binary, at least version 4.0.0.
+The parser needs `libclang` and the `clang++` binary, at least version 15.
 The `clang++` binary will be found in `PATH` and in the same directory as the program that is being executed.
-
-*Note: The project will drop support for older LLVM versions very soon; this minimizes the workaround code when the `libclang` API catches up.*
 
 The CMake code requires `llvm-config`, you may need to install `llvm` and not just `clang` to get it (e.g. on ArchLinux).
 If `llvm-config` is in your path and the version is compatible, it should just work out of the box.
