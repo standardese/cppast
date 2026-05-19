@@ -5,12 +5,71 @@ preview = ["pixi-build"]
 
 [dependencies]
 boost-cpp = "*"
-# We have not adapted our code and tests to newer versions of clang yet.
-clangdev = "<16"
+clangdev = "*"
 cmake = "*"
 coreutils = "*"
 cxx-compiler = "*"
-make = "*"
+
+[environments]
+llvm-15 = ["llvm-15"]
+llvm-16 = ["llvm-16"]
+llvm-17 = ["llvm-17"]
+llvm-18 = ["llvm-18"]
+llvm-19 = ["llvm-19"]
+llvm-20 = ["llvm-20"]
+llvm-21 = ["llvm-21"]
+llvm-22 = ["llvm-22"]
+
+[feature.llvm-15]
+dependencies = {
+  clangdev = "15.*"
+}
+platforms = ["linux-64", "osx-64", "osx-arm64"]
+
+[feature.llvm-16]
+dependencies = {
+  clangdev = "16.*"
+}
+platforms = ["linux-64", "osx-64", "osx-arm64"]
+
+[feature.llvm-17]
+dependencies = {
+  clangdev = "17.*"
+}
+platforms = ["linux-64", "osx-64", "osx-arm64"]
+
+[feature.llvm-18]
+dependencies = {
+  clangdev = "18.*"
+}
+platforms = ["linux-64", "osx-64", "osx-arm64"]
+
+[feature.llvm-19]
+dependencies = {
+  clangdev = "19.*"
+}
+platforms = ["linux-64", "osx-64", "osx-arm64"]
+
+[feature.llvm-20]
+dependencies = {
+  clangdev = "20.*"
+}
+# Strangely, LLVM 20 on Silicon refuses to solve.
+platforms = ["linux-64", "osx-64"]
+
+[feature.llvm-21]
+dependencies = {
+  clangdev = "21.*"
+}
+# Strangely, LLVM 21 on Silicon refuses to solve.
+platforms = ["linux-64", "osx-64"]
+
+[feature.llvm-22]
+dependencies = {
+  clangdev = "22.*"
+}
+# Strangely, LLVM 22 on Silicon refuses to solve.
+platforms = ["linux-64", "osx-64"]
 
 [tasks.configure]
 cmd = ["cmake", "-Bbuild", "-GNinja"]
