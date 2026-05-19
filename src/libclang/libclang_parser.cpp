@@ -123,7 +123,7 @@ std::string get_full_path(const detail::cxstring& dir, const std::string& file)
     else if (is_absolute(file))
         // absolute file
         return file;
-    else if (dir[dir.length() - 1] != '/' && dir[dir.length() - 1] != '\\')
+    else if (dir.length() && dir[dir.length() - 1] != '/' && dir[dir.length() - 1] != '\\')
         // relative needing separator
         return dir.std_str() + '/' + file;
     else
