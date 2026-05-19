@@ -13,8 +13,10 @@ using namespace cppast;
 std::unique_ptr<cpp_entity> detail::try_parse_cpp_language_linkage(const parse_context& context,
                                                                    const CXCursor&      cur)
 {
-    DEBUG_ASSERT(cur.kind == CXCursor_UnexposedDecl,
-                 detail::assert_handler{}); // not exposed currently
+    // libclang <16 reports 'extern "C"' as CXCursor_UnexposedDecl; libclang 16+
+    // gives it its own kind, CXCursor_LinkageSpec. Accept both.
+    DEBUG_ASSERT(cur.kind == CXCursor_UnexposedDecl || cur.kind == CXCursor_LinkageSpec,
+                 detail::assert_handler{});
 
     detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
     detail::cxtoken_stream stream(tokenizer, cur);

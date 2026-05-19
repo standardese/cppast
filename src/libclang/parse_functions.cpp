@@ -129,6 +129,13 @@ try
             return entity;
         break;
 
+    case CXCursor_LinkageSpec:
+        // libclang 16+ exposes 'extern "C"' (and other language linkage
+        // blocks) as their own cursor kind instead of CXCursor_UnexposedDecl.
+        if (auto entity = try_parse_cpp_language_linkage(context, cur))
+            return entity;
+        break;
+
     case CXCursor_MacroDefinition:
     case CXCursor_InclusionDirective:
         DEBUG_UNREACHABLE(detail::assert_handler{}, "handle preprocessor in parser callback");
