@@ -40,7 +40,9 @@ TODO, refer to documentation comments in header file.
 
 ### Installation
 
-The library can be used as CMake subdirectory, download it and call `add_subdirectory(path/to/cppast)`, then link to the `cppast` target and enable C++11 or higher.
+For development, we recommend to use [pixi](https://pixi.sh). Run `pixi run build` to compile the package, `pixi run test` to run its test suite, `pixi run cppast` to run the cppast tool.
+
+The library can also be used as CMake subdirectory, download it and call `add_subdirectory(path/to/cppast)`, then link to the `cppast` target and enable C++11 or higher.
 
 The parser needs `libclang` and the `clang++` binary, at least version 4.0.0.
 The `clang++` binary will be found in `PATH` and in the same directory as the program that is being executed.

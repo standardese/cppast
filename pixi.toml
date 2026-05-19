@@ -1,0 +1,32 @@
+[workspace]
+channels = ["conda-forge"]
+platforms = ["osx-64", "osx-arm64", "linux-64"]
+preview = ["pixi-build"]
+
+[dependencies]
+boost-cpp = "*"
+# We have not adapted our code and tests to newer versions of clang yet.
+clangdev = "<16"
+cmake = "*"
+coreutils = "*"
+cxx-compiler = "*"
+make = "*"
+
+[tasks.configure]
+cmd = ["cmake", "-Bbuild", "-GNinja"]
+inputs = ["CMakeLists.txt", "**/CMakeLists.txt"]
+outputs = ["build/CMakeFiles/"]
+
+[tasks.build]
+depends-on = ["configure"]
+cwd = "build"
+cmd = ["cmake", "--build", "."]
+
+[tasks.test]
+depends-on = ["build"]
+cwd = "build"
+cmd = ["ctest", "--output-on-failure"]
+
+[tasks.cppast]
+depends-on = ["build"]
+cmd = ["./build/tool/cppast"]
