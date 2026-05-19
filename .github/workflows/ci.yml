@@ -19,19 +19,21 @@ jobs:
         - { environment: "llvm-20", on: "ubuntu-24.04" }
         - { environment: "llvm-21", on: "ubuntu-24.04" }
         - { environment: "llvm-22", on: "ubuntu-24.04" }
-        - { environment: "llvm-15", on: "macos-15" }
-        - { environment: "llvm-16", on: "macos-15" }
-        - { environment: "llvm-17", on: "macos-15" }
-        - { environment: "llvm-18", on: "macos-15" }
+        # The Xcode 16.x SDK is not compatible with such an old clang
+        # - { environment: "llvm-15", on: "macos-15" }
+        # - { environment: "llvm-16", on: "macos-15" }
+        # - { environment: "llvm-17", on: "macos-15" }
+        # - { environment: "llvm-18", on: "macos-15" }
         - { environment: "llvm-19", on: "macos-15" }
         # conda cannot solve for clangdev=20,21,22 on Silicon
         # - { environment: "llvm-20", on: "macos-15" }
         # - { environment: "llvm-21", on: "macos-15" }
         # - { environment: "llvm-22", on: "macos-15" }
-        - { environment: "llvm-15", on: "macos-15-intel" }
-        - { environment: "llvm-16", on: "macos-15-intel" }
-        - { environment: "llvm-17", on: "macos-15-intel" }
-        - { environment: "llvm-18", on: "macos-15-intel" }
+        # The Xcode 16.x SDK is not compatible with such an old clang
+        # - { environment: "llvm-15", on: "macos-15-intel" }
+        # - { environment: "llvm-16", on: "macos-15-intel" }
+        # - { environment: "llvm-17", on: "macos-15-intel" }
+        # - { environment: "llvm-18", on: "macos-15-intel" }
         - { environment: "llvm-19", on: "macos-15-intel" }
         - { environment: "llvm-20", on: "macos-15-intel" }
         - { environment: "llvm-21", on: "macos-15-intel" }
