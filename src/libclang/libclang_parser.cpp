@@ -3,6 +3,7 @@
 
 #include <cppast/libclang_parser.hpp>
 
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <vector>
@@ -286,6 +287,43 @@ bool is_valid_binary(const std::string& binary)
 
 void add_default_include_dirs(libclang_compile_config& config)
 {
+#if defined(__APPLE__)
+    // On macOS, adding the libc++/SDK paths as -I alongside libclang's own
+    // sysroot-based system includes causes the libc++ headers to be classified
+    // as user headers, which breaks `#include_next <stdlib.h>` (and friends)
+    // when they try to chain to the Apple C library headers. Just forward
+    // -isysroot and let libclang's embedded driver populate the search list.
+    if (auto sdkroot = std::getenv("SDKROOT"))
+    {
+        config.add_flag("-isysroot");
+        config.add_flag(sdkroot);
+
+        // Ask the clang binary for its resource dir (where stdarg.h, stddef.h
+        // etc. live). Compile-command driven configs otherwise lose access to
+        // these builtins under libclang's standalone parse mode.
+        std::string  resource_dir;
+        tpl::Process process(detail::libclang_compile_config_access::clang_binary(config)
+                                 + " -print-resource-dir",
+                             "",
+                             [&](const char* str, std::size_t n) {
+                                 resource_dir.append(str, n);
+                             },
+                             [](const char*, std::size_t) {});
+        if (process.get_exit_status() == 0)
+        {
+            while (!resource_dir.empty()
+                   && (resource_dir.back() == '\n' || resource_dir.back() == '\r'))
+                resource_dir.pop_back();
+            if (!resource_dir.empty())
+            {
+                config.add_flag("-resource-dir");
+                config.add_flag(std::move(resource_dir));
+            }
+        }
+        return;
+    }
+#endif
+
     std::string  verbose_output;
     std::string  language = config.use_c() ? "-xc" : "-xc++";
     tpl::Process process(
