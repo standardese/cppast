@@ -9,6 +9,7 @@ clangdev = "*"
 cmake = "*"
 coreutils = "*"
 cxx-compiler = "*"
+ninja = "*"
 
 [environments]
 llvm-15 = ["llvm-15"]
