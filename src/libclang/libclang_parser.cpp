@@ -234,6 +234,21 @@ cppast::libclang_compile_config::libclang_compile_config(
         std::string exe(clang_getCString(clang_CompileCommand_getArg(cmd, 0)));
         use_c_ = (exe.find("++", 0) == std::string::npos);
 
+        if (use_c_)
+        {
+            // Try to determine the language from the compiler arguments (e.g. -std=c++11, -x c++)
+            auto argSize = clang_CompileCommands_getSize(cmd);
+            for (auto j = 0u; j <= argSize; ++j)
+            {
+                std::string arg(clang_getCString(clang_CompileCommand_getArg(cmd, j)));
+                if (arg.find("c++", 0) != std::string::npos)
+                {
+                    use_c_ = false;
+                    break;
+                }
+            }
+        }
+
         auto dir = detail::cxstring(clang_CompileCommand_getDirectory(cmd));
         parse_flags(cmd, [&](std::string flag, std::string args) {
             if (flag == "-I")
