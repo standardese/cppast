@@ -9,7 +9,7 @@ include(FetchContent)
 find_package(type_safe QUIET)
 if(NOT type_safe_FOUND)
     message(STATUS "Fetching type_safe")
-    FetchContent_Declare(type_safe GIT_REPOSITORY https://github.com/foonathan/type_safe GIT_TAG origin/main)
+    FetchContent_Declare(type_safe GIT_REPOSITORY https://github.com/foonathan/type_safe GIT_TAG 292e8c127037e33d92f8f52dab0f1184993942d0)  # main as of 2026-05-20
     FetchContent_MakeAvailable(type_safe)
 endif()
 
@@ -31,7 +31,7 @@ if(build_tool)
     set(CXXOPTS_BUILD_TESTS OFF CACHE BOOL "")
 
     message(STATUS "Fetching cxxopts")
-    FetchContent_Declare(cxxopts GIT_REPOSITORY https://github.com/jarro2783/cxxopts GIT_TAG origin/master)
+    FetchContent_Declare(cxxopts GIT_REPOSITORY https://github.com/jarro2783/cxxopts GIT_TAG a3a21b31ef2894b5a802f041f40d51059469a259)  # master as of 2026-05-20
     FetchContent_MakeAvailable(cxxopts)
 endif()
 

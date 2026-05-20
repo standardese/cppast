@@ -5,7 +5,7 @@
 # Fetch catch.
 message(STATUS "Fetching catch")
 include(FetchContent)
-FetchContent_Declare(catch GIT_REPOSITORY https://github.com/catchorg/Catch2 GIT_TAG devel)
+FetchContent_Declare(catch GIT_REPOSITORY https://github.com/catchorg/Catch2 GIT_TAG v3.15.0)
 FetchContent_MakeAvailable(catch)
 
 set(tests
