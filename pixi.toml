@@ -73,7 +73,7 @@ platforms = ["linux-64", "osx-64"]
 
 [tasks.configure]
 cmd = ["cmake", "-Bbuild", "-GNinja"]
-inputs = ["CMakeLists.txt", "**/CMakeLists.txt"]
+inputs = ["CMakeLists.txt", "**/CMakeLists.txt", "external/external.cmake"]
 outputs = ["build/CMakeFiles/"]
 
 [tasks.build]
