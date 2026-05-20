@@ -62,17 +62,15 @@ endmacro()
 # finds the llvm-config binary
 # sets: LLVM_CONFIG_BINARY
 function(_cppast_find_llvm_config)
-    unset(LLVM_CONFIG_BINARY CACHE)
-      find_program(llvm_config_binary llvm-config)
-
-      if(NOT llvm_config_binary)
-          set(LLVM_CONFIG_BINARY ${llvm_config_binary} CACHE INTERNAL "")
-      endif()
-
     if(NOT LLVM_CONFIG_BINARY)
-        message(FATAL_ERROR "Unable to find llvm-config binary, please set option LLVM_CONFIG_BINARY yourself")
-    else()
-        message(STATUS "Found llvm-config at ${LLVM_CONFIG_BINARY}")
+
+        find_program(LLVM_CONFIG_BINARY llvm-config)
+
+        if(NOT LLVM_CONFIG_BINARY)
+            message(FATAL_ERROR "Unable to find llvm-config binary, please set option LLVM_CONFIG_BINARY yourself")
+        else()
+            message(STATUS "Found llvm-config at ${LLVM_CONFIG_BINARY}")
+        endif()
     endif()
 endfunction()
 
