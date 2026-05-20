@@ -40,22 +40,16 @@ TODO, refer to documentation comments in header file.
 
 ### Installation
 
-The library can be used as CMake subdirectory, download it and call `add_subdirectory(path/to/cppast)`, then link to the `cppast` target and enable C++11 or higher.
+For development, we recommend to use [pixi](https://pixi.sh). Run `pixi run build` to compile the package, `pixi run test` to run its test suite, `pixi run cppast` to run the cppast tool.
 
-The parser needs `libclang` and the `clang++` binary, at least version 4.0.0.
+The library can also be used as CMake subdirectory, download it and call `add_subdirectory(path/to/cppast)`, then link to the `cppast` target and enable C++11 or higher.
+
+The parser needs `libclang` and the `clang++` binary, at least version 15.
 The `clang++` binary will be found in `PATH` and in the same directory as the program that is being executed.
-
-*Note: The project will drop support for older LLVM versions very soon; this minimizes the workaround code when the `libclang` API catches up.*
 
 The CMake code requires `llvm-config`, you may need to install `llvm` and not just `clang` to get it (e.g. on ArchLinux).
 If `llvm-config` is in your path and the version is compatible, it should just work out of the box.
 Else you need to set the CMake variable `LLVM_CONFIG_BINARY` to the proper path.
-
-If you don't have a proper clang version installed, it can also be downloaded.
-For that you need to set `LLVM_DOWNLOAD_OS_NAME`.
-This is the name of the operating system used on the [LLVM pre-built binary archive](http://releases.llvm.org/download.html#4.0.0), e.g. `x86_64-linux-gnu-ubuntu-16.10` for Ubuntu 16.10.
-
-You can also set `LLVM_DOWNLOAD_URL` to a custom url, to download a specific version or from a mirror.
 
 If you don't have `llvm-config`, you need to pass the locations explictly.
 For that set the option `LLVM_VERSION_EXPLICIT` to the version you're using,

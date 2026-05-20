@@ -119,6 +119,10 @@ TEST_CASE("command line macro definition")
     REQUIRE(!logger.error);
 }
 
+static bool endsWith( std::string const& s, std::string const& suffix ) {
+        return s.size() >= suffix.size() && std::equal(suffix.rbegin(), suffix.rend(), s.rbegin());
+}
+
 TEST_CASE("cpp_include_directive")
 {
     write_file("cpp_include_directive-header.hpp", R"(
@@ -149,7 +153,7 @@ b
                   REQUIRE(include.target().name() == include.name());
                   REQUIRE(include.include_kind() == cppast::cpp_include_kind::system);
                   REQUIRE(include.target().get(idx).empty());
-                  REQUIRE_THAT(include.full_path(), Catch::EndsWith("iostream"));
+                  REQUIRE(endsWith(include.full_path(), std::string("iostream")));
               }
               else if (include.name() == "cpp_include_directive-header.hpp")
               {

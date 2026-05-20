@@ -510,8 +510,15 @@ typedef decltype(0) w;
         }
         else if (alias.name() == "v")
         {
-            auto type = cpp_user_defined_type::build(cpp_type_ref(cpp_entity_id(""), ""));
-            CHECK(equal_types(idx, alias.underlying_type(), *type));
+            // libclang <16 reports the underlying anonymous struct with an
+            // empty name; libclang 16+ propagates the typedef name 'v' onto
+            // the struct and has no API to recover the original anonymity.
+            auto type_empty = cpp_user_defined_type::build(
+                cpp_type_ref(cpp_entity_id(""), ""));
+            auto type_named = cpp_user_defined_type::build(
+                cpp_type_ref(cpp_entity_id(""), "v"));
+            CHECK((equal_types(idx, alias.underlying_type(), *type_empty)
+                   || equal_types(idx, alias.underlying_type(), *type_named)));
             return false;
         }
         else if (alias.name() == "w")

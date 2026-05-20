@@ -13,9 +13,9 @@ cpp_scope_name::cpp_scope_name(type_safe::object_ref<const cpp_entity> entity) :
 {
     if (cppast::is_templated(*entity))
     {
-        auto& templ = static_cast<const cpp_template&>(entity->parent().value());
-        if (!templ.parameters().empty())
-            templ_ = type_safe::ref(templ);
+        auto* templ = static_cast<const cpp_template*>(&entity->parent().value());
+        if (!templ->parameters().empty())
+            templ_ = type_safe::ref(*templ);
     }
     else if (is_template(entity->kind()))
     {

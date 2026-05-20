@@ -551,22 +551,22 @@ void write_noexcept(code_generator::output& output, const cpp_function_base& bas
     else if (need_ws)
         output << whitespace;
 
-    auto& cond = base.noexcept_condition().value();
-    if (cond.kind() == cpp_expression_kind::literal_t
-        && static_cast<const cpp_literal_expression&>(cond).value() == "true")
+    auto* cond = &base.noexcept_condition().value();
+    if (cond->kind() == cpp_expression_kind::literal_t
+        && static_cast<const cpp_literal_expression&>(*cond).value() == "true")
         output << keyword("noexcept");
     else
     {
         output << keyword("noexcept") << punctuation("(") << bracket_ws;
         // update check when expression gets exposed
-        if (cond.kind() == cpp_expression_kind::unexposed_t
-            && static_cast<const cpp_unexposed_expression&>(cond).expression().front().spelling
+        if (cond->kind() == cpp_expression_kind::unexposed_t
+            && static_cast<const cpp_unexposed_expression&>(*cond).expression().front().spelling
                    == "false")
             output << keyword("false");
         else if (output.options().is_set(code_generator::exclude_noexcept_condition))
             output.excluded(base);
         else
-            detail::write_expression(output, cond);
+            detail::write_expression(output, *cond);
         output << bracket_ws << punctuation(")");
     }
 }

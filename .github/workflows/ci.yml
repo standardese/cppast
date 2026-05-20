@@ -1,73 +1,48 @@
 name: CI
 on: [push, pull_request]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  # Here we're keeping on arbitrary LLVM version fixed and varying GCC.
-  linux-gcc:
+  test:
+    runs-on: ${{ matrix.on }}
     strategy:
-      fail-fast: false
       matrix:
-        image:
-          # List: https://github.com/conan-io/conan-docker-tools
-          - gcc10
-          - gcc9
-          - gcc8
-          - gcc7
-          - gcc6
-
-    runs-on: ubuntu-latest
-    container:
-      image: conanio/${{matrix.image}}
-      options: --user root
+        include:
+        - { environment: "llvm-15", on: "ubuntu-24.04" }
+        - { environment: "llvm-16", on: "ubuntu-24.04" }
+        - { environment: "llvm-17", on: "ubuntu-24.04" }
+        - { environment: "llvm-18", on: "ubuntu-24.04" }
+        - { environment: "llvm-19", on: "ubuntu-24.04" }
+        - { environment: "llvm-20", on: "ubuntu-24.04" }
+        - { environment: "llvm-21", on: "ubuntu-24.04" }
+        - { environment: "llvm-22", on: "ubuntu-24.04" }
+        # The Xcode 16.x SDK is not compatible with such an old clang
+        # - { environment: "llvm-15", on: "macos-15" }
+        # - { environment: "llvm-16", on: "macos-15" }
+        # - { environment: "llvm-17", on: "macos-15" }
+        # - { environment: "llvm-18", on: "macos-15" }
+        - { environment: "llvm-19", on: "macos-15" }
+        # conda cannot solve for clangdev=20,21,22 on Silicon
+        # - { environment: "llvm-20", on: "macos-15" }
+        # - { environment: "llvm-21", on: "macos-15" }
+        # - { environment: "llvm-22", on: "macos-15" }
+        # The Xcode 16.x SDK is not compatible with such an old clang
+        # - { environment: "llvm-15", on: "macos-15-intel" }
+        # - { environment: "llvm-16", on: "macos-15-intel" }
+        # - { environment: "llvm-17", on: "macos-15-intel" }
+        # - { environment: "llvm-18", on: "macos-15-intel" }
+        - { environment: "llvm-19", on: "macos-15-intel" }
+        - { environment: "llvm-20", on: "macos-15-intel" }
+        - { environment: "llvm-21", on: "macos-15-intel" }
+        - { environment: "llvm-22", on: "macos-15-intel" }
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Create Build Environment
-      run: cmake -E make_directory build
-    - name: Install libclang
-      run: apt-get -qq update && apt-get install -y llvm clang libclang-dev
-    - name: Install ninja
-      run: type ninja || apt-get install -y ninja-build
-
-    - name: Configure
-      working-directory: build/
-      run: cmake -GNinja $GITHUB_WORKSPACE
-    - name: Build
-      working-directory: build/
-      run: cmake --build .
-    - name: Test
-      working-directory: build/
-      run: ctest --output-on-failure
-
-  # Here we're varying the LLVM version and using its clang for compiling as well.
-  linux-clang:
-    strategy:
-      fail-fast: false
-      matrix:
-        version: [7, 8, 9, 10]
-
-    runs-on: ubuntu-latest
-    container:
-      # Just one of the newer images.
-      image: conanio/gcc10
-      options: --user root
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: Create Build Environment
-      run: cmake -E make_directory build
-    - name: Install libclang
-      run: apt-get -qq update && apt-get install -y llvm-${{matrix.version}} clang-${{matrix.version}} libclang-${{matrix.version}}-dev
-    - name: Install ninja
-      run: type ninja || apt-get install -y ninja-build
-
-    - name: Configure
-      working-directory: build/
-      run: cmake -GNinja $GITHUB_WORKSPACE -DCMAKE_CXX_COMPILER=clang++-${{matrix.version}}
-    - name: Build
-      working-directory: build/
-      run: cmake --build .
-    - name: Test
-      working-directory: build/
-      run: ctest --output-on-failure
-
+    - uses: actions/checkout@v5
+      with: { submodules: recursive }
+    - uses: prefix-dev/setup-pixi@v0.9.4
+      with: { pixi-version: v0.68.0 }
+    - name: run tests
+      run: pixi run -e ${{ matrix.environment }} test

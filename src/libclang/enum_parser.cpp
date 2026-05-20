@@ -47,19 +47,26 @@ std::unique_ptr<cpp_enum_value> parse_enum_value(const detail::parse_context& co
 cpp_enum::builder make_enum_builder(const detail::parse_context& context, const CXCursor& cur,
                                     type_safe::optional<cpp_entity_ref>& semantic_parent)
 {
-    auto                   name = detail::get_cursor_name(cur);
+    // libclang 16+ synthesizes a spelling like "(unnamed enum at ...)" for
+    // anonymous enums, which does not appear in the source tokens.
+    auto                   is_anonymous = clang_Cursor_isAnonymous(cur) != 0u;
+    auto                   name         = detail::get_cursor_name(cur);
     detail::cxtokenizer    tokenizer(context.tu, context.file, cur);
     detail::cxtoken_stream stream(tokenizer, cur);
 
-    // enum [class/struct] [<attribute>] name [: type] {
+    // enum [class/struct] [<attribute>] [name [: type]] {
     detail::skip(stream, "enum");
     auto scoped     = detail::skip_if(stream, "class") || detail::skip_if(stream, "struct");
     auto attributes = detail::parse_attributes(stream);
 
     std::string scope;
-    while (!detail::skip_if(stream, name.c_str()))
-        if (!detail::append_scope(stream, scope))
-            DEBUG_UNREACHABLE(detail::parse_error_handler{}, cur, "unexpected tokens in enum name");
+    if (!is_anonymous)
+    {
+        while (!detail::skip_if(stream, name.c_str()))
+            if (!detail::append_scope(stream, scope))
+                DEBUG_UNREACHABLE(detail::parse_error_handler{}, cur,
+                                  "unexpected tokens in enum name");
+    }
     if (!scope.empty())
         semantic_parent = cpp_entity_ref(detail::get_entity_id(clang_getCursorSemanticParent(cur)),
                                          std::move(scope));
@@ -68,7 +75,8 @@ cpp_enum::builder make_enum_builder(const detail::parse_context& context, const 
     auto type       = detail::parse_type(context, cur, clang_getEnumDeclIntegerType(cur));
     auto type_given = detail::skip_if(stream, ":");
 
-    auto result = cpp_enum::builder(name.c_str(), scoped, std::move(type), type_given);
+    auto result = cpp_enum::builder(is_anonymous ? "" : name.c_str(), scoped, std::move(type),
+                                    type_given);
     result.get().add_attribute(attributes);
     return result;
 }

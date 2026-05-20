@@ -14,7 +14,7 @@
 
 using namespace cppast;
 
-TEST_CASE("cpp_friend", "[!hide][clang4]")
+TEST_CASE("cpp_friend", "[.][clang4]")
 {
     auto code = R"(
 /// b

@@ -9,7 +9,7 @@ include(FetchContent)
 find_package(type_safe QUIET)
 if(NOT type_safe_FOUND)
     message(STATUS "Fetching type_safe")
-    FetchContent_Declare(type_safe GIT_REPOSITORY https://github.com/foonathan/type_safe GIT_TAG origin/main)
+    FetchContent_Declare(type_safe GIT_REPOSITORY https://github.com/foonathan/type_safe GIT_TAG 292e8c127037e33d92f8f52dab0f1184993942d0)  # main as of 2026-05-20
     FetchContent_MakeAvailable(type_safe)
 endif()
 
@@ -31,7 +31,7 @@ if(build_tool)
     set(CXXOPTS_BUILD_TESTS OFF CACHE BOOL "")
 
     message(STATUS "Fetching cxxopts")
-    FetchContent_Declare(cxxopts URL https://github.com/jarro2783/cxxopts/archive/v2.2.1.zip)
+    FetchContent_Declare(cxxopts GIT_REPOSITORY https://github.com/jarro2783/cxxopts GIT_TAG a3a21b31ef2894b5a802f041f40d51059469a259)  # master as of 2026-05-20
     FetchContent_MakeAvailable(cxxopts)
 endif()
 
@@ -50,38 +50,6 @@ function(name_without_extension FILENAME NAME)
     set(${NAME} "${name_we}" PARENT_SCOPE)
 endfunction()
 
-# downloads and extracts LLVM using the given URL, filename, and extension
-# sets: LLVM_DOWNLOAD_DIR
-function(_cppast_download_llvm url)
-    get_filename_component(file "${url}" NAME)
-    name_without_extension(${file} folder)
-
-    if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${folder})
-        message(STATUS "Downloading LLVM from ${url}")
-        file(DOWNLOAD ${url} ${CMAKE_CURRENT_BINARY_DIR}/${file}
-            STATUS status
-            LOG log)
-
-        list(GET status 0 status_code)
-        list(GET status 1 status_string)
-        if(NOT status_code EQUAL 0)
-            message(FATAL_ERROR "error downloading llvm: ${status_string}" "${log}")
-        endif()
-
-        execute_process(COMMAND ${CMAKE_COMMAND} -E tar xJf ${file}
-                        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-    endif()
-
-    set(LLVM_DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}/${folder} PARENT_SCOPE)
-endfunction()
-
-# downloads and extracts LLVM using the given version and OS name
-# sets: LLVM_DOWNLOAD_DIR
-function(_cppast_download_llvm_from_llvm_releases version os)
-    _cppast_download_llvm("http://releases.llvm.org/${version}/clang+llvm-${version}-${os}.tar.xz")
-    set(LLVM_DOWNLOAD_DIR ${LLVM_DOWNLOAD_DIR} PARENT_SCOPE)
-endfunction()
-
 # determines the llvm version from a config binary
 macro(_cppast_llvm_version output_name llvm_binary)
     execute_process(COMMAND ${llvm_binary} --version
@@ -94,33 +62,15 @@ endmacro()
 # finds the llvm-config binary
 # sets: LLVM_CONFIG_BINARY
 function(_cppast_find_llvm_config)
-    unset(LLVM_CONFIG_BINARY CACHE)
-    if(LLVM_DOWNLOAD_DIR)
-        find_program(LLVM_CONFIG_BINARY "llvm-config" "${LLVM_DOWNLOAD_DIR}/bin" NO_DEFAULT_PATH)
-    else()
-        find_program(llvm_config_binary_no_suffix llvm-config)
-        find_program(llvm_config_binary_suffix NAMES llvm-config-10 llvm-config-9 llvm-config-8 llvm-config-7 llvm-config-6.0 llvm-config-5.0 llvm-config-4.0)
-
-        if(NOT llvm_config_binary_no_suffix)
-            set(LLVM_CONFIG_BINARY ${llvm_config_binary_suffix} CACHE INTERNAL "")
-        elseif(NOT llvm_config_binary_suffix)
-            set(LLVM_CONFIG_BINARY ${llvm_config_binary_no_suffix} CACHE INTERNAL "")
-        else()
-            # pick latest version of the two
-            _cppast_llvm_version(suffix_version ${llvm_config_binary_suffix})
-            _cppast_llvm_version(no_suffix_version ${llvm_config_binary_no_suffix})
-            if(suffix_version VERSION_GREATER no_suffix_version)
-                set(LLVM_CONFIG_BINARY ${llvm_config_binary_suffix} CACHE INTERNAL "")
-            else()
-                set(LLVM_CONFIG_BINARY ${llvm_config_binary_no_suffix} CACHE INTERNAL "")
-            endif()
-        endif()
-    endif()
-
     if(NOT LLVM_CONFIG_BINARY)
-        message(FATAL_ERROR "Unable to find llvm-config binary, please set option LLVM_CONFIG_BINARY yourself")
-    else()
-        message(STATUS "Found llvm-config at ${LLVM_CONFIG_BINARY}")
+
+        find_program(LLVM_CONFIG_BINARY llvm-config)
+
+        if(NOT LLVM_CONFIG_BINARY)
+            message(FATAL_ERROR "Unable to find llvm-config binary, please set option LLVM_CONFIG_BINARY yourself")
+        else()
+            message(STATUS "Found llvm-config at ${LLVM_CONFIG_BINARY}")
+        endif()
     endif()
 endfunction()
 
@@ -202,11 +152,7 @@ function(_cppast_find_libclang config_tool min_version force)
     endif()
 endfunction()
 
-set(llvm_min_version 4.0.0)
-
-if(NOT DEFINED LLVM_PREFERRED_VERSION)
-    set(LLVM_PREFERRED_VERSION 4.0.0 CACHE STRING "the preferred LLVM version")
-endif()
+set(llvm_min_version 15.0.0)
 
 if(DEFINED LLVM_VERSION_EXPLICIT)
     if(LLVM_VERSION_EXPLICIT VERSION_LESS llvm_min_version)
@@ -215,11 +161,6 @@ if(DEFINED LLVM_VERSION_EXPLICIT)
     set(LLVM_VERSION ${LLVM_VERSION_EXPLICIT} CACHE INTERNAL "")
     message(STATUS "Using manually specified LLVM version ${LLVM_VERSION}")
 elseif(NOT LLVM_CONFIG_BINARY)
-    if(DEFINED LLVM_DOWNLOAD_OS_NAME)
-        _cppast_download_llvm_from_llvm_releases(${LLVM_PREFERRED_VERSION} ${LLVM_DOWNLOAD_OS_NAME})
-    elseif(DEFINED LLVM_DOWNLOAD_URL)
-        _cppast_download_llvm(${LLVM_DOWNLOAD_URL})
-    endif()
     _cppast_find_llvm_config()
     _cppast_find_libclang(${LLVM_CONFIG_BINARY} ${llvm_min_version} 1) # override here
 else()

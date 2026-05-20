@@ -56,8 +56,12 @@ cpp_class::builder make_class_builder(const detail::parse_context& context, cons
     auto kind       = parse_class_kind(stream);
     auto attributes = detail::parse_attributes(stream);
     auto name       = detail::get_cursor_name(cur);
+    // libclang 16+ synthesizes a spelling like "(unnamed struct at ...)" for
+    // anonymous tags; expose them with an empty name as old libclang did.
+    const char* name_str
+        = (clang_Cursor_isAnonymous(cur) != 0u) ? "" : name.c_str();
 
-    auto result = cpp_class::builder(name.c_str(), kind);
+    auto result = cpp_class::builder(name_str, kind);
     result.get().add_attribute(attributes);
     return result;
 }
