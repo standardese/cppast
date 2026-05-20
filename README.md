@@ -51,12 +51,6 @@ The CMake code requires `llvm-config`, you may need to install `llvm` and not ju
 If `llvm-config` is in your path and the version is compatible, it should just work out of the box.
 Else you need to set the CMake variable `LLVM_CONFIG_BINARY` to the proper path.
 
-If you don't have a proper clang version installed, it can also be downloaded.
-For that you need to set `LLVM_DOWNLOAD_OS_NAME`.
-This is the name of the operating system used on the [LLVM pre-built binary archive](http://releases.llvm.org/download.html#4.0.0), e.g. `x86_64-linux-gnu-ubuntu-16.10` for Ubuntu 16.10.
-
-You can also set `LLVM_DOWNLOAD_URL` to a custom url, to download a specific version or from a mirror.
-
 If you don't have `llvm-config`, you need to pass the locations explictly.
 For that set the option `LLVM_VERSION_EXPLICIT` to the version you're using,
 `LIBCLANG_LIBRARY` to the location of the libclang library file,
